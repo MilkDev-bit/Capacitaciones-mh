@@ -1,7 +1,84 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"Prueba-Go/internal/db"
+	"Prueba-Go/internal/handlers"
+	"Prueba-Go/internal/middleware"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	fmt.Println("¡Go funcionando en Antigravity!")
+	db.Connect()
+	db.Migrate()
+
+	r := gin.Default()
+
+	// CORS
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	})
+
+	// Servir archivos subidos
+	r.Static("/uploads", "./uploads")
+	// Servir frontend Vue compilado
+	r.Static("/assets", "./frontend/dist/assets")
+	r.StaticFile("/", "./frontend/dist/index.html")
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./frontend/dist/index.html")
+	})
+
+	api := r.Group("/api")
+	{
+		// Auth
+		api.POST("/register", handlers.Register)
+		api.POST("/login", handlers.Login)
+
+		auth := api.Group("/")
+		auth.Use(middleware.AuthRequired())
+		{
+			// Usuario: sus capacitaciones y exámenes asignados
+			auth.GET("/mis-capacitaciones", handlers.ListCapacitacionesUsuario)
+			auth.GET("/mis-examenes", handlers.ListExamenesUsuario)
+			auth.GET("/examenes/:id", handlers.GetExamen)
+			auth.POST("/examenes/:id/submit", handlers.SubmitExamen)
+			auth.GET("/capacitaciones/:id", handlers.GetCapacitacion)
+
+			// Admin
+			admin := auth.Group("/admin")
+			admin.Use(middleware.AdminRequired())
+			{
+				admin.GET("/users", handlers.ListUsers)
+				admin.POST("/asignar", handlers.Asignar)
+				admin.DELETE("/asignar/:id", handlers.DesAsignar)
+				admin.GET("/asignaciones", handlers.ListAsignaciones)
+
+				admin.GET("/capacitaciones", handlers.ListCapacitaciones)
+				admin.POST("/capacitaciones", handlers.CreateCapacitacion)
+				admin.DELETE("/capacitaciones/:id", handlers.DeleteCapacitacion)
+
+				admin.GET("/examenes", handlers.ListExamenes)
+				admin.POST("/examenes", handlers.CreateExamen)
+				admin.DELETE("/examenes/:id", handlers.DeleteExamen)
+			}
+		}
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Servidor iniciado en http://localhost:%s", port)
+	r.Run(":" + port)
 }
