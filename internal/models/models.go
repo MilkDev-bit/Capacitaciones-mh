@@ -12,21 +12,25 @@ type User struct {
 }
 
 type Capacitacion struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Type        string    `json:"type"` // video | document | text
-	FilePath    string    `json:"file_path,omitempty"`
-	Content     string    `json:"content,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Type         string    `json:"type"` // video | document | text
+	FilePath     string    `json:"file_path,omitempty"`
+	Content      string    `json:"content,omitempty"`
+	InstructorID *string   `json:"instructor_id,omitempty"`
+	IsPublic     bool      `json:"is_public"`
+	CodigoAcceso string    `json:"codigo_acceso,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type Examen struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Preguntas   []Pregunta `json:"preguntas,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID           string     `json:"id"`
+	Title        string     `json:"title"`
+	Description  string     `json:"description"`
+	InstructorID *string    `json:"instructor_id,omitempty"`
+	Preguntas    []Pregunta `json:"preguntas,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
 }
 
 type Pregunta struct {

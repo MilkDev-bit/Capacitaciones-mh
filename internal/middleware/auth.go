@@ -47,6 +47,17 @@ func AdminRequired() gin.HandlerFunc {
 	}
 }
 
+func InstructorRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, _ := c.Get("role")
+		if role != "instructor" && role != "admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "acceso denegado: se requiere rol instructor"})
+			return
+		}
+		c.Next()
+	}
+}
+
 func getSecret() string {
 	if s := os.Getenv("JWT_SECRET"); s != "" {
 		return s

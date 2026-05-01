@@ -40,6 +40,8 @@ func Register(c *gin.Context) {
 	if req.Role == "admin" {
 		// Solo permite crear admin si hay un header especial o ajusta según tu lógica
 		role = "admin"
+	} else if req.Role == "instructor" {
+		role = "instructor"
 	}
 	var id string
 	err = db.DB.QueryRow(

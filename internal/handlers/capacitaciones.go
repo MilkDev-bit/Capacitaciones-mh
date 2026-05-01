@@ -80,10 +80,12 @@ func DeleteCapacitacion(c *gin.Context) {
 func ListCapacitacionesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
-		SELECT c.id, c.title, c.description, c.type, COALESCE(c.file_path,''), COALESCE(c.content,''), c.created_at
+		SELECT DISTINCT c.id, c.title, c.description, c.type,
+		       COALESCE(c.file_path,''), COALESCE(c.content,''), c.created_at
 		FROM capacitaciones c
-		INNER JOIN asignaciones a ON a.capacitacion_id = c.id
-		WHERE a.user_id = $1
+		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
+		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
+		WHERE a.user_id = $1 OR i.user_id = $1
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {

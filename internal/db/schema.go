@@ -61,6 +61,19 @@ CREATE TABLE IF NOT EXISTS respuestas (
     respondido_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, examen_id, pregunta_id)
 );
+
+CREATE TABLE IF NOT EXISTS inscripciones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    inscrito_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, capacitacion_id)
+);
+
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS instructor_id UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS codigo_acceso VARCHAR(12) UNIQUE;
+ALTER TABLE examenes ADD COLUMN IF NOT EXISTS instructor_id UUID REFERENCES users(id) ON DELETE SET NULL;
 `
 
 func Migrate() {

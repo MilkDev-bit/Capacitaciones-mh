@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
+  const isInstructor = computed(() => user.value?.role === 'instructor')
 
   async function login(email: string, password: string) {
     const res = await api.post('/login', { email, password })
@@ -20,6 +21,8 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('user', JSON.stringify(res.data.user))
     if (user.value?.role === 'admin') {
       router.push('/admin')
+    } else if (user.value?.role === 'instructor') {
+      router.push('/instructor')
     } else {
       router.push('/usuario')
     }
@@ -33,5 +36,5 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
-  return { token, user, isLoggedIn, isAdmin, login, logout }
+  return { token, user, isLoggedIn, isAdmin, isInstructor, login, logout }
 })

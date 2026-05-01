@@ -44,6 +44,8 @@ func main() {
 		// Auth
 		api.POST("/register", handlers.Register)
 		api.POST("/login", handlers.Login)
+		// Preview público de curso por código (sin auth, para página de invitación)
+		api.GET("/preview-curso/:codigo", handlers.PreviewCurso)
 
 		auth := api.Group("/")
 		auth.Use(middleware.AuthRequired())
@@ -54,6 +56,32 @@ func main() {
 			auth.GET("/examenes/:id", handlers.GetExamen)
 			auth.POST("/examenes/:id/submit", handlers.SubmitExamen)
 			auth.GET("/capacitaciones/:id", handlers.GetCapacitacion)
+
+			// Cursos públicos (cualquier usuario autenticado)
+			auth.GET("/cursos-publicos", handlers.ListCursosPublicos)
+			auth.POST("/inscribirse/:id", handlers.Inscribirse)
+			auth.POST("/unirse-con-codigo", handlers.UnirseConCodigo)
+
+			// Instructor
+			instructor := auth.Group("/instructor")
+			instructor.Use(middleware.InstructorRequired())
+			{
+				instructor.GET("/capacitaciones", handlers.InstructorListCapacitaciones)
+				instructor.POST("/capacitaciones", handlers.InstructorCreateCapacitacion)
+				instructor.DELETE("/capacitaciones/:id", handlers.InstructorDeleteCapacitacion)
+				instructor.PATCH("/capacitaciones/:id/toggle-public", handlers.InstructorTogglePublic)
+				instructor.POST("/capacitaciones/:id/reset-codigo", handlers.InstructorResetCodigo)
+
+				instructor.GET("/examenes", handlers.InstructorListExamenes)
+				instructor.POST("/examenes", handlers.InstructorCreateExamen)
+				instructor.DELETE("/examenes/:id", handlers.InstructorDeleteExamen)
+
+				instructor.GET("/estudiantes", handlers.InstructorListEstudiantes)
+				instructor.POST("/asignar", handlers.InstructorAsignar)
+
+				// Listar todos los usuarios para poder asignar
+				instructor.GET("/users", handlers.ListUsers)
+			}
 
 			// Admin
 			admin := auth.Group("/admin")
