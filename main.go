@@ -41,6 +41,9 @@ func main() {
 
 	api := r.Group("/api")
 	{
+		// Health check (sin auth, para Railway)
+		api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
+
 		// Auth
 		api.POST("/register", handlers.Register)
 		api.POST("/login", handlers.Login)
