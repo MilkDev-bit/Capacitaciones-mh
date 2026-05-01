@@ -1,0 +1,20 @@
+# Dependencias Node (se instalan dentro del Dockerfile)
+node_modules/
+frontend/node_modules/
+
+# Build local (el Dockerfile lo genera desde cero)
+frontend/dist/
+
+# Archivos de desarrollo y sistema
+.git/
+.gitignore
+.env
+.env.*
+*.md
+
+# Archivos subidos por usuarios (datos en producción, no se deployean)
+uploads/
+
+# Artefactos de build Go locales
+*.exe
+server
