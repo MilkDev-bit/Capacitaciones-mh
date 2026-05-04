@@ -13,40 +13,72 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page">
-    <h2>Mis Exámenes</h2>
-    <div v-if="examenes.length" class="grid">
+  <div>
+    <div class="ph">
+      <h1 class="ph-title">Mis exámenes</h1>
+      <p class="ph-sub">Completa los exámenes que te han asignado</p>
+    </div>
+
+    <div v-if="examenes.length" class="exams-grid">
       <div
-        v-for="e in examenes"
-        :key="e.id"
-        class="card"
+        v-for="e in examenes" :key="e.id"
+        class="exam-card"
         @click="router.push('/usuario/examenes/' + e.id)"
+        tabindex="0" @keyup.enter="router.push('/usuario/examenes/' + e.id)"
       >
-        <div class="icon">📝</div>
-        <h3>{{ e.title }}</h3>
-        <p>{{ e.description || 'Sin descripción' }}</p>
-        <span class="see-more">Responder examen →</span>
+        <div class="exam-thumb">
+          <span class="exam-icon">📝</span>
+        </div>
+        <div class="exam-body">
+          <span class="exam-badge">Exámen</span>
+          <h3>{{ e.title }}</h3>
+          <p>{{ e.description || 'Sin descripción' }}</p>
+          <div class="exam-meta" v-if="e.preguntas">
+            <span>📌 {{ e.preguntas.length }} preguntas</span>
+          </div>
+          <div class="exam-cta">Responder exámen →</div>
+        </div>
       </div>
     </div>
-    <div v-else class="empty">
-      <p>No tienes exámenes asignados aún.</p>
+
+    <div v-else class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3>No tienes exámenes asignados</h3>
+      <p>Cuando tu instructor te asigne un exámen aparecerá aquí.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page { padding: 2rem; }
-h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; }
-.card {
-  background: white; border-radius: 12px; padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07); cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+.ph { margin-bottom: 24px; }
+.ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
+.ph-sub { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+.exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 20px; }
+.exam-card {
+  background: var(--surface); border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow-sm); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  display: flex; flex-direction: column;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
-.icon { font-size: 1.8rem; margin-bottom: 10px; }
-h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
-p { font-size: 0.85rem; color: #64748b; line-height: 1.5; }
-.see-more { display: inline-block; margin-top: 12px; color: #3b82f6; font-size: 0.85rem; font-weight: 600; }
-.empty { text-align: center; padding: 4rem; color: #94a3b8; }
+.exam-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.exam-thumb {
+  height: 130px;
+  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.exam-icon { font-size: 2.8rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
+.exam-body { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.exam-badge {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px; border-radius: 4px;
+  display: inline-block; width: fit-content;
+}
+.exam-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); }
+.exam-body p { font-size: 0.83rem; color: var(--muted); }
+.exam-meta { font-size: 0.8rem; color: var(--muted); }
+.exam-cta { font-size: 0.83rem; font-weight: 700; color: var(--brand); margin-top: 4px; }
+.empty-state { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-icon { font-size: 3rem; }
+.empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+.empty-state p { color: var(--muted); max-width: 360px; font-size: 0.9rem; }
+@media (max-width: 560px) { .exams-grid { grid-template-columns: 1fr; } }
 </style>

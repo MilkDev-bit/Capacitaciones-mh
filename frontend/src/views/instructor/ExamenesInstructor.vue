@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
 
@@ -50,7 +50,7 @@ onMounted(load)
 
 async function guardar() {
   error.value = ''; success.value = ''
-  if (!form.value.title) { error.value = 'El título es requerido'; return }
+  if (!form.value.title) { error.value = 'El titulo es requerido'; return }
   if (!form.value.preguntas.length) { error.value = 'Agrega al menos una pregunta'; return }
   for (const p of form.value.preguntas) {
     if (!p.texto) { error.value = 'Todas las preguntas necesitan texto'; return }
@@ -73,143 +73,135 @@ async function guardar() {
 }
 
 async function eliminar(id: string) {
-  if (!confirm('¿Eliminar este examen?')) return
+  if (!confirm('Eliminar este examen?')) return
   await api.delete(`/instructor/examenes/${id}`)
   await load()
 }
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
+  <div>
+    <div class="ph">
       <div>
-        <h2>Mis exámenes</h2>
-        <p class="subtitle">Crea exámenes para evaluar a tus estudiantes. Asígnalos desde la sección Estudiantes.</p>
+        <h1 class="ph-title">Mis examenes</h1>
+        <p class="ph-sub">Crea examenes y asignalos desde la seccion Estudiantes.</p>
       </div>
-      <button class="btn-primary" @click="showForm = !showForm">
+      <button class="btn btn-primary" @click="showForm = !showForm">
         {{ showForm ? 'Cancelar' : '+ Nuevo examen' }}
       </button>
     </div>
 
-    <div v-if="showForm" class="card form-card">
-      <h3>Nuevo examen</h3>
+    <div v-if="showForm" class="form-card">
+      <p class="form-card-title">Nuevo examen</p>
       <div class="form-row">
         <div class="field">
-          <label>Título *</label>
-          <input v-model="form.title" placeholder="Ej: Evaluación módulo 1" />
+          <label>Titulo *</label>
+          <input class="field-input" v-model="form.title" placeholder="Ej: Evaluacion modulo 1" />
         </div>
         <div class="field">
-          <label>Descripción</label>
-          <input v-model="form.description" placeholder="Opcional..." />
+          <label>Descripcion</label>
+          <input class="field-input" v-model="form.description" placeholder="Opcional..." />
         </div>
       </div>
 
-      <div class="preguntas">
-        <div v-for="(p, pi) in form.preguntas" :key="pi" class="pregunta-card">
-          <div class="pregunta-header">
-            <span class="num">Pregunta {{ pi + 1 }}</span>
-            <button class="btn-icon" @click="removePregunta(pi)">✕</button>
+      <div class="preguntas-list">
+        <div v-for="(p, pi) in form.preguntas" :key="pi" class="pregunta-item">
+          <div class="pi-header">
+            <span class="pi-num">Pregunta {{ pi + 1 }}</span>
+            <button class="icon-close" @click="removePregunta(pi)">x</button>
           </div>
-          <div class="form-row">
-            <div class="field flex-3">
+          <div class="pi-body">
+            <div class="field" style="flex:3">
               <label>Enunciado *</label>
-              <textarea v-model="p.texto" rows="2" placeholder="Escribe la pregunta..."></textarea>
+              <textarea class="field-input" v-model="p.texto" rows="2" placeholder="Escribe la pregunta..."></textarea>
             </div>
-            <div class="field flex-1">
-              <label>Valor (pts) *</label>
-              <input v-model.number="p.valor" type="number" min="0.5" step="0.5" />
+            <div class="field" style="flex:1">
+              <label>Valor (pts)</label>
+              <input class="field-input" v-model.number="p.valor" type="number" min="0.5" step="0.5" />
             </div>
           </div>
-          <div class="opciones">
-            <label>Opciones (selecciona la correcta)</label>
+          <div class="opciones-group">
+            <label>Opciones (marca la correcta)</label>
             <div v-for="(o, oi) in p.opciones" :key="oi" class="opcion-row">
-              <input
-                type="radio"
-                :name="'correcta-' + pi"
-                :checked="o.es_correcta"
-                @change="setCorrecta(pi, oi)"
-                title="Marcar como correcta"
-              />
-              <input v-model="o.texto" placeholder="Texto de la opción..." class="opcion-input" />
-              <button class="btn-icon red" @click="removeOpcion(pi, oi)" :disabled="p.opciones.length <= 2">✕</button>
+              <input type="radio" :name="'ok-' + pi" :checked="o.es_correcta" @change="setCorrecta(pi, oi)" class="radio-ok" />
+              <input class="field-input" v-model="o.texto" placeholder="Texto de la opcion..." style="flex:1" />
+              <button class="icon-close sm" @click="removeOpcion(pi, oi)" :disabled="p.opciones.length <= 2">x</button>
             </div>
-            <button class="btn-ghost" @click="addOpcion(pi)">+ Agregar opción</button>
+            <button class="btn-add-op" @click="addOpcion(pi)">+ Opcion</button>
           </div>
         </div>
-        <button class="btn-add-pregunta" @click="addPregunta">+ Agregar pregunta</button>
+        <button class="btn-add-preg" @click="addPregunta">+ Agregar pregunta</button>
       </div>
 
-      <p v-if="error" class="msg error">{{ error }}</p>
-      <p v-if="success" class="msg success">{{ success }}</p>
-      <button class="btn-primary" :disabled="loading" @click="guardar">
-        {{ loading ? 'Guardando...' : 'Guardar examen' }}
-      </button>
+      <div v-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-if="success" class="alert alert-success">{{ success }}</div>
+      <div class="form-actions">
+        <button class="btn btn-primary" :disabled="loading" @click="guardar">
+          <span v-if="loading" class="spinner" style="width:16px;height:16px"></span>
+          {{ loading ? 'Guardando...' : 'Guardar examen' }}
+        </button>
+        <button class="btn btn-secondary" @click="showForm = false">Cancelar</button>
+      </div>
     </div>
 
-    <div class="table-wrap">
+    <div class="table-card">
       <table v-if="examenes.length">
         <thead>
-          <tr><th>Título</th><th>Descripción</th><th>Fecha</th><th></th></tr>
+          <tr><th>Titulo</th><th>Descripcion</th><th>Fecha</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="e in examenes" :key="e.id">
             <td><strong>{{ e.title }}</strong></td>
-            <td class="desc">{{ e.description || '—' }}</td>
-            <td>{{ new Date(e.created_at).toLocaleDateString() }}</td>
-            <td><button class="btn-danger-sm" @click="eliminar(e.id)">Eliminar</button></td>
+            <td class="cell-muted">{{ e.description || '-' }}</td>
+            <td class="cell-muted">{{ new Date(e.created_at).toLocaleDateString() }}</td>
+            <td><button class="btn btn-danger btn-sm" @click="eliminar(e.id)">Eliminar</button></td>
           </tr>
         </tbody>
       </table>
-      <div v-else class="empty">
-        <p>Aún no has creado ningún examen.</p>
-        <button class="btn-primary" @click="showForm = true">Crear mi primer examen</button>
+      <div v-else class="empty-state">
+        <div class="empty-icon">📝</div>
+        <h3>No has creado ningun examen</h3>
+        <p>Crea examenes y luego asignalos a tus estudiantes.</p>
+        <button class="btn btn-primary" @click="showForm = true">Crear mi primer examen</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page { padding: 2rem; }
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem; }
-.page-header h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0; }
-.subtitle { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
-.btn-primary { background: #7c3aed; color: white; border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
-.btn-primary:hover:not(:disabled) { background: #6d28d9; }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 1.5rem; }
-.form-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #334155; }
-.form-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
-.field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.field.flex-3 { flex: 3; }
-.field.flex-1 { flex: 1; }
-label { font-size: 0.78rem; font-weight: 600; color: #64748b; }
-input, select, textarea { padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; outline: none; font-family: inherit; }
-input:focus, select:focus, textarea:focus { border-color: #7c3aed; }
-.preguntas { display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
-.pregunta-card { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 1rem; background: #f8fafc; }
-.pregunta-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.num { font-weight: 700; color: #7c3aed; font-size: 0.9rem; }
-.btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; color: #94a3b8; padding: 2px 6px; border-radius: 4px; }
-.btn-icon:hover { background: #e2e8f0; }
-.btn-icon.red { color: #ef4444; }
-.btn-icon:disabled { opacity: 0.3; cursor: not-allowed; }
-.opciones { margin-top: 0.75rem; }
-.opciones > label { display: block; margin-bottom: 6px; }
-.opcion-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.opcion-input { flex: 1; }
-.btn-ghost { background: none; border: 1.5px dashed #94a3b8; color: #64748b; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; margin-top: 4px; }
-.btn-ghost:hover { border-color: #7c3aed; color: #7c3aed; }
-.btn-add-pregunta { background: #ede9fe; color: #7c3aed; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; width: 100%; }
-.btn-add-pregunta:hover { background: #ddd6fe; }
-.msg { font-size: 0.85rem; margin-top: 8px; padding: 8px 12px; border-radius: 6px; }
-.msg.error { background: #fee2e2; color: #dc2626; }
-.msg.success { background: #d1fae5; color: #065f46; }
-.table-wrap { background: white; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); overflow: hidden; }
+.ph { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
+.ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
+.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border-top: 4px solid var(--brand); }
+.form-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
+.form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
+label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.form-actions { display: flex; gap: 10px; margin-top: 16px; }
+.preguntas-list { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+.pregunta-item { border: 1.5px solid var(--border); border-radius: var(--r); padding: 16px; background: var(--bg); }
+.pi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.pi-num { font-weight: 700; color: var(--brand); font-size: 0.88rem; }
+.icon-close { background: none; border: none; cursor: pointer; color: var(--subtle); font-size: 0.9rem; padding: 2px 6px; border-radius: 4px; }
+.icon-close:hover { color: var(--danger); background: var(--danger-bg); }
+.icon-close.sm { font-size: 0.78rem; }
+.icon-close:disabled { opacity: 0.3; cursor: not-allowed; }
+.pi-body { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.opciones-group > label { display: block; margin-bottom: 8px; }
+.opcion-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.radio-ok { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
+.btn-add-op { background: none; border: 1.5px dashed var(--border); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-top: 4px; }
+.btn-add-op:hover { border-color: var(--brand); color: var(--brand); }
+.btn-add-preg { background: var(--brand-light); color: var(--brand-dark); border: 2px dashed var(--brand-border); border-radius: var(--r); padding: 10px; cursor: pointer; font-weight: 600; font-size: 0.9rem; width: 100%; }
+.btn-add-preg:hover { background: var(--brand-border); }
+.table-card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
 table { width: 100%; border-collapse: collapse; }
-th { background: #f8fafc; padding: 10px 16px; text-align: left; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-td { padding: 12px 16px; border-top: 1px solid #f1f5f9; font-size: 0.9rem; vertical-align: middle; }
-.desc { color: #64748b; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn-danger-sm { background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
-.btn-danger-sm:hover { background: #fecaca; }
-.empty { padding: 3rem; text-align: center; color: #64748b; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+th { background: var(--bg); padding: 11px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+td { padding: 12px 16px; border-top: 1px solid var(--border-light); font-size: 0.9rem; }
+.cell-muted { color: var(--muted); }
+.empty-state { padding: 60px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-icon { font-size: 3rem; }
+.empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+.empty-state p { color: var(--muted); font-size: 0.9rem; }
+@media (max-width: 600px) { .ph { flex-direction: column; } }
 </style>

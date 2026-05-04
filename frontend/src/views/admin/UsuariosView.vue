@@ -61,74 +61,75 @@ function exTitle(id: string) { return examenes.value.find(e => e.id === id)?.tit
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-header">
-      <h2>Usuarios y Asignaciones</h2>
+  <div>
+    <div class="ph">
+      <h1 class="ph-title">Usuarios y Asignaciones</h1>
     </div>
 
-    <div class="card">
-      <h3>Asignar contenido a usuario</h3>
+    <!-- Asignación -->
+    <div class="form-card">
+      <p class="form-card-title">Asignar contenido a usuario</p>
       <div class="form-row">
         <div class="field">
           <label>Usuario *</label>
-          <select v-model="form.user_id">
+          <select class="field-input" v-model="form.user_id">
             <option value="">— Selecciona usuario —</option>
-            <option v-for="u in users" :key="u.id" :value="u.id">
-              {{ u.name }} ({{ u.email }})
-            </option>
+            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
           </select>
         </div>
         <div class="field">
           <label>Capacitación</label>
-          <select v-model="form.capacitacion_id">
+          <select class="field-input" v-model="form.capacitacion_id">
             <option value="">— Ninguna —</option>
             <option v-for="c in capacitaciones" :key="c.id" :value="c.id">{{ c.title }}</option>
           </select>
         </div>
         <div class="field">
-          <label>Examen</label>
-          <select v-model="form.examen_id">
+          <label>Exámen</label>
+          <select class="field-input" v-model="form.examen_id">
             <option value="">— Ninguno —</option>
             <option v-for="e in examenes" :key="e.id" :value="e.id">{{ e.title }}</option>
           </select>
         </div>
       </div>
-      <p v-if="error" class="msg error">{{ error }}</p>
-      <p v-if="success" class="msg success">{{ success }}</p>
-      <button class="btn-primary" :disabled="loading" @click="asignar">
-        {{ loading ? 'Asignando...' : 'Asignar' }}
+      <div v-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-if="success" class="alert alert-success">{{ success }}</div>
+      <button class="btn btn-primary" :disabled="loading" @click="asignar">
+        {{ loading ? 'Asignando…' : 'Asignar' }}
       </button>
     </div>
 
-    <div class="section-title">Asignaciones activas</div>
-    <div class="table-wrap">
+    <!-- Asignaciones activas -->
+    <p class="section-lbl">Asignaciones activas</p>
+    <div class="table-card">
       <table v-if="asignaciones.length">
-        <thead>
-          <tr><th>Usuario</th><th>Capacitación</th><th>Examen</th><th>Fecha</th><th></th></tr>
-        </thead>
+        <thead><tr><th>Usuario</th><th>Capacitación</th><th>Exámen</th><th>Fecha</th><th></th></tr></thead>
         <tbody>
           <tr v-for="a in asignaciones" :key="a.id">
             <td>{{ userName(a.user_id) }}</td>
-            <td>{{ a.capacitacion_id ? capTitle(a.capacitacion_id) : '—' }}</td>
-            <td>{{ a.examen_id ? exTitle(a.examen_id) : '—' }}</td>
-            <td>{{ new Date(a.assigned_at).toLocaleDateString() }}</td>
-            <td><button class="btn-danger-sm" @click="desasignar(a.id)">Quitar</button></td>
+            <td class="cell-muted">{{ a.capacitacion_id ? capTitle(a.capacitacion_id) : '—' }}</td>
+            <td class="cell-muted">{{ a.examen_id ? exTitle(a.examen_id) : '—' }}</td>
+            <td class="cell-muted">{{ new Date(a.assigned_at).toLocaleDateString() }}</td>
+            <td><button class="btn btn-danger btn-sm" @click="desasignar(a.id)">Quitar</button></td>
           </tr>
         </tbody>
       </table>
-      <div v-else class="empty">No hay asignaciones aún.</div>
+      <div v-else class="empty-state"><div class="empty-icon">📋</div><p>No hay asignaciones aún.</p></div>
     </div>
 
-    <div class="section-title" style="margin-top:2rem">Usuarios registrados</div>
-    <div class="table-wrap">
+    <!-- Usuarios -->
+    <p class="section-lbl" style="margin-top:24px">Usuarios registrados</p>
+    <div class="table-card">
       <table v-if="users.length">
         <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Registro</th></tr></thead>
         <tbody>
           <tr v-for="u in users" :key="u.id">
-            <td>{{ u.name }}</td>
-            <td>{{ u.email }}</td>
-            <td><span :class="['badge', u.role]">{{ u.role }}</span></td>
-            <td>{{ new Date(u.created_at).toLocaleDateString() }}</td>
+            <td><strong>{{ u.name }}</strong></td>
+            <td class="cell-muted">{{ u.email }}</td>
+            <td>
+              <span :class="['role-badge', u.role]">{{ u.role }}</span>
+            </td>
+            <td class="cell-muted">{{ new Date(u.created_at).toLocaleDateString() }}</td>
           </tr>
         </tbody>
       </table>
@@ -137,31 +138,25 @@ function exTitle(id: string) { return examenes.value.find(e => e.id === id)?.tit
 </template>
 
 <style scoped>
-.page { padding: 2rem; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
-.btn-primary { background: #3b82f6; color: white; border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; margin-top: 0.5rem; }
-.btn-primary:hover:not(:disabled) { background: #2563eb; }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 1.5rem; }
-.card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #334155; }
-.form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
-.field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; }
-label { font-size: 0.78rem; font-weight: 600; color: #64748b; }
-select { padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; outline: none; }
-select:focus { border-color: #3b82f6; }
-.msg { padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin: 8px 0; }
-.msg.error { background: #fee2e2; color: #b91c1c; }
-.msg.success { background: #dcfce7; color: #15803d; }
-.section-title { font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 0.75rem; }
-.table-wrap { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 1rem; }
+.ph { margin-bottom: 24px; }
+.ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
+.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border-top: 4px solid var(--brand); }
+.form-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
+.form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
+label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.section-lbl { font-size: 0.9rem; font-weight: 700; color: var(--dark); margin-bottom: 12px; }
+.table-card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 12px; }
 table { width: 100%; border-collapse: collapse; }
-th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 0.78rem; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem; }
-.badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-.badge.admin { background: #dbeafe; color: #1d4ed8; }
-.badge.user { background: #f0fdf4; color: #15803d; }
-.btn-danger-sm { background: #fee2e2; color: #b91c1c; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
-.btn-danger-sm:hover { background: #fecaca; }
-.empty { padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.95rem; }
+th { background: var(--bg); padding: 11px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+td { padding: 12px 16px; border-top: 1px solid var(--border-light); font-size: 0.9rem; }
+.cell-muted { color: var(--muted); }
+.role-badge { font-size: 0.73rem; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+.role-badge.admin { background: var(--info-bg); color: var(--info); }
+.role-badge.instructor { background: var(--brand-light); color: var(--brand-dark); }
+.role-badge.user { background: var(--success-bg); color: var(--success); }
+.empty-state { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.empty-icon { font-size: 2rem; }
+.empty-state p { color: var(--muted); }
+@media (max-width: 600px) { .form-row { flex-direction: column; } }
 </style>

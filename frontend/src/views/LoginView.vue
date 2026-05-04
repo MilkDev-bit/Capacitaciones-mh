@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import api from '../api'
@@ -9,13 +9,12 @@ const auth = useAuthStore()
 const route = useRoute()
 const tab = ref<'login' | 'register'>('login')
 
-// Login
 const email = ref('')
 const password = ref('')
+const showPass = ref(false)
 const error = ref('')
 const loading = ref(false)
 
-// Register
 const regName = ref('')
 const regEmail = ref('')
 const regPassword = ref('')
@@ -28,25 +27,18 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    // login directo sin redirigir automático si hay redirect param
     const res = await api.post('/login', { email: email.value, password: password.value })
-    auth.token.value = res.data.token
-    auth.user.value = res.data.user
+    auth.token = res.data.token
+    auth.user = res.data.user
     localStorage.setItem('token', res.data.token)
     localStorage.setItem('user', JSON.stringify(res.data.user))
-
     const redirect = route.query.redirect as string | undefined
-    if (redirect) {
-      router.push(redirect)
-    } else if (res.data.user?.role === 'admin') {
-      router.push('/admin')
-    } else if (res.data.user?.role === 'instructor') {
-      router.push('/instructor')
-    } else {
-      router.push('/usuario')
-    }
+    if (redirect) router.push(redirect)
+    else if (res.data.user?.role === 'admin') router.push('/admin')
+    else if (res.data.user?.role === 'instructor') router.push('/instructor')
+    else router.push('/usuario')
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al iniciar sesión'
+    error.value = e.response?.data?.error || 'Correo o contraseÃ±a incorrectos'
   } finally {
     loading.value = false
   }
@@ -60,133 +52,251 @@ async function register() {
   regLoading.value = true
   try {
     await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value })
-    regSuccess.value = '¡Cuenta creada! Ya puedes iniciar sesión.'
+    regSuccess.value = 'Â¡Cuenta creada! Ya puedes iniciar sesiÃ³n.'
     regName.value = ''; regEmail.value = ''; regPassword.value = ''; regRole.value = 'user'
-    tab.value = 'login'
+    setTimeout(() => { tab.value = 'login'; regSuccess.value = '' }, 1500)
   } catch (e: any) {
     regError.value = e.response?.data?.error || 'Error al registrarse'
   } finally {
     regLoading.value = false
   }
 }
+
+function initials(name: string) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
 </script>
 
 <template>
-  <div class="login-bg">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="10" fill="#3b82f6"/>
-          <path d="M10 28L20 12L30 28H10Z" fill="white"/>
-        </svg>
-        <h1>Capacitaciones MH</h1>
-      </div>
-
-      <!-- Tabs -->
-      <div class="tabs">
-        <button :class="['tab', tab === 'login' ? 'active' : '']" @click="tab = 'login'">Iniciar sesión</button>
-        <button :class="['tab', tab === 'register' ? 'active' : '']" @click="tab = 'register'">Registrarse</button>
-      </div>
-
-      <!-- Login -->
-      <form v-if="tab === 'login'" @submit.prevent="submit">
-        <label>Correo electrónico</label>
-        <input v-model="email" type="email" placeholder="correo@empresa.com" required />
-        <label>Contraseña</label>
-        <input v-model="password" type="password" placeholder="••••••••" required />
-        <p v-if="error" class="error">{{ error }}</p>
-        <button type="submit" :disabled="loading">
-          {{ loading ? 'Entrando...' : 'Entrar' }}
-        </button>
-      </form>
-
-      <!-- Register -->
-      <form v-if="tab === 'register'" @submit.prevent="register">
-        <label>Nombre completo</label>
-        <input v-model="regName" type="text" placeholder="Tu nombre" required />
-        <label>Correo electrónico</label>
-        <input v-model="regEmail" type="email" placeholder="correo@empresa.com" required />
-        <label>Contraseña</label>
-        <input v-model="regPassword" type="password" placeholder="Mínimo 6 caracteres" required minlength="6" />
-        <label>Tipo de cuenta</label>
-        <div class="role-selector">
-          <label :class="['role-card', regRole === 'user' ? 'selected' : '']" @click="regRole = 'user'">
-            <input type="radio" name="role" value="user" v-model="regRole" hidden />
-            <span class="role-icon">🎓</span>
-            <strong>Estudiante</strong>
-            <small>Accede a cursos asignados e inscríbete en cursos públicos</small>
-          </label>
-          <label :class="['role-card', regRole === 'instructor' ? 'selected' : '']" @click="regRole = 'instructor'">
-            <input type="radio" name="role" value="instructor" v-model="regRole" hidden />
-            <span class="role-icon">🧑‍🏫</span>
-            <strong>Instructor</strong>
-            <small>Crea y comparte tus propios cursos y exámenes</small>
-          </label>
+  <div class="auth-page">
+    <!-- Panel izquierdo â€” hero -->
+    <div class="auth-hero">
+      <div class="hero-content">
+        <div class="hero-logo">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="12" fill="rgba(255,255,255,0.15)"/>
+            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
+          </svg>
         </div>
-        <p v-if="regError" class="error">{{ regError }}</p>
-        <p v-if="regSuccess" class="success-msg">{{ regSuccess }}</p>
-        <button type="submit" :disabled="regLoading">
-          {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta' }}
-        </button>
-      </form>
+        <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
+        <p class="hero-subtitle">Aprende, crece y certifica tus habilidades con la plataforma de capacitaciÃ³n corporativa.</p>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-num">500+</span>
+            <span class="stat-lbl">Cursos</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">12K+</span>
+            <span class="stat-lbl">Estudiantes</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">98%</span>
+            <span class="stat-lbl">SatisfacciÃ³n</span>
+          </div>
+        </div>
+        <!-- Feature list -->
+        <ul class="hero-features">
+          <li><span class="feat-check">âœ“</span> Cursos de video, documentos y texto</li>
+          <li><span class="feat-check">âœ“</span> ExÃ¡menes con retroalimentaciÃ³n</li>
+          <li><span class="feat-check">âœ“</span> Acceso por cÃ³digo o enlace de invitaciÃ³n</li>
+        </ul>
+      </div>
+      <div class="hero-decoration"></div>
+    </div>
+
+    <!-- Panel derecho â€” formulario -->
+    <div class="auth-form-panel">
+      <div class="auth-form-wrap">
+        <!-- Logo mobile -->
+        <div class="mobile-logo">
+          <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="12" fill="var(--brand)"/>
+            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
+          </svg>
+          <span>Capacitaciones MH</span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="form-tabs">
+          <button :class="['form-tab', tab === 'login' ? 'active' : '']" @click="tab = 'login'">
+            Iniciar sesiÃ³n
+          </button>
+          <button :class="['form-tab', tab === 'register' ? 'active' : '']" @click="tab = 'register'">
+            Registrarse
+          </button>
+        </div>
+
+        <!-- LOGIN -->
+        <form v-if="tab === 'login'" @submit.prevent="submit" class="auth-form">
+          <div class="form-group">
+            <label>Correo electrÃ³nico</label>
+            <input class="field-input" v-model="email" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label>ContraseÃ±a</label>
+            <div class="pass-wrap">
+              <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" required />
+              <button type="button" class="pass-toggle" @click="showPass = !showPass">
+                {{ showPass ? 'ðŸ™ˆ' : 'ðŸ‘' }}
+              </button>
+            </div>
+          </div>
+          <div v-if="error" class="alert alert-error">{{ error }}</div>
+          <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="loading">
+            <span v-if="loading" class="btn-spinner"></span>
+            {{ loading ? 'Entrando...' : 'Entrar a la plataforma' }}
+          </button>
+          <p class="form-footer">
+            Â¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">RegÃ­strate gratis</button>
+          </p>
+        </form>
+
+        <!-- REGISTER -->
+        <form v-if="tab === 'register'" @submit.prevent="register" class="auth-form">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input class="field-input" v-model="regName" type="text" placeholder="Tu nombre completo" autocomplete="name" required />
+          </div>
+          <div class="form-group">
+            <label>Correo electrÃ³nico</label>
+            <input class="field-input" v-model="regEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label>ContraseÃ±a</label>
+            <input class="field-input" v-model="regPassword" type="password" placeholder="MÃ­nimo 6 caracteres" autocomplete="new-password" required minlength="6" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de cuenta</label>
+            <div class="role-grid">
+              <button
+                type="button"
+                :class="['role-card', regRole === 'user' ? 'selected' : '']"
+                @click="regRole = 'user'"
+              >
+                <span class="role-icon">ðŸŽ“</span>
+                <strong>Estudiante</strong>
+                <small>Accede y aprende a tu ritmo</small>
+              </button>
+              <button
+                type="button"
+                :class="['role-card', regRole === 'instructor' ? 'selected' : '']"
+                @click="regRole = 'instructor'"
+              >
+                <span class="role-icon">ðŸ«</span>
+                <strong>Instructor</strong>
+                <small>Crea y gestiona cursos</small>
+              </button>
+            </div>
+          </div>
+          <div v-if="regError" class="alert alert-error">{{ regError }}</div>
+          <div v-if="regSuccess" class="alert alert-success">{{ regSuccess }}</div>
+          <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading">
+            <span v-if="regLoading" class="btn-spinner"></span>
+            {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
+          </button>
+          <p class="form-footer">
+            Â¿Ya tienes cuenta? <button type="button" class="link-btn" @click="tab = 'login'">Inicia sesiÃ³n</button>
+          </p>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-bg {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%);
-}
-.login-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2.5rem 2rem;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
-}
-.login-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 1.5rem;
-}
-.login-logo h1 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; }
-.tabs { display: flex; background: #f1f5f9; border-radius: 10px; padding: 4px; margin-bottom: 1.5rem; gap: 4px; }
-.tab { flex: 1; padding: 8px; border: none; border-radius: 7px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #64748b; background: transparent; transition: all 0.15s; }
-.tab.active { background: white; color: #1e293b; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; margin-top: 1rem; }
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-  width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0;
-  border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.2s;
-  box-sizing: border-box;
-}
-input:focus { border-color: #3b82f6; }
-.role-selector { display: flex; gap: 10px; margin-top: 8px; }
-.role-card {
-  flex: 1; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px;
-  cursor: pointer; text-align: center; transition: all 0.15s;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.role-card:hover { border-color: #3b82f6; }
-.role-card.selected { border-color: #3b82f6; background: #eff6ff; }
-.role-icon { font-size: 1.5rem; }
-.role-card strong { font-size: 0.85rem; color: #1e293b; }
-.role-card small { font-size: 0.72rem; color: #64748b; line-height: 1.3; }
-button[type="submit"] {
-  margin-top: 1.5rem; width: 100%; padding: 11px;
-  background: #3b82f6; color: white; border: none;
-  border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
-}
-button[type="submit"]:hover:not(:disabled) { background: #2563eb; }
-button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
-.error { color: #ef4444; font-size: 0.85rem; margin-top: 8px; }
-.success-msg { color: #059669; font-size: 0.85rem; margin-top: 8px; background: #d1fae5; padding: 8px 10px; border-radius: 6px; }
-</style>
+/* â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.auth-page { display: flex; min-height: 100vh; }
 
+/* â”€â”€ Hero (left) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.auth-hero {
+  flex: 0 0 45%; background: linear-gradient(145deg, #1c1d1f 0%, #2d2f31 100%);
+  display: flex; flex-direction: column; justify-content: center; padding: 60px 56px;
+  position: relative; overflow: hidden;
+}
+.hero-decoration {
+  position: absolute; right: -80px; bottom: -80px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(249,115,22,.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-logo { margin-bottom: 20px; }
+.hero-title {
+  font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px;
+}
+.hero-title span { color: var(--brand); }
+.hero-subtitle { color: rgba(255,255,255,.65); font-size: 1rem; line-height: 1.6; margin-bottom: 36px; max-width: 340px; }
+.hero-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 36px; }
+.stat { text-align: center; }
+.stat-num { display: block; font-size: 1.4rem; font-weight: 800; color: var(--brand); }
+.stat-lbl { font-size: 0.78rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .05em; }
+.stat-divider { width: 1px; height: 36px; background: rgba(255,255,255,.15); }
+.hero-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.hero-features li { color: rgba(255,255,255,.75); font-size: 0.92rem; display: flex; align-items: center; gap: 10px; }
+.feat-check { background: rgba(249,115,22,.2); color: var(--brand); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 900; flex-shrink: 0; }
+
+/* â”€â”€ Form panel (right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.auth-form-panel {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 40px 24px; background: var(--bg);
+}
+.auth-form-wrap { width: 100%; max-width: 420px; }
+
+.mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
+
+/* Tabs */
+.form-tabs { display: flex; background: var(--border-light); border-radius: var(--r); padding: 4px; gap: 4px; margin-bottom: 28px; }
+.form-tab {
+  flex: 1; padding: 9px; border: none; border-radius: var(--r-sm); background: transparent;
+  font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: all 0.18s; cursor: pointer;
+}
+.form-tab.active { background: var(--surface); color: var(--dark); box-shadow: var(--shadow-sm); }
+
+/* Form */
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
+.pass-wrap { position: relative; }
+.pass-wrap .field-input { padding-right: 44px; }
+.pass-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; font-size: 1rem; cursor: pointer; line-height: 1;
+}
+
+/* Role selector */
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.role-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  padding: 16px 12px; border: 2px solid var(--border); border-radius: var(--r);
+  background: var(--surface); cursor: pointer; transition: all 0.18s;
+}
+.role-card:hover { border-color: var(--brand); }
+.role-card.selected { border-color: var(--brand); background: var(--brand-light); }
+.role-icon { font-size: 1.6rem; }
+.role-card strong { font-size: 0.88rem; color: var(--dark); }
+.role-card small { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
+
+/* Submit */
+.submit-btn { width: 100%; margin-top: 4px; }
+.btn-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+
+/* Footer */
+.form-footer { text-align: center; font-size: 0.85rem; color: var(--muted); }
+.link-btn { background: none; border: none; color: var(--brand); font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; }
+.link-btn:hover { text-decoration: underline; }
+
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 860px) {
+  .auth-hero { display: none; }
+  .auth-form-panel { padding: 32px 20px; }
+  .mobile-logo { display: flex; }
+}
+@media (max-width: 420px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+</style>

@@ -52,50 +52,55 @@ function typeLabel(t: string) {
 <template>
   <div class="join-bg">
     <div class="join-card">
-      <div class="brand">
-        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="8" fill="#3b82f6"/>
+      <!-- Brand -->
+      <div class="brand-bar">
+        <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="8" fill="#f97316"/>
           <path d="M10 28L20 12L30 28H10Z" fill="white"/>
         </svg>
-        <span>Capacitaciones MH</span>
+        <span class="brand-name">Capacitaciones MH</span>
       </div>
 
-      <div v-if="loading" class="state">
-        <div class="spinner"></div>
-        <p>Buscando curso…</p>
+      <!-- Loading -->
+      <div v-if="loading" class="state-center">
+        <div class="spin-ring"></div>
+        <p class="state-text">Buscando curso&hellip;</p>
       </div>
 
-      <div v-else-if="joined" class="state success">
-        <div class="check">✓</div>
-        <h2>¡Te uniste al curso!</h2>
-        <p>Redirigiendo a tus capacitaciones…</p>
+      <!-- &Eacute;xito al unirse -->
+      <div v-else-if="joined" class="state-center">
+        <div class="icon-circle success">&#10003;</div>
+        <h2 class="state-title">&iexcl;Te uniste al curso!</h2>
+        <p class="state-text">Redirigiendo a tus capacitaciones&hellip;</p>
       </div>
 
+      <!-- Vista previa del curso -->
       <div v-else-if="curso" class="course-preview">
-        <div class="invite-badge">Invitación a curso</div>
-        <div class="code-display">{{ codigo.toUpperCase() }}</div>
-        <h2>{{ curso.title }}</h2>
-        <p class="course-desc">{{ curso.description || 'Sin descripción' }}</p>
+        <div class="invite-badge">Invitaci&oacute;n a curso</div>
+        <div class="code-box">{{ codigo.toUpperCase() }}</div>
+        <h2 class="course-title">{{ curso.title }}</h2>
+        <p class="course-desc">{{ curso.description || 'Sin descripci\u00f3n' }}</p>
         <span class="type-tag">{{ typeLabel(curso.type) }}</span>
 
-        <div v-if="error" class="msg error">{{ error }}</div>
+        <div v-if="error" class="alert alert-error" style="margin-top:8px">{{ error }}</div>
 
         <button v-if="auth.isLoggedIn" class="btn-join" :disabled="joining" @click="unirse">
-          {{ joining ? 'Uniéndose…' : 'Unirme al curso' }}
+          {{ joining ? 'Uni\u00e9ndose\u2026' : 'Unirme al curso' }}
         </button>
-        <div v-else class="login-prompt">
-          <p>Debes iniciar sesión para unirte al curso.</p>
+        <div v-else class="login-box">
+          <p>Debes iniciar sesi&oacute;n para unirte.</p>
           <button class="btn-join" @click="router.push(`/login?redirect=/unirse/${codigo}`)">
-            Iniciar sesión
+            Iniciar sesi&oacute;n
           </button>
         </div>
       </div>
 
-      <div v-else class="state">
-        <div class="error-icon">✗</div>
-        <h2>Código no válido</h2>
-        <p>{{ error }}</p>
-        <button class="btn-back" @click="router.push('/')">Volver al inicio</button>
+      <!-- Error / c&oacute;digo inv&aacute;lido -->
+      <div v-else class="state-center">
+        <div class="icon-circle danger">&#10007;</div>
+        <h2 class="state-title">C&oacute;digo no v&aacute;lido</h2>
+        <p class="state-text">{{ error }}</p>
+        <button class="btn btn-secondary" style="margin-top:12px" @click="router.push('/')">Volver al inicio</button>
       </div>
     </div>
   </div>
@@ -104,57 +109,53 @@ function typeLabel(t: string) {
 <style scoped>
 .join-bg {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #7c2d12 0%, #f97316 60%, #fbbf24 100%);
+  padding: 20px;
 }
 .join-card {
-  background: white; border-radius: 16px; padding: 2.5rem 2rem;
-  width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  display: flex; flex-direction: column; gap: 1rem;
+  background: #fff; border-radius: 20px; padding: 36px 32px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.22);
+  display: flex; flex-direction: column; gap: 20px;
 }
-.brand { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; color: #1e3a5f; }
-.state { text-align: center; padding: 1.5rem 0; }
-.state h2 { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
-.state p { color: #64748b; }
-.spinner {
-  width: 36px; height: 36px; border: 3px solid #e2e8f0; border-top-color: #3b82f6;
-  border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+.brand-bar { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
+.brand-name { font-size: 1rem; font-weight: 800; color: var(--dark); letter-spacing: -.01em; }
+.state-center { text-align: center; padding: 8px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.state-title { font-size: 1.25rem; font-weight: 800; color: var(--dark); }
+.state-text { color: var(--muted); font-size: 0.9rem; }
+.spin-ring {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid rgba(249,115,22,.2); border-top-color: var(--brand);
+  animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.state.success .check {
-  width: 56px; height: 56px; background: #d1fae5; color: #059669;
-  border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 12px; font-weight: 900;
+.icon-circle {
+  width: 60px; height: 60px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 900;
 }
-.error-icon {
-  width: 56px; height: 56px; background: #fee2e2; color: #dc2626;
-  border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 12px; font-weight: 900;
+.icon-circle.success { background: var(--success-bg); color: var(--success); }
+.icon-circle.danger { background: var(--danger-bg); color: var(--danger); }
+.course-preview { display: flex; flex-direction: column; gap: 10px; }
+.invite-badge { display: inline-block; background: var(--brand-light); color: var(--brand-dark); font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .04em; width: fit-content; }
+.code-box {
+  font-size: 2rem; font-weight: 900; letter-spacing: .28em; color: var(--dark);
+  font-family: 'Courier New', monospace; background: var(--bg);
+  border: 2px dashed var(--brand-border); border-radius: 12px;
+  padding: 14px; text-align: center;
 }
-.course-preview { display: flex; flex-direction: column; gap: 0.75rem; }
-.invite-badge {
-  display: inline-block; background: #eff6ff; color: #3b82f6;
-  font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
-}
-.code-display {
-  font-size: 2rem; font-weight: 900; letter-spacing: 0.3em; color: #1e293b;
-  font-family: 'Courier New', monospace; background: #f8fafc;
-  border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center;
-}
-.course-preview h2 { font-size: 1.3rem; font-weight: 800; color: #1e293b; margin: 0; }
-.course-desc { color: #64748b; font-size: 0.9rem; line-height: 1.5; }
-.type-tag { background: #ede9fe; color: #6d28d9; font-size: 0.78rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+.course-title { font-size: 1.3rem; font-weight: 800; color: var(--dark); line-height: 1.3; }
+.course-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+.type-tag { background: var(--brand-light); color: var(--brand-dark); font-size: 0.78rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; width: fit-content; }
 .btn-join {
-  background: #3b82f6; color: white; border: none; border-radius: 10px;
-  padding: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: background 0.2s;
+  background: var(--brand); color: #fff; border: none; border-radius: 10px;
+  padding: 14px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
 }
-.btn-join:hover:not(:disabled) { background: #2563eb; }
-.btn-join:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-back {
-  background: #f1f5f9; color: #475569; border: none; border-radius: 8px;
-  padding: 10px 20px; cursor: pointer; font-size: 0.9rem; font-weight: 600; margin-top: 8px;
-}
-.login-prompt { text-align: center; }
-.login-prompt p { color: #64748b; font-size: 0.87rem; margin-bottom: 10px; }
-.msg { font-size: 0.85rem; padding: 8px 12px; border-radius: 6px; }
-.msg.error { background: #fee2e2; color: #dc2626; }
+.btn-join:hover:not(:disabled) { background: var(--brand-dark); }
+.btn-join:disabled { opacity: .6; cursor: not-allowed; }
+.login-box { text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.login-box p { color: var(--muted); font-size: 0.87rem; }
+@media (max-width: 480px) { .join-card { padding: 24px 18px; } }
 </style>
