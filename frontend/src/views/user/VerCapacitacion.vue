@@ -129,7 +129,30 @@ async function crearComentario(postId: string) {
 }
 
 function fileUrl(path: string) {
-  return path ? `${import.meta.env.VITE_API_URL || ''}/uploads/${path}` : ''
+  // path ya viene con /uploads/... desde el backend
+  return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
+}
+
+function getEmbedUrl(url: string): string {
+  if (!url) return ''
+  // YouTube
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`
+  // Vimeo
+  const vim = url.match(/vimeo\.com\/(\d+)/)
+  if (vim) return `https://player.vimeo.com/video/${vim[1]}`
+  // Otro (iframe generico)
+  return url
+}
+
+function typeLabel(t: string) {
+  const map: Record<string, string> = { video: 'Video', document: 'PDF / Documento', text: 'Lectura', link: 'Enlace / Video' }
+  return map[t] || t
+}
+
+function typeIcon(t: string) {
+  const map: Record<string, string> = { video: 'V', document: 'D', text: 'L', link: 'YT' }
+  return map[t] || '?'
 }
 </script>
 
@@ -165,7 +188,7 @@ function fileUrl(path: string) {
             </span>
             <div class="min-w-0">
               <p class="text-sm font-medium truncate">{{ lec.title }}</p>
-              <p class="text-xs text-gray-400 capitalize">{{ lec.type }}</p>
+              <p class="text-xs text-gray-400">{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min" class="ml-1">· {{ lec.duracion_min }} min</span></p>
             </div>
           </button>
           <div v-if="lecciones.length === 0" class="text-xs text-gray-400 text-center py-4">Sin lecciones</div>
@@ -198,19 +221,44 @@ function fileUrl(path: string) {
 
             <!-- Reproductor / contenido -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+              <!-- Video subido -->
               <div v-if="selectedLeccion.type === 'video'" class="aspect-video bg-black">
                 <video v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)" controls class="w-full h-full" />
                 <div v-else class="flex items-center justify-center h-full text-gray-500 text-sm">Sin video disponible</div>
               </div>
-              <div v-else-if="selectedLeccion.type === 'document'" class="p-6">
-                <a v-if="selectedLeccion.file_path" :href="fileUrl(selectedLeccion.file_path)" target="_blank"
-                  class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                  Abrir documento
-                </a>
-                <p v-else class="text-gray-400 text-sm">Sin documento adjunto</p>
+
+              <!-- PDF / Documento embebido -->
+              <div v-else-if="selectedLeccion.type === 'document'">
+                <div v-if="selectedLeccion.file_path">
+                  <iframe :src="fileUrl(selectedLeccion.file_path)" class="w-full border-0" style="height:75vh" />
+                  <div class="px-4 py-2 border-t border-gray-100 flex justify-end">
+                    <a :href="fileUrl(selectedLeccion.file_path)" target="_blank"
+                      class="text-xs text-blue-600 hover:underline">Abrir en nueva pestana</a>
+                  </div>
+                </div>
+                <p v-else class="p-6 text-gray-400 text-sm">Sin documento adjunto</p>
               </div>
-              <div v-else-if="selectedLeccion.type === 'text'" class="p-6 prose prose-sm max-w-none text-gray-700">
-                <div style="white-space: pre-wrap">{{ selectedLeccion.content }}</div>
+
+              <!-- Texto / lectura -->
+              <div v-else-if="selectedLeccion.type === 'text'" class="p-6">
+                <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed" style="white-space: pre-wrap">{{ selectedLeccion.content }}</div>
+              </div>
+
+              <!-- Enlace externo: YouTube, Vimeo, otro -->
+              <div v-else-if="selectedLeccion.type === 'link'">
+                <div v-if="selectedLeccion.content">
+                  <div class="aspect-video">
+                    <iframe :src="getEmbedUrl(selectedLeccion.content)"
+                      class="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen />
+                  </div>
+                  <div class="px-4 py-2 border-t border-gray-100 flex justify-end">
+                    <a :href="selectedLeccion.content" target="_blank" rel="noopener"
+                      class="text-xs text-blue-600 hover:underline">Abrir enlace original</a>
+                  </div>
+                </div>
+                <p v-else class="p-6 text-gray-400 text-sm">Sin enlace configurado</p>
               </div>
             </div>
 

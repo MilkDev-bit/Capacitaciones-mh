@@ -16,7 +16,7 @@ const activeTab = ref<'lecciones' | 'intermedias' | 'examen'>('lecciones')
 const lecciones = ref<any[]>([])
 const loadingLec = ref(false)
 const showLecForm = ref(false)
-const lecForm = ref({ title: '', description: '', type: 'video', content: '', orden: 1 })
+const lecForm = ref({ title: '', description: '', type: 'video', content: '', orden: 1, duracion_min: 0 })
 const lecFile = ref<File | null>(null)
 
 const intermedias = ref<any[]>([])
@@ -110,10 +110,11 @@ async function guardarLeccion() {
   fd.append('type', lecForm.value.type)
   fd.append('content', lecForm.value.content)
   fd.append('orden', String(lecForm.value.orden))
+  fd.append('duracion_min', String(lecForm.value.duracion_min || 0))
   if (lecFile.value) fd.append('file', lecFile.value)
   await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`, fd)
   showLecForm.value = false
-  lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2 }
+  lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2, duracion_min: 0 }
   lecFile.value = null
   await loadLecciones()
 }
@@ -266,19 +267,32 @@ async function loadMisExamenes() {
                   </div>
                   <div>
                     <select v-model="lecForm.type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                      <option value="video">Video</option>
-                      <option value="document">Documento</option>
-                      <option value="text">Texto</option>
+                      <option value="video">Video (subir archivo)</option>
+                      <option value="document">PDF / Documento (subir archivo)</option>
+                      <option value="text">Texto / Lectura</option>
+                      <option value="link">Enlace externo (YouTube, Vimeo, PDF web...)</option>
                     </select>
                   </div>
                   <div>
                     <input type="number" v-model="lecForm.orden" placeholder="Orden" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
                   </div>
-                  <div v-if="lecForm.type !== 'text'" class="col-span-2">
-                    <input type="file" @change="onLecFile" class="text-sm text-gray-600" />
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Duracion (minutos)</label>
+                    <input type="number" v-model="lecForm.duracion_min" min="0" placeholder="Ej: 15" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div v-if="lecForm.type === 'video' || lecForm.type === 'document'" class="col-span-2">
+                    <label class="block text-xs text-gray-500 mb-1">{{ lecForm.type === 'video' ? 'Archivo de video (mp4, webm...)' : 'Archivo PDF o documento' }}</label>
+                    <input type="file" @change="onLecFile" class="text-sm text-gray-600"
+                      :accept="lecForm.type === 'video' ? 'video/*' : '.pdf,.doc,.docx,.ppt,.pptx'" />
                   </div>
                   <div v-if="lecForm.type === 'text'" class="col-span-2">
-                    <textarea v-model="lecForm.content" placeholder="Contenido..." rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                    <label class="block text-xs text-gray-500 mb-1">Contenido de la lectura</label>
+                    <textarea v-model="lecForm.content" placeholder="Escribe el contenido de texto de la leccion..." rows="5" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div v-if="lecForm.type === 'link'" class="col-span-2">
+                    <label class="block text-xs text-gray-500 mb-1">URL del recurso (YouTube, Vimeo, PDF externo, etc.)</label>
+                    <input v-model="lecForm.content" placeholder="https://www.youtube.com/watch?v=..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p class="text-xs text-gray-400 mt-1">Soporta YouTube, Vimeo y cualquier URL embebible.</p>
                   </div>
                 </div>
                 <div class="flex gap-2 mt-3">
@@ -293,7 +307,10 @@ async function loadMisExamenes() {
                   <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ idx + 1 }}</span>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-800 truncate">{{ lec.title }}</p>
-                    <p class="text-xs text-gray-500 capitalize">{{ lec.type }}</p>
+                    <p class="text-xs text-gray-500">
+                      {{ lec.type === 'video' ? 'Video' : lec.type === 'document' ? 'PDF' : lec.type === 'link' ? 'Enlace' : 'Texto' }}
+                      <span v-if="lec.duracion_min" class="ml-1">· {{ lec.duracion_min }} min</span>
+                    </p>
                   </div>
                   <div class="flex gap-1">
                     <button @click="moverLeccion(idx, -1)" :disabled="idx === 0" class="px-1.5 py-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">Subir</button>
