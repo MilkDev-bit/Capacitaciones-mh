@@ -115,121 +115,279 @@ async function eliminar(id: string) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
-    <div class="max-w-4xl mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Mis Examenes</h1>
-        <button @click="showForm = !showForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-          + Nuevo Examen
+  <div class="ex-shell">
+    <!-- Page Header -->
+    <div class="ph">
+      <div>
+        <h1 class="ph-title">Mis Exámenes</h1>
+        <p class="ph-sub">Crea y administra tus evaluaciones</p>
+      </div>
+      <div class="ph-actions">
+        <button @click="showForm = !showForm" class="btn btn-primary" :aria-expanded="showForm">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path v-if="!showForm" d="M12 5v14M5 12h14" stroke-linecap="round"/>
+            <path v-else d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>
+          </svg>
+          {{ showForm ? 'Cancelar' : 'Nuevo examen' }}
         </button>
       </div>
+    </div>
 
-      <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ error }}</div>
-      <div v-if="success" class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ success }}</div>
-
-      <div v-if="showForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-        <h2 class="font-semibold text-gray-700 mb-4">Crear Examen</h2>
-        <div class="space-y-3 mb-4">
-          <input v-model="form.title" placeholder="Titulo del examen *" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <textarea v-model="form.description" placeholder="Descripcion (opcional)" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Enlazar a curso (opcional)</label>
-            <select v-model="form.capacitacion_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option :value="null">Sin curso enlazado</option>
-              <option v-for="cap in capacitaciones" :key="cap.id" :value="cap.id">{{ cap.title }}</option>
-            </select>
-          </div>
+    <div class="ex-body">
+      <!-- Alerts -->
+      <Transition name="slide-down">
+        <div v-if="error" class="alert alert-error" role="alert">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+          {{ error }}
         </div>
+      </Transition>
+      <Transition name="slide-down">
+        <div v-if="success" class="alert alert-success" role="status">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+          {{ success }}
+        </div>
+      </Transition>
 
-        <div class="space-y-4 mb-4">
-          <div v-for="(p, pi) in form.preguntas" :key="pi" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs font-bold text-gray-500">Pregunta {{ pi + 1 }}</span>
-              <button @click="removePregunta(pi)" class="ml-auto text-xs text-red-500 hover:text-red-700">Eliminar</button>
+      <!-- New Exam Form -->
+      <Transition name="slide-down">
+        <div v-if="showForm" class="form-card ex-form-card">
+          <h2 class="form-card-title">Crear nuevo examen</h2>
+          <div class="form-grid">
+            <div class="field full">
+              <label class="field-label" for="ex-title">Título del examen <span class="field-req">*</span></label>
+              <input id="ex-title" v-model="form.title" placeholder="Ej. Evaluación de seguridad laboral" class="field-input" />
             </div>
-            <div class="space-y-2">
-              <textarea v-model="p.texto" placeholder="Texto de la pregunta *" rows="2"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <div class="grid grid-cols-3 gap-2">
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Tipo</label>
-                  <select v-model="p.tipo" @change="onTipoChange(pi)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
-                    <option value="multiple_choice">Opcion multiple</option>
-                    <option value="true_false">Verdadero/Falso</option>
+            <div class="field full">
+              <label class="field-label" for="ex-desc">Descripción <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+              <textarea id="ex-desc" v-model="form.description" placeholder="Instrucciones o contexto del examen..." rows="2" class="field-input" style="resize:vertical" />
+            </div>
+            <div class="field full">
+              <label class="field-label" for="ex-cap">Enlazar a curso <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+              <select id="ex-cap" v-model="form.capacitacion_id" class="field-input">
+                <option :value="null">Sin curso enlazado</option>
+                <option v-for="cap in capacitaciones" :key="cap.id" :value="cap.id">{{ cap.title }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Questions -->
+          <div class="ex-preguntas-head">
+            <span class="ex-preguntas-label">Preguntas <span class="pill-count">{{ form.preguntas.length }}</span></span>
+            <button @click="addPregunta" class="btn btn-secondary btn-sm" type="button">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              Agregar pregunta
+            </button>
+          </div>
+
+          <TransitionGroup name="list-item" tag="div" class="ex-preguntas-list">
+            <div v-for="(p, pi) in form.preguntas" :key="pi" class="ex-pregunta-card">
+              <div class="ex-pregunta-header">
+                <span class="ex-pregunta-num">{{ pi + 1 }}</span>
+                <span class="ex-pregunta-tipo-badge" :class="p.tipo">
+                  {{ p.tipo === 'multiple_choice' ? 'Opción múltiple' : p.tipo === 'true_false' ? 'V / F' : 'Abierta' }}
+                </span>
+                <button @click="removePregunta(pi)" class="icon-btn danger" type="button" :aria-label="`Eliminar pregunta ${pi + 1}`">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+
+              <textarea v-model="p.texto" :placeholder="`Texto de la pregunta ${pi + 1}...`" rows="2" class="field-input ex-pregunta-texto" :aria-label="`Pregunta ${pi + 1}`" />
+
+              <div class="ex-pregunta-meta">
+                <div class="field">
+                  <label class="field-label" :for="`tipo-${pi}`">Tipo</label>
+                  <select :id="`tipo-${pi}`" v-model="p.tipo" @change="onTipoChange(pi)" class="field-input">
+                    <option value="multiple_choice">Opción múltiple</option>
+                    <option value="true_false">Verdadero / Falso</option>
                     <option value="open_text">Respuesta abierta</option>
                   </select>
                 </div>
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Valor (pts)</label>
-                  <input type="number" v-model="p.valor" min="0.1" step="0.5" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
+                <div class="field">
+                  <label class="field-label" :for="`valor-${pi}`">Puntos</label>
+                  <input :id="`valor-${pi}`" type="number" v-model="p.valor" min="0.1" step="0.5" class="field-input" />
                 </div>
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Orden</label>
-                  <input type="number" v-model="p.orden" min="1" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
+                <div class="field">
+                  <label class="field-label" :for="`orden-${pi}`">Orden</label>
+                  <input :id="`orden-${pi}`" type="number" v-model="p.orden" min="1" class="field-input" />
                 </div>
               </div>
 
-              <div v-if="p.tipo === 'open_text'" class="text-xs text-gray-500 italic px-1">
+              <!-- Open text notice -->
+              <div v-if="p.tipo === 'open_text'" class="ex-open-notice">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
                 Pregunta de respuesta abierta. No requiere opciones.
               </div>
-              <div v-if="p.tipo === 'true_false'" class="text-xs text-gray-500 italic px-1">
-                Opciones Verdadero/Falso. Marca la correcta:
-                <div class="flex gap-4 mt-1">
-                  <label class="flex items-center gap-1">
-                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 0)" :checked="p.opciones[0]?.es_correcta" />
-                    Verdadero
+
+              <!-- True/False options -->
+              <div v-if="p.tipo === 'true_false'" class="ex-tf-opts">
+                <p class="ex-opts-label">¿Cuál es correcta?</p>
+                <div style="display:flex;gap:12px">
+                  <label class="ex-tf-label">
+                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 0)" :checked="p.opciones[0]?.es_correcta" style="accent-color:var(--brand)" />
+                    <span :class="{ 'ex-tf-active': p.opciones[0]?.es_correcta }">✓ Verdadero</span>
                   </label>
-                  <label class="flex items-center gap-1">
-                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 1)" :checked="p.opciones[1]?.es_correcta" />
-                    Falso
+                  <label class="ex-tf-label">
+                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 1)" :checked="p.opciones[1]?.es_correcta" style="accent-color:var(--brand)" />
+                    <span :class="{ 'ex-tf-active': p.opciones[1]?.es_correcta }">✗ Falso</span>
                   </label>
                 </div>
               </div>
 
-              <div v-if="p.tipo === 'multiple_choice'" class="space-y-1.5">
-                <div class="flex justify-between items-center">
-                  <span class="text-xs font-medium text-gray-600">Opciones</span>
-                  <button @click="addOpcion(pi)" class="text-xs text-blue-600 hover:underline">+ Opcion</button>
+              <!-- Multiple choice options -->
+              <div v-if="p.tipo === 'multiple_choice'" class="ex-mc-opts">
+                <div class="ex-opts-bar">
+                  <p class="ex-opts-label">Opciones — marca la correcta</p>
+                  <button @click="addOpcion(pi)" class="btn btn-secondary btn-sm" type="button" style="padding:4px 10px">+ Opción</button>
                 </div>
-                <div v-for="(op, oi) in p.opciones" :key="oi" class="flex items-center gap-2">
-                  <input v-model="op.texto" :placeholder="`Opcion ${oi + 1}`" class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                  <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
-                    <input type="radio" :name="`correcta-${pi}`" @change="setCorrecta(pi, oi)" :checked="op.es_correcta" />
-                    Correcta
+                <div v-for="(op, oi) in p.opciones" :key="oi" class="ex-opcion-row" :class="{ correct: op.es_correcta }">
+                  <input v-model="op.texto" :placeholder="`Opción ${oi + 1}`" class="field-input" style="flex:1" />
+                  <label class="ex-radio-label" :title="op.es_correcta ? 'Correcta' : 'Marcar como correcta'">
+                    <input type="radio" :name="`correcta-${pi}`" @change="setCorrecta(pi, oi)" :checked="op.es_correcta" style="accent-color:var(--success)" />
+                    <span>Correcta</span>
                   </label>
-                  <button v-if="p.opciones.length > 2" @click="removeOpcion(pi, oi)" class="text-red-400 hover:text-red-600 text-xs">X</button>
+                  <button v-if="p.opciones.length > 2" @click="removeOpcion(pi, oi)" class="icon-btn danger" type="button" :aria-label="`Eliminar opción ${oi + 1}`">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+                  </button>
                 </div>
               </div>
             </div>
+          </TransitionGroup>
+
+          <div v-if="form.preguntas.length === 0" class="empty-state" style="padding:24px;background:var(--bg);border-radius:var(--r);border:1px dashed var(--border)">
+            <span class="empty-icon">❓</span>
+            <p>Sin preguntas aún. Haz clic en "Agregar pregunta" para comenzar.</p>
+          </div>
+
+          <div class="form-actions" style="margin-top:20px">
+            <button @click="guardar" :disabled="loading" class="btn btn-primary" :aria-busy="loading">
+              <svg v-if="!loading" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
+              {{ loading ? 'Guardando...' : 'Guardar examen' }}
+            </button>
+            <button @click="showForm = false" class="btn btn-secondary" type="button">Cancelar</button>
           </div>
         </div>
+      </Transition>
 
-        <div class="flex gap-2 flex-wrap">
-          <button @click="addPregunta" class="border border-blue-300 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-50">+ Pregunta</button>
-          <button @click="guardar" :disabled="loading" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
-            {{ loading ? 'Guardando...' : 'Guardar Examen' }}
+      <!-- Examenes List -->
+      <TransitionGroup name="list-item" tag="div" class="ex-list">
+        <div v-for="ex in examenes" :key="ex.id" class="ex-card">
+          <div class="ex-card-left">
+            <div class="ex-card-icon" aria-hidden="true">📋</div>
+            <div class="ex-card-info">
+              <h2 class="ex-card-title">{{ ex.title }}</h2>
+              <p v-if="ex.description" class="ex-card-desc">{{ ex.description }}</p>
+              <div class="ex-card-meta">
+                <span v-if="ex.capacitacion_nombre" class="ex-linked-badge">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                  {{ ex.capacitacion_nombre }}
+                </span>
+                <span v-else class="ex-nolink-badge">Sin curso enlazado</span>
+              </div>
+            </div>
+          </div>
+          <button @click="eliminar(ex.id)" class="icon-btn danger" :aria-label="`Eliminar examen ${ex.title}`">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
-          <button @click="showForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
         </div>
-      </div>
+      </TransitionGroup>
 
-      <div class="space-y-3">
-        <div v-for="ex in examenes" :key="ex.id" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <div class="flex items-start justify-between">
-            <div>
-              <h2 class="font-semibold text-gray-800">{{ ex.title }}</h2>
-              <p class="text-sm text-gray-500 mt-0.5">{{ ex.description }}</p>
-              <div v-if="ex.capacitacion_nombre" class="mt-1">
-                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Enlazado: {{ ex.capacitacion_nombre }}</span>
-              </div>
-            </div>
-            <button @click="eliminar(ex.id)" class="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded">Eliminar</button>
-          </div>
+      <Transition name="fade">
+        <div v-if="examenes.length === 0" class="empty-state">
+          <span class="empty-icon">📋</span>
+          <p style="font-weight:600;color:var(--dark)">Sin exámenes aún</p>
+          <p style="font-size:0.85rem">Crea tu primer examen con el botón de arriba.</p>
         </div>
-        <div v-if="examenes.length === 0" class="text-center py-12 text-gray-400">
-          <p>Sin examenes aun. Crea tu primer examen.</p>
-        </div>
-      </div>
+      </Transition>
     </div>
   </div>
 </template>
+
+<style scoped>
+.ex-shell { min-height: 100vh; background: var(--bg); }
+.ex-body { max-width: 860px; margin: 0 auto; padding: 0 28px 40px; }
+
+.ex-form-card { margin-bottom: 24px; }
+
+.ex-preguntas-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 20px 0 12px; padding-top: 16px; border-top: 1.5px solid var(--border-light);
+}
+.ex-preguntas-label { font-size: 0.88rem; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 6px; }
+.ex-preguntas-list { display: flex; flex-direction: column; gap: 14px; position: relative; }
+
+.ex-pregunta-card {
+  background: var(--bg); border-radius: var(--r); border: 1.5px solid var(--border);
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.ex-pregunta-card:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+
+.ex-pregunta-header {
+  display: flex; align-items: center; gap: 10px;
+}
+.ex-pregunta-num {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: #fff;
+  font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ex-pregunta-tipo-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 2px 9px; border-radius: 10px;
+  background: var(--border-light); color: var(--muted);
+}
+.ex-pregunta-tipo-badge.multiple_choice { background: #dbeafe; color: #1d4ed8; }
+.ex-pregunta-tipo-badge.true_false      { background: #fef9c3; color: #a16207; }
+.ex-pregunta-tipo-badge.open_text       { background: #d1fae5; color: #065f46; }
+
+.ex-pregunta-texto { resize: vertical; }
+
+.ex-pregunta-meta {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+
+.ex-open-notice {
+  display: flex; align-items: center; gap: 6px; font-size: 0.8rem;
+  color: var(--muted); background: var(--surface); padding: 8px 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-light);
+}
+
+.ex-tf-opts { padding: 6px 0; }
+.ex-opts-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 7px; }
+.ex-tf-label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.88rem; color: var(--text); }
+.ex-tf-active { font-weight: 700; color: var(--brand); }
+
+.ex-mc-opts { display: flex; flex-direction: column; gap: 6px; }
+.ex-opts-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.ex-opcion-row {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--r-sm);
+  background: var(--surface); border: 1.5px solid var(--border-light); transition: border-color 0.12s;
+}
+.ex-opcion-row.correct { border-color: var(--success); background: var(--success-bg); }
+.ex-radio-label { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); cursor: pointer; white-space: nowrap; }
+
+/* Exam list cards */
+.ex-list { display: flex; flex-direction: column; gap: 10px; position: relative; }
+.ex-card {
+  background: var(--surface); border-radius: var(--r); border: 1.5px solid var(--border);
+  padding: 16px 18px; display: flex; align-items: flex-start; gap: 14px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.ex-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.ex-card-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+.ex-card-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+.ex-card-info { flex: 1; min-width: 0; }
+.ex-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 3px; }
+.ex-card-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 7px; }
+.ex-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-linked-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600;
+  background: var(--success-bg); color: var(--success); padding: 3px 10px; border-radius: 10px;
+}
+.ex-nolink-badge {
+  font-size: 0.76rem; font-weight: 500; color: var(--muted); background: var(--bg);
+  padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border-light);
+}
+
+@media (max-width: 768px) {
+  .ex-body { padding: 0 14px 32px; }
+  .ex-pregunta-meta { grid-template-columns: 1fr 1fr; }
+}
+</style>

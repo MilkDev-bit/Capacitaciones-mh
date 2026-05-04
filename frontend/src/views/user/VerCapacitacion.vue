@@ -157,65 +157,89 @@ function typeIcon(t: string) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <div v-if="loading" class="flex items-center justify-center h-screen text-gray-400">Cargando...</div>
-    <div v-else class="flex h-screen overflow-hidden">
+  <div class="ver-curso-shell">
+    <!-- Skeleton de carga -->
+    <div v-if="loading" class="ver-skeleton">
+      <div class="ver-sidebar-skel">
+        <div class="skeleton" style="height:20px;width:80%;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:8px;width:100%;margin-bottom:20px;border-radius:4px"></div>
+        <div v-for="n in 5" :key="n" style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
+          <div class="skeleton" style="width:22px;height:22px;border-radius:50%;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton skel-line" style="width:75%"></div>
+            <div class="skeleton skel-text-sm" style="margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ver-content-skel">
+        <div class="skeleton" style="height:28px;width:50%;margin-bottom:8px"></div>
+        <div class="skeleton skel-text" style="margin-bottom:20px"></div>
+        <div class="skeleton" style="height:320px;width:100%;border-radius:12px"></div>
+      </div>
+    </div>
+
+    <div v-else class="ver-layout">
 
       <!-- Sidebar lecciones -->
-      <aside class="w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-y-auto">
-        <div class="p-4 border-b border-gray-100">
-          <h2 class="font-bold text-gray-800 text-sm leading-tight">{{ curso?.title }}</h2>
-          <div class="mt-2">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Progreso</span>
-              <span>{{ progreso }}%</span>
+      <aside class="ver-sidebar">
+        <div class="ver-sidebar-head">
+          <h2 class="ver-curso-nombre">{{ curso?.title }}</h2>
+          <div class="ver-progress-wrap">
+            <div class="ver-progress-top">
+              <span>Progreso del curso</span>
+              <span class="ver-progress-pct">{{ progreso }}%</span>
             </div>
-            <div class="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full bg-blue-600 rounded-full transition-all" :style="`width:${progreso}%`" />
+            <div class="ver-progress-bg">
+              <div class="ver-progress-fill" :style="`width:${progreso}%`" />
             </div>
           </div>
         </div>
-        <nav class="flex-1 p-2">
+        <nav class="ver-nav">
           <button v-for="(lec, idx) in lecciones" :key="lec.id"
             @click="selectLeccion(lec)"
-            :class="[
-              'w-full text-left px-3 py-2.5 rounded-lg mb-1 transition flex items-start gap-2',
-              selectedLeccion?.id === lec.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'
-            ]">
-            <span class="mt-0.5 flex-shrink-0">
-              <span v-if="lec.completada" class="text-green-500 text-xs">&#10003;</span>
-              <span v-else class="text-gray-300 text-xs">{{ idx + 1 }}</span>
+            :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '']"
+            :aria-current="selectedLeccion?.id === lec.id ? 'page' : undefined">
+            <span class="ver-nav-num">
+              <svg v-if="lec.completada" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+              <span v-else>{{ idx + 1 }}</span>
             </span>
-            <div class="min-w-0">
-              <p class="text-sm font-medium truncate">{{ lec.title }}</p>
-              <p class="text-xs text-gray-400">{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min" class="ml-1">· {{ lec.duracion_min }} min</span></p>
+            <div class="ver-nav-info">
+              <p class="ver-nav-title">{{ lec.title }}</p>
+              <p class="ver-nav-meta">{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
             </div>
+            <span :class="['ver-type-pip', lec.type]"></span>
           </button>
-          <div v-if="lecciones.length === 0" class="text-xs text-gray-400 text-center py-4">Sin lecciones</div>
+          <div v-if="lecciones.length === 0" class="ver-nav-empty">Sin lecciones</div>
         </nav>
       </aside>
 
       <!-- Contenido principal -->
-      <main class="flex-1 overflow-y-auto">
-        <div class="max-w-3xl mx-auto p-6">
-          <div v-if="!selectedLeccion" class="text-center py-20 text-gray-400">
-            <p>Selecciona una leccion para comenzar</p>
+      <main class="ver-main">
+        <div class="ver-main-inner">
+          <div v-if="!selectedLeccion" class="ver-empty-content">
+            <div style="font-size:3rem;margin-bottom:12px">📖</div>
+            <p style="font-weight:700;color:var(--dark)">Selecciona una lección para comenzar</p>
+            <p style="font-size:0.88rem;color:var(--muted)">Elige una lección del panel lateral.</p>
           </div>
 
-          <div v-else>
+          <Transition name="fade" mode="out-in">
+          <div v-if="selectedLeccion" :key="selectedLeccion.id">
             <!-- Header leccion -->
-            <div class="flex items-start justify-between mb-4">
-              <div>
-                <h1 class="text-xl font-bold text-gray-800">{{ selectedLeccion.title }}</h1>
-                <p class="text-sm text-gray-500 mt-1">{{ selectedLeccion.description }}</p>
+            <div class="ver-lec-header">
+              <div class="ver-lec-header-left">
+                <div class="ver-lec-breadcrumb">{{ curso?.title }}</div>
+                <h1 class="ver-lec-title">{{ selectedLeccion.title }}</h1>
+                <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
               </div>
               <button v-if="!selectedLeccion.completada"
                 @click="marcarCompleta"
-                class="ml-4 flex-shrink-0 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
+                class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                 Marcar completada
               </button>
-              <span v-else class="ml-4 flex-shrink-0 bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-sm font-medium">
-                &#10003; Completada
+              <span v-else class="ver-done-chip">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Completada
               </span>
             </div>
 
@@ -262,84 +286,203 @@ function typeIcon(t: string) {
               </div>
             </div>
 
-            <!-- Preguntas intermedias -->
-            <div v-if="showIntermedias && preguntas.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
-              <h3 class="font-semibold text-yellow-800 mb-4">Preguntas de la leccion</h3>
-              <div v-if="resultadoInt" class="text-center py-4">
-                <p class="text-lg font-bold text-gray-800">{{ resultadoInt.puntaje.toFixed(1) }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</p>
-                <p class="text-sm text-gray-500">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto</p>
-                <button @click="showIntermedias = false" class="mt-3 text-sm text-blue-600 hover:underline">Continuar</button>
-              </div>
-              <div v-else class="space-y-4">
-                <div v-for="p in preguntas" :key="p.id">
-                  <p class="text-sm font-medium text-gray-800 mb-2">{{ p.texto }}</p>
-                  <div v-if="p.tipo === 'open_text'">
-                    <textarea v-model="respuestas[p.id]" rows="2" placeholder="Tu respuesta..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div v-else class="space-y-1.5">
-                    <label v-for="op in p.opciones" :key="op.id" class="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" :name="p.id" :value="op.id" v-model="respuestas[p.id]" />
-                      <span class="text-sm text-gray-700">{{ op.texto }}</span>
-                    </label>
+            <!-- Preguntas Intermedias -->
+            <Transition name="slide-up">
+              <div v-if="showIntermedias && preguntas.length > 0" class="ver-intermedias">
+                <div class="ver-int-head">
+                  <span style="font-size:1.4rem">🧠</span>
+                  <div>
+                    <h3 style="font-weight:700;color:var(--dark);font-size:1rem">Preguntas de la lección</h3>
+                    <p style="font-size:0.82rem;color:var(--muted)">Responde para reforzar tu aprendizaje</p>
                   </div>
                 </div>
-                <button @click="submitIntermedias" class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-700">
-                  Enviar respuestas
-                </button>
+                <div v-if="resultadoInt" class="text-center" style="padding:20px 0">
+                  <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1) }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                  <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto</p>
+                  <button @click="showIntermedias = false" class="btn btn-secondary btn-sm" style="margin-top:12px">Continuar</button>
+                </div>
+                <div v-else style="display:flex;flex-direction:column;gap:16px">
+                  <div v-for="p in preguntas" :key="p.id" class="ver-int-pregunta">
+                    <p style="font-size:0.92rem;font-weight:600;color:var(--dark);margin-bottom:10px">{{ p.texto }}</p>
+                    <div v-if="p.tipo === 'open_text'">
+                      <textarea v-model="respuestas[p.id]" rows="3" placeholder="Tu respuesta..." class="field-input" style="resize:vertical" />
+                    </div>
+                    <div v-else style="display:flex;flex-direction:column;gap:8px">
+                      <label v-for="op in p.opciones" :key="op.id" class="ver-option-label">
+                        <input type="radio" :name="p.id" :value="op.id" v-model="respuestas[p.id]" style="accent-color:var(--brand)" />
+                        <span>{{ op.texto }}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <button @click="submitIntermedias" class="btn btn-primary">Enviar respuestas</button>
+                </div>
               </div>
-            </div>
+            </Transition>
 
             <!-- Foro -->
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="font-semibold text-gray-700">Foro de la leccion</h3>
-                <button @click="showNuevoPost = !showNuevoPost" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">
-                  + Nuevo post
+            <div class="ver-foro">
+              <div class="ver-foro-head">
+                <div>
+                  <h3 style="font-weight:700;color:var(--dark);font-size:1rem">💬 Foro de la lección</h3>
+                  <p style="font-size:0.8rem;color:var(--muted);margin-top:2px">Pregunta o comenta sobre este contenido</p>
+                </div>
+                <button @click="showNuevoPost = !showNuevoPost" class="btn btn-secondary btn-sm">
+                  {{ showNuevoPost ? 'Cancelar' : '+ Nuevo post' }}
                 </button>
               </div>
 
-              <div v-if="showNuevoPost" class="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-                <input v-model="nuevoPost.titulo" placeholder="Titulo del post" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <div class="flex gap-2 mt-2">
-                  <button @click="crearPost" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Publicar</button>
-                  <button @click="showNuevoPost = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300">Cancelar</button>
+              <Transition name="slide-down">
+                <div v-if="showNuevoPost" class="ver-new-post">
+                  <input v-model="nuevoPost.titulo" placeholder="Título del post" class="field-input" style="margin-bottom:8px" />
+                  <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="3" class="field-input" style="resize:vertical;margin-bottom:10px" />
+                  <div style="display:flex;gap:8px">
+                    <button @click="crearPost" class="btn btn-primary btn-sm">Publicar</button>
+                    <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
+                  </div>
                 </div>
-              </div>
+              </Transition>
 
-              <div v-if="foroPosts.length === 0" class="text-sm text-gray-400 text-center py-4">Sin posts aun. Se el primero en preguntar.</div>
-              <div class="space-y-3">
-                <div v-for="post in foroPosts" :key="post.id" class="border border-gray-200 rounded-lg overflow-hidden">
-                  <div class="px-4 py-3 flex items-start justify-between cursor-pointer hover:bg-gray-50" @click="togglePost(post.id)">
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-800">{{ post.titulo }}</p>
-                      <p class="text-xs text-gray-500 mt-0.5">{{ post.user_name }} - {{ new Date(post.created_at).toLocaleDateString('es') }}</p>
+              <div v-if="foroPosts.length === 0" style="text-align:center;padding:28px;color:var(--muted);font-size:0.88rem">Sin posts aún. Sé el primero en preguntar.</div>
+
+              <TransitionGroup name="list-item" tag="div" style="display:flex;flex-direction:column;gap:0;position:relative">
+                <div v-for="post in foroPosts" :key="post.id" class="ver-post">
+                  <div class="ver-post-head" @click="togglePost(post.id)">
+                    <div style="flex:1;min-width:0">
+                      <p class="ver-post-title">{{ post.titulo }}</p>
+                      <p class="ver-post-meta">{{ post.user_name }} · {{ new Date(post.created_at).toLocaleDateString('es') }}</p>
                     </div>
-                    <div class="flex gap-1 ml-2">
-                      <button @click.stop="eliminarPost(post.id)" class="text-xs text-red-400 hover:text-red-600 px-1">X</button>
-                      <span class="text-xs text-gray-400">{{ expandedPost === post.id ? 'Cerrar' : 'Ver' }}</span>
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <button @click.stop="eliminarPost(post.id)" class="lec-btn del" title="Eliminar post">✕</button>
+                      <span class="ver-post-toggle">{{ expandedPost === post.id ? '▲' : '▼' }}</span>
                     </div>
                   </div>
-                  <div v-if="expandedPost === post.id" class="border-t border-gray-100 px-4 py-3 bg-gray-50">
-                    <p class="text-sm text-gray-700 mb-4" style="white-space: pre-wrap">{{ post.contenido }}</p>
-                    <div class="space-y-2 mb-3">
-                      <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="bg-white rounded-lg px-3 py-2 border border-gray-100">
-                        <p class="text-sm text-gray-700">{{ com.contenido }}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">{{ com.user_name }}</p>
+                  <Transition name="slide-down">
+                    <div v-if="expandedPost === post.id" class="ver-post-body">
+                      <p style="font-size:0.88rem;color:var(--text);margin-bottom:16px;white-space:pre-wrap;line-height:1.6">{{ post.contenido }}</p>
+                      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+                        <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="ver-comentario">
+                          <p style="font-size:0.87rem;color:var(--dark)">{{ com.contenido }}</p>
+                          <p style="font-size:0.75rem;color:var(--muted);margin-top:2px">{{ com.user_name }}</p>
+                        </div>
+                        <p v-if="!(comentariosMap[post.id]?.length)" style="font-size:0.82rem;color:var(--muted)">Sin comentarios aún.</p>
                       </div>
-                      <p v-if="!(comentariosMap[post.id]?.length)" class="text-xs text-gray-400">Sin comentarios aun.</p>
+                      <div style="display:flex;gap:8px">
+                        <input v-model="nuevoComentario[post.id]" placeholder="Agregar comentario..." class="field-input" style="flex:1" @keydown.enter="crearComentario(post.id)" />
+                        <button @click="crearComentario(post.id)" class="btn btn-primary btn-sm">Enviar</button>
+                      </div>
                     </div>
-                    <div class="flex gap-2">
-                      <input v-model="nuevoComentario[post.id]" placeholder="Agregar comentario..." class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" @keydown.enter="crearComentario(post.id)" />
-                      <button @click="crearComentario(post.id)" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Enviar</button>
-                    </div>
-                  </div>
+                  </Transition>
                 </div>
-              </div>
+              </TransitionGroup>
             </div>
           </div>
+          </Transition>
         </div>
       </main>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Layout shell */
+.ver-curso-shell { min-height: 100vh; background: var(--bg); }
+.ver-layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* Skeletons */
+.ver-skeleton { display: flex; gap: 0; height: 100vh; overflow: hidden; }
+.ver-sidebar-skel { width: 280px; background: var(--surface); border-right: 1px solid var(--border); padding: 24px; flex-shrink: 0; }
+.ver-content-skel { flex: 1; padding: 36px; }
+
+/* Sidebar */
+.ver-sidebar {
+  width: 280px; background: var(--surface); border-right: 1.5px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+}
+.ver-sidebar-head { padding: 20px; border-bottom: 1px solid var(--border); }
+.ver-curso-nombre { font-size: 0.92rem; font-weight: 800; color: var(--dark); line-height: 1.35; margin-bottom: 12px; }
+.ver-progress-wrap { margin-top: 4px; }
+.ver-progress-top { display: flex; justify-content: space-between; font-size: 0.77rem; color: var(--muted); margin-bottom: 5px; }
+.ver-progress-pct { font-weight: 700; color: var(--brand); }
+.ver-progress-bg { height: 7px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+.ver-progress-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: 4px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94); }
+
+.ver-nav { flex: 1; padding: 10px; overflow-y: auto; }
+.ver-nav-item {
+  width: 100%; text-align: left; padding: 10px 12px; border-radius: var(--r);
+  display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: none;
+  background: none; transition: all 0.15s; margin-bottom: 3px; position: relative;
+}
+.ver-nav-item:hover  { background: var(--bg); }
+.ver-nav-item.active { background: var(--brand-light); }
+.ver-nav-item.done .ver-nav-num { background: var(--success); color: #fff; }
+
+.ver-nav-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--border-light);
+  color: var(--muted); font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  transition: background 0.15s;
+}
+.ver-nav-item.active .ver-nav-num { background: var(--brand); color: #fff; }
+
+.ver-nav-info { flex: 1; min-width: 0; }
+.ver-nav-title { font-size: 0.87rem; font-weight: 600; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); }
+.ver-nav-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+.ver-type-pip { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 8px; }
+.ver-type-pip.video    { background: var(--brand); }
+.ver-type-pip.document { background: var(--info); }
+.ver-type-pip.text     { background: var(--success); }
+.ver-type-pip.link     { background: #8b5cf6; }
+
+.ver-nav-empty { text-align: center; padding: 24px; font-size: 0.85rem; color: var(--muted); }
+
+/* Main content */
+.ver-main { flex: 1; overflow-y: auto; }
+.ver-main-inner { max-width: 820px; margin: 0 auto; padding: 28px 28px; }
+.ver-empty-content { text-align: center; padding: 80px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* Lesson header */
+.ver-lec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.ver-lec-header-left { flex: 1; min-width: 0; }
+.ver-lec-breadcrumb { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+.ver-lec-title { font-size: 1.4rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; line-height: 1.25; }
+.ver-lec-desc { font-size: 0.88rem; color: var(--muted); margin-top: 6px; line-height: 1.55; }
+.ver-done-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--success-bg); color: var(--success); padding: 6px 14px;
+  border-radius: 20px; font-size: 0.82rem; font-weight: 700; flex-shrink: 0;
+}
+
+/* Preguntas intermedias */
+.ver-intermedias {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1.5px solid #fcd34d;
+  border-radius: var(--r-lg); padding: 22px; margin-bottom: 20px;
+}
+.ver-int-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #fcd34d; }
+.ver-int-pregunta { background: rgba(255,255,255,.7); border-radius: var(--r); padding: 14px 16px; border: 1px solid #fde68a; }
+.ver-option-label { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: var(--r-sm); cursor: pointer; transition: background 0.12s; font-size: 0.88rem; color: var(--text); }
+.ver-option-label:hover { background: rgba(249,115,22,.07); }
+
+/* Foro */
+.ver-foro { background: var(--surface); border-radius: var(--r-lg); border: 1.5px solid var(--border); overflow: hidden; }
+.ver-foro-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); }
+.ver-new-post { padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border-light); }
+
+.ver-post { border-bottom: 1px solid var(--border-light); }
+.ver-post:last-child { border-bottom: none; }
+.ver-post-head { padding: 13px 18px; display: flex; align-items: flex-start; cursor: pointer; transition: background 0.12s; }
+.ver-post-head:hover { background: var(--bg); }
+.ver-post-title { font-size: 0.9rem; font-weight: 600; color: var(--dark); }
+.ver-post-meta { font-size: 0.77rem; color: var(--muted); margin-top: 3px; }
+.ver-post-toggle { font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
+.ver-post-body { padding: 16px 18px; background: var(--bg); border-top: 1px solid var(--border-light); }
+
+.ver-comentario { background: var(--surface); border-radius: var(--r); padding: 10px 12px; border: 1px solid var(--border-light); }
+
+@media (max-width: 768px) {
+  .ver-layout { flex-direction: column; height: auto; }
+  .ver-sidebar { width: 100%; max-height: 250px; border-right: none; border-bottom: 1.5px solid var(--border); }
+  .ver-main-inner { padding: 16px; }
+}
+</style>

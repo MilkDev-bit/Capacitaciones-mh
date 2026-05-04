@@ -172,230 +172,398 @@ async function loadMisExamenes() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Mis Cursos</h1>
-        <button @click="showForm = !showForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-          + Nuevo Curso
-        </button>
+  <div>
+    <!-- Page Header -->
+    <div class="ph">
+      <div>
+        <h1 class="ph-title">Mis Cursos</h1>
+        <p class="ph-sub">Gestiona el contenido y estructura de tus capacitaciones</p>
       </div>
+      <button class="btn btn-primary" @click="showForm = !showForm" :aria-expanded="showForm">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo Curso
+      </button>
+    </div>
 
-      <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ error }}</div>
-      <div v-if="success" class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ success }}</div>
+    <!-- Alertas globales -->
+    <Transition name="slide-down">
+      <div v-if="error" class="alert alert-error" style="margin-bottom:16px" role="alert">{{ error }}</div>
+    </Transition>
+    <Transition name="slide-down">
+      <div v-if="success" class="alert alert-success" style="margin-bottom:16px" role="status">{{ success }}</div>
+    </Transition>
 
-      <div v-if="showForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-        <h2 class="font-semibold text-gray-700 mb-4">Nuevo Curso</h2>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-600 mb-1">Titulo *</label>
-            <input v-model="form.title" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    <!-- Formulario nuevo curso -->
+    <Transition name="slide-down">
+      <div v-if="showForm" class="form-card" aria-label="Formulario nuevo curso">
+        <p class="form-card-title">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          Nuevo Curso
+        </p>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Título del curso *</label>
+            <input class="field-input" v-model="form.title" placeholder="Ej: Introducción a la Seguridad Industrial" />
           </div>
-          <div class="col-span-2">
-            <label class="block text-sm font-medium text-gray-600 mb-1">Descripcion</label>
-            <textarea v-model="form.description" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <div class="field full">
+            <label>Descripción</label>
+            <textarea class="field-input" v-model="form.description" rows="2" placeholder="Breve descripción del curso y sus objetivos..." style="resize:vertical" />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
-            <select v-model="form.type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="video">Video</option>
-              <option value="document">Documento</option>
-              <option value="text">Texto</option>
+          <div class="field">
+            <label>Tipo de curso</label>
+            <select class="field-input" v-model="form.type">
+              <option value="video">🎥 Video</option>
+              <option value="document">📄 Documento PDF</option>
+              <option value="text">📝 Texto / Lectura</option>
             </select>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Archivo</label>
-            <input type="file" @change="onFile" class="text-sm text-gray-600" />
+          <div class="field">
+            <label>Archivo principal (opcional)</label>
+            <input type="file" @change="onFile" class="field-input" style="padding:7px" :accept="form.type === 'video' ? 'video/*' : '.pdf,.doc,.docx'" />
           </div>
-          <div v-if="form.type === 'text'" class="col-span-2">
-            <textarea v-model="form.content" placeholder="Contenido..." rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div v-if="form.type === 'text'" class="field full">
+            <label>Contenido</label>
+            <textarea class="field-input" v-model="form.content" rows="4" placeholder="Texto del contenido..." style="resize:vertical" />
           </div>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" v-model="form.is_public" id="pub" class="rounded" />
-            <label for="pub" class="text-sm text-gray-600">Curso publico</label>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" v-model="form.is_public" style="width:16px;height:16px;accent-color:var(--brand)" />
+              Curso público (visible sin código)
+            </label>
           </div>
         </div>
-        <div class="flex gap-2 mt-4">
-          <button @click="guardar" :disabled="loading" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
-            {{ loading ? 'Guardando...' : 'Guardar Curso' }}
+        <div class="form-actions">
+          <button class="btn btn-primary" @click="guardar" :disabled="loading" aria-label="Guardar curso">
+            <span v-if="loading" class="spinner" style="width:15px;height:15px;border-width:2px"></span>
+            {{ loading ? 'Guardando…' : 'Guardar curso' }}
           </button>
-          <button @click="showForm = false" class="px-4 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
+          <button class="btn btn-secondary" @click="showForm = false">Cancelar</button>
         </div>
       </div>
+    </Transition>
 
-      <div class="space-y-4">
-        <div v-for="c in capacitaciones" :key="c.id" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="p-4 flex items-start justify-between">
-            <div class="flex-1 min-w-0 cursor-pointer" @click="selectCurso(c)">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h2 class="font-semibold text-gray-800 truncate">{{ c.title }}</h2>
-                <span :class="c.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="text-xs px-2 py-0.5 rounded-full">
-                  {{ c.is_public ? 'Publico' : 'Privado' }}
+    <!-- Lista de cursos -->
+    <div class="cursos-list">
+      <!-- Skeleton loading -->
+      <template v-if="!capacitaciones.length && loading">
+        <div v-for="n in 3" :key="n" class="curso-card" style="margin-bottom:12px">
+          <div class="curso-header" style="cursor:default">
+            <div class="skeleton skel-thumb" style="width:50px;height:50px;border-radius:10px;flex-shrink:0"></div>
+            <div style="flex:1">
+              <div class="skeleton skel-title"></div>
+              <div class="skeleton skel-text"></div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <TransitionGroup name="list-item" tag="div" class="cursos-list-inner">
+        <div v-for="c in capacitaciones" :key="c.id" class="curso-card" style="margin-bottom:12px">
+
+          <!-- Cabecera del curso -->
+          <div class="curso-header" @click="selectCurso(c)" :aria-expanded="selectedCurso?.id === c.id">
+            <!-- Miniatura tipo -->
+            <div :class="['curso-thumb-mini', c.type === 'video' ? 'thumb-video' : c.type === 'document' ? 'thumb-document' : 'thumb-text']">
+              {{ c.type === 'video' ? '🎥' : c.type === 'document' ? '📄' : '📝' }}
+            </div>
+
+            <!-- Info -->
+            <div class="curso-info">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span class="curso-title">{{ c.title }}</span>
+                <span :class="['badge', c.is_public ? 'badge-green' : 'badge-gray']">
+                  {{ c.is_public ? '🌐 Público' : '🔒 Privado' }}
                 </span>
-                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full capitalize">{{ c.type }}</span>
               </div>
-              <p class="text-sm text-gray-500 mt-1 truncate">{{ c.description }}</p>
-              <p class="text-xs text-gray-400 mt-1">Codigo: <span class="font-mono font-semibold text-blue-600">{{ c.codigo }}</span></p>
+              <div class="curso-meta">
+                <span>{{ c.description || 'Sin descripción' }}</span>
+                <span v-if="c.codigo">Código: <span class="curso-code">{{ c.codigo }}</span></span>
+              </div>
             </div>
-            <div class="flex gap-1 ml-3 flex-shrink-0">
-              <button @click.stop="togglePublic(c.id)" title="Cambiar visibilidad" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 text-xs">{{ c.is_public ? 'Ocultar' : 'Publicar' }}</button>
-              <button @click.stop="resetCodigo(c.id)" title="Regenerar codigo" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 text-xs">Nuevo cod.</button>
-              <button @click.stop="eliminar(c.id)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 text-xs">Eliminar</button>
-              <button @click="selectCurso(c)" class="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 text-xs font-bold">{{ selectedCurso?.id === c.id ? 'Cerrar' : 'Editar' }}</button>
+
+            <!-- Acciones -->
+            <div class="curso-actions" @click.stop>
+              <button class="icon-btn" :title="c.is_public ? 'Ocultar curso' : 'Publicar curso'" @click="togglePublic(c.id)">
+                {{ c.is_public ? '👁' : '🔓' }}
+              </button>
+              <button class="icon-btn" title="Regenerar código de acceso" @click="resetCodigo(c.id)">
+                🔄
+              </button>
+              <button class="icon-btn danger" title="Eliminar curso" @click="eliminar(c.id)">
+                🗑
+              </button>
+              <button :class="['icon-btn', selectedCurso?.id === c.id ? 'active' : '']" @click="selectCurso(c)" :title="selectedCurso?.id === c.id ? 'Cerrar' : 'Editar contenido'">
+                {{ selectedCurso?.id === c.id ? '✕' : '✏️' }}
+              </button>
             </div>
           </div>
 
-          <div v-if="selectedCurso?.id === c.id" class="border-t border-gray-100 bg-gray-50">
-            <div class="flex border-b border-gray-200">
-              <button @click="activeTab = 'lecciones'" :class="activeTab === 'lecciones' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Lecciones</button>
-              <button @click="activeTab = 'intermedias'" :class="activeTab === 'intermedias' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Preguntas Intermedias</button>
-              <button @click="activeTab = 'examen'" :class="activeTab === 'examen' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Examen</button>
-            </div>
+          <!-- Panel expandible de contenido -->
+          <Transition name="slide-down">
+            <div v-if="selectedCurso?.id === c.id" class="curso-panel">
 
-            <div v-if="activeTab === 'lecciones'" class="p-4">
-              <div class="flex justify-between items-center mb-3">
-                <span class="text-sm font-medium text-gray-700">{{ lecciones.length }} leccion(es)</span>
-                <button @click="showLecForm = !showLecForm; lecForm.orden = lecciones.length + 1" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">+ Agregar</button>
+              <!-- Tabs internos -->
+              <div class="curso-inner-tabs" role="tablist">
+                <button role="tab" :aria-selected="activeTab === 'lecciones'"
+                  :class="['curso-tab', activeTab === 'lecciones' ? 'active' : '']"
+                  @click="activeTab = 'lecciones'">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h8"/></svg>
+                  Lecciones
+                  <span class="pill-count">{{ lecciones.length }}</span>
+                </button>
+                <button role="tab" :aria-selected="activeTab === 'intermedias'"
+                  :class="['curso-tab', activeTab === 'intermedias' ? 'active' : '']"
+                  @click="activeTab = 'intermedias'">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"/><circle cx="12" cy="12" r="10"/></svg>
+                  Preguntas Intermedias
+                  <span class="pill-count">{{ intermedias.length }}</span>
+                </button>
+                <button role="tab" :aria-selected="activeTab === 'examen'"
+                  :class="['curso-tab', activeTab === 'examen' ? 'active' : '']"
+                  @click="activeTab = 'examen'">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                  Examen Final
+                </button>
               </div>
-              <div v-if="showLecForm" class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-                <div class="grid grid-cols-2 gap-3">
-                  <div class="col-span-2">
-                    <input v-model="lecForm.title" placeholder="Titulo de la leccion *" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div class="col-span-2">
-                    <input v-model="lecForm.description" placeholder="Descripcion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <select v-model="lecForm.type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                      <option value="video">Video (subir archivo)</option>
-                      <option value="document">PDF / Documento (subir archivo)</option>
-                      <option value="text">Texto / Lectura</option>
-                      <option value="link">Enlace externo (YouTube, Vimeo, PDF web...)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <input type="number" v-model="lecForm.orden" placeholder="Orden" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label class="block text-xs text-gray-500 mb-1">Duracion (minutos)</label>
-                    <input type="number" v-model="lecForm.duracion_min" min="0" placeholder="Ej: 15" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div v-if="lecForm.type === 'video' || lecForm.type === 'document'" class="col-span-2">
-                    <label class="block text-xs text-gray-500 mb-1">{{ lecForm.type === 'video' ? 'Archivo de video (mp4, webm...)' : 'Archivo PDF o documento' }}</label>
-                    <input type="file" @change="onLecFile" class="text-sm text-gray-600"
-                      :accept="lecForm.type === 'video' ? 'video/*' : '.pdf,.doc,.docx,.ppt,.pptx'" />
-                  </div>
-                  <div v-if="lecForm.type === 'text'" class="col-span-2">
-                    <label class="block text-xs text-gray-500 mb-1">Contenido de la lectura</label>
-                    <textarea v-model="lecForm.content" placeholder="Escribe el contenido de texto de la leccion..." rows="5" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                  </div>
-                  <div v-if="lecForm.type === 'link'" class="col-span-2">
-                    <label class="block text-xs text-gray-500 mb-1">URL del recurso (YouTube, Vimeo, PDF externo, etc.)</label>
-                    <input v-model="lecForm.content" placeholder="https://www.youtube.com/watch?v=..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <p class="text-xs text-gray-400 mt-1">Soporta YouTube, Vimeo y cualquier URL embebible.</p>
-                  </div>
-                </div>
-                <div class="flex gap-2 mt-3">
-                  <button @click="guardarLeccion" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Guardar Leccion</button>
-                  <button @click="showLecForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
-                </div>
-              </div>
-              <div v-if="loadingLec" class="text-center text-sm text-gray-400 py-4">Cargando...</div>
-              <div v-else-if="lecciones.length === 0" class="text-center text-sm text-gray-400 py-4">Sin lecciones aun.</div>
-              <div v-else class="space-y-2">
-                <div v-for="(lec, idx) in lecciones" :key="lec.id" class="flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-3 py-2.5">
-                  <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ idx + 1 }}</span>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 truncate">{{ lec.title }}</p>
-                    <p class="text-xs text-gray-500">
-                      {{ lec.type === 'video' ? 'Video' : lec.type === 'document' ? 'PDF' : lec.type === 'link' ? 'Enlace' : 'Texto' }}
-                      <span v-if="lec.duracion_min" class="ml-1">· {{ lec.duracion_min }} min</span>
-                    </p>
-                  </div>
-                  <div class="flex gap-1">
-                    <button @click="moverLeccion(idx, -1)" :disabled="idx === 0" class="px-1.5 py-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">Subir</button>
-                    <button @click="moverLeccion(idx, 1)" :disabled="idx === lecciones.length - 1" class="px-1.5 py-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">Bajar</button>
-                    <button @click="eliminarLeccion(lec.id)" class="px-1.5 py-0.5 text-red-400 hover:text-red-600 text-xs">Eliminar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div v-if="activeTab === 'intermedias'" class="p-4">
-              <div class="flex justify-between items-center mb-3">
-                <span class="text-sm font-medium text-gray-700">{{ intermedias.length }} pregunta(s)</span>
-                <button @click="showIntForm = !showIntForm" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">+ Agregar</button>
-              </div>
-              <div v-if="showIntForm" class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-                <div class="space-y-3">
-                  <textarea v-model="intForm.texto" placeholder="Texto de la pregunta *" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-xs text-gray-500 mb-1">Tipo</label>
-                      <select v-model="intForm.tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="multiple_choice">Opcion multiple</option>
-                        <option value="true_false">Verdadero/Falso</option>
-                        <option value="open_text">Respuesta abierta</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-xs text-gray-500 mb-1">Mostrar despues de</label>
-                      <select v-model="intForm.despues_de_leccion_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Al inicio</option>
-                        <option v-for="lec in lecciones" :key="lec.id" :value="lec.id">{{ lec.title }}</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div v-if="intForm.tipo === 'multiple_choice'" class="space-y-2">
-                    <div class="flex justify-between items-center">
-                      <span class="text-xs font-medium text-gray-600">Opciones</span>
-                      <button @click="addOpcion" class="text-xs text-blue-600 hover:underline">+ Opcion</button>
-                    </div>
-                    <div v-for="(op, i) in intForm.opciones" :key="i" class="flex items-center gap-2">
-                      <input v-model="op.texto" :placeholder="`Opcion ${i+1}`" class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm" />
-                      <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
-                        <input type="radio" :name="`int-c`" :checked="op.es_correcta" @change="intForm.opciones.forEach((o,j) => o.es_correcta = j===i)" />
-                        Correcta
-                      </label>
-                      <button v-if="intForm.opciones.length > 2" @click="removeOpcion(i)" class="text-red-400 text-xs">X</button>
-                    </div>
-                  </div>
-                  <div v-if="intForm.tipo === 'true_false'" class="text-xs text-gray-500">Se generaran opciones Verdadero y Falso automaticamente.</div>
+              <!-- TAB: LECCIONES -->
+              <div v-if="activeTab === 'lecciones'" class="tab-pane" role="tabpanel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                  <span style="font-size:0.88rem;font-weight:600;color:var(--muted)">{{ lecciones.length }} lección(es) en este curso</span>
+                  <button class="btn btn-primary btn-sm" @click="showLecForm = !showLecForm; lecForm.orden = lecciones.length + 1">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Agregar lección
+                  </button>
                 </div>
-                <div class="flex gap-2 mt-3">
-                  <button @click="guardarIntermedia" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Guardar</button>
-                  <button @click="showIntForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
-                </div>
-              </div>
-              <div v-if="loadingInt" class="text-center text-sm text-gray-400 py-4">Cargando...</div>
-              <div v-else-if="intermedias.length === 0" class="text-center text-sm text-gray-400 py-4">Sin preguntas intermedias.</div>
-              <div v-else class="space-y-2">
-                <div v-for="preg in intermedias" :key="preg.id" class="flex items-start gap-3 bg-white rounded-lg border border-gray-200 px-3 py-2.5">
-                  <div class="flex-1">
-                    <p class="text-sm text-gray-800">{{ preg.texto }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5 capitalize">{{ preg.tipo }}</p>
-                  </div>
-                  <button @click="eliminarIntermedia(preg.id)" class="text-red-400 hover:text-red-600 text-xs">Eliminar</button>
-                </div>
-              </div>
-            </div>
 
-            <div v-if="activeTab === 'examen'" class="p-4">
-              <p class="text-sm text-gray-600 mb-3">Examenes enlazados a este curso. Para enlazar, selecciona el curso al crear el examen.</p>
-              <div v-for="ex in misExamenes.filter(e => e.capacitacion_id === c.id)" :key="ex.id" class="flex items-center gap-3 bg-white rounded-lg border border-green-200 px-3 py-2.5 mb-2">
-                <span class="text-green-600 text-xs font-medium">Enlazado</span>
-                <span class="text-sm text-gray-800">{{ ex.title }}</span>
+                <!-- Formulario nueva lección -->
+                <Transition name="slide-down">
+                  <div v-if="showLecForm" class="lec-form-card">
+                    <p style="font-size:0.9rem;font-weight:700;color:var(--dark);margin-bottom:14px">Nueva lección</p>
+                    <div class="form-grid" style="gap:12px">
+                      <div class="field full">
+                        <label>Título *</label>
+                        <input class="field-input" v-model="lecForm.title" placeholder="Ej: Introducción al módulo" />
+                      </div>
+                      <div class="field full">
+                        <label>Descripción</label>
+                        <input class="field-input" v-model="lecForm.description" placeholder="Descripción breve" />
+                      </div>
+                      <div class="field">
+                        <label>Tipo de contenido</label>
+                        <select class="field-input" v-model="lecForm.type">
+                          <option value="video">🎥 Video (subir archivo)</option>
+                          <option value="document">📄 PDF / Documento</option>
+                          <option value="text">📝 Texto / Lectura</option>
+                          <option value="link">🔗 Enlace externo (YouTube, Vimeo…)</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label>Duración (minutos)</label>
+                        <input type="number" class="field-input" v-model="lecForm.duracion_min" min="0" placeholder="Ej: 15" />
+                      </div>
+                      <div v-if="lecForm.type === 'video' || lecForm.type === 'document'" class="field full">
+                        <label>{{ lecForm.type === 'video' ? 'Archivo de video (mp4, webm…)' : 'Archivo PDF o documento' }}</label>
+                        <input type="file" class="field-input" @change="onLecFile" style="padding:7px"
+                          :accept="lecForm.type === 'video' ? 'video/*' : '.pdf,.doc,.docx,.ppt,.pptx'" />
+                      </div>
+                      <div v-if="lecForm.type === 'text'" class="field full">
+                        <label>Contenido de la lectura</label>
+                        <textarea class="field-input" v-model="lecForm.content" placeholder="Escribe el contenido aquí…" rows="5" style="resize:vertical" />
+                      </div>
+                      <div v-if="lecForm.type === 'link'" class="field full">
+                        <label>URL del recurso</label>
+                        <input class="field-input" v-model="lecForm.content" placeholder="https://www.youtube.com/watch?v=…" />
+                        <span style="font-size:0.77rem;color:var(--muted);margin-top:4px">Soporta YouTube, Vimeo y cualquier URL embebible.</span>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button class="btn btn-primary btn-sm" @click="guardarLeccion">Guardar lección</button>
+                      <button class="btn btn-secondary btn-sm" @click="showLecForm = false">Cancelar</button>
+                    </div>
+                  </div>
+                </Transition>
+
+                <!-- Lista de lecciones -->
+                <div v-if="loadingLec" style="padding:32px 0">
+                  <div v-for="n in 3" :key="n" class="lec-item" style="margin-bottom:8px">
+                    <div class="skeleton" style="width:26px;height:26px;border-radius:50%;flex-shrink:0"></div>
+                    <div style="flex:1">
+                      <div class="skeleton skel-line" style="width:60%"></div>
+                      <div class="skeleton skel-text-sm" style="margin-top:4px"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else-if="lecciones.length === 0" class="empty-state" style="padding:40px 20px">
+                  <div class="empty-icon">📋</div>
+                  <p style="font-weight:600;color:var(--dark)">Sin lecciones aún</p>
+                  <p style="font-size:0.85rem;color:var(--muted)">Agrega la primera lección con el botón de arriba.</p>
+                </div>
+
+                <TransitionGroup v-else name="list-item" tag="div" style="display:flex;flex-direction:column;gap:8px;position:relative">
+                  <div v-for="(lec, idx) in lecciones" :key="lec.id" class="lec-item">
+                    <div class="lec-num">{{ idx + 1 }}</div>
+                    <div :class="['lec-type-dot', lec.type]"></div>
+                    <div class="lec-info">
+                      <div class="lec-title">{{ lec.title }}</div>
+                      <div class="lec-meta">
+                        <span>{{ lec.type === 'video' ? '🎥 Video' : lec.type === 'document' ? '📄 PDF' : lec.type === 'link' ? '🔗 Enlace' : '📝 Texto' }}</span>
+                        <span v-if="lec.duracion_min">· {{ lec.duracion_min }} min</span>
+                        <span v-if="lec.description" style="color:var(--subtle)">· {{ lec.description }}</span>
+                      </div>
+                    </div>
+                    <div class="lec-actions">
+                      <button class="lec-btn" @click="moverLeccion(idx, -1)" :disabled="idx === 0" title="Mover arriba" aria-label="Subir lección">↑</button>
+                      <button class="lec-btn" @click="moverLeccion(idx, 1)" :disabled="idx === lecciones.length - 1" title="Mover abajo" aria-label="Bajar lección">↓</button>
+                      <button class="lec-btn del" @click="eliminarLeccion(lec.id)" title="Eliminar lección" aria-label="Eliminar">✕</button>
+                    </div>
+                  </div>
+                </TransitionGroup>
               </div>
-              <p v-if="!misExamenes.find(e => e.capacitacion_id === c.id)" class="text-sm text-gray-400">Ningun examen enlazado. Crea uno seleccionando este curso.</p>
+
+              <!-- TAB: PREGUNTAS INTERMEDIAS -->
+              <div v-if="activeTab === 'intermedias'" class="tab-pane" role="tabpanel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                  <span style="font-size:0.88rem;font-weight:600;color:var(--muted)">{{ intermedias.length }} pregunta(s) intermedia(s)</span>
+                  <button class="btn btn-primary btn-sm" @click="showIntForm = !showIntForm">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Agregar pregunta
+                  </button>
+                </div>
+
+                <Transition name="slide-down">
+                  <div v-if="showIntForm" class="lec-form-card">
+                    <p style="font-size:0.9rem;font-weight:700;color:var(--dark);margin-bottom:14px">Nueva pregunta intermedia</p>
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                      <div class="field full">
+                        <label>Pregunta *</label>
+                        <textarea class="field-input" v-model="intForm.texto" placeholder="¿Cuál es la respuesta correcta sobre…?" rows="2" style="resize:vertical" />
+                      </div>
+                      <div class="form-grid" style="gap:12px">
+                        <div class="field">
+                          <label>Tipo de pregunta</label>
+                          <select class="field-input" v-model="intForm.tipo">
+                            <option value="multiple_choice">Opción múltiple</option>
+                            <option value="true_false">Verdadero / Falso</option>
+                            <option value="open_text">Respuesta abierta</option>
+                          </select>
+                        </div>
+                        <div class="field">
+                          <label>Mostrar después de</label>
+                          <select class="field-input" v-model="intForm.despues_de_leccion_id">
+                            <option value="">Al inicio del curso</option>
+                            <option v-for="lec in lecciones" :key="lec.id" :value="lec.id">{{ lec.title }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div v-if="intForm.tipo === 'multiple_choice'">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                          <span style="font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Opciones</span>
+                          <button class="btn btn-secondary btn-sm" @click="addOpcion">+ Opción</button>
+                        </div>
+                        <div v-for="(op, i) in intForm.opciones" :key="i" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                          <input class="field-input" v-model="op.texto" :placeholder="`Opción ${i+1}`" style="flex:1" />
+                          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;color:var(--muted);white-space:nowrap;cursor:pointer">
+                            <input type="radio" :name="`int-c-${c.id}`" :checked="op.es_correcta"
+                              @change="intForm.opciones.forEach((o,j) => o.es_correcta = j===i)"
+                              style="accent-color:var(--success)" />
+                            Correcta
+                          </label>
+                          <button v-if="intForm.opciones.length > 2" class="lec-btn del" @click="removeOpcion(i)" title="Eliminar opción">✕</button>
+                        </div>
+                      </div>
+
+                      <div v-if="intForm.tipo === 'true_false'" class="alert alert-warning" style="font-size:0.82rem">
+                        Se generarán las opciones <strong>Verdadero</strong> y <strong>Falso</strong> automáticamente.
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button class="btn btn-primary btn-sm" @click="guardarIntermedia">Guardar pregunta</button>
+                      <button class="btn btn-secondary btn-sm" @click="showIntForm = false">Cancelar</button>
+                    </div>
+                  </div>
+                </Transition>
+
+                <div v-if="loadingInt" style="padding:32px 0">
+                  <div v-for="n in 2" :key="n" class="int-item" style="margin-bottom:8px">
+                    <div class="skeleton" style="width:70px;height:22px;border-radius:4px;flex-shrink:0"></div>
+                    <div style="flex:1">
+                      <div class="skeleton skel-line" style="width:80%"></div>
+                      <div class="skeleton skel-text-sm" style="margin-top:4px"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else-if="intermedias.length === 0" class="empty-state" style="padding:40px 20px">
+                  <div class="empty-icon">💬</div>
+                  <p style="font-weight:600;color:var(--dark)">Sin preguntas intermedias</p>
+                  <p style="font-size:0.85rem;color:var(--muted)">Las preguntas intermedias aparecen entre lecciones para reforzar el aprendizaje.</p>
+                </div>
+
+                <TransitionGroup v-else name="list-item" tag="div" style="display:flex;flex-direction:column;gap:8px;position:relative">
+                  <div v-for="preg in intermedias" :key="preg.id" class="int-item">
+                    <span :class="['int-badge', preg.tipo === 'multiple_choice' ? 'mc' : preg.tipo === 'true_false' ? 'tf' : 'ot']">
+                      {{ preg.tipo === 'multiple_choice' ? 'Opción múltiple' : preg.tipo === 'true_false' ? 'V/F' : 'Abierta' }}
+                    </span>
+                    <div style="flex:1;min-width:0">
+                      <p style="font-size:0.88rem;color:var(--dark);line-height:1.4">{{ preg.texto }}</p>
+                    </div>
+                    <button class="lec-btn del" @click="eliminarIntermedia(preg.id)" title="Eliminar pregunta">✕</button>
+                  </div>
+                </TransitionGroup>
+              </div>
+
+              <!-- TAB: EXAMEN -->
+              <div v-if="activeTab === 'examen'" class="tab-pane" role="tabpanel">
+                <div class="alert alert-warning" style="margin-bottom:16px;font-size:0.85rem">
+                  Para enlazar un examen a este curso, selecciona <strong>{{ c.title }}</strong> al crear o editar el examen en la sección "Exámenes".
+                </div>
+
+                <div v-if="misExamenes.filter(e => e.capacitacion_id === c.id).length === 0" class="empty-state" style="padding:32px 20px">
+                  <div class="empty-icon">📋</div>
+                  <p style="font-weight:600;color:var(--dark)">Sin examen enlazado</p>
+                  <p style="font-size:0.85rem;color:var(--muted)">Ve a la sección Exámenes y selecciona este curso para enlazarlo.</p>
+                </div>
+
+                <div v-for="ex in misExamenes.filter(e => e.capacitacion_id === c.id)" :key="ex.id" class="lec-item" style="margin-bottom:8px">
+                  <div class="lec-type-dot" style="background:var(--success)"></div>
+                  <div class="lec-info">
+                    <div class="lec-title">{{ ex.title }}</div>
+                    <div class="lec-meta">
+                      <span class="badge badge-green">✓ Enlazado</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </div>
+          </Transition>
         </div>
+      </TransitionGroup>
 
-        <div v-if="capacitaciones.length === 0" class="text-center py-12 text-gray-400">
-          <p class="text-lg mb-2">Sin cursos</p>
-          <p class="text-sm">Crea tu primer curso con el boton de arriba</p>
+      <!-- Empty state -->
+      <Transition name="fade">
+        <div v-if="capacitaciones.length === 0 && !loading" class="empty-state">
+          <div class="empty-icon">📚</div>
+          <h3>Aún no tienes cursos</h3>
+          <p>Crea tu primer curso con el botón <strong>Nuevo Curso</strong> en la parte superior.</p>
+          <button class="btn btn-primary" @click="showForm = true">Crear mi primer curso</button>
         </div>
-      </div>
+      </Transition>
     </div>
   </div>
 </template>
+
+<style scoped>
+.cursos-list { /* container */ }
+.cursos-list-inner { position: relative; }
+
+.lec-form-card {
+  background: var(--bg); border: 1.5px dashed var(--border); border-radius: var(--r);
+  padding: 18px; margin-bottom: 16px;
+}
+
+.curso-panel { border-top: 1.5px solid var(--border); }
+</style>
