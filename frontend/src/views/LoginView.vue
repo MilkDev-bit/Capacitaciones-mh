@@ -52,7 +52,7 @@ async function register() {
   regLoading.value = true
   try {
     await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value })
-    regSuccess.value = 'Cuenta creada! Ya puedes iniciar sesion.'
+    regSuccess.value = '¡Cuenta creada! Ya puedes iniciar sesión.'
     regName.value = ''; regEmail.value = ''; regPassword.value = ''; regRole.value = 'user'
     setTimeout(() => { tab.value = 'login'; regSuccess.value = '' }, 1500)
   } catch (e: any) {
@@ -83,7 +83,7 @@ async function register() {
           <span class="text-orange-400">MH</span>
         </h1>
         <p class="text-gray-400 text-base leading-relaxed max-w-xs">
-          Tu plataforma de aprendizaje corporativo. Accede a cursos, completa examenes y avanza a tu ritmo.
+          Tu plataforma de aprendizaje corporativo. Accede a cursos, completa exámenes y avanza a tu ritmo.
         </p>
         <div class="mt-10 space-y-4">
           <div class="flex items-center gap-3 text-gray-300 text-sm">
@@ -92,7 +92,7 @@ async function register() {
           </div>
           <div class="flex items-center gap-3 text-gray-300 text-sm">
             <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base flex-shrink-0">&#128221;</div>
-            Examenes y seguimiento de progreso
+            Exámenes y seguimiento de progreso
           </div>
           <div class="flex items-center gap-3 text-gray-300 text-sm">
             <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base flex-shrink-0">&#127891;</div>
@@ -124,7 +124,7 @@ async function register() {
             ]"
             @click="tab = 'login'"
           >
-            Iniciar sesion
+            Iniciar sesión
           </button>
           <button
             :class="[
@@ -140,7 +140,7 @@ async function register() {
         <!-- Login form -->
         <form v-if="tab === 'login'" @submit.prevent="submit" class="space-y-5">
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Correo electronico</label>
+            <label class="block text-sm font-semibold text-gray-700">Correo electrónico</label>
             <input
               v-model="email"
               type="email"
@@ -151,7 +151,7 @@ async function register() {
             />
           </div>
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Contrasena</label>
+            <label class="block text-sm font-semibold text-gray-700">Contraseña</label>
             <div class="relative">
               <input
                 v-model="password"
@@ -185,9 +185,9 @@ async function register() {
           </button>
 
           <p class="text-center text-sm text-gray-500">
-            No tienes cuenta?
+            ¿No tienes cuenta?
             <button type="button" class="text-orange-500 font-bold hover:underline" @click="tab = 'register'">
-              Registrate gratis
+              Regístrate gratis
             </button>
           </p>
         </form>
@@ -206,7 +206,7 @@ async function register() {
             />
           </div>
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Correo electronico</label>
+            <label class="block text-sm font-semibold text-gray-700">Correo electrónico</label>
             <input
               v-model="regEmail"
               type="email"
@@ -217,11 +217,11 @@ async function register() {
             />
           </div>
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Contrasena</label>
+            <label class="block text-sm font-semibold text-gray-700">Contraseña</label>
             <input
               v-model="regPassword"
               type="password"
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               autocomplete="new-password"
               required
               minlength="6"
@@ -280,9 +280,9 @@ async function register() {
           </button>
 
           <p class="text-center text-sm text-gray-500">
-            Ya tienes cuenta?
+            ¿Ya tienes cuenta?
             <button type="button" class="text-orange-500 font-bold hover:underline" @click="tab = 'login'">
-              Inicia sesion
+              Inicia sesión
             </button>
           </p>
         </form>

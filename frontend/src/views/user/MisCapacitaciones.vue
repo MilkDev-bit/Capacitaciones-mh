@@ -53,17 +53,17 @@ async function inscribirse(id: string) {
 
 async function unirseConCodigo() {
   const code = codigoInput.value.trim().toUpperCase()
-  if (!code) { codigoError.value = 'Ingresa un codigo'; return }
+  if (!code) { codigoError.value = 'Ingresa un código'; return }
   codigoError.value = ''; codigoSuccess.value = ''
   codigoLoading.value = true
   try {
     const res = await api.post('/unirse-con-codigo', { codigo: code })
-    codigoSuccess.value = `Te uniste a "${res.data.title}"!`
+    codigoSuccess.value = `¡Te uniste a "${res.data.title}"!`
     codigoInput.value = ''
     await loadMis()
     setTimeout(() => { codigoSuccess.value = ''; activeTab.value = 'mis' }, 2000)
   } catch (e: any) {
-    codigoError.value = e.response?.data?.error || 'Codigo invalido'
+    codigoError.value = e.response?.data?.error || 'Código inválido'
   } finally { codigoLoading.value = false }
 }
 </script>
@@ -131,8 +131,8 @@ async function unirseConCodigo() {
       </div>
       <div v-else class="flex flex-col items-center text-center py-16 gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div class="text-5xl">&#128218;</div>
-        <h3 class="text-base font-bold text-gray-800">No tienes cursos asignados aun</h3>
-        <p class="text-gray-500 text-sm max-w-sm">Explora los cursos disponibles o pide a tu instructor un codigo de acceso.</p>
+        <h3 class="text-base font-bold text-gray-800">No tienes cursos asignados aún</h3>
+        <p class="text-gray-500 text-sm max-w-sm">Explora los cursos disponibles o pide a tu instructor un código de acceso.</p>
         <button
           class="mt-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           @click="activeTab = 'explorar'"
@@ -149,8 +149,8 @@ async function unirseConCodigo() {
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <div class="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">&#128273;</div>
           <div>
-            <p class="font-bold text-gray-900 text-sm">Tienes un codigo de acceso?</p>
-            <p class="text-gray-500 text-xs mt-0.5">Ingresa el codigo de tu instructor para unirte a un curso privado.</p>
+            <p class="font-bold text-gray-900 text-sm">¿Tienes un código de acceso?</p>
+            <p class="text-gray-500 text-xs mt-0.5">Ingresa el código de tu instructor para unirte a un curso privado.</p>
           </div>
         </div>
         <div class="flex gap-2 sm:flex-shrink-0">
@@ -189,7 +189,7 @@ async function unirseConCodigo() {
         </div>
         <div v-else class="flex flex-col items-center text-center py-16 gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div class="text-5xl">&#128269;</div>
-          <h3 class="text-base font-bold text-gray-800">No hay cursos publicos disponibles</h3>
+          <h3 class="text-base font-bold text-gray-800">No hay cursos públicos disponibles</h3>
           <p class="text-gray-500 text-sm max-w-sm">Pide a tu instructor que comparta el enlace o codigo de su curso.</p>
         </div>
       </div>

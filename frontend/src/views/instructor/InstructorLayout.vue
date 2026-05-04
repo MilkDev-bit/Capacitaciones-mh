@@ -21,7 +21,7 @@ function initials(name: string) {
         <button
           class="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
           @click="sidebarOpen = true"
-          aria-label="Abrir menu"
+          aria-label="Abrir menú"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
