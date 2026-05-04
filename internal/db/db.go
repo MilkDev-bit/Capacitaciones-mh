@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -33,10 +34,16 @@ func Connect() {
 	if err != nil {
 		log.Fatalf("Error abriendo base de datos: %v", err)
 	}
-	if err = DB.Ping(); err != nil {
-		log.Fatalf("Error conectando a la base de datos: %v", err)
+	// Retry ping hasta 10 intentos (Railway puede tardar unos segundos en levantar el plugin de PostgreSQL)
+	for i := 1; i <= 10; i++ {
+		if err = DB.Ping(); err == nil {
+			log.Println("Conexión a PostgreSQL exitosa")
+			return
+		}
+		log.Printf("DB no disponible, intento %d/10: %v", i, err)
+		time.Sleep(3 * time.Second)
 	}
-	log.Println("Conexión a PostgreSQL exitosa")
+	log.Fatalf("No se pudo conectar a la base de datos tras 10 intentos: %v", err)
 }
 
 func getEnv(key, fallback string) string {

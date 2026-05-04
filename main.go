@@ -13,9 +13,6 @@ import (
 )
 
 func main() {
-	db.Connect()
-	db.Migrate()
-
 	r := gin.Default()
 
 	// CORS
@@ -111,5 +108,19 @@ func main() {
 		port = "8080"
 	}
 	log.Printf("Servidor iniciado en http://localhost:%s", port)
-	r.Run(":" + port)
+
+	// Arrancar el servidor HTTP en segundo plano para que el healthcheck
+	// de Railway pueda responder mientras la BD termina de conectar.
+	go func() {
+		if err := r.Run(":" + port); err != nil {
+			log.Fatalf("Error en r.Run: %v", err)
+		}
+	}()
+
+	// Conectar la base de datos (reintenta hasta 10 veces × 3 s = 30 s)
+	db.Connect()
+	db.Migrate()
+
+	// Mantener el proceso vivo
+	select {}
 }
