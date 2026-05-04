@@ -38,7 +38,7 @@ async function submit() {
     else if (res.data.user?.role === 'instructor') router.push('/instructor')
     else router.push('/usuario')
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Correo o contrase\u00f1a incorrectos'
+    error.value = e.response?.data?.error || 'Correo o contraseña incorrectos'
   } finally {
     loading.value = false
   }
@@ -52,7 +52,7 @@ async function register() {
   regLoading.value = true
   try {
     await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value })
-    regSuccess.value = '\u00a1Cuenta creada! Ya puedes iniciar sesi\u00f3n.'
+    regSuccess.value = '¡Cuenta creada! Ya puedes iniciar sesión.'
     regName.value = ''; regEmail.value = ''; regPassword.value = ''; regRole.value = 'user'
     setTimeout(() => { tab.value = 'login'; regSuccess.value = '' }, 1500)
   } catch (e: any) {
@@ -79,12 +79,12 @@ async function register() {
           <div class="stat-divider"></div>
           <div class="stat"><span class="stat-num">12K+</span><span class="stat-lbl">Estudiantes</span></div>
           <div class="stat-divider"></div>
-          <div class="stat"><span class="stat-num">98%</span><span class="stat-lbl">Satisfacci\u00f3n</span></div>
+          <div class="stat"><span class="stat-num">98%</span><span class="stat-lbl">Satisfacción</span></div>
         </div>
         <ul class="hero-features">
-          <li><span class="feat-check">\u2713</span> Cursos de video, documentos y texto</li>
-          <li><span class="feat-check">\u2713</span> Ex\u00e1menes con retroalimentaci\u00f3n</li>
-          <li><span class="feat-check">\u2713</span> Acceso por c\u00f3digo o enlace de invitaci\u00f3n</li>
+          <li><span class="feat-check">✓</span> Cursos de video, documentos y texto</li>
+          <li><span class="feat-check">✓</span> Exámenes con retroalimentación</li>
+          <li><span class="feat-check">✓</span> Acceso por código o enlace de invitación</li>
         </ul>
       </div>
       <div class="hero-decoration"></div>
@@ -101,60 +101,60 @@ async function register() {
         </div>
 
         <div class="form-tabs">
-          <button :class="[\'form-tab\', tab === \'login\' ? \'active\' : \'\']" @click="tab = \'login\'">
-            Iniciar sesi\u00f3n
+          <button :class="['form-tab', tab === 'login' ? 'active' : '']" @click="tab = 'login'">
+            Iniciar sesión
           </button>
-          <button :class="[\'form-tab\', tab === \'register\' ? \'active\' : \'\']" @click="tab = \'register\'">
+          <button :class="['form-tab', tab === 'register' ? 'active' : '']" @click="tab = 'register'">
             Registrarse
           </button>
         </div>
 
-        <form v-if="tab === \'login\'" @submit.prevent="submit" class="auth-form">
+        <form v-if="tab === 'login'" @submit.prevent="submit" class="auth-form">
           <div class="form-group">
-            <label>Correo electr\u00f3nico</label>
+            <label>Correo electrónico</label>
             <input class="field-input" v-model="email" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
           </div>
           <div class="form-group">
-            <label>Contrase\u00f1a</label>
+            <label>Contraseña</label>
             <div class="pass-wrap">
-              <input class="field-input" v-model="password" :type="showPass ? \'text\' : \'password\'" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password" required />
+              <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
               <button type="button" class="pass-toggle" @click="showPass = !showPass">
-                {{ showPass ? \'\U0001f648\' : \'\U0001f441\' }}
+                {{ showPass ? '\U0001f648' : '\U0001f441' }}
               </button>
             </div>
           </div>
           <div v-if="error" class="alert alert-error">{{ error }}</div>
           <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="loading">
             <span v-if="loading" class="btn-spinner"></span>
-            {{ loading ? \'Entrando...\' : \'Entrar a la plataforma\' }}
+            {{ loading ? 'Entrando...' : 'Entrar a la plataforma' }}
           </button>
           <p class="form-footer">
-            \u00bfNo tienes cuenta? <button type="button" class="link-btn" @click="tab = \'register\'">Reg\u00edstrate gratis</button>
+            ¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">Regístrate gratis</button>
           </p>
         </form>
 
-        <form v-if="tab === \'register\'" @submit.prevent="register" class="auth-form">
+        <form v-if="tab === 'register'" @submit.prevent="register" class="auth-form">
           <div class="form-group">
             <label>Nombre completo</label>
             <input class="field-input" v-model="regName" type="text" placeholder="Tu nombre completo" autocomplete="name" required />
           </div>
           <div class="form-group">
-            <label>Correo electr\u00f3nico</label>
+            <label>Correo electrónico</label>
             <input class="field-input" v-model="regEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
           </div>
           <div class="form-group">
-            <label>Contrase\u00f1a</label>
-            <input class="field-input" v-model="regPassword" type="password" placeholder="M\u00ednimo 6 caracteres" autocomplete="new-password" required minlength="6" />
+            <label>Contraseña</label>
+            <input class="field-input" v-model="regPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6" />
           </div>
           <div class="form-group">
             <label>Tipo de cuenta</label>
             <div class="role-grid">
-              <button type="button" :class="[\'role-card\', regRole === \'user\' ? \'selected\' : \'\']" @click="regRole = \'user\'">
+              <button type="button" :class="['role-card', regRole === 'user' ? 'selected' : '']" @click="regRole = 'user'">
                 <span class="role-icon">\U0001f393</span>
                 <strong>Estudiante</strong>
                 <small>Accede y aprende a tu ritmo</small>
               </button>
-              <button type="button" :class="[\'role-card\', regRole === \'instructor\' ? \'selected\' : \'\']" @click="regRole = \'instructor\'">
+              <button type="button" :class="['role-card', regRole === 'instructor' ? 'selected' : '']" @click="regRole = 'instructor'">
                 <span class="role-icon">\U0001f3eb</span>
                 <strong>Instructor</strong>
                 <small>Crea y gestiona cursos</small>
@@ -165,10 +165,10 @@ async function register() {
           <div v-if="regSuccess" class="alert alert-success">{{ regSuccess }}</div>
           <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading">
             <span v-if="regLoading" class="btn-spinner"></span>
-            {{ regLoading ? \'Creando cuenta...\' : \'Crear cuenta gratis\' }}
+            {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
           </button>
           <p class="form-footer">
-            \u00bfYa tienes cuenta? <button type="button" class="link-btn" @click="tab = \'login\'">Inicia sesi\u00f3n</button>
+            ¿Ya tienes cuenta? <button type="button" class="link-btn" @click="tab = 'login'">Inicia sesión</button>
           </p>
         </form>
       </div>
