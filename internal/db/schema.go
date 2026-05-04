@@ -1,5 +1,7 @@
 package db
 
+import "log"
+
 const Schema = `
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,6 +80,7 @@ ALTER TABLE examenes ADD COLUMN IF NOT EXISTS instructor_id UUID REFERENCES user
 
 func Migrate() {
 	if _, err := DB.Exec(Schema); err != nil {
-		panic("Error ejecutando migración: " + err.Error())
+		log.Fatalf("Error ejecutando migración: %v", err)
 	}
+	log.Println("Migración ejecutada correctamente")
 }
