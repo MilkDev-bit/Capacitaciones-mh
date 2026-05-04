@@ -236,9 +236,9 @@ async function register() {
 </style>
 """
 
-with open(login_path, 'w', encoding='utf-8') as f:
+with open(path, 'w', encoding='utf-8') as f:
     f.write(login_content.encode('raw_unicode_escape').decode('unicode_escape'))
-print("OK:", login_path)
+print("OK:", path)
 content = """\
 <script setup lang="ts">
 import { ref } from 'vue'
