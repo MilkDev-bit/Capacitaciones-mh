@@ -74,18 +74,6 @@ async function register() {
           </svg>
         </div>
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
-        <div class="hero-stats">
-          <div class="stat"><span class="stat-num">500+</span><span class="stat-lbl">Cursos</span></div>
-          <div class="stat-divider"></div>
-          <div class="stat"><span class="stat-num">12K+</span><span class="stat-lbl">Estudiantes</span></div>
-          <div class="stat-divider"></div>
-          <div class="stat"><span class="stat-num">98%</span><span class="stat-lbl">Satisfacción</span></div>
-        </div>
-        <ul class="hero-features">
-          <li><span class="feat-check">✓</span> Cursos de video, documentos y texto</li>
-          <li><span class="feat-check">✓</span> Exámenes con retroalimentación</li>
-          <li><span class="feat-check">✓</span> Acceso por código o enlace de invitación</li>
-        </ul>
       </div>
       <div class="hero-decoration"></div>
     </div>
@@ -191,14 +179,6 @@ async function register() {
 .hero-logo { margin-bottom: 20px; }
 .hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
 .hero-title span { color: var(--brand); }
-.hero-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 36px; }
-.stat { text-align: center; }
-.stat-num { display: block; font-size: 1.4rem; font-weight: 800; color: var(--brand); }
-.stat-lbl { font-size: 0.78rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .05em; }
-.stat-divider { width: 1px; height: 36px; background: rgba(255,255,255,.15); }
-.hero-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.hero-features li { color: rgba(255,255,255,.75); font-size: 0.92rem; display: flex; align-items: center; gap: 10px; }
-.feat-check { background: rgba(249,115,22,.2); color: var(--brand); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 900; flex-shrink: 0; }
 .auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
 .auth-form-wrap { width: 100%; max-width: 420px; }
 .mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
