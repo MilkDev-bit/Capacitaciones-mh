@@ -17,7 +17,23 @@ const codigoSuccess = ref('')
 
 async function loadMis() {
   const res = await api.get('/mis-capacitaciones')
-  capacitaciones.value = res.data || []
+  const cursos = res.data || []
+  // Para cada curso, cargar el progreso de lecciones
+  const cursosConProgreso = await Promise.all(
+    cursos.map(async (c: any) => {
+      try {
+        const lRes = await api.get(`/capacitaciones/${c.id}/lecciones`)
+        const lecciones = lRes.data || []
+        c.total_lecciones = lecciones.length
+        c.lecciones_completadas = lecciones.filter((l: any) => l.completada).length
+      } catch {
+        c.total_lecciones = 0
+        c.lecciones_completadas = 0
+      }
+      return c
+    })
+  )
+  capacitaciones.value = cursosConProgreso
 }
 async function loadPublicos() {
   const res = await api.get('/cursos-publicos')
@@ -93,6 +109,15 @@ const typeLabel: Record<string, string> = { video: 'Video', document: 'Documento
             <span class="course-type-badge">{{ typeLabel[c.type] || c.type }}</span>
             <h3 class="course-title">{{ c.title }}</h3>
             <p class="course-desc">{{ c.description || 'Sin descripción' }}</p>
+            <div v-if="c.total_lecciones > 0" class="progress-wrap">
+              <div class="progress-top">
+                <span class="progress-label">{{ c.lecciones_completadas }}/{{ c.total_lecciones }} lecciones</span>
+                <span class="progress-pct">{{ Math.round((c.lecciones_completadas/c.total_lecciones)*100) }}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" :style="`width:${Math.round((c.lecciones_completadas/c.total_lecciones)*100)}%`" />
+              </div>
+            </div>
             <div class="course-cta">Continuar aprendiendo →</div>
           </div>
         </div>
@@ -215,6 +240,14 @@ const typeLabel: Record<string, string> = { video: 'Video', document: 'Documento
 .course-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.45; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .course-cta { font-size: 0.83rem; font-weight: 700; color: var(--brand); margin-top: 4px; }
 .course-footer-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+
+/* Progress bar */
+.progress-wrap { margin-top: 4px; }
+.progress-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.progress-label { font-size: 0.75rem; color: var(--muted); }
+.progress-pct { font-size: 0.75rem; font-weight: 700; color: var(--brand); }
+.progress-bar-bg { height: 5px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--brand); border-radius: 3px; transition: width 0.3s; }
 
 /* Code banner */
 .code-banner {

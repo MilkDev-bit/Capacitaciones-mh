@@ -7,11 +7,30 @@ const loading = ref(false)
 const showForm = ref(false)
 const error = ref('')
 const success = ref('')
-const copiedId = ref<string | null>(null)
-const expandedCode = ref<string | null>(null)
-
 const form = ref({ title: '', description: '', type: 'video', content: '', is_public: false })
 const file = ref<File | null>(null)
+
+const selectedCurso = ref<any | null>(null)
+const activeTab = ref<'lecciones' | 'intermedias' | 'examen'>('lecciones')
+
+const lecciones = ref<any[]>([])
+const loadingLec = ref(false)
+const showLecForm = ref(false)
+const lecForm = ref({ title: '', description: '', type: 'video', content: '', orden: 1 })
+const lecFile = ref<File | null>(null)
+
+const intermedias = ref<any[]>([])
+const loadingInt = ref(false)
+const showIntForm = ref(false)
+const intForm = ref({
+  texto: '',
+  tipo: 'multiple_choice',
+  orden: 1,
+  despues_de_leccion_id: '',
+  opciones: [{ texto: '', es_correcta: false }, { texto: '', es_correcta: false }]
+})
+
+const misExamenes = ref<any[]>([])
 
 async function load() {
   const res = await api.get('/instructor/capacitaciones')
@@ -21,15 +40,15 @@ async function load() {
 onMounted(load)
 
 function onFile(e: Event) {
-  const input = e.target as HTMLInputElement
-  file.value = input.files?.[0] ?? null
+  file.value = (e.target as HTMLInputElement).files?.[0] ?? null
+}
+function onLecFile(e: Event) {
+  lecFile.value = (e.target as HTMLInputElement).files?.[0] ?? null
 }
 
 async function guardar() {
   error.value = ''; success.value = ''
-  if (!form.value.title || !form.value.type) {
-    error.value = 'El título y tipo son requeridos'; return
-  }
+  if (!form.value.title) { error.value = 'El titulo es requerido'; return }
   loading.value = true
   try {
     const fd = new FormData()
@@ -40,7 +59,7 @@ async function guardar() {
     fd.append('is_public', String(form.value.is_public))
     if (file.value) fd.append('file', file.value)
     await api.post('/instructor/capacitaciones', fd)
-    success.value = 'Curso creado exitosamente'
+    success.value = 'Curso creado'
     showForm.value = false
     form.value = { title: '', description: '', type: 'video', content: '', is_public: false }
     file.value = null
@@ -53,7 +72,7 @@ async function guardar() {
 }
 
 async function eliminar(id: string) {
-  if (!confirm('¿Eliminar este curso?')) return
+  if (!confirm('Eliminar este curso?')) return
   await api.delete(`/instructor/capacitaciones/${id}`)
   await load()
 }
@@ -64,215 +83,302 @@ async function togglePublic(id: string) {
 }
 
 async function resetCodigo(id: string) {
-  if (!confirm('¿Generar un nuevo código? El anterior dejará de funcionar.')) return
-  const res = await api.post(`/instructor/capacitaciones/${id}/reset-codigo`)
-  const cap = capacitaciones.value.find(c => c.id === id)
-  if (cap) cap.codigo_acceso = res.data.codigo_acceso
+  await api.post(`/instructor/capacitaciones/${id}/reset-codigo`)
+  await load()
 }
 
-function shareLink(codigo: string) {
-  return `${window.location.origin}/unirse/${codigo}`
+async function selectCurso(c: any) {
+  if (selectedCurso.value?.id === c.id) { selectedCurso.value = null; return }
+  selectedCurso.value = c
+  activeTab.value = 'lecciones'
+  await Promise.all([loadLecciones(), loadIntermedias(), loadMisExamenes()])
 }
 
-async function copiarCodigo(codigo: string, id: string) {
-  await navigator.clipboard.writeText(codigo)
-  copiedId.value = id + '-code'
-  setTimeout(() => { copiedId.value = null }, 2000)
+async function loadLecciones() {
+  if (!selectedCurso.value) return
+  loadingLec.value = true
+  const res = await api.get(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`)
+  lecciones.value = res.data || []
+  loadingLec.value = false
 }
 
-async function copiarEnlace(codigo: string, id: string) {
-  await navigator.clipboard.writeText(shareLink(codigo))
-  copiedId.value = id + '-link'
-  setTimeout(() => { copiedId.value = null }, 2000)
+async function guardarLeccion() {
+  if (!lecForm.value.title) return
+  const fd = new FormData()
+  fd.append('title', lecForm.value.title)
+  fd.append('description', lecForm.value.description)
+  fd.append('type', lecForm.value.type)
+  fd.append('content', lecForm.value.content)
+  fd.append('orden', String(lecForm.value.orden))
+  if (lecFile.value) fd.append('file', lecFile.value)
+  await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`, fd)
+  showLecForm.value = false
+  lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2 }
+  lecFile.value = null
+  await loadLecciones()
 }
 
-function typeLabel(t: string) {
-  return { video: '🎥 Video', document: '📄 Documento', text: '📝 Texto' }[t] || t
+async function eliminarLeccion(leccionId: string) {
+  if (!confirm('Eliminar esta leccion?')) return
+  await api.delete(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones/${leccionId}`)
+  await loadLecciones()
+}
+
+async function moverLeccion(idx: number, dir: -1 | 1) {
+  const arr = [...lecciones.value]
+  const target = idx + dir
+  if (target < 0 || target >= arr.length) return
+  ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
+  const reorder = arr.map((l, i) => ({ id: l.id, orden: i + 1 }))
+  await api.put(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones/reorder`, reorder)
+  await loadLecciones()
+}
+
+async function loadIntermedias() {
+  if (!selectedCurso.value) return
+  loadingInt.value = true
+  const res = await api.get(`/instructor/capacitaciones/${selectedCurso.value.id}/intermedias`)
+  intermedias.value = res.data || []
+  loadingInt.value = false
+}
+
+function addOpcion() { intForm.value.opciones.push({ texto: '', es_correcta: false }) }
+function removeOpcion(i: number) { intForm.value.opciones.splice(i, 1) }
+
+async function guardarIntermedia() {
+  if (!intForm.value.texto) return
+  const payload: any = { texto: intForm.value.texto, tipo: intForm.value.tipo, orden: intForm.value.orden }
+  if (intForm.value.despues_de_leccion_id) payload.despues_de_leccion_id = intForm.value.despues_de_leccion_id
+  if (intForm.value.tipo !== 'open_text') payload.opciones = intForm.value.tipo === 'true_false'
+    ? [{ texto: 'Verdadero', es_correcta: false }, { texto: 'Falso', es_correcta: false }]
+    : intForm.value.opciones
+  await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/intermedias`, payload)
+  showIntForm.value = false
+  intForm.value = { texto: '', tipo: 'multiple_choice', orden: 1, despues_de_leccion_id: '', opciones: [{ texto: '', es_correcta: false }, { texto: '', es_correcta: false }] }
+  await loadIntermedias()
+}
+
+async function eliminarIntermedia(preguntaId: string) {
+  if (!confirm('Eliminar esta pregunta?')) return
+  await api.delete(`/instructor/capacitaciones/${selectedCurso.value.id}/intermedias/${preguntaId}`)
+  await loadIntermedias()
+}
+
+async function loadMisExamenes() {
+  const res = await api.get('/instructor/examenes')
+  misExamenes.value = res.data || []
 }
 </script>
 
 <template>
-  <div>
-    <!-- Header -->
-    <div class="ph">
-      <div>
-        <h1 class="ph-title">Mis cursos</h1>
-        <p class="ph-sub">Crea y gestiona tus cursos. Comparte el c\u00f3digo con tus estudiantes.</p>
-      </div>
-      <button class="btn btn-primary" @click="showForm = !showForm">
-        {{ showForm ? 'Cancelar' : '+ Nuevo curso' }}
-      </button>
-    </div>
-
-    <!-- Form -->
-    <div v-if="showForm" class="form-card">
-      <p class="form-card-title">Nuevo curso</p>
-      <div class="form-grid">
-        <div class="field">
-          <label>T\u00edtulo *</label>
-          <input class="field-input" v-model="form.title" placeholder="Ej: Introducci\u00f3n a la seguridad" />
-        </div>
-        <div class="field">
-          <label>Tipo *</label>
-          <select class="field-input" v-model="form.type">
-            <option value="video">Video</option>
-            <option value="document">Documento PDF</option>
-            <option value="text">Texto enriquecido</option>
-          </select>
-        </div>
-        <div class="field full">
-          <label>Descripci\u00f3n</label>
-          <textarea class="field-input" v-model="form.description" rows="2" placeholder="Breve descripci\u00f3n..."></textarea>
-        </div>
-        <div v-if="form.type === 'text'" class="field full">
-          <label>Contenido HTML</label>
-          <textarea class="field-input" v-model="form.content" rows="5" placeholder="<p>Contenido del curso...</p>"></textarea>
-        </div>
-        <div v-else class="field full">
-          <label>Archivo ({{ form.type === 'video' ? 'MP4, MOV...' : 'PDF, DOCX...' }})</label>
-          <input type="file" :accept="form.type === 'video' ? 'video/*' : '.pdf,.doc,.docx'" @change="onFile" />
-        </div>
-        <div class="field full">
-          <label class="toggle-label">
-            <input type="checkbox" v-model="form.is_public" />
-            <span>Publicar curso (cualquier usuario puede inscribirse sin c\u00f3digo)</span>
-          </label>
-        </div>
-      </div>
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-      <div v-if="success" class="alert alert-success">{{ success }}</div>
-      <div class="form-actions">
-        <button class="btn btn-primary" :disabled="loading" @click="guardar">
-          <span v-if="loading" class="spinner" style="width:16px;height:16px"></span>
-          {{ loading ? 'Guardando\u2026' : 'Guardar curso' }}
+  <div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Mis Cursos</h1>
+        <button @click="showForm = !showForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+          + Nuevo Curso
         </button>
-        <button class="btn btn-secondary" @click="showForm = false">Cancelar</button>
       </div>
-    </div>
 
-    <!-- Cards de cursos -->
-    <div v-if="capacitaciones.length" class="courses-grid">
-      <div v-for="c in capacitaciones" :key="c.id" class="course-card">
-        <div :class="['course-thumb', { 'thumb-video': c.type==='video', 'thumb-document': c.type==='document', 'thumb-text': c.type==='text', 'thumb-default': !['video','document','text'].includes(c.type) }]">
-          <span class="thumb-icon">{{ ({ video: '\ud83c\udfa5', document: '\ud83d\udcce', text: '\ud83d\udcdd' } as Record<string,string>)[c.type] || '\ud83d\udcda' }}</span>
-          <button
-            :class="['vis-badge', c.is_public ? 'vis-public' : 'vis-private']"
-            @click="togglePublic(c.id)"
-            :title="c.is_public ? 'Hacer privado' : 'Publicar'"
-          >
-            {{ c.is_public ? '\ud83c\udf10 P\u00fablico' : '\ud83d\udd12 Privado' }}
-          </button>
-        </div>
-        <div class="course-body">
-          <span class="course-type">{{ ({ video: 'Video', document: 'Documento', text: 'Texto' } as Record<string,string>)[c.type] || c.type }}</span>
-          <h3>{{ c.title }}</h3>
-          <p class="course-desc">{{ c.description || 'Sin descripci\u00f3n' }}</p>
+      <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ error }}</div>
+      <div v-if="success" class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ success }}</div>
 
-          <!-- C\u00f3digo de acceso -->
-          <div class="code-section">
-            <div class="code-label">C\u00f3digo de acceso</div>
-            <div class="code-row">
-              <span class="code-val">{{ c.codigo_acceso || '\u2014' }}</span>
-              <div class="code-btns" v-if="c.codigo_acceso">
-                <button class="code-btn" @click="copiarCodigo(c.codigo_acceso, c.id)" title="Copiar c\u00f3digo">
-                  {{ copiedId === c.id + '-code' ? '\u2713' : '\ud83d\udccb' }}
-                </button>
-                <button class="code-btn" @click="copiarEnlace(c.codigo_acceso, c.id)" title="Copiar enlace">
-                  {{ copiedId === c.id + '-link' ? '\u2713 Copiado' : '\ud83d\udd17 Enlace' }}
-                </button>
-                <button class="code-btn danger" @click="resetCodigo(c.id)" title="Nuevo c\u00f3digo">\ud83d\udd04</button>
-              </div>
-            </div>
-            <div v-if="copiedId === c.id + '-code'" class="copy-toast">C\u00f3digo copiado</div>
-            <div v-if="copiedId === c.id + '-link'" class="copy-toast">Enlace copiado</div>
+      <div v-if="showForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+        <h2 class="font-semibold text-gray-700 mb-4">Nuevo Curso</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Titulo *</label>
+            <input v-model="form.title" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Descripcion</label>
+            <textarea v-model="form.description" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
+            <select v-model="form.type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="video">Video</option>
+              <option value="document">Documento</option>
+              <option value="text">Texto</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Archivo</label>
+            <input type="file" @change="onFile" class="text-sm text-gray-600" />
+          </div>
+          <div v-if="form.type === 'text'" class="col-span-2">
+            <textarea v-model="form.content" placeholder="Contenido..." rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" v-model="form.is_public" id="pub" class="rounded" />
+            <label for="pub" class="text-sm text-gray-600">Curso publico</label>
           </div>
         </div>
-        <div class="course-footer">
-          <span class="course-date">{{ new Date(c.created_at).toLocaleDateString() }}</span>
-          <button class="btn btn-danger btn-sm" @click="eliminar(c.id)">Eliminar</button>
+        <div class="flex gap-2 mt-4">
+          <button @click="guardar" :disabled="loading" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
+            {{ loading ? 'Guardando...' : 'Guardar Curso' }}
+          </button>
+          <button @click="showForm = false" class="px-4 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
         </div>
       </div>
-    </div>
 
-    <div v-else class="empty-state">
-      <div class="empty-icon">📚</div>
-      <h3>Aún no has creado ningún curso</h3>
-      <p>Crea tu primer curso y comparte el código con tus estudiantes.</p>
-      <button class="btn btn-primary" @click="showForm = true">Crear mi primer curso</button>
+      <div class="space-y-4">
+        <div v-for="c in capacitaciones" :key="c.id" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="p-4 flex items-start justify-between">
+            <div class="flex-1 min-w-0 cursor-pointer" @click="selectCurso(c)">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="font-semibold text-gray-800 truncate">{{ c.title }}</h2>
+                <span :class="c.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="text-xs px-2 py-0.5 rounded-full">
+                  {{ c.is_public ? 'Publico' : 'Privado' }}
+                </span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full capitalize">{{ c.type }}</span>
+              </div>
+              <p class="text-sm text-gray-500 mt-1 truncate">{{ c.description }}</p>
+              <p class="text-xs text-gray-400 mt-1">Codigo: <span class="font-mono font-semibold text-blue-600">{{ c.codigo }}</span></p>
+            </div>
+            <div class="flex gap-1 ml-3 flex-shrink-0">
+              <button @click.stop="togglePublic(c.id)" title="Cambiar visibilidad" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 text-xs">{{ c.is_public ? 'Ocultar' : 'Publicar' }}</button>
+              <button @click.stop="resetCodigo(c.id)" title="Regenerar codigo" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 text-xs">Nuevo cod.</button>
+              <button @click.stop="eliminar(c.id)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 text-xs">Eliminar</button>
+              <button @click="selectCurso(c)" class="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 text-xs font-bold">{{ selectedCurso?.id === c.id ? 'Cerrar' : 'Editar' }}</button>
+            </div>
+          </div>
+
+          <div v-if="selectedCurso?.id === c.id" class="border-t border-gray-100 bg-gray-50">
+            <div class="flex border-b border-gray-200">
+              <button @click="activeTab = 'lecciones'" :class="activeTab === 'lecciones' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Lecciones</button>
+              <button @click="activeTab = 'intermedias'" :class="activeTab === 'intermedias' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Preguntas Intermedias</button>
+              <button @click="activeTab = 'examen'" :class="activeTab === 'examen' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'" class="px-4 py-2.5 text-sm font-medium">Examen</button>
+            </div>
+
+            <div v-if="activeTab === 'lecciones'" class="p-4">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-sm font-medium text-gray-700">{{ lecciones.length }} leccion(es)</span>
+                <button @click="showLecForm = !showLecForm; lecForm.orden = lecciones.length + 1" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">+ Agregar</button>
+              </div>
+              <div v-if="showLecForm" class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="col-span-2">
+                    <input v-model="lecForm.title" placeholder="Titulo de la leccion *" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div class="col-span-2">
+                    <input v-model="lecForm.description" placeholder="Descripcion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <select v-model="lecForm.type" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                      <option value="video">Video</option>
+                      <option value="document">Documento</option>
+                      <option value="text">Texto</option>
+                    </select>
+                  </div>
+                  <div>
+                    <input type="number" v-model="lecForm.orden" placeholder="Orden" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div v-if="lecForm.type !== 'text'" class="col-span-2">
+                    <input type="file" @change="onLecFile" class="text-sm text-gray-600" />
+                  </div>
+                  <div v-if="lecForm.type === 'text'" class="col-span-2">
+                    <textarea v-model="lecForm.content" placeholder="Contenido..." rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                  <button @click="guardarLeccion" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Guardar Leccion</button>
+                  <button @click="showLecForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
+                </div>
+              </div>
+              <div v-if="loadingLec" class="text-center text-sm text-gray-400 py-4">Cargando...</div>
+              <div v-else-if="lecciones.length === 0" class="text-center text-sm text-gray-400 py-4">Sin lecciones aun.</div>
+              <div v-else class="space-y-2">
+                <div v-for="(lec, idx) in lecciones" :key="lec.id" class="flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-3 py-2.5">
+                  <span class="text-xs font-bold text-gray-400 w-5 text-center">{{ idx + 1 }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ lec.title }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ lec.type }}</p>
+                  </div>
+                  <div class="flex gap-1">
+                    <button @click="moverLeccion(idx, -1)" :disabled="idx === 0" class="px-1.5 py-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">Subir</button>
+                    <button @click="moverLeccion(idx, 1)" :disabled="idx === lecciones.length - 1" class="px-1.5 py-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">Bajar</button>
+                    <button @click="eliminarLeccion(lec.id)" class="px-1.5 py-0.5 text-red-400 hover:text-red-600 text-xs">Eliminar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="activeTab === 'intermedias'" class="p-4">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-sm font-medium text-gray-700">{{ intermedias.length }} pregunta(s)</span>
+                <button @click="showIntForm = !showIntForm" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">+ Agregar</button>
+              </div>
+              <div v-if="showIntForm" class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                <div class="space-y-3">
+                  <textarea v-model="intForm.texto" placeholder="Texto de la pregunta *" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+                      <select v-model="intForm.tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="multiple_choice">Opcion multiple</option>
+                        <option value="true_false">Verdadero/Falso</option>
+                        <option value="open_text">Respuesta abierta</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-gray-500 mb-1">Mostrar despues de</label>
+                      <select v-model="intForm.despues_de_leccion_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Al inicio</option>
+                        <option v-for="lec in lecciones" :key="lec.id" :value="lec.id">{{ lec.title }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div v-if="intForm.tipo === 'multiple_choice'" class="space-y-2">
+                    <div class="flex justify-between items-center">
+                      <span class="text-xs font-medium text-gray-600">Opciones</span>
+                      <button @click="addOpcion" class="text-xs text-blue-600 hover:underline">+ Opcion</button>
+                    </div>
+                    <div v-for="(op, i) in intForm.opciones" :key="i" class="flex items-center gap-2">
+                      <input v-model="op.texto" :placeholder="`Opcion ${i+1}`" class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm" />
+                      <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+                        <input type="radio" :name="`int-c`" :checked="op.es_correcta" @change="intForm.opciones.forEach((o,j) => o.es_correcta = j===i)" />
+                        Correcta
+                      </label>
+                      <button v-if="intForm.opciones.length > 2" @click="removeOpcion(i)" class="text-red-400 text-xs">X</button>
+                    </div>
+                  </div>
+                  <div v-if="intForm.tipo === 'true_false'" class="text-xs text-gray-500">Se generaran opciones Verdadero y Falso automaticamente.</div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                  <button @click="guardarIntermedia" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700">Guardar</button>
+                  <button @click="showIntForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
+                </div>
+              </div>
+              <div v-if="loadingInt" class="text-center text-sm text-gray-400 py-4">Cargando...</div>
+              <div v-else-if="intermedias.length === 0" class="text-center text-sm text-gray-400 py-4">Sin preguntas intermedias.</div>
+              <div v-else class="space-y-2">
+                <div v-for="preg in intermedias" :key="preg.id" class="flex items-start gap-3 bg-white rounded-lg border border-gray-200 px-3 py-2.5">
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-800">{{ preg.texto }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5 capitalize">{{ preg.tipo }}</p>
+                  </div>
+                  <button @click="eliminarIntermedia(preg.id)" class="text-red-400 hover:text-red-600 text-xs">Eliminar</button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="activeTab === 'examen'" class="p-4">
+              <p class="text-sm text-gray-600 mb-3">Examenes enlazados a este curso. Para enlazar, selecciona el curso al crear el examen.</p>
+              <div v-for="ex in misExamenes.filter(e => e.capacitacion_id === c.id)" :key="ex.id" class="flex items-center gap-3 bg-white rounded-lg border border-green-200 px-3 py-2.5 mb-2">
+                <span class="text-green-600 text-xs font-medium">Enlazado</span>
+                <span class="text-sm text-gray-800">{{ ex.title }}</span>
+              </div>
+              <p v-if="!misExamenes.find(e => e.capacitacion_id === c.id)" class="text-sm text-gray-400">Ningun examen enlazado. Crea uno seleccionando este curso.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="capacitaciones.length === 0" class="text-center py-12 text-gray-400">
+          <p class="text-lg mb-2">Sin cursos</p>
+          <p class="text-sm">Crea tu primer curso con el boton de arriba</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.ph { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-.ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
-.ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
-
-/* Form card */
-.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border-top: 4px solid var(--brand); }
-.form-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field.full { grid-column: 1 / -1; }
-fieldlabel, label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-input[type="text"], input[type="file"], input[type="number"], select, textarea {
-  padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 0.9rem; outline: none; font-family: inherit; background: var(--bg);
-}
-input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.1); }
-.toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.88rem; color: var(--text); font-weight: 500; }
-.form-actions { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
-
-/* Courses grid */
-.courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-.course-card { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
-.course-thumb {
-  height: 120px; display: flex; align-items: center; justify-content: center; position: relative;
-}
-.thumb-icon { font-size: 2.5rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2)); }
-
-/* Visibility badge */
-.vis-badge {
-  position: absolute; top: 10px; right: 10px;
-  font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: none; cursor: pointer;
-  transition: opacity .15s;
-}
-.vis-public  { background: rgba(0,200,80,.18); color: #065f46; }
-.vis-private { background: rgba(0,0,0,.22); color: #fff; }
-.vis-badge:hover { opacity: 0.75; }
-
-.course-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.course-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
-.course-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); line-height: 1.35; }
-.course-desc { font-size: 0.83rem; color: var(--muted); flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-/* Code section */
-.code-section { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 13px; position: relative; }
-.code-label { font-size: 0.68rem; font-weight: 700; color: var(--subtle); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
-.code-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.code-val { font-size: 1.2rem; font-weight: 800; letter-spacing: .15em; color: var(--dark); font-family: 'Courier New', monospace; }
-.code-btns { display: flex; gap: 4px; margin-left: auto; }
-.code-btn {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-  padding: 4px 9px; cursor: pointer; font-size: 0.78rem; font-weight: 600; color: var(--text); transition: all .15s; white-space: nowrap;
-}
-.code-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
-.code-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
-.copy-toast {
-  position: absolute; bottom: -26px; right: 4px;
-  background: var(--dark); color: #fff; font-size: 0.7rem; padding: 3px 9px; border-radius: 4px; z-index: 10;
-}
-
-.course-footer { padding: 12px 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
-.course-date { font-size: 0.76rem; color: var(--subtle); }
-
-.empty-state { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.empty-icon { font-size: 3rem; }
-.empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
-.empty-state p { color: var(--muted); font-size: 0.9rem; max-width: 360px; }
-
-@media (max-width: 680px) {
-  .form-grid { grid-template-columns: 1fr; }
-  .courses-grid { grid-template-columns: 1fr; }
-  .ph { flex-direction: column; }
-}
-</style>

@@ -163,6 +163,9 @@ func InstructorListExamenes(c *gin.Context) {
 	for rows.Next() {
 		var e models.Examen
 		rows.Scan(&e.ID, &e.Title, &e.Description, &e.CreatedAt)
+		// Cargar capacitacion enlazada
+		db.DB.QueryRow(`SELECT e.capacitacion_id, COALESCE(c.title,'') FROM examenes e LEFT JOIN capacitaciones c ON c.id=e.capacitacion_id WHERE e.id=$1`, e.ID).
+			Scan(&e.CapacitacionID, &e.CapacitacionNombre)
 		result = append(result, e)
 	}
 	c.JSON(http.StatusOK, result)
@@ -186,8 +189,8 @@ func InstructorCreateExamen(c *gin.Context) {
 
 	var examenID string
 	err = tx.QueryRow(
-		`INSERT INTO examenes(title, description, instructor_id) VALUES($1,$2,$3) RETURNING id`,
-		req.Title, req.Description, instructorID,
+		`INSERT INTO examenes(title, description, instructor_id, capacitacion_id) VALUES($1,$2,$3,$4) RETURNING id`,
+		req.Title, req.Description, instructorID, req.CapacitacionID,
 	).Scan(&examenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -195,23 +198,29 @@ func InstructorCreateExamen(c *gin.Context) {
 	}
 
 	for _, p := range req.Preguntas {
+		tipo := p.Tipo
+		if tipo == "" {
+			tipo = "multiple_choice"
+		}
 		var preguntaID string
 		err = tx.QueryRow(
-			`INSERT INTO preguntas(examen_id, texto, valor, orden) VALUES($1,$2,$3,$4) RETURNING id`,
-			examenID, p.Texto, p.Valor, p.Orden,
+			`INSERT INTO preguntas(examen_id, texto, tipo, valor, orden) VALUES($1,$2,$3,$4,$5) RETURNING id`,
+			examenID, p.Texto, tipo, p.Valor, p.Orden,
 		).Scan(&preguntaID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		for _, o := range p.Opciones {
-			_, err = tx.Exec(
-				`INSERT INTO opciones(pregunta_id, texto, es_correcta) VALUES($1,$2,$3)`,
-				preguntaID, o.Texto, o.EsCorrecta,
-			)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
+		if tipo != "open_text" {
+			for _, o := range p.Opciones {
+				_, err = tx.Exec(
+					`INSERT INTO opciones(pregunta_id, texto, es_correcta) VALUES($1,$2,$3)`,
+					preguntaID, o.Texto, o.EsCorrecta,
+				)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
 			}
 		}
 	}

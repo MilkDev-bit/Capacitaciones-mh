@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import api from '../../api'
 
 const examenes = ref<any[]>([])
+const capacitaciones = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -11,23 +12,37 @@ const success = ref('')
 const form = ref({
   title: '',
   description: '',
+  capacitacion_id: null as string | null,
   preguntas: [] as Array<{
-    texto: string; valor: number; orden: number;
+    texto: string
+    tipo: string
+    valor: number
+    orden: number
     opciones: Array<{ texto: string; es_correcta: boolean }>
   }>
 })
 
 function addPregunta() {
   form.value.preguntas.push({
-    texto: '', valor: 1, orden: form.value.preguntas.length,
-    opciones: [
-      { texto: '', es_correcta: false },
-      { texto: '', es_correcta: false },
-    ]
+    texto: '', tipo: 'multiple_choice', valor: 1, orden: form.value.preguntas.length + 1,
+    opciones: [{ texto: '', es_correcta: false }, { texto: '', es_correcta: false }]
   })
 }
 
 function removePregunta(i: number) { form.value.preguntas.splice(i, 1) }
+
+function onTipoChange(pi: number) {
+  const p = form.value.preguntas[pi]
+  if (!p) return
+  if (p.tipo === 'true_false') {
+    p.opciones = [{ texto: 'Verdadero', es_correcta: false }, { texto: 'Falso', es_correcta: false }]
+  } else if (p.tipo === 'open_text') {
+    p.opciones = []
+  } else {
+    p.opciones = [{ texto: '', es_correcta: false }, { texto: '', es_correcta: false }]
+  }
+}
+
 function addOpcion(pi: number) {
   const p = form.value.preguntas[pi]
   if (p) p.opciones.push({ texto: '', es_correcta: false })
@@ -42,8 +57,12 @@ function setCorrecta(pi: number, oi: number) {
 }
 
 async function load() {
-  const res = await api.get('/instructor/examenes')
-  examenes.value = res.data || []
+  const [eRes, cRes] = await Promise.all([
+    api.get('/instructor/examenes'),
+    api.get('/instructor/capacitaciones')
+  ])
+  examenes.value = eRes.data || []
+  capacitaciones.value = cRes.data || []
 }
 
 onMounted(load)
@@ -54,16 +73,32 @@ async function guardar() {
   if (!form.value.preguntas.length) { error.value = 'Agrega al menos una pregunta'; return }
   for (const p of form.value.preguntas) {
     if (!p.texto) { error.value = 'Todas las preguntas necesitan texto'; return }
-    if (p.valor <= 0) { error.value = 'El valor de cada pregunta debe ser mayor a 0'; return }
-    if (!p.opciones.some(o => o.es_correcta)) { error.value = 'Cada pregunta debe tener una respuesta correcta'; return }
-    if (p.opciones.some(o => !o.texto)) { error.value = 'Todas las opciones deben tener texto'; return }
+    if (p.valor <= 0) { error.value = 'El valor debe ser mayor a 0'; return }
+    if (p.tipo !== 'open_text' && !p.opciones.some(o => o.es_correcta)) {
+      error.value = 'Cada pregunta debe tener una respuesta correcta'; return
+    }
+    if (p.tipo === 'multiple_choice' && p.opciones.some(o => !o.texto)) {
+      error.value = 'Todas las opciones deben tener texto'; return
+    }
   }
   loading.value = true
   try {
-    await api.post('/instructor/examenes', form.value)
+    const payload: any = {
+      title: form.value.title,
+      description: form.value.description,
+      preguntas: form.value.preguntas.map(p => ({
+        texto: p.texto,
+        tipo: p.tipo,
+        valor: p.valor,
+        orden: p.orden,
+        opciones: p.tipo !== 'open_text' ? p.opciones : []
+      }))
+    }
+    if (form.value.capacitacion_id) payload.capacitacion_id = form.value.capacitacion_id
+    await api.post('/instructor/examenes', payload)
     success.value = 'Examen creado exitosamente'
     showForm.value = false
-    form.value = { title: '', description: '', preguntas: [] }
+    form.value = { title: '', description: '', capacitacion_id: null, preguntas: [] }
     await load()
   } catch (e: any) {
     error.value = e.response?.data?.error || 'Error al guardar'
@@ -80,128 +115,121 @@ async function eliminar(id: string) {
 </script>
 
 <template>
-  <div>
-    <div class="ph">
-      <div>
-        <h1 class="ph-title">Mis examenes</h1>
-        <p class="ph-sub">Crea examenes y asignalos desde la seccion Estudiantes.</p>
-      </div>
-      <button class="btn btn-primary" @click="showForm = !showForm">
-        {{ showForm ? 'Cancelar' : '+ Nuevo examen' }}
-      </button>
-    </div>
-
-    <div v-if="showForm" class="form-card">
-      <p class="form-card-title">Nuevo examen</p>
-      <div class="form-row">
-        <div class="field">
-          <label>Titulo *</label>
-          <input class="field-input" v-model="form.title" placeholder="Ej: Evaluacion modulo 1" />
-        </div>
-        <div class="field">
-          <label>Descripcion</label>
-          <input class="field-input" v-model="form.description" placeholder="Opcional..." />
-        </div>
-      </div>
-
-      <div class="preguntas-list">
-        <div v-for="(p, pi) in form.preguntas" :key="pi" class="pregunta-item">
-          <div class="pi-header">
-            <span class="pi-num">Pregunta {{ pi + 1 }}</span>
-            <button class="icon-close" @click="removePregunta(pi)">x</button>
-          </div>
-          <div class="pi-body">
-            <div class="field" style="flex:3">
-              <label>Enunciado *</label>
-              <textarea class="field-input" v-model="p.texto" rows="2" placeholder="Escribe la pregunta..."></textarea>
-            </div>
-            <div class="field" style="flex:1">
-              <label>Valor (pts)</label>
-              <input class="field-input" v-model.number="p.valor" type="number" min="0.5" step="0.5" />
-            </div>
-          </div>
-          <div class="opciones-group">
-            <label>Opciones (marca la correcta)</label>
-            <div v-for="(o, oi) in p.opciones" :key="oi" class="opcion-row">
-              <input type="radio" :name="'ok-' + pi" :checked="o.es_correcta" @change="setCorrecta(pi, oi)" class="radio-ok" />
-              <input class="field-input" v-model="o.texto" placeholder="Texto de la opcion..." style="flex:1" />
-              <button class="icon-close sm" @click="removeOpcion(pi, oi)" :disabled="p.opciones.length <= 2">x</button>
-            </div>
-            <button class="btn-add-op" @click="addOpcion(pi)">+ Opcion</button>
-          </div>
-        </div>
-        <button class="btn-add-preg" @click="addPregunta">+ Agregar pregunta</button>
-      </div>
-
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-      <div v-if="success" class="alert alert-success">{{ success }}</div>
-      <div class="form-actions">
-        <button class="btn btn-primary" :disabled="loading" @click="guardar">
-          <span v-if="loading" class="spinner" style="width:16px;height:16px"></span>
-          {{ loading ? 'Guardando...' : 'Guardar examen' }}
+  <div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Mis Examenes</h1>
+        <button @click="showForm = !showForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+          + Nuevo Examen
         </button>
-        <button class="btn btn-secondary" @click="showForm = false">Cancelar</button>
       </div>
-    </div>
 
-    <div class="table-card">
-      <table v-if="examenes.length">
-        <thead>
-          <tr><th>Titulo</th><th>Descripcion</th><th>Fecha</th><th></th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="e in examenes" :key="e.id">
-            <td><strong>{{ e.title }}</strong></td>
-            <td class="cell-muted">{{ e.description || '-' }}</td>
-            <td class="cell-muted">{{ new Date(e.created_at).toLocaleDateString() }}</td>
-            <td><button class="btn btn-danger btn-sm" @click="eliminar(e.id)">Eliminar</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-else class="empty-state">
-        <div class="empty-icon">📝</div>
-        <h3>No has creado ningun examen</h3>
-        <p>Crea examenes y luego asignalos a tus estudiantes.</p>
-        <button class="btn btn-primary" @click="showForm = true">Crear mi primer examen</button>
+      <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ error }}</div>
+      <div v-if="success" class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ success }}</div>
+
+      <div v-if="showForm" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+        <h2 class="font-semibold text-gray-700 mb-4">Crear Examen</h2>
+        <div class="space-y-3 mb-4">
+          <input v-model="form.title" placeholder="Titulo del examen *" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <textarea v-model="form.description" placeholder="Descripcion (opcional)" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Enlazar a curso (opcional)</label>
+            <select v-model="form.capacitacion_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option :value="null">Sin curso enlazado</option>
+              <option v-for="cap in capacitaciones" :key="cap.id" :value="cap.id">{{ cap.title }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-4 mb-4">
+          <div v-for="(p, pi) in form.preguntas" :key="pi" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs font-bold text-gray-500">Pregunta {{ pi + 1 }}</span>
+              <button @click="removePregunta(pi)" class="ml-auto text-xs text-red-500 hover:text-red-700">Eliminar</button>
+            </div>
+            <div class="space-y-2">
+              <textarea v-model="p.texto" placeholder="Texto de la pregunta *" rows="2"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+                  <select v-model="p.tipo" @change="onTipoChange(pi)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+                    <option value="multiple_choice">Opcion multiple</option>
+                    <option value="true_false">Verdadero/Falso</option>
+                    <option value="open_text">Respuesta abierta</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">Valor (pts)</label>
+                  <input type="number" v-model="p.valor" min="0.1" step="0.5" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">Orden</label>
+                  <input type="number" v-model="p.orden" min="1" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm" />
+                </div>
+              </div>
+
+              <div v-if="p.tipo === 'open_text'" class="text-xs text-gray-500 italic px-1">
+                Pregunta de respuesta abierta. No requiere opciones.
+              </div>
+              <div v-if="p.tipo === 'true_false'" class="text-xs text-gray-500 italic px-1">
+                Opciones Verdadero/Falso. Marca la correcta:
+                <div class="flex gap-4 mt-1">
+                  <label class="flex items-center gap-1">
+                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 0)" :checked="p.opciones[0]?.es_correcta" />
+                    Verdadero
+                  </label>
+                  <label class="flex items-center gap-1">
+                    <input type="radio" :name="`tf-${pi}`" @change="setCorrecta(pi, 1)" :checked="p.opciones[1]?.es_correcta" />
+                    Falso
+                  </label>
+                </div>
+              </div>
+
+              <div v-if="p.tipo === 'multiple_choice'" class="space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-gray-600">Opciones</span>
+                  <button @click="addOpcion(pi)" class="text-xs text-blue-600 hover:underline">+ Opcion</button>
+                </div>
+                <div v-for="(op, oi) in p.opciones" :key="oi" class="flex items-center gap-2">
+                  <input v-model="op.texto" :placeholder="`Opcion ${oi + 1}`" class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+                    <input type="radio" :name="`correcta-${pi}`" @change="setCorrecta(pi, oi)" :checked="op.es_correcta" />
+                    Correcta
+                  </label>
+                  <button v-if="p.opciones.length > 2" @click="removeOpcion(pi, oi)" class="text-red-400 hover:text-red-600 text-xs">X</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 flex-wrap">
+          <button @click="addPregunta" class="border border-blue-300 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-50">+ Pregunta</button>
+          <button @click="guardar" :disabled="loading" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
+            {{ loading ? 'Guardando...' : 'Guardar Examen' }}
+          </button>
+          <button @click="showForm = false" class="px-3 py-1.5 rounded-lg text-sm border border-gray-300 hover:bg-gray-50">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div v-for="ex in examenes" :key="ex.id" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="font-semibold text-gray-800">{{ ex.title }}</h2>
+              <p class="text-sm text-gray-500 mt-0.5">{{ ex.description }}</p>
+              <div v-if="ex.capacitacion_nombre" class="mt-1">
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Enlazado: {{ ex.capacitacion_nombre }}</span>
+              </div>
+            </div>
+            <button @click="eliminar(ex.id)" class="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded">Eliminar</button>
+          </div>
+        </div>
+        <div v-if="examenes.length === 0" class="text-center py-12 text-gray-400">
+          <p>Sin examenes aun. Crea tu primer examen.</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.ph { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-.ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
-.ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
-.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border-top: 4px solid var(--brand); }
-.form-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
-.form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
-.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.form-actions { display: flex; gap: 10px; margin-top: 16px; }
-.preguntas-list { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
-.pregunta-item { border: 1.5px solid var(--border); border-radius: var(--r); padding: 16px; background: var(--bg); }
-.pi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.pi-num { font-weight: 700; color: var(--brand); font-size: 0.88rem; }
-.icon-close { background: none; border: none; cursor: pointer; color: var(--subtle); font-size: 0.9rem; padding: 2px 6px; border-radius: 4px; }
-.icon-close:hover { color: var(--danger); background: var(--danger-bg); }
-.icon-close.sm { font-size: 0.78rem; }
-.icon-close:disabled { opacity: 0.3; cursor: not-allowed; }
-.pi-body { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.opciones-group > label { display: block; margin-bottom: 8px; }
-.opcion-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.radio-ok { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
-.btn-add-op { background: none; border: 1.5px dashed var(--border); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-top: 4px; }
-.btn-add-op:hover { border-color: var(--brand); color: var(--brand); }
-.btn-add-preg { background: var(--brand-light); color: var(--brand-dark); border: 2px dashed var(--brand-border); border-radius: var(--r); padding: 10px; cursor: pointer; font-weight: 600; font-size: 0.9rem; width: 100%; }
-.btn-add-preg:hover { background: var(--brand-border); }
-.table-card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-table { width: 100%; border-collapse: collapse; }
-th { background: var(--bg); padding: 11px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
-td { padding: 12px 16px; border-top: 1px solid var(--border-light); font-size: 0.9rem; }
-.cell-muted { color: var(--muted); }
-.empty-state { padding: 60px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.empty-icon { font-size: 3rem; }
-.empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
-.empty-state p { color: var(--muted); font-size: 0.9rem; }
-@media (max-width: 600px) { .ph { flex-direction: column; } }
-</style>

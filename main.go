@@ -57,6 +57,25 @@ func main() {
 			auth.POST("/examenes/:id/submit", handlers.SubmitExamen)
 			auth.GET("/capacitaciones/:id", handlers.GetCapacitacion)
 
+			// Lecciones con progreso
+			auth.GET("/capacitaciones/:id/lecciones", handlers.GetLeccionesConProgreso)
+			auth.POST("/lecciones/:leccion_id/completar", handlers.MarcarLeccionCompleta)
+
+			// Preguntas intermedias
+			auth.GET("/capacitaciones/:id/intermedias", handlers.GetPreguntasIntermedias)
+			auth.POST("/capacitaciones/:id/intermedias/submit", handlers.SubmitPreguntasIntermedias)
+
+			// Foros
+			auth.GET("/lecciones/:leccion_id/foro", handlers.ListForoPosts)
+			auth.POST("/lecciones/:leccion_id/foro", handlers.CreateForoPost)
+			auth.DELETE("/foro/posts/:post_id", handlers.DeleteForoPost)
+			auth.GET("/foro/posts/:post_id/comentarios", handlers.ListForoComentarios)
+			auth.POST("/foro/posts/:post_id/comentarios", handlers.CreateForoComentario)
+
+			// Perfil
+			auth.GET("/perfil", handlers.GetPerfil)
+			auth.PUT("/perfil", handlers.UpdatePerfil)
+
 			// Cursos públicos (cualquier usuario autenticado)
 			auth.GET("/cursos-publicos", handlers.ListCursosPublicos)
 			auth.POST("/inscribirse/:id", handlers.Inscribirse)
@@ -71,6 +90,17 @@ func main() {
 				instructor.DELETE("/capacitaciones/:id", handlers.InstructorDeleteCapacitacion)
 				instructor.PATCH("/capacitaciones/:id/toggle-public", handlers.InstructorTogglePublic)
 				instructor.POST("/capacitaciones/:id/reset-codigo", handlers.InstructorResetCodigo)
+
+				// Lecciones de un curso
+				instructor.GET("/capacitaciones/:id/lecciones", handlers.InstructorListLecciones)
+				instructor.POST("/capacitaciones/:id/lecciones", handlers.InstructorCreateLeccion)
+				instructor.DELETE("/capacitaciones/:id/lecciones/:leccion_id", handlers.InstructorDeleteLeccion)
+				instructor.PUT("/capacitaciones/:id/lecciones/reorder", handlers.InstructorReorderLecciones)
+
+				// Preguntas intermedias de un curso
+				instructor.GET("/capacitaciones/:id/intermedias", handlers.InstructorListPreguntasIntermedias)
+				instructor.POST("/capacitaciones/:id/intermedias", handlers.InstructorCreatePreguntaIntermedia)
+				instructor.DELETE("/capacitaciones/:id/intermedias/:pregunta_id", handlers.InstructorDeletePreguntaIntermedia)
 
 				instructor.GET("/examenes", handlers.InstructorListExamenes)
 				instructor.POST("/examenes", handlers.InstructorCreateExamen)
