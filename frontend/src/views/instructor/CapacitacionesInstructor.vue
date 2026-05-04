@@ -33,8 +33,15 @@ const intForm = ref({
 const misExamenes = ref<any[]>([])
 
 async function load() {
-  const res = await api.get('/instructor/capacitaciones')
-  capacitaciones.value = res.data || []
+  loading.value = true
+  try {
+    const res = await api.get('/instructor/capacitaciones')
+    capacitaciones.value = res.data || []
+  } catch (e: any) {
+    error.value = e.response?.data?.error || 'Error al cargar los cursos'
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
@@ -292,7 +299,7 @@ async function loadMisExamenes() {
         </div>
       </template>
 
-      <TransitionGroup name="list-item" tag="template">
+      <TransitionGroup name="list-item" tag="div" style="display:contents">
         <div v-for="c in capacitaciones" :key="c.id"
           :class="['ci-card', selectedCurso?.id === c.id && 'ci-card-selected']">
 
