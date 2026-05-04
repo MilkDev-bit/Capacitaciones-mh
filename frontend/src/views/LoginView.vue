@@ -64,149 +64,229 @@ async function register() {
 </script>
 
 <template>
-  <div class="auth-page">
-    <div class="auth-hero">
-      <div class="hero-content">
-        <div class="hero-logo">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-            <rect width="44" height="44" rx="12" fill="rgba(255,255,255,0.15)"/>
-            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
-          </svg>
+  <div class="min-h-screen flex">
+    <!-- Left hero panel -->
+    <div class="hidden lg:flex flex-col justify-center w-5/12 xl:w-2/5 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-14 py-16 relative overflow-hidden flex-shrink-0">
+      <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-orange-500/20 blur-3xl pointer-events-none" />
+      <div class="absolute -left-10 top-10 w-48 h-48 rounded-full bg-orange-500/10 blur-2xl pointer-events-none" />
+
+      <div class="relative z-10">
+        <div class="flex items-center gap-3 mb-10">
+          <div class="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center border border-orange-500/30">
+            <svg width="24" height="24" viewBox="0 0 44 44" fill="none">
+              <path d="M12 32L22 14L32 32H12Z" fill="#f97316"/>
+            </svg>
+          </div>
         </div>
-        <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
+        <h1 class="text-4xl font-black text-white leading-tight mb-4">
+          Capacitaciones<br>
+          <span class="text-orange-400">MH</span>
+        </h1>
+        <p class="text-gray-400 text-base leading-relaxed max-w-xs">
+          Tu plataforma de aprendizaje corporativo. Accede a cursos, completa exámenes y avanza a tu ritmo.
+        </p>
+        <div class="mt-10 space-y-4">
+          <div class="flex items-center gap-3 text-gray-300 text-sm">
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base flex-shrink-0">&#128218;</div>
+            Cursos en video, documentos y texto
+          </div>
+          <div class="flex items-center gap-3 text-gray-300 text-sm">
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base flex-shrink-0">&#128221;</div>
+            Exámenes y seguimiento de progreso
+          </div>
+          <div class="flex items-center gap-3 text-gray-300 text-sm">
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base flex-shrink-0">&#127891;</div>
+            Certifica tus conocimientos
+          </div>
+        </div>
       </div>
-      <div class="hero-decoration"></div>
     </div>
 
-    <div class="auth-form-panel">
-      <div class="auth-form-wrap">
-        <div class="mobile-logo">
-          <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
-            <rect width="44" height="44" rx="12" fill="var(--brand)"/>
-            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
-          </svg>
-          <span>Capacitaciones MH</span>
+    <!-- Right form panel -->
+    <div class="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
+      <div class="w-full max-w-md">
+        <!-- Mobile logo -->
+        <div class="flex lg:hidden items-center gap-2.5 mb-8">
+          <div class="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 44 44" fill="none">
+              <path d="M12 32L22 14L32 32H12Z" fill="white"/>
+            </svg>
+          </div>
+          <span class="font-extrabold text-gray-900 text-lg">Capacitaciones MH</span>
         </div>
 
-        <div class="form-tabs">
-          <button :class="['form-tab', tab === 'login' ? 'active' : '']" @click="tab = 'login'">
+        <!-- Tabs -->
+        <div class="flex bg-gray-200 rounded-xl p-1 gap-1 mb-8">
+          <button
+            :class="[
+              'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all',
+              tab === 'login' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            ]"
+            @click="tab = 'login'"
+          >
             Iniciar sesión
           </button>
-          <button :class="['form-tab', tab === 'register' ? 'active' : '']" @click="tab = 'register'">
+          <button
+            :class="[
+              'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all',
+              tab === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            ]"
+            @click="tab = 'register'"
+          >
             Registrarse
           </button>
         </div>
 
-        <form v-if="tab === 'login'" @submit.prevent="submit" class="auth-form">
-          <div class="form-group">
-            <label>Correo electrónico</label>
-            <input class="field-input" v-model="email" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+        <!-- Login form -->
+        <form v-if="tab === 'login'" @submit.prevent="submit" class="space-y-5">
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Correo electrónico</label>
+            <input
+              v-model="email"
+              type="email"
+              placeholder="correo@empresa.com"
+              autocomplete="email"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
-          <div class="form-group">
-            <label>Contraseña</label>
-            <div class="pass-wrap">
-              <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
-              <button type="button" class="pass-toggle" @click="showPass = !showPass">
-                {{ showPass ? '\U0001f648' : '\U0001f441' }}
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Contraseña</label>
+            <div class="relative">
+              <input
+                v-model="password"
+                :type="showPass ? 'text' : 'password'"
+                placeholder="password"
+                autocomplete="current-password"
+                required
+                class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+              />
+              <button
+                type="button"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium"
+                @click="showPass = !showPass"
+              >
+                {{ showPass ? 'Ocultar' : 'Ver' }}
               </button>
             </div>
           </div>
-          <div v-if="error" class="alert alert-error">{{ error }}</div>
-          <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="loading">
-            <span v-if="loading" class="btn-spinner"></span>
+
+          <div v-if="error" class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            {{ error }}
+          </div>
+
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <span v-if="loading" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
             {{ loading ? 'Entrando...' : 'Entrar a la plataforma' }}
           </button>
-          <p class="form-footer">
-            ¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">Regístrate gratis</button>
+
+          <p class="text-center text-sm text-gray-500">
+            ¿No tienes cuenta?
+            <button type="button" class="text-orange-500 font-bold hover:underline" @click="tab = 'register'">
+              Regístrate gratis
+            </button>
           </p>
         </form>
 
-        <form v-if="tab === 'register'" @submit.prevent="register" class="auth-form">
-          <div class="form-group">
-            <label>Nombre completo</label>
-            <input class="field-input" v-model="regName" type="text" placeholder="Tu nombre completo" autocomplete="name" required />
+        <!-- Register form -->
+        <form v-if="tab === 'register'" @submit.prevent="register" class="space-y-5">
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Nombre completo</label>
+            <input
+              v-model="regName"
+              type="text"
+              placeholder="Tu nombre completo"
+              autocomplete="name"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
-          <div class="form-group">
-            <label>Correo electrónico</label>
-            <input class="field-input" v-model="regEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Correo electrónico</label>
+            <input
+              v-model="regEmail"
+              type="email"
+              placeholder="correo@empresa.com"
+              autocomplete="email"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
-          <div class="form-group">
-            <label>Contraseña</label>
-            <input class="field-input" v-model="regPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6" />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Contraseña</label>
+            <input
+              v-model="regPassword"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="new-password"
+              required
+              minlength="6"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
-          <div class="form-group">
-            <label>Tipo de cuenta</label>
-            <div class="role-grid">
-              <button type="button" :class="['role-card', regRole === 'user' ? 'selected' : '']" @click="regRole = 'user'">
-                <span class="role-icon">\U0001f393</span>
-                <strong>Estudiante</strong>
-                <small>Accede y aprende a tu ritmo</small>
+
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700">Tipo de cuenta</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                :class="[
+                  'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 text-center transition-all',
+                  regRole === 'user'
+                    ? 'border-orange-500 bg-orange-50 text-gray-900'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+                ]"
+                @click="regRole = 'user'"
+              >
+                <span class="text-2xl">&#127891;</span>
+                <strong class="text-sm font-bold">Estudiante</strong>
+                <small class="text-xs text-gray-500 leading-tight">Accede y aprende a tu ritmo</small>
               </button>
-              <button type="button" :class="['role-card', regRole === 'instructor' ? 'selected' : '']" @click="regRole = 'instructor'">
-                <span class="role-icon">\U0001f3eb</span>
-                <strong>Instructor</strong>
-                <small>Crea y gestiona cursos</small>
+              <button
+                type="button"
+                :class="[
+                  'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 text-center transition-all',
+                  regRole === 'instructor'
+                    ? 'border-orange-500 bg-orange-50 text-gray-900'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+                ]"
+                @click="regRole = 'instructor'"
+              >
+                <span class="text-2xl">&#127979;</span>
+                <strong class="text-sm font-bold">Instructor</strong>
+                <small class="text-xs text-gray-500 leading-tight">Crea y gestiona cursos</small>
               </button>
             </div>
           </div>
-          <div v-if="regError" class="alert alert-error">{{ regError }}</div>
-          <div v-if="regSuccess" class="alert alert-success">{{ regSuccess }}</div>
-          <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading">
-            <span v-if="regLoading" class="btn-spinner"></span>
+
+          <div v-if="regError" class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            {{ regError }}
+          </div>
+          <div v-if="regSuccess" class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3">
+            {{ regSuccess }}
+          </div>
+
+          <button
+            type="submit"
+            :disabled="regLoading"
+            class="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <span v-if="regLoading" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
             {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
           </button>
-          <p class="form-footer">
-            ¿Ya tienes cuenta? <button type="button" class="link-btn" @click="tab = 'login'">Inicia sesión</button>
+
+          <p class="text-center text-sm text-gray-500">
+            ¿Ya tienes cuenta?
+            <button type="button" class="text-orange-500 font-bold hover:underline" @click="tab = 'login'">
+              Inicia sesión
+            </button>
           </p>
         </form>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.auth-page { display: flex; min-height: 100vh; }
-.auth-hero {
-  flex: 0 0 45%; background: linear-gradient(145deg, #1c1d1f 0%, #2d2f31 100%);
-  display: flex; flex-direction: column; justify-content: center; padding: 60px 56px;
-  position: relative; overflow: hidden;
-}
-.hero-decoration {
-  position: absolute; right: -80px; bottom: -80px; width: 320px; height: 320px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(249,115,22,.25) 0%, transparent 70%); pointer-events: none;
-}
-.hero-content { position: relative; z-index: 1; }
-.hero-logo { margin-bottom: 20px; }
-.hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
-.hero-title span { color: var(--brand); }
-.auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
-.auth-form-wrap { width: 100%; max-width: 420px; }
-.mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
-.form-tabs { display: flex; background: var(--border-light); border-radius: var(--r); padding: 4px; gap: 4px; margin-bottom: 28px; }
-.form-tab { flex: 1; padding: 9px; border: none; border-radius: var(--r-sm); background: transparent; font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: all 0.18s; cursor: pointer; }
-.form-tab.active { background: var(--surface); color: var(--dark); box-shadow: var(--shadow-sm); }
-.auth-form { display: flex; flex-direction: column; gap: 18px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
-.pass-wrap { position: relative; }
-.pass-wrap .field-input { padding-right: 44px; }
-.pass-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1rem; cursor: pointer; line-height: 1; }
-.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.role-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 16px 12px; border: 2px solid var(--border); border-radius: var(--r); background: var(--surface); cursor: pointer; transition: all 0.18s; }
-.role-card:hover { border-color: var(--brand); }
-.role-card.selected { border-color: var(--brand); background: var(--brand-light); }
-.role-icon { font-size: 1.6rem; }
-.role-card strong { font-size: 0.88rem; color: var(--dark); }
-.role-card small { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
-.submit-btn { width: 100%; margin-top: 4px; }
-.btn-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
-.form-footer { text-align: center; font-size: 0.85rem; color: var(--muted); }
-.link-btn { background: none; border: none; color: var(--brand); font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; }
-.link-btn:hover { text-decoration: underline; }
-@media (max-width: 860px) {
-  .auth-hero { display: none; }
-  .auth-form-panel { padding: 32px 20px; }
-  .mobile-logo { display: flex; }
-}
-@media (max-width: 420px) { .role-grid { grid-template-columns: 1fr; } }
-</style>

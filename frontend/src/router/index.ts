@@ -33,7 +33,8 @@ const router = createRouter({
       component: () => import('../views/user/UserLayout.vue'),
       meta: { requiresAuth: true, role: 'user' },
       children: [
-        { path: '', redirect: '/usuario/capacitaciones' },
+        { path: '', redirect: '/usuario/dashboard' },
+        { path: 'dashboard', component: () => import('../views/user/DashboardView.vue') },
         { path: 'capacitaciones', component: () => import('../views/user/MisCapacitaciones.vue') },
         { path: 'examenes', component: () => import('../views/user/MisExamenes.vue') },
         { path: 'examenes/:id', component: () => import('../views/user/ResponderExamen.vue') },
