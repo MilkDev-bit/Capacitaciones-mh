@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
 
@@ -7,7 +7,7 @@ const loading = ref(false)
 const showForm = ref(false)
 const error = ref('')
 const success = ref('')
-const form = ref({ title: '', description: '', type: 'video', content: '', is_public: false })
+const form = ref({ title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' })
 const file = ref<File | null>(null)
 
 const selectedCurso = ref<any | null>(null)
@@ -64,11 +64,13 @@ async function guardar() {
     fd.append('type', form.value.type)
     fd.append('content', form.value.content)
     fd.append('is_public', String(form.value.is_public))
+    fd.append('welcome_message', form.value.welcome_message)
+    fd.append('thumbnail_url', form.value.thumbnail_url)
     if (file.value) fd.append('file', file.value)
     await api.post('/instructor/capacitaciones', fd)
     success.value = 'Curso creado'
     showForm.value = false
-    form.value = { title: '', description: '', type: 'video', content: '', is_public: false }
+    form.value = { title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' }
     file.value = null
     await load()
   } catch (e: any) {
@@ -231,6 +233,21 @@ async function loadMisExamenes() {
             <div class="ci-field ci-field-full">
               <label class="ci-label" for="f-desc">Descripción del curso</label>
               <textarea id="f-desc" class="ci-input ci-textarea" v-model="form.description" rows="3" placeholder="¿Qué aprenderán los estudiantes? ¿A quién va dirigido?" style="resize:vertical" />
+            </div>
+          </div>
+        </div>
+
+        <div class="ci-form-section">
+          <h3 class="ci-form-section-title">Diseño y Bienvenida</h3>
+          <div class="ci-form-grid">
+            <div class="ci-field ci-field-full">
+              <label class="ci-label" for="f-thumb">URL de la imagen de portada <span class="ci-optional">(opcional)</span></label>
+              <input id="f-thumb" class="ci-input" v-model="form.thumbnail_url" placeholder="https://ejemplo.com/imagen.jpg" />
+              <span class="ci-hint">Imagen que representará el curso (Recomendado: 1280x720px)</span>
+            </div>
+            <div class="ci-field ci-field-full">
+              <label class="ci-label" for="f-welcome">Mensaje de Bienvenida <span class="ci-optional">(opcional)</span></label>
+              <textarea id="f-welcome" class="ci-input ci-textarea" v-model="form.welcome_message" rows="3" placeholder="Mensaje visible para los estudiantes al entrar al curso por primera vez" style="resize:vertical" />
             </div>
           </div>
         </div>

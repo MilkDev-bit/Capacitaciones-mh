@@ -26,6 +26,7 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/instructor/CapacitacionesInstructor.vue') },
         { path: 'examenes', component: () => import('../views/instructor/ExamenesInstructor.vue') },
         { path: 'estudiantes', component: () => import('../views/instructor/EstudiantesView.vue') },
+        { path: 'perfil', component: () => import('../views/instructor/InstructorPerfilView.vue') },
       ],
     },
     {

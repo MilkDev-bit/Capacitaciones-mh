@@ -3,12 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import api from '../../api'
 
 const perfil = ref<any>(null)
+const stats = ref<any>({})
 const loading = ref(false)
 const loadingSave = ref(false)
 const error = ref('')
 const success = ref('')
 
-const form = ref({ name: '', bio: '', phone: '' })
+const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
 const showPass = ref(false)
 
@@ -32,10 +33,12 @@ async function load() {
   error.value = ''
   try {
     const res = await api.get('/perfil')
-    perfil.value = res.data
-    form.value.name = res.data.name || ''
-    form.value.bio = res.data.bio || ''
-    form.value.phone = res.data.phone || ''
+    perfil.value = res.data.user
+    stats.value = res.data.stats || {}
+    form.value.name = perfil.value.name || ''
+    form.value.bio = perfil.value.bio || ''
+    form.value.phone = perfil.value.phone || ''
+    form.value.specialty = perfil.value.specialty || ''
   } catch (e: any) {
     error.value = e.response?.data?.error || 'No pudimos cargar tu perfil'
   } finally {
@@ -139,6 +142,24 @@ function initials(name: string) {
           </div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" :style="`width:${completion}%`"></div>
+          </div>
+        </div>
+
+        <div class="profile-stats" v-if="stats.cursos_inscritos !== undefined">
+          <h3>Mi aprendizaje</h3>
+          <div class="profile-stats-grid">
+            <div class="profile-stat-item">
+              <span class="profile-stat-num">{{ stats.cursos_inscritos ?? 0 }}</span>
+              <span class="profile-stat-lbl">Cursos</span>
+            </div>
+            <div class="profile-stat-item">
+              <span class="profile-stat-num">{{ stats.lecciones_completadas ?? 0 }}</span>
+              <span class="profile-stat-lbl">Lecciones</span>
+            </div>
+            <div class="profile-stat-item">
+              <span class="profile-stat-num">{{ stats.total_lecciones ? Math.round((stats.lecciones_completadas / stats.total_lecciones) * 100) : 0 }}%</span>
+              <span class="profile-stat-lbl">Progreso</span>
+            </div>
           </div>
         </div>
       </aside>
@@ -247,10 +268,10 @@ function initials(name: string) {
 }
 
 .profile-card {
-  padding: 22px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 8px;
+  padding: 24px;
   background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -279,16 +300,17 @@ function initials(name: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--brand), #2563eb);
+  background: linear-gradient(135deg, var(--brand), #ef4444);
   color: #fff;
-  font-size: 1.4rem;
-  font-weight: 900;
+  font-size: 1.6rem;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(249,115,22,.25);
 }
 
 .profile-summary-copy h2 {
   color: var(--dark);
-  font-size: 1.15rem;
-  font-weight: 900;
+  font-size: 1.1rem;
+  font-weight: 700;
   line-height: 1.25;
 }
 
@@ -301,13 +323,13 @@ function initials(name: string) {
 
 .profile-role {
   display: inline-flex;
-  margin-top: 10px;
-  padding: 4px 10px;
+  margin-top: 8px;
+  padding: 4px 14px;
   border-radius: 999px;
-  background: var(--info-bg);
-  color: var(--info);
+  background: var(--brand-light);
+  color: var(--brand-dark);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .profile-completion {
@@ -326,6 +348,56 @@ function initials(name: string) {
 
 .profile-completion-top strong {
   color: var(--brand);
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  border-radius: 3px;
+  transition: width 0.5s var(--ease-apple);
+}
+
+.profile-stats h3 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 14px;
+  margin-top: 20px;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.profile-stat-item {
+  text-align: center;
+  padding: 12px 4px;
+  background: var(--bg);
+  border-radius: var(--r);
+}
+
+.profile-stat-num {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.profile-stat-lbl {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .profile-card-head {

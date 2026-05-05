@@ -107,8 +107,11 @@ func GetCapacitacion(c *gin.Context) {
 	var cap models.Capacitacion
 	var createdAt time.Time
 	err := db.DB.QueryRow(
-		`SELECT id, title, description, type, COALESCE(file_path,''), COALESCE(content,''), created_at FROM capacitaciones WHERE id=$1`, id,
-	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &createdAt)
+		`SELECT id, title, description, type, COALESCE(file_path,''), COALESCE(content,''),
+		        COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), created_at
+		 FROM capacitaciones WHERE id=$1`, id,
+	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content,
+		&cap.WelcomeMessage, &cap.ThumbnailURL, &createdAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no encontrado"})
 		return

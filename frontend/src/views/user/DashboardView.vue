@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
-import CourseCard from '../../components/CourseCard.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -81,134 +80,178 @@ const statCards = computed(() => [
     label: 'Cursos inscritos',
     value: stats.value.total,
     icon: '📚',
-    color: 'bg-violet-50 text-violet-700',
-    iconBg: 'bg-violet-100',
+    bgClass: 'bg-violet',
   },
   {
     label: 'Cursos completados',
     value: stats.value.completed,
     icon: '✅',
-    color: 'bg-emerald-50 text-emerald-700',
-    iconBg: 'bg-emerald-100',
+    bgClass: 'bg-emerald',
   },
   {
     label: 'Exámenes',
     value: stats.value.exams,
     icon: '📝',
-    color: 'bg-sky-50 text-sky-700',
-    iconBg: 'bg-sky-100',
+    bgClass: 'bg-sky',
   },
   {
     label: 'Progreso promedio',
     value: `${stats.value.avgProgress}%`,
     icon: '📈',
-    color: 'bg-orange-50 text-orange-700',
-    iconBg: 'bg-orange-100',
+    bgClass: 'bg-orange',
   },
 ])
+
+function courseProgress(curso: any) {
+  if (!curso.total_lecciones) return 0
+  return Math.round((curso.lecciones_completadas / curso.total_lecciones) * 100)
+}
 </script>
 
 <template>
-  <div class="space-y-8">
-    <!-- Welcome header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-extrabold text-gray-900">
-          ¡Hola, {{ firstName }}! 👋
-        </h1>
-        <p class="text-gray-500 mt-1 text-sm">Continúa aprendiendo donde lo dejaste.</p>
+  <div class="dash-shell">
+    <header class="dash-header">
+      <div class="dash-welcome">
+        <h1>¡Hola, {{ firstName }}! 👋</h1>
+        <p>Continúa aprendiendo donde lo dejaste.</p>
       </div>
-      <div class="flex gap-3">
-        <button
-          class="bg-brand hover:bg-brand-dark text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm"
-          @click="router.push('/usuario/capacitaciones')"
-        >
-          Explorar cursos
-        </button>
-      </div>
-    </div>
+      <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">
+        Explorar cursos
+      </button>
+    </header>
 
-    <!-- Stats grid -->
-    <div v-if="!loading" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div
-        v-for="stat in statCards"
-        :key="stat.label"
-        :class="['rounded-2xl p-5 flex items-center gap-4', stat.color]"
-      >
-        <div :class="['w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0', stat.iconBg]">
-          {{ stat.icon }}
-        </div>
-        <div>
-          <p class="text-2xl font-extrabold leading-none">{{ stat.value }}</p>
-          <p class="text-xs font-medium mt-1 opacity-80">{{ stat.label }}</p>
+    <!-- Stats -->
+    <section v-if="!loading" class="dash-stats">
+      <div v-for="stat in statCards" :key="stat.label" :class="['dash-stat-card', stat.bgClass]">
+        <div class="dash-stat-icon">{{ stat.icon }}</div>
+        <div class="dash-stat-info">
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.label }}</span>
         </div>
       </div>
-    </div>
-    <!-- Stats skeleton -->
-    <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div v-for="i in 4" :key="i" class="bg-gray-100 animate-pulse rounded-2xl h-20" />
-    </div>
+    </section>
 
-    <!-- Continue Learning -->
-    <div v-if="!loading">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-900">Continuar aprendiendo</h2>
-        <button
-          class="text-sm font-semibold text-brand hover:text-brand-dark transition-colors"
-          @click="router.push('/usuario/capacitaciones')"
-        >
-          Ver todos →
-        </button>
+    <!-- En progreso -->
+    <section v-if="!loading" class="dash-section">
+      <div class="dash-section-head">
+        <h2>Continuar aprendiendo</h2>
+        <button class="btn-link" @click="router.push('/usuario/capacitaciones')">Ver todos &rarr;</button>
       </div>
 
-      <div v-if="inProgress.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <CourseCard
-          v-for="course in inProgress"
-          :key="course.id"
-          :course="course"
-          mode="enrolled"
-          @navigate="(id) => router.push('/usuario/capacitaciones/' + id)"
-        />
-      </div>
-
-      <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-        <div class="text-4xl mb-3">🎓</div>
-        <p class="font-bold text-gray-800 text-base">No tienes cursos en progreso</p>
-        <p class="text-gray-500 text-sm mt-1 mb-5">¡Empieza alguno de tus cursos inscritos!</p>
-        <button
-          class="bg-brand hover:bg-brand-dark text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
-          @click="router.push('/usuario/capacitaciones')"
+      <div v-if="inProgress.length" class="courses-grid">
+        <article
+          v-for="c in inProgress"
+          :key="c.id"
+          class="course-card"
+          @click="router.push('/usuario/capacitaciones/' + c.id)"
         >
-          Ir a mis cursos
-        </button>
+          <div class="course-body">
+            <h3 class="course-title">{{ c.title }}</h3>
+            <p class="course-desc">{{ c.description }}</p>
+            <div class="progress-wrap">
+              <div class="progress-top">
+                <span class="progress-label">{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
+                <span class="progress-pct">{{ courseProgress(c) }}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" :style="`width:${courseProgress(c)}%`" />
+              </div>
+            </div>
+            <div class="course-cta">Continuar aprendiendo &rarr;</div>
+          </div>
+        </article>
       </div>
-    </div>
+      
+      <div v-else class="dash-empty">
+        <div class="dash-empty-icon">🎓</div>
+        <h3>No tienes cursos en progreso</h3>
+        <p>¡Empieza alguno de tus cursos inscritos!</p>
+        <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">Ir a mis cursos</button>
+      </div>
+    </section>
 
-    <!-- Quick Actions -->
-    <div v-if="!loading">
-      <h2 class="text-lg font-bold text-gray-900 mb-4">Acciones rápidas</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          class="flex items-center gap-4 bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl p-5 text-left shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
-          @click="router.push('/usuario/capacitaciones')"
-        >
-          <div class="w-11 h-11 bg-violet-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔍</div>
-          <div>
-            <p class="font-bold text-gray-900 text-sm">Explorar cursos</p>
-            <p class="text-xs text-gray-500 mt-0.5">Descubre nuevos cursos disponibles</p>
+    <!-- Acciones rápidas -->
+    <section v-if="!loading" class="dash-section">
+      <div class="dash-section-head">
+        <h2>Acciones rápidas</h2>
+      </div>
+      <div class="dash-actions">
+        <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
+          <div class="dash-action-icon" style="background:#e0e7ff;color:#4f46e5">🔍</div>
+          <div class="dash-action-info">
+            <strong>Explorar cursos</strong>
+            <p>Descubre nuevos cursos disponibles</p>
           </div>
         </button>
-        <button
-          class="flex items-center gap-4 bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl p-5 text-left shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
-          @click="router.push('/usuario/capacitaciones')"
-        >
-          <div class="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔑</div>
-          <div>
-            <p class="font-bold text-gray-900 text-sm">Unirse con código</p>
-            <p class="text-xs text-gray-500 mt-0.5">Ingresa el código de tu instructor</p>
+        <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
+          <div class="dash-action-icon" style="background:#fef3c7;color:#d97706">🔑</div>
+          <div class="dash-action-info">
+            <strong>Unirse con código</strong>
+            <p>Ingresa el código de tu instructor</p>
           </div>
         </button>
       </div>
-    </div>
+    </section>
   </div>
 </template>
+
+<style scoped>
+.dash-shell { display: flex; flex-direction: column; gap: 32px; }
+
+.dash-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.dash-welcome h1 { font-size: 1.8rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; }
+.dash-welcome p { color: var(--muted); margin-top: 4px; font-size: 0.95rem; }
+
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dash-stat-card {
+  display: flex; align-items: center; gap: 16px; padding: 20px;
+  border-radius: var(--r-lg); background: var(--surface);
+  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+  transition: transform 0.2s;
+}
+.dash-stat-card:hover { transform: translateY(-2px); }
+.dash-stat-icon {
+  width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0; background: rgba(0,0,0,0.04);
+}
+.bg-violet .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
+.bg-emerald .dash-stat-icon { background: #d1fae5; color: #059669; }
+.bg-sky .dash-stat-icon { background: #e0f2fe; color: #0284c7; }
+.bg-orange .dash-stat-icon { background: #ffedd5; color: #ea580c; }
+
+.dash-stat-info strong { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--dark); }
+.dash-stat-info span { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 4px; display: block; }
+
+.dash-section { display: flex; flex-direction: column; gap: 16px; }
+.dash-section-head { display: flex; justify-content: space-between; align-items: flex-end; }
+.dash-section-head h2 { font-size: 1.2rem; font-weight: 700; color: var(--dark); }
+.btn-link { background: none; border: none; color: var(--brand); font-weight: 600; cursor: pointer; transition: color 0.15s; }
+.btn-link:hover { color: var(--brand-dark); }
+
+.dash-empty {
+  padding: 48px 24px; text-align: center; background: var(--surface); border-radius: var(--r-lg);
+  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.dash-empty-icon { font-size: 3rem; }
+.dash-empty h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+.dash-empty p { color: var(--muted); margin-bottom: 8px; }
+
+.dash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-action-card {
+  display: flex; align-items: center; gap: 16px; padding: 20px;
+  background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs); text-align: left; transition: all 0.2s; cursor: pointer;
+}
+.dash-action-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--brand-border); }
+.dash-action-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.dash-action-info strong { display: block; font-size: 0.95rem; font-weight: 700; color: var(--dark); }
+.dash-action-info p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+@media (max-width: 900px) {
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .dash-stats, .dash-actions { grid-template-columns: 1fr; }
+}
+</style>

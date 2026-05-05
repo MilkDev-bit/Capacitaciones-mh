@@ -160,6 +160,13 @@ CREATE TABLE IF NOT EXISTS respuestas_intermedias (
     respondido_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, pregunta_id)
 );
+
+-- Curso: mensaje de bienvenida y portada
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS welcome_message TEXT DEFAULT '';
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS thumbnail_url TEXT DEFAULT '';
+
+-- Perfil instructor: especialidad
+ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty VARCHAR(255) DEFAULT '';
 `
 
 func Migrate() {

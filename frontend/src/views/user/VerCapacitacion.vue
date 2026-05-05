@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../../api'
@@ -55,10 +55,16 @@ async function load() {
   ])
   curso.value = cRes.data
   lecciones.value = lRes.data || []
-  if (lecciones.value.length > 0) {
-    await selectLeccion(lecciones.value[0])
-  }
+  // Instead of auto-selecting, we let selectedLeccion be null to show the Welcome Hero
   loading.value = false
+}
+
+function startCourse() {
+  if (lecciones.value.length > 0) {
+    // Find the first non-completed lesson, or default to the first one
+    const firstPending = lecciones.value.find(l => !l.completada)
+    selectLeccion(firstPending || lecciones.value[0])
+  }
 }
 
 onMounted(load)
@@ -241,10 +247,36 @@ async function goToLesson(lec: any | null) {
       <!-- Contenido principal -->
       <main class="ver-main">
         <div class="ver-main-inner">
-          <div v-if="!selectedLeccion" class="ver-empty-content">
-            <div style="font-size:3rem;margin-bottom:12px">📖</div>
-            <p style="font-weight:700;color:var(--dark)">Selecciona una lección para comenzar</p>
-            <p style="font-size:0.88rem;color:var(--muted)">Elige una lección del panel lateral.</p>
+          <div v-if="!selectedLeccion" class="ver-welcome-hero">
+            <div class="ver-welcome-banner" :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : ''">
+              <div class="ver-welcome-overlay"></div>
+              <div class="ver-welcome-content">
+                <span class="ver-welcome-badge">Módulo de Capacitación</span>
+                <h1 class="ver-welcome-title">{{ curso?.title }}</h1>
+                <p class="ver-welcome-desc">{{ curso?.description }}</p>
+                <div class="ver-welcome-stats">
+                  <div class="vw-stat">
+                    <strong>{{ lecciones.length }}</strong>
+                    <span>Lecciones</span>
+                  </div>
+                  <div class="vw-stat" v-if="duracionTotal">
+                    <strong>{{ duracionTotal }}</strong>
+                    <span>Minutos</span>
+                  </div>
+                  <div class="vw-stat">
+                    <strong>{{ progreso }}%</strong>
+                    <span>Completado</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-large mt-6" @click="startCourse">
+                  {{ progreso > 0 ? 'Continuar curso' : 'Comenzar curso' }}
+                </button>
+              </div>
+            </div>
+            <div class="ver-welcome-message" v-if="curso?.welcome_message">
+              <h3>Acerca de este curso</h3>
+              <p>{{ curso.welcome_message }}</p>
+            </div>
           </div>
 
           <Transition name="fade" mode="out-in">
@@ -494,7 +526,40 @@ async function goToLesson(lec: any | null) {
 /* Main content */
 .ver-main { min-width: 0; background: #f8fafc; }
 .ver-main-inner { max-width: 980px; margin: 0 auto; padding: 30px; }
-.ver-empty-content { text-align: center; padding: 80px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* Welcome Hero */
+.ver-welcome-hero { display: flex; flex-direction: column; gap: 24px; }
+.ver-welcome-banner {
+  position: relative; padding: 60px 40px; border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--dark) 0%, #374151 100%);
+  color: #fff; overflow: hidden; background-size: cover; background-position: center;
+  box-shadow: var(--shadow-md);
+}
+.ver-welcome-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, rgba(29,29,31,0.95) 0%, rgba(29,29,31,0.7) 100%);
+  backdrop-filter: blur(4px);
+}
+.ver-welcome-content { position: relative; z-index: 10; max-width: 600px; }
+.ver-welcome-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.ver-welcome-title { font-size: 2.2rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px; }
+.ver-welcome-desc { font-size: 1.05rem; color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 30px; }
+.ver-welcome-stats { display: flex; gap: 24px; margin-bottom: 30px; }
+.vw-stat { display: flex; flex-direction: column; gap: 4px; }
+.vw-stat strong { font-size: 1.4rem; font-weight: 800; color: var(--brand); }
+.vw-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.ver-welcome-message {
+  background: var(--surface); padding: 32px; border-radius: var(--r-lg);
+  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+}
+.ver-welcome-message h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 12px; }
+.ver-welcome-message p { font-size: 0.95rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.btn-large { padding: 12px 24px; font-size: 1rem; font-weight: 600; }
 
 /* Lesson header */
 .ver-lec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }

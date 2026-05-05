@@ -412,14 +412,12 @@ async function unirseConCodigo() {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
   gap: 22px;
-  padding: 28px;
-  border: 1px solid rgba(28, 29, 31, 0.08);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(28, 29, 31, 0.96), rgba(49, 46, 42, 0.94)),
-    linear-gradient(135deg, rgba(249, 115, 22, 0.28), rgba(37, 99, 235, 0.14));
+  padding: 32px 40px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--dark) 0%, #374151 100%);
   color: #fff;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .learning-hero-copy {
@@ -582,8 +580,8 @@ async function unirseConCodigo() {
 }
 
 .course-card {
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
 }
 
 .course-card:hover {

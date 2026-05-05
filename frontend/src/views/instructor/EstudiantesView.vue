@@ -55,14 +55,14 @@ async function asignar() {
     <div class="ph">
       <div>
         <h1 class="ph-title">Estudiantes</h1>
-        <p class="ph-sub">Gestiona qui\u00e9n accede a tus cursos y ex\u00e1menes.</p>
+        <p class="ph-sub">Gestiona quién accede a tus cursos y exámenes.</p>
       </div>
       <button class="btn btn-primary" @click="showAssign = !showAssign">
         {{ showAssign ? 'Cancelar' : '+ Asignar contenido' }}
       </button>
     </div>
 
-    <!-- Formulario de asignaci\u00f3n -->
+    <!-- Formulario de asignación -->
     <div v-if="showAssign" class="form-card">
       <p class="form-card-title">Asignar a usuario</p>
       <div class="form-row">
@@ -76,23 +76,23 @@ async function asignar() {
         <div class="field">
           <label>Tipo de contenido *</label>
           <select class="field-input" v-model="assignType">
-            <option value="capacitacion">Capacitaci\u00f3n</option>
-            <option value="examen">Ex\u00e1men</option>
+            <option value="capacitacion">Capacitación</option>
+            <option value="examen">Examen</option>
           </select>
         </div>
       </div>
       <div class="form-row">
         <div class="field" v-if="assignType === 'capacitacion'">
-          <label>Capacitaci\u00f3n *</label>
+          <label>Capacitación *</label>
           <select class="field-input" v-model="assignForm.capacitacion_id">
-            <option value="">Seleccionar capacitaci\u00f3n...</option>
+            <option value="">Seleccionar capacitación...</option>
             <option v-for="c in capacitaciones" :key="c.id" :value="c.id">{{ c.title }}</option>
           </select>
         </div>
         <div class="field" v-else>
-          <label>Ex\u00e1men *</label>
+          <label>Examen *</label>
           <select class="field-input" v-model="assignForm.examen_id">
-            <option value="">Seleccionar ex\u00e1men...</option>
+            <option value="">Seleccionar examen...</option>
             <option v-for="e in examenes" :key="e.id" :value="e.id">{{ e.title }}</option>
           </select>
         </div>
@@ -158,13 +158,14 @@ async function asignar() {
 .ph { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .ph-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
 .ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
-.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border-top: 4px solid var(--brand); }
-.form-card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
-.form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
-.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-.stat-box { background: var(--surface); border-radius: var(--r-lg); padding: 20px; text-align: center; box-shadow: var(--shadow-sm); }
+.form-card { background: var(--surface); border-radius: var(--r-lg); padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border-light); }
+.form-card-title { font-size: 1.1rem; font-weight: 800; color: var(--dark); margin-bottom: 20px; }
+.form-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-box { background: var(--surface); border-radius: var(--r-lg); padding: 24px; text-align: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: transform 0.2s; }
+.stat-box:hover { transform: translateY(-2px); }
 .stat-box.brand { background: var(--brand); }
 .stat-num { font-size: 2rem; font-weight: 800; color: var(--dark); }
 .stat-box.brand .stat-num { color: #fff; }

@@ -11,20 +11,23 @@ type User struct {
 	Bio          string    `json:"bio,omitempty"`
 	AvatarURL    string    `json:"avatar_url,omitempty"`
 	Phone        string    `json:"phone,omitempty"`
+	Specialty    string    `json:"specialty,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 type Capacitacion struct {
-	ID           string    `json:"id"`
-	Title        string    `json:"title"`
-	Description  string    `json:"description"`
-	Type         string    `json:"type"` // video | document | text | course
-	FilePath     string    `json:"file_path,omitempty"`
-	Content      string    `json:"content,omitempty"`
-	InstructorID *string   `json:"instructor_id,omitempty"`
-	IsPublic     bool      `json:"is_public"`
-	CodigoAcceso string    `json:"codigo_acceso,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
+	Type           string    `json:"type"` // video | document | text | course
+	FilePath       string    `json:"file_path,omitempty"`
+	Content        string    `json:"content,omitempty"`
+	InstructorID   *string   `json:"instructor_id,omitempty"`
+	IsPublic       bool      `json:"is_public"`
+	CodigoAcceso   string    `json:"codigo_acceso,omitempty"`
+	WelcomeMessage string    `json:"welcome_message,omitempty"`
+	ThumbnailURL   string    `json:"thumbnail_url,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 type Leccion struct {

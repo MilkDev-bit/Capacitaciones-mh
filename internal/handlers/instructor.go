@@ -45,7 +45,8 @@ func InstructorListCapacitaciones(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT id, title, description, type,
 		       COALESCE(file_path,''), COALESCE(content,''),
-		       instructor_id, is_public, COALESCE(codigo_acceso,''), created_at
+		       instructor_id, is_public, COALESCE(codigo_acceso,''),
+		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), created_at
 		FROM capacitaciones
 		WHERE instructor_id = $1
 		ORDER BY created_at DESC
@@ -59,7 +60,8 @@ func InstructorListCapacitaciones(c *gin.Context) {
 	for rows.Next() {
 		var cap models.Capacitacion
 		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type,
-			&cap.FilePath, &cap.Content, &cap.InstructorID, &cap.IsPublic, &cap.CodigoAcceso, &cap.CreatedAt)
+			&cap.FilePath, &cap.Content, &cap.InstructorID, &cap.IsPublic, &cap.CodigoAcceso,
+			&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.CreatedAt)
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)
@@ -72,6 +74,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 	capType := c.PostForm("type")
 	content := c.PostForm("content")
 	isPublic := c.PostForm("is_public") == "true"
+	welcomeMessage := c.PostForm("welcome_message")
 
 	if title == "" || capType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "title y type son requeridos"})
@@ -98,9 +101,9 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 
 	var id string
 	err = db.DB.QueryRow(
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(),
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(), welcomeMessage,
 	).Scan(&id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

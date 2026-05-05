@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
 
@@ -316,11 +316,11 @@ async function eliminar(id: string) {
 .ex-preguntas-list { display: flex; flex-direction: column; gap: 14px; position: relative; }
 
 .ex-pregunta-card {
-  background: var(--bg); border-radius: var(--r); border: 1.5px solid var(--border);
-  padding: 16px; display: flex; flex-direction: column; gap: 10px;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--border-light);
+  padding: 20px; display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.15s, border-color 0.15s;
 }
-.ex-pregunta-card:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.ex-pregunta-card:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
 
 .ex-pregunta-header {
   display: flex; align-items: center; gap: 10px;
@@ -366,11 +366,11 @@ async function eliminar(id: string) {
 /* Exam list cards */
 .ex-list { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .ex-card {
-  background: var(--surface); border-radius: var(--r); border: 1.5px solid var(--border);
-  padding: 16px 18px; display: flex; align-items: flex-start; gap: 14px;
-  transition: box-shadow 0.15s, transform 0.15s;
+  background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--border-light);
+  padding: 20px; display: flex; align-items: flex-start; gap: 16px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.2s, transform 0.2s;
 }
-.ex-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.ex-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
 .ex-card-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
 .ex-card-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; margin-top: 2px; }
 .ex-card-info { flex: 1; min-width: 0; }
