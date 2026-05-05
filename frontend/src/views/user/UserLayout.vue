@@ -13,10 +13,8 @@ function initials(name: string) {
 
 <template>
   <div class="shell">
-    <!-- Overlay mobile -->
     <div :class="['sidebar-overlay', sidebarOpen ? 'open' : '']" @click="sidebarOpen = false"></div>
 
-    <!-- Sidebar -->
     <aside :class="['sidebar-nav', sidebarOpen ? 'open' : '']">
       <div class="sn-brand">
         <div class="sn-brand-icon">
@@ -48,7 +46,6 @@ function initials(name: string) {
       </div>
     </aside>
 
-    <!-- Main -->
     <div class="shell-main">
       <header class="topbar">
         <button class="topbar-hamburger" @click="sidebarOpen = true" aria-label="Abrir menú">
@@ -70,6 +67,4 @@ function initials(name: string) {
   </div>
 </template>
 
-<style scoped>
-/* all from main.css globals */
-</style>
+<style scoped></style>

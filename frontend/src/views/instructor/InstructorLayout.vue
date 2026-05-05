@@ -48,7 +48,7 @@ function initials(name: string) {
 
     <div class="shell-main">
       <header class="topbar">
-        <button class="topbar-hamburger" @click="sidebarOpen = true">
+        <button class="topbar-hamburger" @click="sidebarOpen = true" aria-label="Abrir menú">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <span class="topbar-title">Panel Instructor</span>
