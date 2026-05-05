@@ -74,8 +74,43 @@ async function register() {
           </svg>
         </div>
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
+        <p class="hero-subtitle">Cursos, lecciones, examenes y seguimiento en una sola experiencia de aprendizaje.</p>
+        <div class="hero-metrics" aria-label="Resumen de la plataforma">
+          <div>
+            <strong>24/7</strong>
+            <span>Acceso</span>
+          </div>
+          <div>
+            <strong>3</strong>
+            <span>Roles</span>
+          </div>
+          <div>
+            <strong>100%</strong>
+            <span>Progreso</span>
+          </div>
+        </div>
+        <div class="hero-preview" aria-hidden="true">
+          <div class="preview-top">
+            <span>Aula activa</span>
+            <strong>68%</strong>
+          </div>
+          <div class="preview-progress"><span></span></div>
+          <div class="preview-course">
+            <i>VID</i>
+            <div>
+              <strong>Seguridad operativa</strong>
+              <span>12 lecciones · examen final</span>
+            </div>
+          </div>
+          <div class="preview-course">
+            <i>PDF</i>
+            <div>
+              <strong>Protocolos internos</strong>
+              <span>Material de consulta</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="hero-decoration"></div>
     </div>
 
     <div class="auth-form-panel">
@@ -107,7 +142,7 @@ async function register() {
             <div class="pass-wrap">
               <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
               <button type="button" class="pass-toggle" @click="showPass = !showPass">
-                {{ showPass ? '\U0001f648' : '\U0001f441' }}
+                {{ showPass ? 'Ocultar' : 'Ver' }}
               </button>
             </div>
           </div>
@@ -138,12 +173,12 @@ async function register() {
             <label>Tipo de cuenta</label>
             <div class="role-grid">
               <button type="button" :class="['role-card', regRole === 'user' ? 'selected' : '']" @click="regRole = 'user'">
-                <span class="role-icon">\U0001f393</span>
+                <span class="role-icon">EST</span>
                 <strong>Estudiante</strong>
                 <small>Accede y aprende a tu ritmo</small>
               </button>
               <button type="button" :class="['role-card', regRole === 'instructor' ? 'selected' : '']" @click="regRole = 'instructor'">
-                <span class="role-icon">\U0001f3eb</span>
+                <span class="role-icon">INS</span>
                 <strong>Instructor</strong>
                 <small>Crea y gestiona cursos</small>
               </button>
@@ -167,18 +202,42 @@ async function register() {
 <style scoped>
 .auth-page { display: flex; min-height: 100vh; }
 .auth-hero {
-  flex: 0 0 45%; background: linear-gradient(145deg, #1c1d1f 0%, #2d2f31 100%);
+  flex: 0 0 47%;
+  background:
+    linear-gradient(145deg, rgba(28,29,31,.98) 0%, rgba(38,35,31,.96) 100%),
+    linear-gradient(135deg, rgba(249,115,22,.22), rgba(37,99,235,.18));
   display: flex; flex-direction: column; justify-content: center; padding: 60px 56px;
   position: relative; overflow: hidden;
 }
-.hero-decoration {
-  position: absolute; right: -80px; bottom: -80px; width: 320px; height: 320px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(249,115,22,.25) 0%, transparent 70%); pointer-events: none;
-}
-.hero-content { position: relative; z-index: 1; }
+.hero-content { position: relative; z-index: 1; max-width: 520px; }
 .hero-logo { margin-bottom: 20px; }
 .hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
 .hero-title span { color: var(--brand); }
+.hero-subtitle { color: rgba(255,255,255,.72); font-size: 0.96rem; line-height: 1.6; max-width: 430px; }
+.hero-metrics {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 26px;
+}
+.hero-metrics div {
+  padding: 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px;
+  background: rgba(255,255,255,.07);
+}
+.hero-metrics strong { display: block; color: #fff; font-size: 1.05rem; font-weight: 900; }
+.hero-metrics span { color: rgba(255,255,255,.58); font-size: 0.75rem; font-weight: 700; }
+.hero-preview {
+  margin-top: 24px; padding: 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 8px;
+  background: rgba(255,255,255,.1); box-shadow: 0 20px 60px rgba(0,0,0,.22);
+}
+.preview-top { display: flex; align-items: center; justify-content: space-between; color: rgba(255,255,255,.72); font-size: 0.78rem; font-weight: 800; }
+.preview-top strong { color: #fff; }
+.preview-progress { height: 7px; margin: 10px 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
+.preview-progress span { display: block; width: 68%; height: 100%; background: linear-gradient(90deg, var(--brand), #22c55e); }
+.preview-course { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.1); }
+.preview-course i {
+  width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  background: rgba(249,115,22,.22); color: #fff; font-style: normal; font-size: 0.72rem; font-weight: 900;
+}
+.preview-course strong { display: block; color: #fff; font-size: 0.86rem; }
+.preview-course span { color: rgba(255,255,255,.58); font-size: 0.76rem; }
 .auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
 .auth-form-wrap { width: 100%; max-width: 420px; }
 .mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
@@ -189,13 +248,17 @@ async function register() {
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
 .pass-wrap { position: relative; }
-.pass-wrap .field-input { padding-right: 44px; }
-.pass-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1rem; cursor: pointer; line-height: 1; }
+.pass-wrap .field-input { padding-right: 78px; }
+.pass-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--border-light); border: none; border-radius: 6px; color: var(--dark); font-size: 0.76rem; font-weight: 800; cursor: pointer; line-height: 1; padding: 7px 9px; }
 .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .role-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 16px 12px; border: 2px solid var(--border); border-radius: var(--r); background: var(--surface); cursor: pointer; transition: all 0.18s; }
 .role-card:hover { border-color: var(--brand); }
 .role-card.selected { border-color: var(--brand); background: var(--brand-light); }
-.role-icon { font-size: 1.6rem; }
+.role-icon {
+  width: 38px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 7px; background: var(--border-light); color: var(--brand-dark); font-size: 0.72rem; font-weight: 900;
+}
+.role-card.selected .role-icon { background: var(--brand); color: #fff; }
 .role-card strong { font-size: 0.88rem; color: var(--dark); }
 .role-card small { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
 .submit-btn { width: 100%; margin-top: 4px; }

@@ -31,6 +31,22 @@ const progreso = computed(() => {
   return Math.round((completadas / lecciones.value.length) * 100)
 })
 
+const leccionesCompletadas = computed(() => lecciones.value.filter(l => l.completada).length)
+const duracionTotal = computed(() =>
+  lecciones.value.reduce((total, lec) => total + Number(lec.duracion_min || 0), 0)
+)
+const currentIndex = computed(() =>
+  lecciones.value.findIndex(l => l.id === selectedLeccion.value?.id)
+)
+const previousLeccion = computed(() =>
+  currentIndex.value > 0 ? lecciones.value[currentIndex.value - 1] : null
+)
+const nextLeccion = computed(() =>
+  currentIndex.value >= 0 && currentIndex.value < lecciones.value.length - 1
+    ? lecciones.value[currentIndex.value + 1]
+    : null
+)
+
 async function load() {
   loading.value = true
   const [cRes, lRes] = await Promise.all([
@@ -154,6 +170,11 @@ function typeIcon(t: string) {
   const map: Record<string, string> = { video: 'V', document: 'D', text: 'L', link: 'YT' }
   return map[t] || '?'
 }
+
+async function goToLesson(lec: any | null) {
+  if (!lec) return
+  await selectLeccion(lec)
+}
 </script>
 
 <template>
@@ -184,6 +205,10 @@ function typeIcon(t: string) {
       <aside class="ver-sidebar">
         <div class="ver-sidebar-head">
           <h2 class="ver-curso-nombre">{{ curso?.title }}</h2>
+          <p class="ver-course-meta">
+            {{ leccionesCompletadas }} de {{ lecciones.length }} lecciones
+            <span v-if="duracionTotal"> · {{ duracionTotal }} min</span>
+          </p>
           <div class="ver-progress-wrap">
             <div class="ver-progress-top">
               <span>Progreso del curso</span>
@@ -229,6 +254,11 @@ function typeIcon(t: string) {
               <div class="ver-lec-header-left">
                 <div class="ver-lec-breadcrumb">{{ curso?.title }}</div>
                 <h1 class="ver-lec-title">{{ selectedLeccion.title }}</h1>
+                <div class="ver-lec-meta-row">
+                  <span>{{ currentIndex + 1 }} / {{ lecciones.length }}</span>
+                  <span>{{ typeLabel(selectedLeccion.type) }}</span>
+                  <span v-if="selectedLeccion.duracion_min">{{ selectedLeccion.duracion_min }} min</span>
+                </div>
                 <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
               </div>
               <button v-if="!selectedLeccion.completada"
@@ -244,46 +274,58 @@ function typeIcon(t: string) {
             </div>
 
             <!-- Reproductor / contenido -->
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+            <section class="ver-content-card">
               <!-- Video subido -->
-              <div v-if="selectedLeccion.type === 'video'" class="aspect-video bg-black">
-                <video v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)" controls class="w-full h-full" />
-                <div v-else class="flex items-center justify-center h-full text-gray-500 text-sm">Sin video disponible</div>
+              <div v-if="selectedLeccion.type === 'video'" class="ver-media-frame ver-media-video">
+                <video v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)" controls class="ver-media-fill" />
+                <div v-else class="ver-media-empty">Sin video disponible</div>
               </div>
 
               <!-- PDF / Documento embebido -->
               <div v-else-if="selectedLeccion.type === 'document'">
                 <div v-if="selectedLeccion.file_path">
-                  <iframe :src="fileUrl(selectedLeccion.file_path)" class="w-full border-0" style="height:75vh" />
-                  <div class="px-4 py-2 border-t border-gray-100 flex justify-end">
+                  <iframe :src="fileUrl(selectedLeccion.file_path)" class="ver-doc-frame" />
+                  <div class="ver-resource-footer">
                     <a :href="fileUrl(selectedLeccion.file_path)" target="_blank"
-                      class="text-xs text-blue-600 hover:underline">Abrir en nueva pestana</a>
+                      class="ver-resource-link">Abrir en nueva pestaña</a>
                   </div>
                 </div>
-                <p v-else class="p-6 text-gray-400 text-sm">Sin documento adjunto</p>
+                <p v-else class="ver-media-empty ver-media-empty-light">Sin documento adjunto</p>
               </div>
 
               <!-- Texto / lectura -->
-              <div v-else-if="selectedLeccion.type === 'text'" class="p-6">
-                <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed" style="white-space: pre-wrap">{{ selectedLeccion.content }}</div>
+              <div v-else-if="selectedLeccion.type === 'text'" class="ver-reading">
+                <div class="ver-reading-content">{{ selectedLeccion.content }}</div>
               </div>
 
               <!-- Enlace externo: YouTube, Vimeo, otro -->
               <div v-else-if="selectedLeccion.type === 'link'">
                 <div v-if="selectedLeccion.content">
-                  <div class="aspect-video">
+                  <div class="ver-media-frame">
                     <iframe :src="getEmbedUrl(selectedLeccion.content)"
-                      class="w-full h-full border-0"
+                      class="ver-media-fill"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowfullscreen />
                   </div>
-                  <div class="px-4 py-2 border-t border-gray-100 flex justify-end">
+                  <div class="ver-resource-footer">
                     <a :href="selectedLeccion.content" target="_blank" rel="noopener"
-                      class="text-xs text-blue-600 hover:underline">Abrir enlace original</a>
+                      class="ver-resource-link">Abrir enlace original</a>
                   </div>
                 </div>
-                <p v-else class="p-6 text-gray-400 text-sm">Sin enlace configurado</p>
+                <p v-else class="ver-media-empty ver-media-empty-light">Sin enlace configurado</p>
               </div>
+            </section>
+
+            <div class="ver-lesson-actions">
+              <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
+                Anterior
+              </button>
+              <button v-if="!selectedLeccion.completada" class="btn btn-primary" @click="marcarCompleta">
+                Marcar completada
+              </button>
+              <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
+                Siguiente
+              </button>
             </div>
 
             <!-- Preguntas Intermedias -->
@@ -296,7 +338,7 @@ function typeIcon(t: string) {
                     <p style="font-size:0.82rem;color:var(--muted)">Responde para reforzar tu aprendizaje</p>
                   </div>
                 </div>
-                <div v-if="resultadoInt" class="text-center" style="padding:20px 0">
+                <div v-if="resultadoInt" class="ver-int-result">
                   <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1) }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                   <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto</p>
                   <button @click="showIntermedias = false" class="btn btn-secondary btn-sm" style="margin-top:12px">Continuar</button>
@@ -385,8 +427,19 @@ function typeIcon(t: string) {
 
 <style scoped>
 /* Layout shell */
-.ver-curso-shell { min-height: 100vh; background: var(--bg); }
-.ver-layout { display: flex; height: 100vh; overflow: hidden; }
+.ver-curso-shell {
+  min-height: calc(100vh - var(--topbar-h) - 56px);
+}
+.ver-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: calc(100vh - var(--topbar-h) - 56px);
+  background: var(--surface);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
 
 /* Skeletons */
 .ver-skeleton { display: flex; gap: 0; height: 100vh; overflow: hidden; }
@@ -395,11 +448,12 @@ function typeIcon(t: string) {
 
 /* Sidebar */
 .ver-sidebar {
-  width: 280px; background: var(--surface); border-right: 1.5px solid var(--border);
-  display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+  width: 100%; background: var(--surface); border-right: 1.5px solid var(--border);
+  display: flex; flex-direction: column; min-width: 0;
 }
 .ver-sidebar-head { padding: 20px; border-bottom: 1px solid var(--border); }
 .ver-curso-nombre { font-size: 0.92rem; font-weight: 800; color: var(--dark); line-height: 1.35; margin-bottom: 12px; }
+.ver-course-meta { color: var(--muted); font-size: 0.78rem; margin: -6px 0 12px; }
 .ver-progress-wrap { margin-top: 4px; }
 .ver-progress-top { display: flex; justify-content: space-between; font-size: 0.77rem; color: var(--muted); margin-bottom: 5px; }
 .ver-progress-pct { font-weight: 700; color: var(--brand); }
@@ -438,8 +492,8 @@ function typeIcon(t: string) {
 .ver-nav-empty { text-align: center; padding: 24px; font-size: 0.85rem; color: var(--muted); }
 
 /* Main content */
-.ver-main { flex: 1; overflow-y: auto; }
-.ver-main-inner { max-width: 820px; margin: 0 auto; padding: 28px 28px; }
+.ver-main { min-width: 0; background: #f8fafc; }
+.ver-main-inner { max-width: 980px; margin: 0 auto; padding: 30px; }
 .ver-empty-content { text-align: center; padding: 80px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
 /* Lesson header */
@@ -447,11 +501,106 @@ function typeIcon(t: string) {
 .ver-lec-header-left { flex: 1; min-width: 0; }
 .ver-lec-breadcrumb { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
 .ver-lec-title { font-size: 1.4rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; line-height: 1.25; }
+.ver-lec-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+.ver-lec-meta-row span {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
 .ver-lec-desc { font-size: 0.88rem; color: var(--muted); margin-top: 6px; line-height: 1.55; }
 .ver-done-chip {
   display: inline-flex; align-items: center; gap: 5px;
   background: var(--success-bg); color: var(--success); padding: 6px 14px;
   border-radius: 20px; font-size: 0.82rem; font-weight: 700; flex-shrink: 0;
+}
+
+/* Content player */
+.ver-content-card {
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+.ver-media-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0b0f19;
+}
+.ver-media-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ver-media-fill {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.ver-media-empty {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.ver-media-empty-light {
+  min-height: 180px;
+  background: var(--surface);
+}
+.ver-doc-frame {
+  width: 100%;
+  height: min(72vh, 760px);
+  min-height: 420px;
+  border: 0;
+  display: block;
+  background: var(--border-light);
+}
+.ver-resource-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-light);
+  background: var(--surface);
+}
+.ver-resource-link {
+  color: var(--info);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.ver-resource-link:hover {
+  text-decoration: underline;
+}
+.ver-reading {
+  padding: 28px;
+}
+.ver-reading-content {
+  max-width: 72ch;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.ver-lesson-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 22px;
 }
 
 /* Preguntas intermedias */
@@ -463,6 +612,7 @@ function typeIcon(t: string) {
 .ver-int-pregunta { background: rgba(255,255,255,.7); border-radius: var(--r); padding: 14px 16px; border: 1px solid #fde68a; }
 .ver-option-label { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: var(--r-sm); cursor: pointer; transition: background 0.12s; font-size: 0.88rem; color: var(--text); }
 .ver-option-label:hover { background: rgba(249,115,22,.07); }
+.ver-int-result { text-align: center; padding: 20px 0; }
 
 /* Foro */
 .ver-foro { background: var(--surface); border-radius: var(--r-lg); border: 1.5px solid var(--border); overflow: hidden; }
@@ -481,8 +631,33 @@ function typeIcon(t: string) {
 .ver-comentario { background: var(--surface); border-radius: var(--r); padding: 10px 12px; border: 1px solid var(--border-light); }
 
 @media (max-width: 768px) {
-  .ver-layout { flex-direction: column; height: auto; }
-  .ver-sidebar { width: 100%; max-height: 250px; border-right: none; border-bottom: 1.5px solid var(--border); }
-  .ver-main-inner { padding: 16px; }
+  .ver-curso-shell {
+    min-height: auto;
+  }
+  .ver-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .ver-sidebar {
+    width: 100%;
+    max-height: 320px;
+    overflow-y: auto;
+    border-right: none;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .ver-main-inner {
+    padding: 18px;
+  }
+  .ver-lec-title {
+    font-size: 1.2rem;
+  }
+  .ver-doc-frame {
+    min-height: 360px;
+  }
+  .ver-lesson-actions,
+  .ver-foro-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>
