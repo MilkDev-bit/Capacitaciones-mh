@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
+import DragDropUpload from '../../components/DragDropUpload.vue'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(true)
@@ -126,10 +127,16 @@ function thumbClass(t: string) {
                 <option value="text">📝 Texto enriquecido</option>
               </select>
             </div>
-            <div class="ac-field">
-              <label>Archivo {{ form.type === 'text' ? '(no aplica)' : '' }}</label>
-              <input v-if="form.type !== 'text'" type="file" :accept="form.type === 'video' ? 'video/*' : '.pdf,.doc,.docx'" @change="onFile" />
-              <p v-else style="font-size:0.82rem;color:var(--muted);padding:10px 0">El contenido se escribe abajo</p>
+            <div class="ac-field" v-if="form.type !== 'text'">
+              <label>Archivo *</label>
+              <DragDropUpload 
+                v-model="file" 
+                :accept="form.type === 'video' ? 'video/mp4,video/webm' : '.pdf,.doc,.docx'" 
+              />
+            </div>
+            <div class="ac-field" v-else>
+              <label>Archivo (no aplica)</label>
+              <p style="font-size:0.82rem;color:var(--muted);padding:10px 0;background:var(--surface-soft);border-radius:var(--r);text-align:center">El contenido se escribe abajo</p>
             </div>
             <div class="ac-field ac-field-full">
               <label>Descripción</label>

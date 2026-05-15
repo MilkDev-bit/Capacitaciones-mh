@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import api from '../../api'
+import DragDropUpload from '../../components/DragDropUpload.vue'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(false)
@@ -475,12 +476,15 @@ async function loadMisExamenes() {
                     <input type="number" class="ci-input" v-model="lecForm.duracion_min" min="0" placeholder="0" />
                   </div>
                   <div v-if="lecForm.type === 'video' || lecForm.type === 'document'" class="ci-field ci-field-full">
-                    <label class="ci-label">{{ lecForm.type === 'video' ? 'Archivo de video' : 'Archivo PDF' }}</label>
-                    <div class="ci-file-drop">
-                      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 16l4-4m0 0l4 4m-4-4v9"/><path d="M20 16.58A5 5 0 0018 7h-1.26A8 8 0 104 15.25"/></svg>
-                      <span>Elige archivo</span>
-                      <input type="file" @change="onLecFile" :accept="lecForm.type === 'video' ? 'video/*' : '.pdf,.doc,.docx,.ppt,.pptx'" />
-                    </div>
+                    <label>Archivo *</label>
+                    <DragDropUpload 
+                      v-model="lecFile" 
+                      :accept="lecForm.type === 'video' ? 'video/mp4,video/webm' : '.pdf,.doc,.docx'" 
+                    />
+                  </div>
+                  <div v-if="lecForm.type === 'text'" class="ci-field ci-field-full">
+                    <label>Archivo (no aplica)</label>
+                    <p style="font-size:0.82rem;color:var(--muted);padding:10px 0;background:var(--surface-soft);border-radius:var(--r);text-align:center">El contenido se escribe abajo</p>
                   </div>
                   <div v-if="lecForm.type === 'text'" class="ci-field ci-field-full">
                     <label class="ci-label">Contenido</label>

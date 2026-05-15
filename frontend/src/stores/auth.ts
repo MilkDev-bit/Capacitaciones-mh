@@ -29,11 +29,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/login')
+    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+      token.value = null
+      user.value = null
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
+      // Replace history to prevent going back
+      router.replace('/login').then(() => {
+        // Force a page reload to clear any cached states
+        window.location.reload()
+      })
+    }
   }
 
   return { token, user, isLoggedIn, isAdmin, isInstructor, login, logout }
