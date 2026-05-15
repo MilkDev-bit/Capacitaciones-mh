@@ -41,6 +41,10 @@ const expandedPost = ref<string | null>(null)
 const comentariosMap = ref<Record<string, any[]>>({})
 const nuevoComentario = ref<Record<string, string>>({})
 
+// Learning Aids
+const focusMode = ref(false)
+const notasPersonales = ref<Record<string, string>>({})
+
 const progreso = computed(() => {
   if (!lecciones.value.length) return 0
   const completadas = lecciones.value.filter(l => l.completada).length
@@ -50,6 +54,9 @@ const progreso = computed(() => {
 const leccionesCompletadas = computed(() => lecciones.value.filter(l => l.completada).length)
 const duracionTotal = computed(() =>
   lecciones.value.reduce((total, lec) => total + Number(lec.duracion_min || 0), 0)
+)
+const tiempoRestante = computed(() => 
+  lecciones.value.filter(l => !l.completada).reduce((total, lec) => total + Number(lec.duracion_min || 0), 0)
 )
 const currentIndex = computed(() =>
   lecciones.value.findIndex(l => l.id === selectedLeccion.value?.id)
@@ -98,11 +105,25 @@ async function selectLeccion(lec: any) {
   showIntermedias.value = false
   resultadoInt.value = null
   respuestas.value = {}
+  
+  // Cargar nota local
+  const nota = localStorage.getItem(`cap_nota_${cursoId}_${lec.id}`)
+  if (nota) notasPersonales.value[lec.id] = nota
+
   try {
     await loadForo(lec.id)
     await loadPreguntas(lec.id)
   } catch { /* silently fail for non-critical */ }
 }
+
+function guardarNota() {
+  if (selectedLeccion.value) {
+    localStorage.setItem(`cap_nota_${cursoId}_${selectedLeccion.value.id}`, notasPersonales.value[selectedLeccion.value.id] || '')
+    showToast('Nota guardada')
+  }
+}
+
+const showConfetti = ref(false)
 
 async function marcarCompleta() {
   if (!selectedLeccion.value || selectedLeccion.value.completada) return
@@ -112,6 +133,12 @@ async function marcarCompleta() {
     const idx = lecciones.value.findIndex(l => l.id === selectedLeccion.value.id)
     if (idx >= 0) lecciones.value[idx].completada = true
     showToast('✓ Lección completada')
+    
+    if (progreso.value === 100) {
+      showConfetti.value = true
+      setTimeout(() => { showConfetti.value = false }, 5000)
+    }
+
     // Mostrar preguntas intermedias si hay
     if (preguntas.value.length > 0) {
       showIntermedias.value = true
@@ -264,7 +291,7 @@ function goBack() {
       </div>
     </div>
 
-    <div v-else-if="!loadError" class="ver-layout">
+    <div v-else-if="!loadError" :class="['ver-layout', focusMode ? 'focus-mode' : '']">
 
       <!-- Mobile sidebar overlay -->
       <div :class="['ver-sidebar-overlay', sidebarOpen ? 'open' : '']" @click="sidebarOpen = false"></div>
@@ -333,9 +360,13 @@ function goBack() {
                     <strong>{{ lecciones.length }}</strong>
                     <span>Lecciones</span>
                   </div>
-                  <div class="vw-stat" v-if="duracionTotal">
+                  <div class="vw-stat" v-if="tiempoRestante > 0">
+                    <strong>{{ tiempoRestante }}</strong>
+                    <span>Minutos restantes</span>
+                  </div>
+                  <div class="vw-stat" v-else-if="duracionTotal">
                     <strong>{{ duracionTotal }}</strong>
-                    <span>Minutos</span>
+                    <span>Minutos totales</span>
                   </div>
                   <div class="vw-stat">
                     <strong>{{ progreso }}%</strong>
@@ -396,16 +427,23 @@ function goBack() {
                 </div>
                 <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
               </div>
-              <button v-if="!selectedLeccion.completada"
-                @click="marcarCompleta"
-                class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                Marcar completada
-              </button>
-              <span v-else class="ver-done-chip">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                Completada
-              </span>
+              <div class="ver-lec-header-right" style="display:flex;gap:12px;align-items:center;">
+                <button class="btn btn-secondary btn-sm" @click="focusMode = !focusMode" aria-label="Alternar modo enfoque">
+                  <svg v-if="!focusMode" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V4h4m12 4V4h-4M4 16v4h4m12-4v4h-4"/></svg>
+                  <svg v-else width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 14h6v6m10-10h-6V4m0 10l7 7M10 10L3 3"/></svg>
+                  {{ focusMode ? 'Salir del Enfoque' : 'Modo Enfoque' }}
+                </button>
+                <button v-if="!selectedLeccion.completada"
+                  @click="marcarCompleta"
+                  class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                  Marcar completada
+                </button>
+                <span v-else class="ver-done-chip">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                  Completada
+                </span>
+              </div>
             </div>
 
             <!-- Reproductor / contenido -->
@@ -461,6 +499,21 @@ function goBack() {
               <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
                 Siguiente →
               </button>
+            </div>
+
+            <!-- Mis Notas -->
+            <div class="ver-notes-section">
+              <div class="ver-notes-head">
+                <h3>📝 Mis Notas</h3>
+                <span class="ver-notes-status">{{ notasPersonales[selectedLeccion.id] ? 'Guardado localmente' : 'Escribe para guardar' }}</span>
+              </div>
+              <textarea 
+                v-model="notasPersonales[selectedLeccion.id]" 
+                @input="guardarNota"
+                placeholder="Escribe tus apuntes personales para esta lección aquí..." 
+                class="field-input ver-notes-input" 
+                rows="4"
+              ></textarea>
             </div>
 
             <!-- Sugerencia siguiente lección -->
@@ -571,6 +624,17 @@ function goBack() {
         </div>
       </main>
     </div>
+
+    <!-- Celebration Confetti Overlay -->
+    <Transition name="fade">
+      <div v-if="showConfetti" class="ver-confetti-overlay">
+        <div class="ver-confetti-card">
+          <div class="ver-confetti-icon">🎉</div>
+          <h2>¡Felicidades!</h2>
+          <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -931,5 +995,46 @@ function goBack() {
   .ver-welcome-title {
     font-size: 1.5rem !important;
   }
+}
+
+/* Focus Mode */
+.ver-layout.focus-mode .ver-sidebar { display: none; }
+.ver-layout.focus-mode .ver-main { margin-left: 0; }
+.ver-layout.focus-mode .ver-lec-header { max-width: 900px; margin: 0 auto 24px; }
+.ver-layout.focus-mode .ver-content-card { max-width: 900px; margin: 0 auto 24px; box-shadow: none; border-color: transparent; }
+
+/* Notes Section */
+.ver-notes-section { margin-top: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
+.ver-notes-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ver-notes-head h3 { font-size: 1rem; font-weight: 700; color: var(--dark); }
+.ver-notes-status { font-size: 0.75rem; color: var(--muted); background: var(--surface-soft); padding: 4px 8px; border-radius: 4px; }
+.ver-notes-input { font-size: 0.9rem; line-height: 1.5; resize: vertical; background: var(--bg); border: 1px solid var(--border-light); }
+.ver-notes-input:focus { background: var(--surface); border-color: var(--brand); }
+
+/* Confetti Overlay */
+.ver-confetti-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.ver-confetti-card {
+  background: var(--surface); padding: 40px; border-radius: 20px;
+  text-align: center; max-width: 400px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.ver-confetti-icon { font-size: 4rem; margin-bottom: 16px; animation: bounce 2s infinite; }
+.ver-confetti-card h2 { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
+.ver-confetti-card p { font-size: 1rem; color: var(--muted); }
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
 }
 </style>
