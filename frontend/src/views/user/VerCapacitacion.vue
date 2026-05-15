@@ -1,15 +1,31 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 
 const route = useRoute()
+const router = useRouter()
 const cursoId = route.params.id as string
 
 const curso = ref<any>(null)
 const lecciones = ref<any[]>([])
 const selectedLeccion = ref<any | null>(null)
 const loading = ref(true)
+const loadError = ref('')
+
+// Mobile sidebar
+const sidebarOpen = ref(false)
+
+// Toast
+const toastMsg = ref('')
+const toastVisible = ref(false)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(msg: string) {
+  toastMsg.value = msg
+  toastVisible.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastVisible.value = false }, 2800)
+}
 
 // Preguntas intermedias
 const showIntermedias = ref(false)
@@ -46,22 +62,29 @@ const nextLeccion = computed(() =>
     ? lecciones.value[currentIndex.value + 1]
     : null
 )
+const nextPendingLeccion = computed(() =>
+  lecciones.value.find(l => !l.completada && l.id !== selectedLeccion.value?.id)
+)
 
 async function load() {
   loading.value = true
-  const [cRes, lRes] = await Promise.all([
-    api.get(`/capacitaciones/${cursoId}`),
-    api.get(`/capacitaciones/${cursoId}/lecciones`)
-  ])
-  curso.value = cRes.data
-  lecciones.value = lRes.data || []
-  // Instead of auto-selecting, we let selectedLeccion be null to show the Welcome Hero
-  loading.value = false
+  loadError.value = ''
+  try {
+    const [cRes, lRes] = await Promise.all([
+      api.get(`/capacitaciones/${cursoId}`),
+      api.get(`/capacitaciones/${cursoId}/lecciones`)
+    ])
+    curso.value = cRes.data
+    lecciones.value = lRes.data || []
+  } catch (e: any) {
+    loadError.value = e.response?.data?.error || 'No pudimos cargar el curso. Verifica tu conexión.'
+  } finally {
+    loading.value = false
+  }
 }
 
 function startCourse() {
   if (lecciones.value.length > 0) {
-    // Find the first non-completed lesson, or default to the first one
     const firstPending = lecciones.value.find(l => !l.completada)
     selectLeccion(firstPending || lecciones.value[0])
   }
@@ -71,22 +94,30 @@ onMounted(load)
 
 async function selectLeccion(lec: any) {
   selectedLeccion.value = lec
+  sidebarOpen.value = false
   showIntermedias.value = false
   resultadoInt.value = null
   respuestas.value = {}
-  await loadForo(lec.id)
-  await loadPreguntas(lec.id)
+  try {
+    await loadForo(lec.id)
+    await loadPreguntas(lec.id)
+  } catch { /* silently fail for non-critical */ }
 }
 
 async function marcarCompleta() {
   if (!selectedLeccion.value || selectedLeccion.value.completada) return
-  await api.post(`/lecciones/${selectedLeccion.value.id}/completar`)
-  selectedLeccion.value.completada = true
-  const idx = lecciones.value.findIndex(l => l.id === selectedLeccion.value.id)
-  if (idx >= 0) lecciones.value[idx].completada = true
-  // Mostrar preguntas intermedias si hay
-  if (preguntas.value.length > 0) {
-    showIntermedias.value = true
+  try {
+    await api.post(`/lecciones/${selectedLeccion.value.id}/completar`)
+    selectedLeccion.value.completada = true
+    const idx = lecciones.value.findIndex(l => l.id === selectedLeccion.value.id)
+    if (idx >= 0) lecciones.value[idx].completada = true
+    showToast('✓ Lección completada')
+    // Mostrar preguntas intermedias si hay
+    if (preguntas.value.length > 0) {
+      showIntermedias.value = true
+    }
+  } catch {
+    showToast('Error al marcar la lección')
   }
 }
 
@@ -177,14 +208,42 @@ function typeIcon(t: string) {
   return map[t] || '?'
 }
 
+function isNextPending(lec: any) {
+  if (lec.completada) return false
+  const firstPending = lecciones.value.find(l => !l.completada)
+  return firstPending?.id === lec.id
+}
+
 async function goToLesson(lec: any | null) {
   if (!lec) return
   await selectLeccion(lec)
+}
+
+function goBack() {
+  router.push('/usuario/capacitaciones')
 }
 </script>
 
 <template>
   <div class="ver-curso-shell">
+    <!-- Toast -->
+    <Transition name="slide-down">
+      <div v-if="toastVisible" class="ver-toast" role="status">{{ toastMsg }}</div>
+    </Transition>
+
+    <!-- Error state -->
+    <div v-if="loadError && !loading" class="ver-error-state">
+      <div class="ver-error-icon">
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      </div>
+      <h2>No se pudo cargar el curso</h2>
+      <p>{{ loadError }}</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" @click="load">Reintentar</button>
+        <button class="btn btn-secondary" @click="goBack">Volver a mis cursos</button>
+      </div>
+    </div>
+
     <!-- Skeleton de carga -->
     <div v-if="loading" class="ver-skeleton">
       <div class="ver-sidebar-skel">
@@ -205,11 +264,25 @@ async function goToLesson(lec: any | null) {
       </div>
     </div>
 
-    <div v-else class="ver-layout">
+    <div v-else-if="!loadError" class="ver-layout">
+
+      <!-- Mobile sidebar overlay -->
+      <div :class="['ver-sidebar-overlay', sidebarOpen ? 'open' : '']" @click="sidebarOpen = false"></div>
+
+      <!-- Mobile toggle button -->
+      <button class="ver-mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Ver índice de lecciones">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span>Índice</span>
+        <span class="ver-mobile-toggle-count">{{ leccionesCompletadas }}/{{ lecciones.length }}</span>
+      </button>
 
       <!-- Sidebar lecciones -->
-      <aside class="ver-sidebar">
+      <aside :class="['ver-sidebar', sidebarOpen ? 'open' : '']">
         <div class="ver-sidebar-head">
+          <button class="ver-back-btn" @click="goBack" title="Volver a mis cursos">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Mis cursos
+          </button>
           <h2 class="ver-curso-nombre">{{ curso?.title }}</h2>
           <p class="ver-course-meta">
             {{ leccionesCompletadas }} de {{ lecciones.length }} lecciones
@@ -228,7 +301,7 @@ async function goToLesson(lec: any | null) {
         <nav class="ver-nav">
           <button v-for="(lec, idx) in lecciones" :key="lec.id"
             @click="selectLeccion(lec)"
-            :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '']"
+            :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '', isNextPending(lec) ? 'next-pending' : '']"
             :aria-current="selectedLeccion?.id === lec.id ? 'page' : undefined">
             <span class="ver-nav-num">
               <svg v-if="lec.completada" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
@@ -238,6 +311,7 @@ async function goToLesson(lec: any | null) {
               <p class="ver-nav-title">{{ lec.title }}</p>
               <p class="ver-nav-meta">{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
             </div>
+            <span v-if="isNextPending(lec)" class="ver-next-badge">Siguiente</span>
             <span :class="['ver-type-pip', lec.type]"></span>
           </button>
           <div v-if="lecciones.length === 0" class="ver-nav-empty">Sin lecciones</div>
@@ -273,6 +347,35 @@ async function goToLesson(lec: any | null) {
                 </button>
               </div>
             </div>
+
+            <!-- Cómo funciona -->
+            <div class="ver-how-it-works">
+              <h3>¿Cómo funciona?</h3>
+              <div class="ver-steps">
+                <div class="ver-step">
+                  <div class="ver-step-num">1</div>
+                  <div>
+                    <strong>Ve el contenido</strong>
+                    <p>Mira el video, lee el documento o revisa el material de la lección.</p>
+                  </div>
+                </div>
+                <div class="ver-step">
+                  <div class="ver-step-num">2</div>
+                  <div>
+                    <strong>Marca completada</strong>
+                    <p>Cuando termines, presiona el botón "Marcar completada" para registrar tu avance.</p>
+                  </div>
+                </div>
+                <div class="ver-step">
+                  <div class="ver-step-num">3</div>
+                  <div>
+                    <strong>Contesta las preguntas</strong>
+                    <p>Algunas lecciones tienen preguntas para reforzar lo aprendido.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="ver-welcome-message" v-if="curso?.welcome_message">
               <h3>Acerca de este curso</h3>
               <p>{{ curso.welcome_message }}</p>
@@ -350,15 +453,29 @@ async function goToLesson(lec: any | null) {
 
             <div class="ver-lesson-actions">
               <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
-                Anterior
+                ← Anterior
               </button>
               <button v-if="!selectedLeccion.completada" class="btn btn-primary" @click="marcarCompleta">
-                Marcar completada
+                ✓ Marcar completada
               </button>
               <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
-                Siguiente
+                Siguiente →
               </button>
             </div>
+
+            <!-- Sugerencia siguiente lección -->
+            <Transition name="slide-up">
+              <div v-if="selectedLeccion.completada && nextPendingLeccion" class="ver-next-suggestion">
+                <div class="ver-next-suggestion-left">
+                  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                  <div>
+                    <strong>Siguiente lección</strong>
+                    <p>{{ nextPendingLeccion.title }}</p>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm" @click="goToLesson(nextPendingLeccion)">Continuar →</button>
+              </div>
+            </Transition>
 
             <!-- Preguntas Intermedias -->
             <Transition name="slide-up">
@@ -458,6 +575,84 @@ async function goToLesson(lec: any | null) {
 </template>
 
 <style scoped>
+/* Toast notification */
+.ver-toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
+  background: var(--dark); color: #fff; padding: 12px 28px; border-radius: 999px;
+  font-size: 0.9rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.2);
+  pointer-events: none;
+}
+
+/* Error state */
+.ver-error-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 80px 24px; text-align: center; min-height: 50vh;
+}
+.ver-error-icon { color: var(--muted); }
+.ver-error-state h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); }
+.ver-error-state p { color: var(--muted); font-size: 0.92rem; max-width: 420px; }
+
+/* Back button */
+.ver-back-btn {
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+  color: var(--muted); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 4px 0; margin-bottom: 10px; transition: color 0.15s;
+}
+.ver-back-btn:hover { color: var(--brand); }
+
+/* Mobile toggle */
+.ver-mobile-toggle {
+  display: none; align-items: center; gap: 8px; padding: 10px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+  font-size: 0.85rem; font-weight: 700; color: var(--dark); cursor: pointer;
+  grid-column: 1 / -1; transition: all 0.15s;
+}
+.ver-mobile-toggle:hover { border-color: var(--brand); }
+.ver-mobile-toggle-count {
+  margin-left: auto; background: var(--brand-light); color: var(--brand-dark);
+  padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+}
+
+/* Mobile sidebar overlay */
+.ver-sidebar-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+}
+.ver-sidebar-overlay.open { display: block; }
+
+/* Next pending badge */
+.ver-nav-item.next-pending { border-left: 3px solid var(--brand); }
+.ver-next-badge {
+  font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--brand-dark); background: var(--brand-light); padding: 2px 7px;
+  border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+}
+
+/* How it works steps */
+.ver-how-it-works {
+  background: var(--surface); padding: 28px; border-radius: var(--r-lg);
+  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+}
+.ver-how-it-works h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 18px; }
+.ver-steps { display: flex; flex-direction: column; gap: 16px; }
+.ver-step { display: flex; align-items: flex-start; gap: 14px; }
+.ver-step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff;
+  font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.ver-step strong { font-size: 0.9rem; font-weight: 700; color: var(--dark); display: block; }
+.ver-step p { font-size: 0.82rem; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+
+/* Next lesson suggestion */
+.ver-next-suggestion {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd;
+  border-radius: var(--r-lg); padding: 16px 20px; margin-bottom: 20px;
+}
+.ver-next-suggestion-left { display: flex; align-items: center; gap: 12px; color: var(--info); flex: 1; min-width: 0; }
+.ver-next-suggestion-left strong { font-size: 0.82rem; font-weight: 700; color: var(--dark); display: block; }
+.ver-next-suggestion-left p { font-size: 0.85rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* Layout shell */
 .ver-curso-shell {
   min-height: calc(100vh - var(--topbar-h) - 56px);
@@ -703,12 +898,17 @@ async function goToLesson(lec: any | null) {
     grid-template-columns: 1fr;
     min-height: auto;
   }
+  .ver-mobile-toggle {
+    display: flex;
+  }
   .ver-sidebar {
-    width: 100%;
-    max-height: 320px;
-    overflow-y: auto;
-    border-right: none;
-    border-bottom: 1.5px solid var(--border);
+    position: fixed; top: 0; left: 0; bottom: 0; width: 300px; z-index: 201;
+    transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.25,0.1,0.25,1);
+    border-right: none; max-height: none; overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0,0,0,.15);
+  }
+  .ver-sidebar.open {
+    transform: translateX(0);
   }
   .ver-main-inner {
     padding: 18px;
@@ -723,6 +923,13 @@ async function goToLesson(lec: any | null) {
   .ver-foro-head {
     flex-direction: column;
     align-items: stretch;
+  }
+  .ver-next-suggestion {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ver-welcome-title {
+    font-size: 1.5rem !important;
   }
 }
 </style>

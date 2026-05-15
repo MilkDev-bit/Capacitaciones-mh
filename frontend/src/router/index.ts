@@ -11,7 +11,8 @@ const router = createRouter({
       component: () => import('../views/admin/AdminLayout.vue'),
       meta: { requiresAuth: true, role: 'admin' },
       children: [
-        { path: '', redirect: '/admin/capacitaciones' },
+        { path: '', redirect: '/admin/dashboard' },
+        { path: 'dashboard', component: () => import('../views/admin/AdminDashboard.vue') },
         { path: 'capacitaciones', component: () => import('../views/admin/CapacitacionesView.vue') },
         { path: 'examenes', component: () => import('../views/admin/ExamenesView.vue') },
         { path: 'usuarios', component: () => import('../views/admin/UsuariosView.vue') },
