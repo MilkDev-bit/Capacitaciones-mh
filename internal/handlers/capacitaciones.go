@@ -58,10 +58,21 @@ func CreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
+	var thumbnailPath string
+	thumbFile, err := c.FormFile("thumbnail")
+	if err == nil {
+		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
+		newName := uuid.NewString() + ext
+		dest := filepath.Join("uploads", "thumbnails", newName)
+		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
+			thumbnailPath = "/" + filepath.ToSlash(dest)
+		}
+	}
+
 	var id string
 	err = db.DB.QueryRow(
-		`INSERT INTO capacitaciones(title, description, type, file_path, content) VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		title, description, capType, filePath, content,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, thumbnail_url) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+		title, description, capType, filePath, content, thumbnailPath,
 	).Scan(&id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

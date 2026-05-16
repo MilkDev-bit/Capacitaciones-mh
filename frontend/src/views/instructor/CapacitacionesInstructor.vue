@@ -10,6 +10,7 @@ const error = ref('')
 const success = ref('')
 const form = ref({ title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' })
 const file = ref<File | null>(null)
+const thumbnailFile = ref<File | null>(null)
 
 const selectedCurso = ref<any | null>(null)
 const activeTab = ref<'lecciones' | 'intermedias' | 'examen'>('lecciones')
@@ -66,13 +67,15 @@ async function guardar() {
     fd.append('content', form.value.content)
     fd.append('is_public', String(form.value.is_public))
     fd.append('welcome_message', form.value.welcome_message)
-    fd.append('thumbnail_url', form.value.thumbnail_url)
     if (file.value) fd.append('file', file.value)
+    if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
+    
     await api.post('/instructor/capacitaciones', fd)
     success.value = 'Curso creado'
     showForm.value = false
     form.value = { title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' }
     file.value = null
+    thumbnailFile.value = null
     await load()
   } catch (e: any) {
     error.value = e.response?.data?.error || 'Error al guardar'
@@ -179,6 +182,10 @@ async function loadMisExamenes() {
   const res = await api.get('/instructor/examenes')
   misExamenes.value = res.data || []
 }
+
+function fileUrl(path: string) {
+  return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
+}
 </script>
 
 <template>
@@ -242,9 +249,12 @@ async function loadMisExamenes() {
           <h3 class="ci-form-section-title">Diseño y Bienvenida</h3>
           <div class="ci-form-grid">
             <div class="ci-field ci-field-full">
-              <label class="ci-label" for="f-thumb">URL de la imagen de portada <span class="ci-optional">(opcional)</span></label>
-              <input id="f-thumb" class="ci-input" v-model="form.thumbnail_url" placeholder="https://ejemplo.com/imagen.jpg" />
-              <span class="ci-hint">Imagen que representará el curso (Recomendado: 1280x720px)</span>
+              <label class="ci-label">Imagen de portada <span class="ci-optional">(opcional)</span></label>
+              <DragDropUpload 
+                v-model="thumbnailFile" 
+                accept=".jpg,.jpeg,.png,.webp" 
+              />
+              <span class="ci-hint">Sube una imagen que representará el curso (Recomendado: 1280x720px. Formatos: JPG, PNG, WEBP)</span>
             </div>
             <div class="ci-field ci-field-full">
               <label class="ci-label" for="f-welcome">Mensaje de Bienvenida <span class="ci-optional">(opcional)</span></label>
@@ -322,8 +332,13 @@ async function loadMisExamenes() {
           :class="['ci-card', selectedCurso?.id === c.id && 'ci-card-selected']">
 
           <!-- Cover / Thumbnail -->
-          <div :class="['ci-card-cover', `cover-${c.type}`]">
-            <div class="ci-card-cover-icon">{{ c.type === 'video' ? '🎥' : c.type === 'document' ? '📄' : '📝' }}</div>
+          <div :class="['ci-card-cover', c.thumbnail_url ? 'has-image' : `cover-${c.type}`]">
+            <template v-if="c.thumbnail_url">
+              <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="ci-card-cover-img" />
+            </template>
+            <template v-else>
+              <div class="ci-card-cover-icon">{{ c.type === 'video' ? '🎥' : c.type === 'document' ? '📄' : '📝' }}</div>
+            </template>
             <div class="ci-card-cover-badges">
               <span :class="['ci-badge-pub', c.is_public ? 'pub' : 'priv']">
                 {{ c.is_public ? '🌐 Público' : '🔒 Privado' }}
@@ -809,6 +824,8 @@ async function loadMisExamenes() {
   height: 155px; position: relative; display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
+.ci-card-cover.has-image { background: none; }
+.ci-card-cover-img { width: 100%; height: 100%; object-fit: cover; }
 .cover-video    { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%); }
 .cover-document { background: linear-gradient(135deg, #14532d 0%, #15803d 40%, #16a34a 100%); }
 .cover-text     { background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 40%, #3b82f6 100%); }

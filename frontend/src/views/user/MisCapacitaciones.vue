@@ -40,6 +40,10 @@ function normalize(text: string) {
   return (text || '').toLowerCase().trim()
 }
 
+function fileUrl(path: string) {
+  return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
+}
+
 function courseProgress(curso: any) {
   if (!curso.total_lecciones) return 0
   return Math.round((curso.lecciones_completadas / curso.total_lecciones) * 100)
@@ -278,9 +282,14 @@ async function unirseConCodigo() {
           @click="openCourse(c.id)"
           @keyup.enter="openCourse(c.id)"
         >
-          <div :class="['course-thumb', thumbClass[c.type] || 'thumb-default']">
-            <span class="thumb-icon">{{ typeIcon[c.type] || 'CUR' }}</span>
-            <span class="course-cover-pill">{{ typeLabel[c.type] || c.type }}</span>
+          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]">
+            <template v-if="c.thumbnail_url">
+              <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="course-thumb-img" />
+            </template>
+            <template v-else>
+              <span class="thumb-icon">{{ typeIcon[c.type] || 'CUR' }}</span>
+              <span class="course-cover-pill">{{ typeLabel[c.type] || c.type }}</span>
+            </template>
           </div>
           <div class="course-body">
             <div class="course-card-top">
@@ -366,9 +375,15 @@ async function unirseConCodigo() {
 
       <div v-else-if="publicosFiltrados.length" class="courses-grid">
         <article v-for="c in publicosFiltrados" :key="c.id" class="course-card public-course">
-          <div :class="['course-thumb', thumbClass[c.type] || 'thumb-default']">
-            <span class="thumb-icon">{{ typeIcon[c.type] || 'CUR' }}</span>
-            <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
+          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]">
+            <template v-if="c.thumbnail_url">
+              <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="course-thumb-img" />
+              <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
+            </template>
+            <template v-else>
+              <span class="thumb-icon">{{ typeIcon[c.type] || 'CUR' }}</span>
+              <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
+            </template>
           </div>
           <div class="course-body">
             <div class="course-card-top">
@@ -599,6 +614,14 @@ async function unirseConCodigo() {
   padding: 16px;
 }
 
+.course-thumb.has-image {
+  background: none;
+}
+.course-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .thumb-icon {
   color: rgba(255, 255, 255, 0.94);
   font-size: 1.85rem;

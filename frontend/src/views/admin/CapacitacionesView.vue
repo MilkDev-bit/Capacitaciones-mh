@@ -12,6 +12,7 @@ const search = ref('')
 
 const form = ref({ title: '', description: '', type: 'video', content: '' })
 const file = ref<File | null>(null)
+const thumbnailFile = ref<File | null>(null)
 
 const filtered = computed(() => {
   const term = search.value.toLowerCase().trim()
@@ -51,11 +52,13 @@ async function guardar() {
     fd.append('type', form.value.type)
     fd.append('content', form.value.content)
     if (file.value) fd.append('file', file.value)
+    if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
     await api.post('/admin/capacitaciones', fd)
     success.value = 'Capacitación creada exitosamente'
     showForm.value = false
     form.value = { title: '', description: '', type: 'video', content: '' }
     file.value = null
+    thumbnailFile.value = null
     await load()
     setTimeout(() => { success.value = '' }, 3000)
   } catch (e: any) {
@@ -79,6 +82,9 @@ function typeIcon(t: string) {
 }
 function thumbClass(t: string) {
   return { video: 'thumb-video', document: 'thumb-document', text: 'thumb-text' }[t] || 'thumb-default'
+}
+function fileUrl(path: string) {
+  return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
 }
 </script>
 
@@ -128,15 +134,23 @@ function thumbClass(t: string) {
               </select>
             </div>
             <div class="ac-field" v-if="form.type !== 'text'">
-              <label>Archivo *</label>
+              <label>Archivo principal *</label>
               <DragDropUpload 
                 v-model="file" 
                 :accept="form.type === 'video' ? 'video/mp4,video/webm' : '.pdf,.doc,.docx'" 
               />
             </div>
             <div class="ac-field" v-else>
-              <label>Archivo (no aplica)</label>
+              <label>Archivo principal (no aplica)</label>
               <p style="font-size:0.82rem;color:var(--muted);padding:10px 0;background:var(--surface-soft);border-radius:var(--r);text-align:center">El contenido se escribe abajo</p>
+            </div>
+            <div class="ac-field ac-field-full">
+              <label>Miniatura (opcional)</label>
+              <DragDropUpload 
+                v-model="thumbnailFile" 
+                accept=".jpg,.jpeg,.png,.webp" 
+              />
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Imagen que se mostrará en las tarjetas de cursos. Formatos: JPG, PNG, WEBP.</p>
             </div>
             <div class="ac-field ac-field-full">
               <label>Descripción</label>
@@ -175,9 +189,14 @@ function thumbClass(t: string) {
 
     <div v-else-if="filtered.length" class="ac-grid">
       <div v-for="c in filtered" :key="c.id" class="ac-card">
-        <div :class="['ac-card-cover', thumbClass(c.type)]">
-          <span class="ac-card-icon">{{ typeIcon(c.type) }}</span>
-          <span class="ac-card-type-badge">{{ typeLabel(c.type) }}</span>
+        <div :class="['ac-card-cover', c.thumbnail_url ? 'has-image' : thumbClass(c.type)]">
+          <template v-if="c.thumbnail_url">
+            <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="ac-card-cover-img" style="width:100%;height:100%;object-fit:cover;" />
+          </template>
+          <template v-else>
+            <span class="ac-card-icon">{{ typeIcon(c.type) }}</span>
+            <span class="ac-card-type-badge">{{ typeLabel(c.type) }}</span>
+          </template>
         </div>
         <div class="ac-card-body">
           <h3>{{ c.title }}</h3>
