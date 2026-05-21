@@ -425,6 +425,96 @@ async function eliminar(id: string) {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- ── Panel full-screen de detalle ─────────────────────────────────────── -->
+  <Teleport to="body">
+    <div v-if="detalleVisible" class="det-overlay">
+
+      <!-- Cabecera sticky -->
+      <div class="det-header">
+        <div class="det-header-left">
+          <button class="det-back" @click="cerrarDetalle">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Volver a resultados
+          </button>
+          <div class="det-title-group">
+            <span class="det-exam-name">{{ resModal?.title }}</span>
+            <span class="det-sep">›</span>
+            <span class="det-student-name">{{ resEstudiante?.nombre }}</span>
+          </div>
+        </div>
+        <div class="det-header-right">
+          <span class="det-score-pill" :style="{ background: scoreColor(resEstudiante?.porcentaje) + '18', color: scoreColor(resEstudiante?.porcentaje) }">
+            {{ resEstudiante?.porcentaje?.toFixed(0) }}%
+          </span>
+          <span class="det-pts">{{ resEstudiante?.puntaje?.toFixed(1) }} / {{ resEstudiante?.puntaje_max?.toFixed(1) }} pts</span>
+        </div>
+      </div>
+
+      <!-- Barra de filtros / stats -->
+      <div class="det-stats-bar">
+        <button
+          v-for="f in [
+            { key: 'all',     label: 'Todas',       count: resDetalle?.length ?? 0,   color: '' },
+            { key: 'correct', label: 'Correctas',   count: detalleStats.correctas,    color: '#10b981' },
+            { key: 'wrong',   label: 'Incorrectas', count: detalleStats.incorrectas,  color: '#ef4444' },
+            { key: 'open',    label: 'Texto libre', count: detalleStats.open,         color: '#6366f1' },
+          ]"
+          :key="f.key"
+          class="det-stat-chip"
+          :class="{ active: detalleFiltro === f.key }"
+          :style="detalleFiltro === f.key && f.color ? { background: f.color + '18', color: f.color, borderColor: f.color + '50' } : {}"
+          @click="detalleFiltro = f.key as any"
+        >
+          <span class="det-chip-count" :style="f.color && detalleFiltro !== f.key ? { color: f.color } : {}">{{ f.count }}</span>
+          {{ f.label }}
+        </button>
+      </div>
+
+      <!-- Cuerpo scrollable -->
+      <div class="det-body">
+        <div v-if="resLoading" class="det-loading"><div class="spinner"></div></div>
+        <template v-else>
+          <div
+            v-for="p in detalleFiltrada"
+            :key="p.pregunta_id"
+            class="det-q-card"
+            :class="!p.respuesta_dada ? 'q-unanswered' : p.tipo === 'open_text' ? 'q-open' : p.es_correcta ? 'q-correct' : 'q-wrong'"
+          >
+            <div class="det-q-head">
+              <span class="det-q-num">{{ (resDetalle?.indexOf(p) ?? 0) + 1 }}</span>
+              <p class="det-q-texto">{{ p.texto }}</p>
+              <div class="det-q-right">
+                <span v-if="!p.respuesta_dada" class="det-q-tag tag-unanswered">Sin respuesta</span>
+                <span v-else-if="p.tipo === 'open_text'" class="det-q-tag tag-open">Texto libre</span>
+                <span v-else-if="p.es_correcta" class="det-q-tag tag-correct">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
+                  Correcto
+                </span>
+                <span v-else class="det-q-tag tag-wrong">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+                  Incorrecto
+                </span>
+                <span class="det-q-val">{{ p.valor }} pt</span>
+              </div>
+            </div>
+            <div v-if="p.respuesta_dada" class="det-q-answers">
+              <div class="det-ans-row">
+                <span class="det-ans-label">Respondió</span>
+                <span class="det-ans-val" :class="p.tipo === 'open_text' ? 'val-open' : p.es_correcta ? 'val-correct' : 'val-wrong'">{{ p.respuesta_dada }}</span>
+              </div>
+              <div v-if="p.tipo !== 'open_text' && !p.es_correcta && p.respuesta_correcta" class="det-ans-row">
+                <span class="det-ans-label">Correcta</span>
+                <span class="det-ans-val val-correct">{{ p.respuesta_correcta }}</span>
+              </div>
+            </div>
+          </div>
+          <p v-if="detalleFiltrada.length === 0" class="det-empty">No hay preguntas en esta categoría.</p>
+        </template>
+      </div>
+
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
