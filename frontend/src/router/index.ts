@@ -6,6 +6,7 @@ const router = createRouter({
     { path: '/', redirect: '/login' },
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
+    { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
     {
       path: '/admin',
       component: () => import('../views/admin/AdminLayout.vue'),

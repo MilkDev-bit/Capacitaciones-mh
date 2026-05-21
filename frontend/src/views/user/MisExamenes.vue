@@ -13,9 +13,9 @@ onMounted(async () => {
 
 function openInWindow(id: string) {
   window.open(
-    '/usuario/examenes/' + id,
+    '/examen/' + id,
     'examen_' + id,
-    'width=1000,height=720,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
+    'width=780,height=900,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no'
   )
 }
 </script>
