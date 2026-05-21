@@ -75,6 +75,7 @@ async function submit() {
     auth.user = res.data.user
     localStorage.setItem('token', res.data.token)
     localStorage.setItem('user', JSON.stringify(res.data.user))
+    toast.success(`¡Bienvenido/a, ${res.data.user.name}!`, 'Sesión iniciada')
     const redirect = route.query.redirect as string | undefined
     if (redirect) router.push(redirect)
     else if (res.data.user?.role === 'admin') router.push('/admin')

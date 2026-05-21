@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../api'
 import router from '../router'
+import { toast } from '../utils/toast'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -28,19 +29,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
-    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
-      token.value = null
-      user.value = null
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      
-      // Replace history to prevent going back
-      router.replace('/login').then(() => {
-        // Force a page reload to clear any cached states
-        window.location.reload()
-      })
-    }
+  async function logout() {
+    if (!await toast.confirm('¿Deseas cerrar sesión?', 'Cerrar sesión')) return
+    token.value = null
+    user.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    toast.success('¡Hasta pronto! Sesión cerrada correctamente.', 'Hasta pronto')
+    setTimeout(() => router.push('/login'), 800)
   }
 
   return { token, user, isLoggedIn, isAdmin, isInstructor, login, logout }
