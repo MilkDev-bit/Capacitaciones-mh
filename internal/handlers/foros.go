@@ -11,13 +11,18 @@ import (
 
 func ListForoPosts(c *gin.Context) {
 	leccionID := c.Param("leccion_id")
+	userID, _ := c.Get("user_id")
 
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.leccion_id, p.user_id, u.name, p.titulo, p.contenido, p.created_at
+		SELECT p.id, p.leccion_id, p.user_id, u.name, p.titulo, p.contenido, p.created_at,
+		       COUNT(DISTINCT fl.id) AS like_count,
+		       COALESCE(BOOL_OR(fl.user_id = $2::uuid), false) AS user_liked
 		FROM foro_posts p
 		JOIN users u ON u.id = p.user_id
+		LEFT JOIN foro_likes fl ON fl.post_id = p.id
 		WHERE p.leccion_id = $1
-		ORDER BY p.created_at DESC`, leccionID)
+		GROUP BY p.id, u.name
+		ORDER BY p.created_at DESC`, leccionID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -27,7 +32,7 @@ func ListForoPosts(c *gin.Context) {
 	result := []models.ForoPost{}
 	for rows.Next() {
 		var p models.ForoPost
-		rows.Scan(&p.ID, &p.LeccionID, &p.UserID, &p.UserName, &p.Titulo, &p.Contenido, &p.CreatedAt)
+		rows.Scan(&p.ID, &p.LeccionID, &p.UserID, &p.UserName, &p.Titulo, &p.Contenido, &p.CreatedAt, &p.LikeCount, &p.UserLiked)
 		result = append(result, p)
 	}
 	c.JSON(http.StatusOK, result)
@@ -124,4 +129,23 @@ func CreateForoComentario(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
+}
+
+func ToggleForoPostLike(c *gin.Context) {
+	postID := c.Param("post_id")
+	userID, _ := c.Get("user_id")
+
+	var exists bool
+	db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM foro_likes WHERE post_id=$1 AND user_id=$2)`,
+		postID, userID).Scan(&exists)
+
+	if exists {
+		db.DB.Exec(`DELETE FROM foro_likes WHERE post_id=$1 AND user_id=$2`, postID, userID)
+	} else {
+		db.DB.Exec(`INSERT INTO foro_likes(post_id, user_id) VALUES($1, $2)`, postID, userID)
+	}
+
+	var count int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM foro_likes WHERE post_id=$1`, postID).Scan(&count)
+	c.JSON(http.StatusOK, gin.H{"liked": !exists, "count": count})
 }

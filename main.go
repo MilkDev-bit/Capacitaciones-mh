@@ -71,6 +71,7 @@ func main() {
 			auth.DELETE("/foro/posts/:post_id", handlers.DeleteForoPost)
 			auth.GET("/foro/posts/:post_id/comentarios", handlers.ListForoComentarios)
 			auth.POST("/foro/posts/:post_id/comentarios", handlers.CreateForoComentario)
+			auth.POST("/foro/posts/:post_id/like", handlers.ToggleForoPostLike)
 
 			// Perfil
 			auth.GET("/perfil", handlers.GetPerfil)

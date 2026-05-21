@@ -2,10 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
+import { useAuthStore } from '../../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const cursoId = route.params.id as string
+const authStore = useAuthStore()
+const currentUser = computed(() => authStore.user)
 
 const curso = ref<any>(null)
 const lecciones = ref<any[]>([])
@@ -178,6 +181,11 @@ async function loadForo(leccionId: string) {
   try {
     const res = await api.get(`/lecciones/${leccionId}/foro`)
     foroPosts.value = res.data || []
+    // Pre-cargar comentarios para todos los posts
+    for (const post of foroPosts.value) {
+      const cRes = await api.get(`/foro/posts/${post.id}/comentarios`)
+      comentariosMap.value[post.id] = cRes.data || []
+    }
   } catch {
     foroError.value = 'No se pudieron cargar los posts del foro'
   } finally {
@@ -214,9 +222,23 @@ async function togglePost(postId: string) {
     return
   }
   expandedPost.value = postId
-  if (!comentariosMap.value[postId]) {
-    const res = await api.get(`/foro/posts/${postId}/comentarios`)
-    comentariosMap.value[postId] = res.data || []
+  const res = await api.get(`/foro/posts/${postId}/comentarios`)
+  comentariosMap.value[postId] = res.data || []
+}
+
+async function toggleLike(postId: string) {
+  const post = foroPosts.value.find(p => p.id === postId)
+  if (!post) return
+  const wasLiked = post.user_liked
+  post.user_liked = !wasLiked
+  post.like_count = (post.like_count || 0) + (post.user_liked ? 1 : -1)
+  try {
+    const res = await api.post(`/foro/posts/${postId}/like`)
+    post.user_liked = res.data.liked
+    post.like_count = res.data.count
+  } catch {
+    post.user_liked = wasLiked
+    post.like_count = (post.like_count || 0) + (wasLiked ? 1 : -1)
   }
 }
 
@@ -227,6 +249,24 @@ async function crearComentario(postId: string) {
   nuevoComentario.value[postId] = ''
   const res = await api.get(`/foro/posts/${postId}/comentarios`)
   comentariosMap.value[postId] = res.data || []
+}
+
+function foroInitials(name: string) {
+  return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || '?'
+}
+
+function meInitials() {
+  const n = currentUser.value?.name || ''
+  return n.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'YO'
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+  if (diff < 60) return 'ahora mismo'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`
+  return new Date(dateStr).toLocaleDateString('es', { month: 'short', day: 'numeric' })
 }
 
 function fileUrl(path: string) {
@@ -593,20 +633,15 @@ function goBack() {
 
             <!-- Foro -->
             <div class="ver-foro">
+              <!-- Foro header -->
               <div class="ver-foro-head">
-                <div>
-                  <h3 class="ver-section-title">
-                    <span class="gm-icon gm-icon-forum">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                    </span>
-                    Foro de la lección
-                  </h3>
-                  <p style="font-size:0.8rem;color:var(--muted);margin-top:2px">Pregunta o comenta sobre este contenido</p>
-                </div>
-                <button @click="showNuevoPost = !showNuevoPost" class="btn btn-secondary btn-sm">
-                  <svg v-if="!showNuevoPost" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                  {{ showNuevoPost ? 'Cancelar' : 'Nuevo post' }}
-                </button>
+                <h3 class="ver-section-title">
+                  <span class="gm-icon gm-icon-forum">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                  </span>
+                  Foro de la lección
+                </h3>
+                <p class="ver-foro-sub">Participa, pregunta y comparte con la comunidad</p>
               </div>
 
               <div v-if="foroError" class="foro-msg foro-msg-error">{{ foroError }}</div>
@@ -615,57 +650,119 @@ function goBack() {
                 <span>Cargando...</span>
               </div>
 
+              <!-- Caja "¿Qué estás pensando?" al estilo Facebook -->
+              <div v-if="!foroLoading" class="fb-create-box">
+                <div class="fb-create-avatar">{{ meInitials() }}</div>
+                <button class="fb-create-trigger" @click="showNuevoPost = true">
+                  ¿Qué quieres preguntar sobre esta lección?
+                </button>
+              </div>
+
               <Transition name="slide-down">
-                <div v-if="showNuevoPost" class="ver-new-post">
-                  <input v-model="nuevoPost.titulo" placeholder="Título del post" class="field-input" style="margin-bottom:8px" />
-                  <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="3" class="field-input" style="resize:vertical;margin-bottom:10px" />
-                  <div style="display:flex;gap:8px">
-                    <button @click="crearPost" class="btn btn-primary btn-sm" :disabled="postLoading">
+                <div v-if="showNuevoPost" class="fb-post-form-card">
+                  <div class="fb-post-form-header">
+                    <h4>Crear publicación</h4>
+                    <button class="fb-close-btn" @click="showNuevoPost = false">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                  <div class="fb-post-form-author">
+                    <div class="fb-create-avatar">{{ meInitials() }}</div>
+                    <span class="fb-post-form-name">{{ currentUser?.name }}</span>
+                  </div>
+                  <input v-model="nuevoPost.titulo" placeholder="Título de tu publicación..." class="field-input" style="margin-bottom:10px" />
+                  <textarea v-model="nuevoPost.contenido" placeholder="¿Qué quieres compartir con el grupo?" rows="4" class="field-input" style="resize:vertical;margin-bottom:12px" />
+                  <div class="fb-post-form-footer">
+                    <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
+                    <button @click="crearPost" class="btn btn-primary btn-sm" :disabled="postLoading || !nuevoPost.titulo || !nuevoPost.contenido">
                       <span v-if="postLoading" class="btn-spinner"></span>
                       {{ postLoading ? 'Publicando...' : 'Publicar' }}
                     </button>
-                    <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
                   </div>
                 </div>
               </Transition>
 
-              <div v-if="!foroLoading && foroPosts.length === 0" style="text-align:center;padding:28px;color:var(--muted);font-size:0.88rem">Sin posts aún. Sé el primero en preguntar.</div>
+              <div v-if="!foroLoading && foroPosts.length === 0" class="fb-empty-foro">
+                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                <p>Aún no hay publicaciones en este foro.</p>
+                <span>¡Sé el primero en preguntar o compartir algo!</span>
+              </div>
 
-              <TransitionGroup name="list-item" tag="div" style="display:flex;flex-direction:column;gap:0;position:relative">
-                <div v-for="post in foroPosts" :key="post.id" class="ver-post">
-                  <div class="ver-post-head" @click="togglePost(post.id)">
-                    <div style="flex:1;min-width:0">
-                      <p class="ver-post-title">{{ post.titulo }}</p>
-                      <p class="ver-post-meta">
-                        <router-link :to="`/usuario/perfil/${post.user_id}`" class="ver-user-link" @click.stop>{{ post.user_name }}</router-link>
-                        · {{ new Date(post.created_at).toLocaleDateString('es') }}
-                      </p>
+              <!-- Posts estilo Facebook -->
+              <TransitionGroup name="list-item" tag="div" class="fb-posts-list">
+                <div v-for="post in foroPosts" :key="post.id" class="fb-post-card">
+
+                  <!-- Card header: avatar, nombre, tiempo, opciones -->
+                  <div class="fb-post-header">
+                    <div class="fb-post-avatar-wrap">
+                      <div class="fb-post-avatar">{{ foroInitials(post.user_name) }}</div>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center">
-                      <button @click.stop="eliminarPost(post.id)" class="lec-btn del" title="Eliminar post">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                      </button>
-                      <span class="ver-post-toggle">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                          <path v-if="expandedPost === post.id" d="M18 15l-6-6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path v-else d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </span>
+                    <div class="fb-post-meta">
+                      <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name }}</router-link>
+                      <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                     </div>
+                    <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
                   </div>
+
+                  <!-- Contenido del post -->
+                  <div class="fb-post-body">
+                    <h4 class="fb-post-title">{{ post.titulo }}</h4>
+                    <p class="fb-post-content">{{ post.contenido }}</p>
+                  </div>
+
+                  <!-- Contador de likes y comentarios -->
+                  <div v-if="post.like_count > 0 || (comentariosMap[post.id] || []).length > 0" class="fb-post-stats">
+                    <span v-if="post.like_count > 0" class="fb-stat-likes">
+                      <span class="fb-like-bubble">
+                        <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zm6-10A1.5 1.5 0 006.5 2v1.5a.5.5 0 01-.5.5H4a2 2 0 00-2 2v1a2 2 0 002 2h.5v1a.5.5 0 01-.5.5H3a1 1 0 000 2h.5a.5.5 0 01.5.5V17a1 1 0 001 1h8a1 1 0 001-1v-2.5a.5.5 0 01.5-.5H16a2 2 0 002-2V8a2 2 0 00-2-2h-2a.5.5 0 01-.5-.5V4a2 2 0 00-2-2h-1.5A1.5 1.5 0 008 3v-.5z"/></svg>
+                      </span>
+                      {{ post.like_count }}
+                    </span>
+                    <span v-if="(comentariosMap[post.id] || []).length > 0" class="fb-stat-comments">
+                      {{ (comentariosMap[post.id] || []).length }} {{ (comentariosMap[post.id] || []).length === 1 ? 'comentario' : 'comentarios' }}
+                    </span>
+                  </div>
+
+                  <!-- Botones de acción: Me gusta y Comentar -->
+                  <div class="fb-post-actions">
+                    <button @click="toggleLike(post.id)" :class="['fb-action-btn', post.user_liked ? 'fb-action-liked' : '']">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      {{ post.user_liked ? 'Me gusta' : 'Me gusta' }}
+                    </button>
+                    <button @click="togglePost(post.id)" :class="['fb-action-btn', expandedPost === post.id ? 'fb-action-active' : '']">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Comentar
+                    </button>
+                  </div>
+
+                  <!-- Sección de comentarios -->
                   <Transition name="slide-down">
-                    <div v-if="expandedPost === post.id" class="ver-post-body">
-                      <p style="font-size:0.88rem;color:var(--text);margin-bottom:16px;white-space:pre-wrap;line-height:1.6">{{ post.contenido }}</p>
-                      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-                        <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="ver-comentario">
-                          <p style="font-size:0.87rem;color:var(--dark)">{{ com.contenido }}</p>
-                          <p style="font-size:0.75rem;color:var(--muted);margin-top:2px">{{ com.user_name }}</p>
+                    <div v-if="expandedPost === post.id" class="fb-comments-section">
+                      <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="fb-comment">
+                        <div class="fb-comment-avatar">{{ foroInitials(com.user_name) }}</div>
+                        <div class="fb-comment-bubble">
+                          <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
+                          <p class="fb-comment-text">{{ com.contenido }}</p>
                         </div>
-                        <p v-if="!(comentariosMap[post.id]?.length)" style="font-size:0.82rem;color:var(--muted)">Sin comentarios aún.</p>
                       </div>
-                      <div style="display:flex;gap:8px">
-                        <input v-model="nuevoComentario[post.id]" placeholder="Agregar comentario..." class="field-input" style="flex:1" @keydown.enter="crearComentario(post.id)" />
-                        <button @click="crearComentario(post.id)" class="btn btn-primary btn-sm">Enviar</button>
+                      <p v-if="!(comentariosMap[post.id] || []).length" class="fb-no-comments">Sin comentarios aún.</p>
+                      <!-- Input nuevo comentario -->
+                      <div class="fb-new-comment-row">
+                        <div class="fb-comment-avatar me">{{ meInitials() }}</div>
+                        <div class="fb-comment-input-wrap">
+                          <input v-model="nuevoComentario[post.id]"
+                            @keydown.enter="crearComentario(post.id)"
+                            placeholder="Escribe un comentario..."
+                            class="fb-comment-input" />
+                          <button @click="crearComentario(post.id)" class="fb-comment-send" :disabled="!nuevoComentario[post.id]?.trim()" title="Enviar">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </Transition>
@@ -996,20 +1093,166 @@ function goBack() {
 .ver-int-result { text-align: center; padding: 20px 0; }
 
 /* Foro */
-.ver-foro { background: var(--surface); border-radius: var(--r-lg); border: 1.5px solid var(--border); overflow: hidden; }
-.ver-foro-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); }
-.ver-new-post { padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border-light); }
+.ver-foro { background: transparent; display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+.ver-foro-head { margin-bottom: 2px; }
+.ver-foro-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
-.ver-post { border-bottom: 1px solid var(--border-light); }
-.ver-post:last-child { border-bottom: none; }
-.ver-post-head { padding: 13px 18px; display: flex; align-items: flex-start; cursor: pointer; transition: background 0.12s; }
-.ver-post-head:hover { background: var(--bg); }
-.ver-post-title { font-size: 0.9rem; font-weight: 600; color: var(--dark); }
-.ver-post-meta { font-size: 0.77rem; color: var(--muted); margin-top: 3px; }
-.ver-post-toggle { font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
-.ver-post-body { padding: 16px 18px; background: var(--bg); border-top: 1px solid var(--border-light); }
+/* Facebook: caja crear publicación */
+.fb-create-box {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: var(--r-lg); padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.fb-create-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--brand), #ef4444);
+  color: #fff; font-size: 0.85rem; font-weight: 800;
+}
+.fb-create-trigger {
+  flex: 1; background: var(--bg); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 9px 16px; text-align: left;
+  color: var(--muted); font-size: 0.88rem; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.fb-create-trigger:hover { background: rgba(249,115,22,.06); border-color: var(--brand); }
 
-.ver-comentario { background: var(--surface); border-radius: var(--r); padding: 10px 12px; border: 1px solid var(--border-light); }
+/* Facebook: formulario publicación */
+.fb-post-form-card {
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-md);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.fb-post-form-header { display: flex; align-items: center; justify-content: space-between; }
+.fb-post-form-header h4 { font-size: 1rem; font-weight: 800; color: var(--dark); }
+.fb-close-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: var(--bg); color: var(--muted); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.fb-close-btn:hover { background: #fef2f2; color: #dc2626; }
+.fb-post-form-author { display: flex; align-items: center; gap: 10px; }
+.fb-post-form-name { font-weight: 600; font-size: 0.9rem; color: var(--dark); }
+.fb-post-form-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Facebook: estado vacío */
+.fb-empty-foro {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 40px 24px; text-align: center; color: var(--muted);
+}
+.fb-empty-foro p { font-size: 0.95rem; font-weight: 600; color: var(--dark); margin: 0; }
+.fb-empty-foro span { font-size: 0.83rem; }
+
+/* Facebook: lista de posts */
+.fb-posts-list { display: flex; flex-direction: column; gap: 14px; }
+
+/* Facebook: card de post */
+.fb-post-card {
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.fb-post-card:hover { box-shadow: var(--shadow-md); }
+
+.fb-post-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px 10px; }
+.fb-post-avatar-wrap { flex-shrink: 0; }
+.fb-post-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-size: 0.8rem; font-weight: 800;
+}
+.fb-post-meta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.fb-post-author { font-size: 0.88rem; font-weight: 700; color: var(--dark); text-decoration: none; transition: color 0.15s; }
+.fb-post-author:hover { color: var(--brand); }
+.fb-post-time { font-size: 0.75rem; color: var(--muted); }
+.fb-delete-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: transparent; color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.fb-delete-btn:hover { background: #fef2f2; color: #dc2626; }
+
+.fb-post-body { padding: 0 16px 14px; }
+.fb-post-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+.fb-post-content { font-size: 0.88rem; color: var(--text); line-height: 1.65; white-space: pre-wrap; }
+
+/* Contadores */
+.fb-post-stats {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 16px 10px; font-size: 0.78rem; color: var(--muted);
+}
+.fb-stat-likes { display: flex; align-items: center; gap: 5px; }
+.fb-like-bubble {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--brand); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.fb-stat-comments { cursor: pointer; }
+.fb-stat-comments:hover { text-decoration: underline; }
+
+/* Botones acción */
+.fb-post-actions {
+  display: flex; border-top: 1px solid var(--border-light);
+  padding: 4px 8px;
+}
+.fb-action-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 8px 12px; border-radius: var(--r); border: none; background: transparent;
+  color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.fb-action-btn:hover { background: var(--bg); color: var(--dark); }
+.fb-action-liked { color: var(--brand) !important; }
+.fb-action-liked:hover { background: rgba(249,115,22,.08) !important; }
+.fb-action-active { color: #3b82f6 !important; }
+
+/* Sección comentarios */
+.fb-comments-section {
+  background: var(--bg); border-top: 1px solid var(--border-light);
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.fb-comment { display: flex; gap: 9px; align-items: flex-start; }
+.fb-comment-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-size: 0.7rem; font-weight: 800;
+}
+.fb-comment-avatar.me { background: linear-gradient(135deg, var(--brand), #ef4444); }
+.fb-comment-bubble {
+  background: var(--surface); border-radius: 0 var(--r-lg) var(--r-lg) var(--r-lg);
+  padding: 8px 12px; max-width: calc(100% - 42px);
+  border: 1px solid var(--border-light);
+}
+.fb-comment-author { font-size: 0.8rem; font-weight: 700; color: var(--dark); text-decoration: none; display: block; margin-bottom: 3px; }
+.fb-comment-author:hover { color: var(--brand); }
+.fb-comment-text { font-size: 0.84rem; color: var(--text); line-height: 1.5; white-space: pre-wrap; }
+.fb-no-comments { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 4px 0; }
+
+/* Input nuevo comentario */
+.fb-new-comment-row { display: flex; gap: 9px; align-items: center; padding-top: 4px; }
+.fb-comment-input-wrap {
+  flex: 1; display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 6px 10px 6px 14px;
+  transition: border-color 0.15s;
+}
+.fb-comment-input-wrap:focus-within { border-color: var(--brand); }
+.fb-comment-input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 0.84rem; color: var(--dark);
+}
+.fb-comment-send {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+}
+.fb-comment-send:disabled { background: var(--border); cursor: default; }
+.fb-comment-send:not(:disabled):hover { background: var(--brand-dark); }
 
 @media (max-width: 768px) {
   .ver-curso-shell {
@@ -1041,7 +1284,7 @@ function goBack() {
     min-height: 360px;
   }
   .ver-lesson-actions,
-  .ver-foro-head {
+  .fb-post-form-card {
     flex-direction: column;
     align-items: stretch;
   }
