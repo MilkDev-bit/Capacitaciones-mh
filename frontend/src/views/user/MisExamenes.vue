@@ -6,10 +6,13 @@ import api from '../../api'
 const examenes = ref<any[]>([])
 const router = useRouter()
 
-onMounted(async () => {
-  const res = await api.get('/mis-examenes')
-  examenes.value = res.data || []
-})
+function openInWindow(id: string) {
+  window.open(
+    '/usuario/examenes/' + id,
+    'examen_' + id,
+    'width=1000,height=720,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
+  )
+}
 </script>
 
 <template>
@@ -36,7 +39,17 @@ onMounted(async () => {
           <div class="exam-meta" v-if="e.preguntas">
             <span>📌 {{ e.preguntas.length }} preguntas</span>
           </div>
-          <div class="exam-cta">Responder exámen →</div>
+          <div class="exam-cta-row">
+            <span class="exam-cta">Responder exámen →</span>
+            <button
+              class="exam-window-btn"
+              @click.stop="openInWindow(e.id)"
+              title="Abrir en ventana independiente"
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Abrir en ventana
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -75,7 +88,16 @@ onMounted(async () => {
 .exam-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); }
 .exam-body p { font-size: 0.83rem; color: var(--muted); }
 .exam-meta { font-size: 0.8rem; color: var(--muted); }
-.exam-cta { font-size: 0.83rem; font-weight: 700; color: var(--brand); margin-top: 4px; }
+.exam-cta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.exam-cta { font-size: 0.83rem; font-weight: 700; color: var(--brand); }
+.exam-window-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; font-weight: 600; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 4px 9px; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s; white-space: nowrap;
+}
+.exam-window-btn:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
 .empty-state { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .empty-icon { font-size: 3rem; }
 .empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
