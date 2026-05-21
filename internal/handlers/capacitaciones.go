@@ -92,7 +92,8 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
 		SELECT DISTINCT c.id, c.title, c.description, c.type,
-		       COALESCE(c.file_path,''), COALESCE(c.content,''), c.created_at
+		       COALESCE(c.file_path,''), COALESCE(c.content,''),
+		       COALESCE(c.thumbnail_url,''), c.created_at
 		FROM capacitaciones c
 		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
 		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
@@ -107,7 +108,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	result := []models.Capacitacion{}
 	for rows.Next() {
 		var cap models.Capacitacion
-		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.CreatedAt)
+		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.ThumbnailURL, &cap.CreatedAt)
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)

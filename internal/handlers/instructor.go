@@ -341,6 +341,7 @@ func ListCursosPublicos(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT c.id, c.title, c.description, c.type,
 		       COALESCE(c.file_path,''), COALESCE(c.content,''),
+		       COALESCE(c.thumbnail_url,''),
 		       c.instructor_id, c.is_public, c.created_at,
 		       EXISTS(SELECT 1 FROM inscripciones i WHERE i.capacitacion_id=c.id AND i.user_id=$1) as inscrito
 		FROM capacitaciones c
@@ -362,7 +363,7 @@ func ListCursosPublicos(c *gin.Context) {
 	for rows.Next() {
 		var cp CursoPublico
 		rows.Scan(&cp.ID, &cp.Title, &cp.Description, &cp.Type,
-			&cp.FilePath, &cp.Content, &cp.InstructorID, &cp.IsPublic, &cp.CreatedAt, &cp.Inscrito)
+			&cp.FilePath, &cp.Content, &cp.ThumbnailURL, &cp.InstructorID, &cp.IsPublic, &cp.CreatedAt, &cp.Inscrito)
 		result = append(result, cp)
 	}
 	c.JSON(http.StatusOK, result)
