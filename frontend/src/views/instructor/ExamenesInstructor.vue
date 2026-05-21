@@ -604,6 +604,8 @@ async function eliminar(id: string) {
 @media (max-width: 768px) {
   .ex-body { padding: 0 14px 32px; }
   .ex-pregunta-meta { grid-template-columns: 1fr 1fr; }
+  .det-overlay { inset: 0; }
+  .res-overlay  { inset: 0; }
 }
 
 /* ── Botones de tarjeta ──────────────────────────────────────────────────────── */
@@ -611,7 +613,7 @@ async function eliminar(id: string) {
 
 /* ── Modal overlay ───────────────────────────────────────────────────────────── */
 .res-overlay {
-  position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  position: fixed; inset: 0 0 0 var(--sidebar-w); background: rgba(15,23,42,.45);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: 20px;
 }
@@ -683,7 +685,7 @@ async function eliminar(id: string) {
 
 /* ── Panel fullscreen de detalle ────────────────────────────────────── */
 .det-overlay {
-  position: fixed; inset: 0; z-index: 1100;
+  position: fixed; inset: 0 0 0 var(--sidebar-w); z-index: 1100;
   background: var(--bg);
   display: flex; flex-direction: column;
   overflow: hidden;
