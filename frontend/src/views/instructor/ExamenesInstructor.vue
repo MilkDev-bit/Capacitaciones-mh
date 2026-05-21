@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
 
@@ -9,16 +9,45 @@ const showForm = ref(false)
 const loading = ref(false)
 
 // Resultados
-const resModal = ref<any>(null)          // examen activo en el modal
-const resLista = ref<any[]>([])          // lista de estudiantes que respondieron
-const resDetalle = ref<any[] | null>(null) // respuestas detalladas de un estudiante
-const resEstudiante = ref<any>(null)     // info del estudiante seleccionado
+const resModal = ref<any>(null)
+const resLista = ref<any[]>([])
+const resDetalle = ref<any[] | null>(null)
+const resEstudiante = ref<any>(null)
 const resLoading = ref(false)
+const detalleFiltro = ref<'all' | 'correct' | 'wrong' | 'open'>('all')
+
+const detalleVisible = computed(() => resDetalle.value !== null)
+
+const detalleFiltrada = computed(() => {
+  if (!resDetalle.value) return []
+  if (detalleFiltro.value === 'all') return resDetalle.value
+  if (detalleFiltro.value === 'correct') return resDetalle.value.filter((p: any) => p.tipo !== 'open_text' && p.es_correcta)
+  if (detalleFiltro.value === 'wrong') return resDetalle.value.filter((p: any) => p.tipo !== 'open_text' && !p.es_correcta)
+  if (detalleFiltro.value === 'open') return resDetalle.value.filter((p: any) => p.tipo === 'open_text')
+  return resDetalle.value
+})
+
+const detalleStats = computed(() => {
+  if (!resDetalle.value) return { correctas: 0, incorrectas: 0, open: 0, sinRespuesta: 0 }
+  return {
+    correctas:    resDetalle.value.filter((p: any) => p.tipo !== 'open_text' && p.es_correcta && p.respuesta_dada).length,
+    incorrectas:  resDetalle.value.filter((p: any) => p.tipo !== 'open_text' && !p.es_correcta && p.respuesta_dada).length,
+    open:         resDetalle.value.filter((p: any) => p.tipo === 'open_text').length,
+    sinRespuesta: resDetalle.value.filter((p: any) => !p.respuesta_dada).length,
+  }
+})
+
+function cerrarDetalle() {
+  resDetalle.value = null
+  resEstudiante.value = null
+  detalleFiltro.value = 'all'
+}
 
 async function verResultados(ex: any) {
   resModal.value = ex
   resDetalle.value = null
   resEstudiante.value = null
+  detalleFiltro.value = 'all'
   resLoading.value = true
   try {
     const r = await api.get(`/instructor/examenes/${ex.id}/resultados`)
@@ -31,6 +60,7 @@ async function verResultados(ex: any) {
 async function verDetalle(est: any) {
   if (!resModal.value) return
   resEstudiante.value = est
+  detalleFiltro.value = 'all'
   resLoading.value = true
   try {
     const r = await api.get(`/instructor/examenes/${resModal.value.id}/resultados/${est.user_id}`)
@@ -390,53 +420,7 @@ async function eliminar(id: string) {
             </div>
           </template>
 
-          <!-- Detalle de un estudiante -->
-          <template v-else>
-            <button class="res-back-btn" @click="resDetalle = null; resEstudiante = null">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-              Volver a la lista
-            </button>
-            <div class="res-detalle-header">
-              <div class="res-detalle-user">{{ resEstudiante.nombre }}</div>
-              <div class="res-detalle-meta">
-                <span :style="{ color: scoreColor(resEstudiante.porcentaje) }" style="font-weight:700">
-                  {{ resEstudiante.porcentaje.toFixed(0) }}%
-                </span>
-                &nbsp;·&nbsp;
-                {{ resEstudiante.puntaje.toFixed(1) }} / {{ resEstudiante.puntaje_max.toFixed(1) }} pts
-              </div>
-            </div>
-            <div class="res-preguntas">
-              <div
-                v-for="(p, i) in resDetalle" :key="p.pregunta_id"
-                class="res-pregunta"
-                :class="p.respuesta_dada ? (p.tipo === 'open_text' ? 'open' : p.es_correcta ? 'correct' : 'wrong') : 'unanswered'"
-              >
-                <div class="res-pregunta-head">
-                  <span class="res-qnum">{{ i + 1 }}</span>
-                  <span class="res-qtexto">{{ p.texto }}</span>
-                  <span class="res-qval">{{ p.valor }} pt</span>
-                </div>
-                <div class="res-pregunta-body">
-                  <div v-if="!p.respuesta_dada" class="res-sin-respuesta">Sin respuesta</div>
-                  <template v-else>
-                    <div class="res-resp-row">
-                      <span class="res-resp-label">Respondió:</span>
-                      <span class="res-resp-val">{{ p.respuesta_dada }}</span>
-                      <span v-if="p.tipo !== 'open_text'" class="res-resp-icon">
-                        <svg v-if="p.es_correcta" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
-                        <svg v-else width="16" height="16" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
-                      </span>
-                    </div>
-                    <div v-if="p.tipo !== 'open_text' && !p.es_correcta && p.respuesta_correcta" class="res-correcta-row">
-                      <span class="res-resp-label">Correcta:</span>
-                      <span class="res-resp-val correct-text">{{ p.respuesta_correcta }}</span>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </template>
+          <!-- Detalle de un estudiante (ya no va aquí — se abre en panel fullscreen) -->
         </div>
       </div>
     </Transition>
@@ -606,4 +590,123 @@ async function eliminar(id: string) {
 .res-correcta-row { display: flex; align-items: center; gap: 8px; }
 .correct-text { color: #10b981; font-weight: 600; }
 .res-sin-respuesta { font-size: 0.82rem; color: var(--muted); font-style: italic; }
+
+/* ── Panel fullscreen de detalle ────────────────────────────────────── */
+.det-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* Transición deslizamiento desde abajo */
+.slide-up-enter-active { transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .25s; }
+.slide-up-leave-active { transition: transform .2s ease-in, opacity .15s; }
+.slide-up-enter-from  { transform: translateY(30px); opacity: 0; }
+.slide-up-leave-to    { transform: translateY(30px); opacity: 0; }
+
+/* Cabecera sticky */
+.det-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0; gap: 16px; flex-wrap: wrap;
+}
+.det-header-left { display: flex; flex-direction: column; gap: 4px; }
+.det-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer; padding: 0; transition: color .15s;
+}
+.det-back:hover { color: var(--brand); }
+.det-title-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.det-exam-name { font-size: 0.88rem; color: var(--muted); }
+.det-sep { color: var(--border); font-size: 1rem; }
+.det-student-name { font-size: 0.95rem; font-weight: 800; color: var(--dark); }
+.det-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.det-score-pill {
+  font-size: 0.9rem; font-weight: 800;
+  padding: 5px 14px; border-radius: 20px;
+}
+.det-pts { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+
+/* Barra de filtros */
+.det-stats-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 28px; background: var(--surface); border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.det-stat-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  background: var(--bg); border: 1.5px solid var(--border-light); color: var(--muted);
+  transition: all .15s;
+}
+.det-stat-chip:hover { border-color: var(--border); color: var(--dark); }
+.det-stat-chip.active { border-color: var(--brand); color: var(--brand); background: rgba(249,115,22,.08); }
+.det-chip-count { font-size: 0.78rem; font-weight: 800; }
+
+/* Cuerpo scrollable */
+.det-body {
+  flex: 1; overflow-y: auto; padding: 28px;
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 860px; width: 100%; margin: 0 auto;
+}
+.det-loading { display: flex; justify-content: center; padding: 60px; }
+.det-empty { text-align: center; color: var(--muted); font-size: 0.9rem; padding: 40px; }
+
+/* Tarjeta de pregunta */
+.det-q-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  border: 1.5px solid var(--border-light); overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s;
+}
+.det-q-card:hover { box-shadow: var(--shadow-md); }
+.det-q-card.q-correct { border-color: #bbf7d0; }
+.det-q-card.q-wrong   { border-color: #fecaca; }
+.det-q-card.q-open    { border-color: #c7d2fe; }
+.det-q-card.q-unanswered { opacity: .7; }
+
+.det-q-head {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+.det-q-num {
+  flex-shrink: 0; min-width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand); color: #fff;
+  font-size: 0.78rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.det-q-texto { flex: 1; font-size: 0.95rem; font-weight: 600; color: var(--dark); line-height: 1.6; margin: 0; }
+.det-q-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.det-q-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 10px;
+}
+.tag-correct    { background: #dcfce7; color: #15803d; }
+.tag-wrong      { background: #fee2e2; color: #b91c1c; }
+.tag-open       { background: #e0e7ff; color: #4338ca; }
+.tag-unanswered { background: var(--bg); color: var(--muted); border: 1px solid var(--border-light); }
+.det-q-val { font-size: 0.78rem; font-weight: 700; color: var(--success); white-space: nowrap; }
+
+/* Respuestas */
+.det-q-answers {
+  padding: 14px 20px 16px 62px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.det-ans-row { display: flex; align-items: flex-start; gap: 12px; }
+.det-ans-label {
+  font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .04em; min-width: 64px; padding-top: 2px;
+}
+.det-ans-val {
+  flex: 1; font-size: 0.9rem; color: var(--dark);
+  line-height: 1.5;
+}
+.val-correct { color: #15803d; font-weight: 600; }
+.val-wrong   { color: #b91c1c; font-weight: 600; }
+.val-open    { color: var(--dark); font-style: italic; }
 </style>
