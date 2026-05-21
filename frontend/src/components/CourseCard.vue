@@ -34,8 +34,7 @@ const thumbGradient = computed(() => {
 })
 
 const typeIcon = computed(() => {
-  const map: Record<string, string> = { video: '🎥', document: '📄', text: '📝' }
-  return map[props.course.type ?? ''] ?? '📚'
+  return props.course.type ?? 'default'
 })
 
 const typeLabel = computed(() => {
@@ -66,7 +65,9 @@ const progressColor = computed(() => {
   >
     <!-- Thumbnail -->
     <div :class="['bg-gradient-to-br', thumbGradient, 'h-36 flex items-center justify-center relative flex-shrink-0']">
-      <span class="text-5xl drop-shadow-md">{{ typeIcon }}</span>
+      <svg v-if="course.type === 'video'" class="w-16 h-16 opacity-90 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <svg v-else-if="course.type === 'document'" class="w-16 h-16 opacity-90 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <svg v-else class="w-16 h-16 opacity-90 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       <!-- Enrolled ribbon -->
       <span
         v-if="mode === 'public' && course.inscrito"
@@ -79,7 +80,7 @@ const progressColor = computed(() => {
         v-if="mode === 'instructor'"
         class="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full"
       >
-        ✏️ Tuyo
+        Tuyo
       </span>
     </div>
 

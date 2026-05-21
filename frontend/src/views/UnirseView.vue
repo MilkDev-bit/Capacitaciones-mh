@@ -46,7 +46,7 @@ async function unirse() {
 }
 
 function typeLabel(t: string) {
-  return { video: '🎥 Video', document: '📄 Documento', text: '📝 Texto' }[t] || t
+  return { video: 'Video', document: 'Documento', text: 'Texto' }[t] || t
 }
 </script>
 

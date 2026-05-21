@@ -1,13 +1,27 @@
 import iziToast from 'izitoast'
 
+// Apply global defaults matching app theme
+iziToast.settings({
+  transitionIn: 'fadeInDown',
+  transitionOut: 'fadeOutUp',
+  progressBarColor: 'rgba(255,255,255,0.4)',
+  layout: 1,
+  balloon: false,
+})
+
 export const toast = {
-  success(message: string, title = '') {
+  success(message: string, title = 'Listo') {
     iziToast.success({
       title,
       message,
       position: 'topRight',
       timeout: 3000,
       progressBar: true,
+      iconColor: '#fff',
+      titleColor: '#fff',
+      messageColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: '#22c55e',
+      progressBarColor: 'rgba(255,255,255,0.35)',
     })
   },
 
@@ -18,16 +32,26 @@ export const toast = {
       position: 'topRight',
       timeout: 5000,
       progressBar: true,
+      iconColor: '#fff',
+      titleColor: '#fff',
+      messageColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: '#ef4444',
+      progressBarColor: 'rgba(255,255,255,0.35)',
     })
   },
 
-  info(message: string, title = '') {
+  info(message: string, title = 'Info') {
     iziToast.info({
       title,
       message,
       position: 'topRight',
       timeout: 3500,
       progressBar: true,
+      iconColor: '#fff',
+      titleColor: '#fff',
+      messageColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: '#f97316',
+      progressBarColor: 'rgba(255,255,255,0.35)',
     })
   },
 
@@ -38,6 +62,11 @@ export const toast = {
       position: 'topRight',
       timeout: 4000,
       progressBar: true,
+      iconColor: '#fff',
+      titleColor: '#fff',
+      messageColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: '#f59e0b',
+      progressBarColor: 'rgba(255,255,255,0.35)',
     })
   },
 
@@ -51,9 +80,12 @@ export const toast = {
         title,
         message,
         position: 'center',
+        backgroundColor: '#ffffff',
+        titleColor: '#1d1d1f',
+        messageColor: '#86868b',
         buttons: [
           [
-            '<button style="background:#ef4444;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-weight:700;cursor:pointer">Sí, eliminar</button>',
+            '<button style="background:#f97316;color:#fff;border:none;padding:9px 22px;border-radius:9999px;font-weight:700;cursor:pointer;font-size:0.9rem;box-shadow:0 4px 12px rgba(249,115,22,.3)">Confirmar</button>',
             (instance: any, toastEl: any) => {
               instance.hide({ transitionOut: 'fadeOut' }, toastEl, 'button')
               resolve(true)
@@ -61,7 +93,7 @@ export const toast = {
             true,
           ],
           [
-            '<button style="background:#e5e7eb;color:#111;border:none;padding:8px 20px;border-radius:6px;font-weight:600;cursor:pointer">Cancelar</button>',
+            '<button style="background:rgba(0,0,0,0.06);color:#1d1d1f;border:none;padding:9px 22px;border-radius:9999px;font-weight:600;cursor:pointer;font-size:0.9rem">Cancelar</button>',
             (instance: any, toastEl: any) => {
               instance.hide({ transitionOut: 'fadeOut' }, toastEl, 'button')
               resolve(false)

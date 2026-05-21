@@ -117,7 +117,9 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
     <div v-if="activeTab === 'asignar'" class="au-tab-content">
       <div class="au-assign-card">
         <div class="au-assign-header">
-          <span>🔗</span>
+          <div class="au-assign-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          </div>
           <div>
             <h2>Asignar contenido a un usuario</h2>
             <p>Selecciona un usuario y el contenido que deseas asignarle</p>
@@ -175,7 +177,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
           <button class="btn btn-danger btn-sm" @click="desasignar(a.id)">Quitar</button>
         </div>
       </div>
-      <div v-else class="empty-state"><div class="empty-icon">📋</div><h3>Sin asignaciones</h3><p>Asigna contenido a usuarios desde la pestaña "Asignar contenido".</p></div>
+      <div v-else class="empty-state"><div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><h3>Sin asignaciones</h3><p>Asigna contenido a usuarios desde la pestaña "Asignar contenido".</p></div>
     </div>
 
     <!-- TAB: Usuarios -->
@@ -234,7 +236,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
   display: flex; align-items: center; gap: 16px;
   padding: 22px 28px; background: var(--dark); color: #fff;
 }
-.au-assign-header span { font-size: 2rem; }
+.au-assign-icon { width: 44px; height: 44px; background: rgba(255,255,255,.18); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
 .au-assign-header h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; }
 .au-assign-header p { font-size: 0.83rem; color: rgba(255,255,255,.65); margin: 2px 0 0; }
 .au-assign-body { padding: 24px 28px; }

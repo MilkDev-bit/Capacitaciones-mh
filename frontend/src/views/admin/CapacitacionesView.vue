@@ -75,7 +75,7 @@ function typeLabel(t: string) {
   return { video: 'Video', document: 'Documento', text: 'Texto' }[t] || t
 }
 function typeIcon(t: string) {
-  return { video: '🎥', document: '📄', text: '📝' }[t] || '📁'
+  return { video: 'video', document: 'document', text: 'text' }[t] || 'default'
 }
 function thumbClass(t: string) {
   return { video: 'thumb-video', document: 'thumb-document', text: 'thumb-text' }[t] || 'thumb-default'
@@ -104,7 +104,9 @@ function fileUrl(path: string) {
     <Transition name="slide-down">
       <div v-if="showForm" class="ac-form-card">
         <div class="ac-form-header">
-          <span>📚</span>
+          <div class="ac-form-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
           <div>
             <h2>Nueva capacitación</h2>
             <p>Completa los datos para crear un nuevo curso</p>
@@ -119,9 +121,9 @@ function fileUrl(path: string) {
             <div class="ac-field">
               <label>Tipo *</label>
               <select class="field-input" v-model="form.type">
-                <option value="video">🎥 Video</option>
-                <option value="document">📄 Documento PDF</option>
-                <option value="text">📝 Texto enriquecido</option>
+                <option value="video">Video</option>
+                <option value="document">Documento PDF</option>
+                <option value="text">Texto enriquecido</option>
               </select>
             </div>
             <div class="ac-field" v-if="form.type !== 'text'">
@@ -185,7 +187,11 @@ function fileUrl(path: string) {
             <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="ac-card-cover-img" style="width:100%;height:100%;object-fit:cover;" />
           </template>
           <template v-else>
-            <span class="ac-card-icon">{{ typeIcon(c.type) }}</span>
+            <span class="ac-card-icon">
+              <svg v-if="c.type === 'video'" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <svg v-else-if="c.type === 'document'" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <svg v-else width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7"/></svg>
+            </span>
             <span class="ac-card-type-badge">{{ typeLabel(c.type) }}</span>
           </template>
         </div>
@@ -201,7 +207,7 @@ function fileUrl(path: string) {
     </div>
 
     <div v-else class="empty-state">
-      <div class="empty-icon">📚</div>
+      <div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
       <h3>{{ search ? 'Sin resultados' : 'No hay capacitaciones' }}</h3>
       <p>{{ search ? 'Prueba con otro término de búsqueda.' : 'Crea la primera capacitación para empezar.' }}</p>
       <button v-if="!search" class="btn btn-primary" @click="showForm = true">Crear primera capacitación</button>
@@ -223,7 +229,7 @@ function fileUrl(path: string) {
   display: flex; align-items: center; gap: 16px;
   padding: 22px 28px; background: var(--dark); color: #fff;
 }
-.ac-form-header span { font-size: 2rem; }
+.ac-form-icon { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,.15); flex-shrink:0; }
 .ac-form-header h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; }
 .ac-form-header p { font-size: 0.83rem; color: rgba(255,255,255,.65); margin: 2px 0 0; }
 .ac-form-body { padding: 24px 28px; }

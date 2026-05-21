@@ -57,11 +57,11 @@ function getColor(pct: number) {
         <div class="exam-header-card">
           <div class="exam-type-bar"></div>
           <div class="exam-header-body">
-            <span class="exam-badge">📝 Exámen</span>
+            <span class="exam-badge">Exámen</span>
             <h2>{{ examen.title }}</h2>
             <p v-if="examen.description">{{ examen.description }}</p>
             <div class="exam-stats">
-              <span>📌 {{ examen.preguntas?.length || 0 }} preguntas</span>
+            <span>📌 {{ examen.preguntas?.length || 0 }} preguntas</span>
               <span>•</span>
               <span>{{ examen.preguntas?.reduce((s: number, p: any) => s + (p.valor || 1), 0) }} puntos en total</span>
             </div>
@@ -104,7 +104,10 @@ function getColor(pct: number) {
 
     <!-- Resultado -->
     <div v-else class="result-card">
-      <div class="result-emoji">{{ resultado.porcentaje >= 60 ? '🎉' : '📚' }}</div>
+      <div class="result-icon">
+        <svg v-if="resultado.porcentaje >= 60" width="56" height="56" fill="none" stroke="#22c55e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <svg v-else width="56" height="56" fill="none" stroke="#f97316" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
       <h2>Exámen completado</h2>
       <div class="score-ring" :style="{ '--pct': resultado.porcentaje, '--color': getColor(resultado.porcentaje) }">
         <svg viewBox="0 0 100 100" class="ring-svg">
@@ -186,7 +189,7 @@ function getColor(pct: number) {
   text-align: center; box-shadow: var(--shadow-lg); max-width: 480px;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
-.result-emoji { font-size: 3rem; }
+.result-icon { display: flex; align-items: center; justify-content: center; }
 .result-card h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
 .score-ring { position: relative; width: 130px; height: 130px; margin: 8px auto; }
 .ring-svg { width: 100%; height: 100%; }

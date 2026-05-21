@@ -79,25 +79,25 @@ const statCards = computed(() => [
   {
     label: 'Cursos inscritos',
     value: stats.value.total,
-    icon: '📚',
+    icon: 'book',
     bgClass: 'bg-violet',
   },
   {
     label: 'Cursos completados',
     value: stats.value.completed,
-    icon: '✅',
+    icon: 'check',
     bgClass: 'bg-emerald',
   },
   {
     label: 'Exámenes',
     value: stats.value.exams,
-    icon: '📝',
+    icon: 'clipboard',
     bgClass: 'bg-sky',
   },
   {
     label: 'Progreso promedio',
     value: `${stats.value.avgProgress}%`,
-    icon: '📈',
+    icon: 'chart',
     bgClass: 'bg-orange',
   },
 ])
@@ -112,7 +112,7 @@ function courseProgress(curso: any) {
   <div class="dash-shell">
     <header class="dash-header">
       <div class="dash-welcome">
-        <h1>¡Hola, {{ firstName }}! 👋</h1>
+        <h1>¡Hola, {{ firstName }}!</h1>
         <p>Continúa aprendiendo donde lo dejaste.</p>
       </div>
       <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">
@@ -123,7 +123,12 @@ function courseProgress(curso: any) {
     <!-- Stats -->
     <section v-if="!loading" class="dash-stats">
       <div v-for="stat in statCards" :key="stat.label" :class="['dash-stat-card', stat.bgClass]">
-        <div class="dash-stat-icon">{{ stat.icon }}</div>
+        <div class="dash-stat-icon">
+          <svg v-if="stat.icon === 'book'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <svg v-else-if="stat.icon === 'check'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg v-else-if="stat.icon === 'clipboard'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <svg v-else-if="stat.icon === 'chart'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        </div>
         <div class="dash-stat-info">
           <strong>{{ stat.value }}</strong>
           <span>{{ stat.label }}</span>
@@ -163,7 +168,7 @@ function courseProgress(curso: any) {
       </div>
       
       <div v-else class="dash-empty">
-        <div class="dash-empty-icon">🎓</div>
+        <div class="dash-empty-icon"><svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
         <h3>No tienes cursos en progreso</h3>
         <p>¡Empieza alguno de tus cursos inscritos!</p>
         <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">Ir a mis cursos</button>
@@ -177,14 +182,14 @@ function courseProgress(curso: any) {
       </div>
       <div class="dash-actions">
         <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
-          <div class="dash-action-icon" style="background:#e0e7ff;color:#4f46e5">🔍</div>
+          <div class="dash-action-icon" style="background:#e0e7ff;color:#4f46e5"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
           <div class="dash-action-info">
             <strong>Explorar cursos</strong>
             <p>Descubre nuevos cursos disponibles</p>
           </div>
         </button>
         <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
-          <div class="dash-action-icon" style="background:#fef3c7;color:#d97706">🔑</div>
+          <div class="dash-action-icon" style="background:#fef3c7;color:#d97706"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
           <div class="dash-action-info">
             <strong>Unirse con código</strong>
             <p>Ingresa el código de tu instructor</p>

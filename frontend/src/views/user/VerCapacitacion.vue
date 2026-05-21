@@ -297,6 +297,18 @@ async function goToLesson(lec: any | null) {
   await selectLeccion(lec)
 }
 
+// Forum profile card popup
+const foroProfileCard = ref<null | { id: string; name: string }>(null)
+
+function openForoProfile(id: string, name: string) {
+  foroProfileCard.value = { id, name }
+}
+
+function iniciarConversacion() {
+  foroProfileCard.value = null
+  toast.info('La mensajería directa estará disponible próximamente.')
+}
+
 function goBack() {
   router.push('/usuario/capacitaciones')
 }
@@ -681,7 +693,7 @@ function goBack() {
 
                   <!-- Card header: avatar, nombre, tiempo, opciones -->
                   <div class="fb-post-header">
-                    <div class="fb-post-avatar-wrap">
+                    <div class="fb-post-avatar-wrap" @click.stop="openForoProfile(post.user_id, post.user_name)" style="cursor:pointer" title="Ver perfil">
                       <div class="fb-post-avatar">{{ foroInitials(post.user_name) }}</div>
                     </div>
                     <div class="fb-post-meta">
@@ -731,7 +743,7 @@ function goBack() {
                   <Transition name="slide-down">
                     <div v-if="expandedPost === post.id" class="fb-comments-section">
                       <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="fb-comment">
-                        <div class="fb-comment-avatar">{{ foroInitials(com.user_name) }}</div>
+                        <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(com.user_name) }}</div>
                         <div class="fb-comment-bubble">
                           <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
                           <p class="fb-comment-text">{{ com.contenido }}</p>
@@ -761,6 +773,30 @@ function goBack() {
         </div>
       </main>
     </div>
+
+    <!-- Forum Profile Card Popup -->
+    <Transition name="fade">
+      <div v-if="foroProfileCard" class="foro-card-backdrop" @click="foroProfileCard = null">
+        <div class="foro-profile-card" @click.stop>
+          <button class="fpc-close" @click="foroProfileCard = null" aria-label="Cerrar">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+          <div class="fpc-avatar">{{ foroInitials(foroProfileCard.name) }}</div>
+          <div class="fpc-name">{{ foroProfileCard.name }}</div>
+          <div class="fpc-role">Participante del foro</div>
+          <div class="fpc-actions">
+            <RouterLink :to="`/usuario/perfil/${foroProfileCard.id}`" class="fpc-btn fpc-btn-primary" @click="foroProfileCard = null">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              Ver perfil
+            </RouterLink>
+            <button class="fpc-btn fpc-btn-secondary" @click="iniciarConversacion">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Iniciar conversación
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Celebration Confetti Overlay -->
     <Transition name="fade">
@@ -1378,4 +1414,44 @@ function goBack() {
   40% { transform: translateY(-20px); }
   60% { transform: translateY(-10px); }
 }
+
+/* ── Forum Profile Card Popup ─────────────────────────── */
+.foro-card-backdrop {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.foro-profile-card {
+  position: relative;
+  background: var(--surface); border-radius: var(--r-xl);
+  padding: 32px 24px 24px; text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.18);
+  min-width: 240px; max-width: 300px; width: 100%;
+}
+.fpc-close {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--surface-soft); border: none; cursor: pointer;
+  color: var(--muted); border-radius: 50%; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s;
+}
+.fpc-close:hover { background: var(--border); }
+.fpc-avatar {
+  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff; font-size: 1.6rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.fpc-name { font-size: 1.05rem; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+.fpc-role { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; }
+.fpc-actions { display: flex; flex-direction: column; gap: 8px; }
+.fpc-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; border-radius: 9999px; font-size: 0.88rem; font-weight: 600;
+  border: none; cursor: pointer; text-decoration: none; transition: all 0.15s;
+}
+.fpc-btn-primary { background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(249,115,22,.25); }
+.fpc-btn-primary:hover { background: var(--brand-dark); }
+.fpc-btn-secondary { background: var(--surface-soft); color: var(--dark); }
+.fpc-btn-secondary:hover { background: rgba(0,0,0,.06); }
 </style>

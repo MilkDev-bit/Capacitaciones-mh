@@ -157,7 +157,7 @@ async function eliminar(id: string) {
             </div>
 
             <button v-if="!form.preguntas.length" class="ae-empty-add" @click="addPregunta">
-              <span>📋</span>
+              <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/><path d="M12 12h.01M12 16h.01"/></svg>
               <strong>Agrega tu primera pregunta</strong>
               <p>Haz clic aquí para comenzar</p>
             </button>
@@ -185,7 +185,7 @@ async function eliminar(id: string) {
     <div v-if="filtered.length" class="ae-grid">
       <div v-for="e in filtered" :key="e.id" class="ae-card">
         <div class="ae-card-cover">
-          <span>📝</span>
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         </div>
         <div class="ae-card-body">
           <h3>{{ e.title }}</h3>
@@ -199,7 +199,7 @@ async function eliminar(id: string) {
     </div>
 
     <div v-else-if="!loading" class="empty-state">
-      <div class="empty-icon">📝</div>
+      <div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
       <h3>{{ search ? 'Sin resultados' : 'No hay exámenes' }}</h3>
       <p>{{ search ? 'Prueba con otro término.' : 'Crea el primer examen de la plataforma.' }}</p>
       <button v-if="!search" class="btn btn-primary" @click="showForm = true">Crear primer examen</button>
@@ -221,7 +221,7 @@ async function eliminar(id: string) {
   display: flex; align-items: center; gap: 16px;
   padding: 22px 28px; background: var(--dark); color: #fff;
 }
-.ae-form-header span { font-size: 2rem; }
+.ae-form-icon { width: 44px; height: 44px; background: rgba(255,255,255,.18); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
 .ae-form-header h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; }
 .ae-form-header p { font-size: 0.83rem; color: rgba(255,255,255,.65); margin: 2px 0 0; }
 .ae-form-body { padding: 24px 28px; }

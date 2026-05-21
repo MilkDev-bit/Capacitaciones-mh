@@ -279,7 +279,7 @@ async function forgotPassword() {
           <!-- FORGOT PASSWORD FORM -->
           <form v-else-if="tab === 'forgot'" @submit.prevent="forgotPassword" class="auth-form forgot-form">
             <div class="forgot-header">
-              <div class="forgot-icon">🔒</div>
+              <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
               <h2>Recuperar contraseña</h2>
               <p>Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña.</p>
             </div>

@@ -256,7 +256,7 @@ async function eliminar(id: string) {
       <TransitionGroup name="list-item" tag="div" class="ex-list">
         <div v-for="ex in examenes" :key="ex.id" class="ex-card">
           <div class="ex-card-left">
-            <div class="ex-card-icon" aria-hidden="true">📋</div>
+            <div class="ex-card-icon" aria-hidden="true"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
             <div class="ex-card-info">
               <h2 class="ex-card-title">{{ ex.title }}</h2>
               <p v-if="ex.description" class="ex-card-desc">{{ ex.description }}</p>
@@ -277,7 +277,7 @@ async function eliminar(id: string) {
 
       <Transition name="fade">
         <div v-if="examenes.length === 0" class="empty-state">
-          <span class="empty-icon">📋</span>
+          <span class="empty-icon"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>
           <p style="font-weight:600;color:var(--dark)">Sin exámenes aún</p>
           <p style="font-size:0.85rem">Crea tu primer examen con el botón de arriba.</p>
         </div>

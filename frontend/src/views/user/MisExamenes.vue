@@ -27,7 +27,7 @@ onMounted(async () => {
         tabindex="0" @keyup.enter="router.push('/usuario/examenes/' + e.id)"
       >
         <div class="exam-thumb">
-          <span class="exam-icon">📝</span>
+          <span class="exam-icon"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
         </div>
         <div class="exam-body">
           <span class="exam-badge">Exámen</span>
@@ -42,7 +42,7 @@ onMounted(async () => {
     </div>
 
     <div v-else class="empty-state">
-      <div class="empty-icon">📝</div>
+      <div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
       <h3>No tienes exámenes asignados</h3>
       <p>Cuando tu instructor te asigne un exámen aparecerá aquí.</p>
     </div>

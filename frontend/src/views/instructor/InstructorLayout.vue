@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterView, RouterLink } from 'vue-router'
+import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 
 const auth = useAuthStore()
+const router = useRouter()
 const sidebarOpen = ref(false)
+const profileOpen = ref(false)
 
 function initials(name: string) {
   return (name || 'I').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -57,10 +59,33 @@ function initials(name: string) {
         </button>
         <span class="topbar-title">Panel Instructor</span>
         <div class="topbar-right">
-          <div class="topbar-user">
+          <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
+          <div class="topbar-user" @click.stop="profileOpen = !profileOpen">
             <div class="topbar-avatar">{{ initials(auth.user?.name || '') }}</div>
             <span class="topbar-name">{{ auth.user?.name }}</span>
             <span class="badge badge-orange">Instructor</span>
+            <svg class="topbar-chevron" :class="{ open: profileOpen }" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+            <Transition name="slide-down">
+              <div v-if="profileOpen" class="profile-dropdown" @click.stop>
+                <div class="pd-header">
+                  <div class="pd-avatar">{{ initials(auth.user?.name || '') }}</div>
+                  <div class="pd-info">
+                    <strong>{{ auth.user?.name }}</strong>
+                    <span>{{ auth.user?.email }}</span>
+                  </div>
+                </div>
+                <div class="pd-divider" />
+                <RouterLink to="/instructor/perfil" class="pd-item" @click="profileOpen = false">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  Mi perfil
+                </RouterLink>
+                <div class="pd-divider" />
+                <button class="pd-item pd-item-danger" @click="auth.logout()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                  Cerrar sesión
+                </button>
+              </div>
+            </Transition>
           </div>
         </div>
       </header>

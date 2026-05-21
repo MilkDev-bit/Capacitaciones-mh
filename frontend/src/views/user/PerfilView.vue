@@ -190,7 +190,7 @@ function initials(name: string) {
                 <span>Teléfono</span>
                 <input v-model="form.phone" type="tel" class="field-input" placeholder="+52 55 0000 0000" autocomplete="tel" />
               </label>
-              <label class="fp-field">
+              <label class="fp-field fp-field-full">
                 <span>Especialidad / Área</span>
                 <input v-model="form.specialty" class="field-input" placeholder="Ej: Recursos Humanos, Ventas, TI..." />
               </label>
@@ -237,8 +237,7 @@ function initials(name: string) {
 
 <style scoped>
 /* ─── Página ────────────────────────────────────────────── */
-.fp-page { display: flex; flex-direction: column; min-height: 0; }
-
+.fp-page { display: flex; flex-direction: column; min-height: 0; }.fp-content { display: flex; flex-direction: column; }
 /* Skeleton */
 .fp-skeleton { display: flex; flex-direction: column; gap: 0; }
 .fp-cover-skel { height: 200px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
@@ -275,6 +274,7 @@ function initials(name: string) {
   border: 1px solid var(--border-light);
   border-top: none;
   box-shadow: var(--shadow-sm);
+  position: relative; z-index: 1;
 }
 .fp-identity-left { display: flex; align-items: flex-end; gap: 16px; }
 .fp-avatar {
@@ -302,9 +302,9 @@ function initials(name: string) {
 .fp-stats-bar {
   display: flex; align-items: center;
   background: var(--surface); border: 1px solid var(--border-light); border-top: none;
-  padding: 14px 28px; gap: 0; flex-wrap: wrap;
+  padding: 14px 28px; gap: 0; overflow-x: auto;
 }
-.fp-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 80px; padding: 6px 12px; }
+.fp-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 100px; padding: 6px 12px; }
 .fp-stat-num { font-size: 1.25rem; font-weight: 900; color: var(--dark); line-height: 1; }
 .fp-stat-pct { color: var(--brand); }
 .fp-stat-lbl { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-align: center; }
