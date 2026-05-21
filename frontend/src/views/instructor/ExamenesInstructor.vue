@@ -16,7 +16,7 @@ const resEstudiante = ref<any>(null)
 const resLoading = ref(false)
 const detalleFiltro = ref<'all' | 'correct' | 'wrong' | 'open'>('all')
 
-const detalleVisible = computed(() => resDetalle.value !== null)
+const detalleVisible = computed(() => resEstudiante.value !== null)
 
 const detalleFiltrada = computed(() => {
   if (!resDetalle.value) return []
@@ -362,7 +362,7 @@ async function eliminar(id: string) {
   <!-- ── Modal de resultados ─────────────────────────────────────────────── -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="resModal" class="res-overlay" @click.self="resModal = null">
+      <div v-if="resModal && !detalleVisible" class="res-overlay" @click.self="resModal = null">
         <div class="res-panel">
           <!-- Header -->
           <div class="res-header">
