@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const examenes = ref<any[]>([])
 const capacitaciones = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
-const error = ref('')
-const success = ref('')
 
 const form = ref({
   title: '',
@@ -68,17 +67,16 @@ async function load() {
 onMounted(load)
 
 async function guardar() {
-  error.value = ''; success.value = ''
-  if (!form.value.title) { error.value = 'El titulo es requerido'; return }
-  if (!form.value.preguntas.length) { error.value = 'Agrega al menos una pregunta'; return }
+  if (!form.value.title) { toast.error('El titulo es requerido'); return }
+  if (!form.value.preguntas.length) { toast.error('Agrega al menos una pregunta'); return }
   for (const p of form.value.preguntas) {
-    if (!p.texto) { error.value = 'Todas las preguntas necesitan texto'; return }
-    if (p.valor <= 0) { error.value = 'El valor debe ser mayor a 0'; return }
+    if (!p.texto) { toast.error('Todas las preguntas necesitan texto'); return }
+    if (p.valor <= 0) { toast.error('El valor debe ser mayor a 0'); return }
     if (p.tipo !== 'open_text' && !p.opciones.some(o => o.es_correcta)) {
-      error.value = 'Cada pregunta debe tener una respuesta correcta'; return
+      toast.error('Cada pregunta debe tener una respuesta correcta'); return
     }
     if (p.tipo === 'multiple_choice' && p.opciones.some(o => !o.texto)) {
-      error.value = 'Todas las opciones deben tener texto'; return
+      toast.error('Todas las opciones deben tener texto'); return
     }
   }
   loading.value = true
@@ -96,19 +94,19 @@ async function guardar() {
     }
     if (form.value.capacitacion_id) payload.capacitacion_id = form.value.capacitacion_id
     await api.post('/instructor/examenes', payload)
-    success.value = 'Examen creado exitosamente'
+    toast.success('Examen creado exitosamente')
     showForm.value = false
     form.value = { title: '', description: '', capacitacion_id: null, preguntas: [] }
     await load()
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loading.value = false
   }
 }
 
 async function eliminar(id: string) {
-  if (!confirm('Eliminar este examen?')) return
+  if (!await toast.confirm('Eliminar este examen?')) return
   await api.delete(`/instructor/examenes/${id}`)
   await load()
 }
@@ -134,20 +132,6 @@ async function eliminar(id: string) {
     </div>
 
     <div class="ex-body">
-      <!-- Alerts -->
-      <Transition name="slide-down">
-        <div v-if="error" class="alert alert-error" role="alert">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-          {{ error }}
-        </div>
-      </Transition>
-      <Transition name="slide-down">
-        <div v-if="success" class="alert alert-success" role="status">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
-          {{ success }}
-        </div>
-      </Transition>
-
       <!-- New Exam Form -->
       <Transition name="slide-down">
         <div v-if="showForm" class="form-card ex-form-card">

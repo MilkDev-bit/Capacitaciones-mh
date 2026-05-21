@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import api from '../api'
 import router from '../router'
 import { useRoute } from 'vue-router'
+import { toast } from '../utils/toast'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -13,7 +14,6 @@ const tab = ref<'login' | 'register' | 'forgot'>('login')
 const email = ref('')
 const password = ref('')
 const showPass = ref(false)
-const error = ref('')
 const loading = ref(false)
 
 // Register state
@@ -23,13 +23,10 @@ const regPassword = ref('')
 const regConfirmPassword = ref('')
 const showRegPass = ref(false)
 const regRole = ref('user')
-const regError = ref('')
-const regSuccess = ref('')
 const regLoading = ref(false)
 
 // Forgot password state
 const forgotEmail = ref('')
-const forgotSuccess = ref('')
 const forgotLoading = ref(false)
 
 // Validation helpers
@@ -67,9 +64,8 @@ const passwordsMatch = computed(() => {
 })
 
 async function submit() {
-  error.value = ''
   if (!isValidEmail(email.value)) {
-    error.value = 'Formato de correo inválido'
+    toast.error('Formato de correo inválido')
     return
   }
   loading.value = true
@@ -85,59 +81,55 @@ async function submit() {
     else if (res.data.user?.role === 'instructor') router.push('/instructor')
     else router.push('/usuario')
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Correo o contraseña incorrectos'
+    toast.error(e.response?.data?.error || 'Correo o contraseña incorrectos')
   } finally {
     loading.value = false
   }
 }
 
 async function register() {
-  regError.value = ''; regSuccess.value = ''
   if (!regName.value || !regEmail.value || !regPassword.value || !regConfirmPassword.value) {
-    regError.value = 'Todos los campos son requeridos'; return
+    toast.error('Todos los campos son requeridos'); return
   }
   if (!isValidEmail(regEmail.value)) {
-    regError.value = 'Formato de correo inválido'; return
+    toast.error('Formato de correo inválido'); return
   }
   if (!passwordsMatch.value) {
-    regError.value = 'Las contraseñas no coinciden'; return
+    toast.error('Las contraseñas no coinciden'); return
   }
   if (passStrength.value < 50) {
-    regError.value = 'La contraseña es muy débil. Usa mayúsculas y números.'; return
+    toast.error('La contraseña es muy débil. Usa mayúsculas y números.'); return
   }
   
   regLoading.value = true
   try {
     await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value })
-    regSuccess.value = '¡Cuenta creada! Redirigiendo...'
+    toast.success('¡Cuenta creada! Redirigiendo...')
     setTimeout(() => { 
       tab.value = 'login'
       email.value = regEmail.value
       password.value = regPassword.value
-      regSuccess.value = '' 
       regName.value = ''; regEmail.value = ''; regPassword.value = ''; regConfirmPassword.value = '';
     }, 1500)
   } catch (e: any) {
-    regError.value = e.response?.data?.error || 'Error al registrarse'
+    toast.error(e.response?.data?.error || 'Error al registrarse')
   } finally {
     regLoading.value = false
   }
 }
 
 async function forgotPassword() {
-  error.value = ''
   if (!isValidEmail(forgotEmail.value)) {
-    error.value = 'Ingresa un correo válido'
+    toast.error('Ingresa un correo válido')
     return
   }
   forgotLoading.value = true
   // Simulate network request
   setTimeout(() => {
     forgotLoading.value = false
-    forgotSuccess.value = 'Si el correo existe, recibirás instrucciones para recuperar tu contraseña.'
+    toast.success('Si el correo existe, recibirás instrucciones para recuperar tu contraseña.')
     setTimeout(() => {
       tab.value = 'login'
-      forgotSuccess.value = ''
       forgotEmail.value = ''
     }, 4000)
   }, 1200)
@@ -211,7 +203,6 @@ async function forgotPassword() {
                 </button>
               </div>
             </div>
-            <div v-if="error" class="alert alert-error">{{ error }}</div>
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="loading">
               <span v-if="loading" class="btn-spinner"></span>
               {{ loading ? 'Entrando...' : 'Entrar a la plataforma' }}
@@ -276,8 +267,6 @@ async function forgotPassword() {
                 </button>
               </div>
             </div>
-            <div v-if="regError" class="alert alert-error">{{ regError }}</div>
-            <div v-if="regSuccess" class="alert alert-success">{{ regSuccess }}</div>
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading || !passwordsMatch || passStrength < 50">
               <span v-if="regLoading" class="btn-spinner"></span>
               {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
@@ -299,9 +288,6 @@ async function forgotPassword() {
               <label>Correo electrónico</label>
               <input class="field-input" v-model="forgotEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
             </div>
-
-            <div v-if="error" class="alert alert-error">{{ error }}</div>
-            <div v-if="forgotSuccess" class="alert alert-success">{{ forgotSuccess }}</div>
 
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading">
               <span v-if="forgotLoading" class="btn-spinner"></span>

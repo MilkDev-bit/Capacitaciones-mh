@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
+import { toast } from '../../utils/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,17 +19,6 @@ const loadError = ref('')
 
 // Mobile sidebar
 const sidebarOpen = ref(false)
-
-// Toast
-const toastMsg = ref('')
-const toastVisible = ref(false)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-function showToast(msg: string) {
-  toastMsg.value = msg
-  toastVisible.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toastVisible.value = false }, 2800)
-}
 
 // Preguntas intermedias
 const showIntermedias = ref(false)
@@ -126,7 +116,7 @@ function guardarNota() {
   if (selectedLeccion.value) {
     localStorage.setItem(`cap_nota_${cursoId}_${selectedLeccion.value.id}`, notasPersonales.value[selectedLeccion.value.id] || '')
     if (notaTimer) clearTimeout(notaTimer)
-    notaTimer = setTimeout(() => showToast('✓ Nota guardada'), 1200)
+    notaTimer = setTimeout(() => toast.success('Nota guardada'), 1200)
   }
 }
 
@@ -139,7 +129,7 @@ async function marcarCompleta() {
     selectedLeccion.value.completada = true
     const idx = lecciones.value.findIndex(l => l.id === selectedLeccion.value.id)
     if (idx >= 0) lecciones.value[idx].completada = true
-    showToast('✓ Lección completada')
+    toast.success('Lección completada')
     
     if (progreso.value === 100) {
       showConfetti.value = true
@@ -151,7 +141,7 @@ async function marcarCompleta() {
       showIntermedias.value = true
     }
   } catch {
-    showToast('Error al marcar la lección')
+    toast.error('Error al marcar la lección')
   }
 }
 
@@ -202,7 +192,7 @@ async function crearPost() {
     nuevoPost.value = { titulo: '', contenido: '' }
     showNuevoPost.value = false
     await loadForo(selectedLeccion.value.id)
-    showToast('Post publicado')
+    toast.success('Post publicado')
   } catch {
     foroError.value = 'Error al publicar el post. Inténtalo de nuevo.'
   } finally {
@@ -211,7 +201,7 @@ async function crearPost() {
 }
 
 async function eliminarPost(postId: string) {
-  if (!confirm('Eliminar este post?')) return
+  if (!await toast.confirm('Eliminar este post?')) return
   await api.delete(`/foro/posts/${postId}`)
   await loadForo(selectedLeccion.value.id)
 }
@@ -314,10 +304,7 @@ function goBack() {
 
 <template>
   <div class="ver-curso-shell">
-    <!-- Toast -->
-    <Transition name="slide-down">
-      <div v-if="toastVisible" class="ver-toast" role="status">{{ toastMsg }}</div>
-    </Transition>
+    <!-- Main content -->
 
     <!-- Error state -->
     <div v-if="loadError && !loading" class="ver-error-state">

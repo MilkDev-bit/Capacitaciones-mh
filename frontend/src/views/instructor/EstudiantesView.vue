@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const estudiantes = ref<any[]>([])
 const users = ref<any[]>([])
@@ -10,8 +11,7 @@ const examenes = ref<any[]>([])
 const showAssign = ref(false)
 const assignForm = ref({ user_id: '', capacitacion_id: '', examen_id: '' })
 const assignType = ref<'capacitacion' | 'examen'>('capacitacion')
-const assignError = ref('')
-const assignSuccess = ref('')
+
 
 async function load() {
   const [estRes, capRes, exRes, usrRes] = await Promise.all([
@@ -29,23 +29,22 @@ async function load() {
 onMounted(load)
 
 async function asignar() {
-  assignError.value = ''; assignSuccess.value = ''
-  if (!assignForm.value.user_id) { assignError.value = 'Selecciona un usuario'; return }
+  if (!assignForm.value.user_id) { toast.error('Selecciona un usuario'); return }
   const body: any = { user_id: assignForm.value.user_id }
   if (assignType.value === 'capacitacion') {
-    if (!assignForm.value.capacitacion_id) { assignError.value = 'Selecciona una capacitación'; return }
+    if (!assignForm.value.capacitacion_id) { toast.error('Selecciona una capacitación'); return }
     body.capacitacion_id = assignForm.value.capacitacion_id
   } else {
-    if (!assignForm.value.examen_id) { assignError.value = 'Selecciona un examen'; return }
+    if (!assignForm.value.examen_id) { toast.error('Selecciona un examen'); return }
     body.examen_id = assignForm.value.examen_id
   }
   try {
     await api.post('/instructor/asignar', body)
-    assignSuccess.value = 'Asignación realizada exitosamente'
+    toast.success('Asignación realizada exitosamente')
     assignForm.value = { user_id: '', capacitacion_id: '', examen_id: '' }
     await load()
   } catch (e: any) {
-    assignError.value = e.response?.data?.error || 'Error al asignar'
+    toast.error(e.response?.data?.error || 'Error al asignar')
   }
 }
 </script>
@@ -97,8 +96,7 @@ async function asignar() {
           </select>
         </div>
       </div>
-      <div v-if="assignError" class="alert alert-error">{{ assignError }}</div>
-      <div v-if="assignSuccess" class="alert alert-success">{{ assignSuccess }}</div>
+
       <button class="btn btn-primary" @click="asignar">Confirmar asignación</button>
     </div>
 

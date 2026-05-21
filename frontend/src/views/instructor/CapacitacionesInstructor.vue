@@ -2,12 +2,11 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
+import { toast } from '../../utils/toast'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(false)
 const showForm = ref(false)
-const error = ref('')
-const success = ref('')
 const form = ref({ title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' })
 const file = ref<File | null>(null)
 const thumbnailFile = ref<File | null>(null)
@@ -21,7 +20,6 @@ const showLecForm = ref(false)
 const lecForm = ref({ title: '', description: '', type: 'video', content: '', orden: 1, duracion_min: 0 })
 const lecFile = ref<File | null>(null)
 const lecError = ref('')
-const lecSaving = ref(false)
 
 const intermedias = ref<any[]>([])
 const loadingInt = ref(false)
@@ -42,7 +40,7 @@ async function load() {
     const res = await api.get('/instructor/capacitaciones')
     capacitaciones.value = res.data || []
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al cargar los cursos'
+    toast.error(e.response?.data?.error || 'Error al cargar los cursos')
   } finally {
     loading.value = false
   }
@@ -58,8 +56,7 @@ function onLecFile(e: Event) {
 }
 
 async function guardar() {
-  error.value = ''; success.value = ''
-  if (!form.value.title) { error.value = 'El titulo es requerido'; return }
+  if (!form.value.title) { toast.error('El titulo es requerido'); return }
   loading.value = true
   try {
     const fd = new FormData()
@@ -73,21 +70,21 @@ async function guardar() {
     if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
     
     await api.post('/instructor/capacitaciones', fd)
-    success.value = 'Curso creado'
+    toast.success('Curso creado')
     showForm.value = false
     form.value = { title: '', description: '', type: 'video', content: '', is_public: false, welcome_message: '', thumbnail_url: '' }
     file.value = null
     thumbnailFile.value = null
     await load()
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loading.value = false
   }
 }
 
 async function eliminar(id: string) {
-  if (!confirm('Eliminar este curso?')) return
+  if (!await toast.confirm('Eliminar este curso?')) return
   await api.delete(`/instructor/capacitaciones/${id}`)
   await load()
 }
@@ -120,7 +117,6 @@ async function loadLecciones() {
 async function guardarLeccion() {
   if (!lecForm.value.title) return
   lecError.value = ''
-  lecSaving.value = true
   try {
     const fd = new FormData()
     fd.append('title', lecForm.value.title)
@@ -136,14 +132,12 @@ async function guardarLeccion() {
     lecFile.value = null
     await loadLecciones()
   } catch (e: any) {
-    lecError.value = e.response?.data?.error || 'Error al guardar la lección'
-  } finally {
-    lecSaving.value = false
+    toast.error(e.response?.data?.error || 'Error al guardar la lección')
   }
 }
 
 async function eliminarLeccion(leccionId: string) {
-  if (!confirm('Eliminar esta leccion?')) return
+  if (!await toast.confirm('Eliminar esta leccion?')) return
   await api.delete(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones/${leccionId}`)
   await loadLecciones()
 }
@@ -183,7 +177,7 @@ async function guardarIntermedia() {
 }
 
 async function eliminarIntermedia(preguntaId: string) {
-  if (!confirm('Eliminar esta pregunta?')) return
+  if (!await toast.confirm('Eliminar esta pregunta?')) return
   await api.delete(`/instructor/capacitaciones/${selectedCurso.value.id}/intermedias/${preguntaId}`)
   await loadIntermedias()
 }
@@ -214,20 +208,6 @@ function fileUrl(path: string) {
         {{ showForm ? 'Cancelar' : 'Crear nuevo curso' }}
       </button>
     </div>
-
-    <!-- Alertas globales -->
-    <Transition name="slide-down">
-      <div v-if="error" class="ci-alert ci-alert-error" role="alert">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-        {{ error }}
-      </div>
-    </Transition>
-    <Transition name="slide-down">
-      <div v-if="success" class="ci-alert ci-alert-success" role="status">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
-        {{ success }}
-      </div>
-    </Transition>
 
     <!-- Formulario nuevo curso estilo Udemy -->
     <Transition name="slide-down">
@@ -532,14 +512,9 @@ function fileUrl(path: string) {
                     <span class="ci-hint">Soporta YouTube, Vimeo y cualquier URL embebible.</span>
                   </div>
                 </div>
-                <div v-if="lecError" class="ci-lec-error">
-                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-                  {{ lecError }}
-                </div>
                 <div class="ci-sub-form-footer">
-                  <button class="ci-btn-primary ci-btn-sm" @click="guardarLeccion" :disabled="lecSaving">
-                    <span v-if="lecSaving" class="ci-spinner"></span>
-                    {{ lecSaving ? 'Guardando...' : 'Guardar lección' }}
+                  <button class="ci-btn-primary ci-btn-sm" @click="guardarLeccion">
+                    Guardar lección
                   </button>
                   <button class="ci-btn-ghost ci-btn-sm" @click="showLecForm = false">Cancelar</button>
                 </div>

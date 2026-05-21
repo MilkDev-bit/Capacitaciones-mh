@@ -1,4 +1,5 @@
 import './assets/main.css'
+import 'izitoast/dist/css/iziToast.min.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

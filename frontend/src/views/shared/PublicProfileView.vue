@@ -19,7 +19,8 @@ const roleLabel = computed(() => {
 })
 
 const roleClass = computed(() => {
-  return { admin: 'role-admin', instructor: 'role-instructor', user: 'role-user' }[user.value?.role] || 'role-user'
+  const map: Record<string, string> = { admin: 'role-admin', instructor: 'role-instructor', user: 'role-user' }
+  return map[user.value?.role] || 'role-user'
 })
 
 function initials(name: string) {

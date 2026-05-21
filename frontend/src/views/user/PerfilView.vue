@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const perfil = ref<any>(null)
 const stats = ref<any>({})
 const loading = ref(false)
 const loadingSave = ref(false)
-const error = ref('')
-const success = ref('')
 
 const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
@@ -31,7 +30,6 @@ const completion = computed(() => {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     const res = await api.get('/perfil')
     perfil.value = res.data.user
@@ -41,7 +39,7 @@ async function load() {
     form.value.phone = perfil.value.phone || ''
     form.value.specialty = perfil.value.specialty || ''
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'No pudimos cargar tu perfil'
+    toast.error(e.response?.data?.error || 'No pudimos cargar tu perfil')
   } finally {
     loading.value = false
   }
@@ -50,24 +48,21 @@ async function load() {
 onMounted(load)
 
 async function guardar() {
-  error.value = ''
-  success.value = ''
-
   if (!form.value.name.trim()) {
-    error.value = 'El nombre es requerido'
+    toast.error('El nombre es requerido')
     return
   }
   if (showPass.value || (activeTab.value === 'security' && (password.value.nueva || password.value.confirmar))) {
     if (!password.value.nueva) {
-      error.value = 'Ingresa la nueva contraseña'
+      toast.error('Ingresa la nueva contraseña')
       return
     }
     if (password.value.nueva.length < 6) {
-      error.value = 'La contraseña debe tener al menos 6 caracteres'
+      toast.error('La contraseña debe tener al menos 6 caracteres')
       return
     }
     if (password.value.nueva !== password.value.confirmar) {
-      error.value = 'Las contraseñas no coinciden'
+      toast.error('Las contraseñas no coinciden')
       return
     }
   }
@@ -82,12 +77,12 @@ async function guardar() {
     if (showPass.value && password.value.nueva) payload.password = password.value.nueva
 
     await api.put('/perfil', payload)
-    success.value = 'Perfil actualizado correctamente'
+    toast.success('Perfil actualizado correctamente')
     password.value = { nueva: '', confirmar: '' }
     showPass.value = false
     await load()
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loadingSave.value = false
   }
@@ -175,10 +170,6 @@ function initials(name: string) {
           Seguridad
         </button>
       </div>
-
-      <!-- Alertas -->
-      <div v-if="error" class="alert alert-error fp-alert">{{ error }}</div>
-      <div v-if="success" class="alert alert-success fp-alert">{{ success }}</div>
 
       <!-- Contenido de tabs -->
       <div class="fp-tab-body">

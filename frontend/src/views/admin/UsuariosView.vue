@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const users = ref<any[]>([])
 const capacitaciones = ref<any[]>([])
@@ -8,8 +9,6 @@ const examenes = ref<any[]>([])
 const asignaciones = ref<any[]>([])
 
 const form = ref({ user_id: '', capacitacion_id: '', examen_id: '' })
-const error = ref('')
-const success = ref('')
 const loading = ref(false)
 const searchUsers = ref('')
 const searchAsig = ref('')
@@ -60,10 +59,9 @@ async function load() {
 onMounted(load)
 
 async function asignar() {
-  error.value = ''; success.value = ''
-  if (!form.value.user_id) { error.value = 'Selecciona un usuario'; return }
+  if (!form.value.user_id) { toast.error('Selecciona un usuario'); return }
   if (!form.value.capacitacion_id && !form.value.examen_id) {
-    error.value = 'Selecciona una capacitación o un examen'; return
+    toast.error('Selecciona una capacitación o un examen'); return
   }
   loading.value = true
   try {
@@ -71,19 +69,18 @@ async function asignar() {
     if (form.value.capacitacion_id) payload.capacitacion_id = form.value.capacitacion_id
     if (form.value.examen_id) payload.examen_id = form.value.examen_id
     await api.post('/admin/asignar', payload)
-    success.value = 'Asignación realizada correctamente'
+    toast.success('Asignación realizada correctamente')
     form.value = { user_id: '', capacitacion_id: '', examen_id: '' }
     await load()
-    setTimeout(() => { success.value = '' }, 3000)
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al asignar'
+    toast.error(e.response?.data?.error || 'Error al asignar')
   } finally {
     loading.value = false
   }
 }
 
 async function desasignar(id: string) {
-  if (!confirm('¿Eliminar esta asignación?')) return
+  if (!await toast.confirm('¿Eliminar esta asignación?')) return
   await api.delete(`/admin/asignar/${id}`)
   await load()
 }
@@ -102,13 +99,6 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
         <p class="au-sub">{{ users.length }} usuarios · {{ asignaciones.length }} asignaciones activas</p>
       </div>
     </div>
-
-    <Transition name="slide-down">
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-    </Transition>
-    <Transition name="slide-down">
-      <div v-if="success" class="alert alert-success">{{ success }}</div>
-    </Transition>
 
     <!-- Tabs -->
     <div class="tabs-bar">

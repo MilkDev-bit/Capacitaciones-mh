@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
+import { toast } from '../utils/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,7 +39,7 @@ async function unirse() {
     joined.value = true
     setTimeout(() => router.push('/usuario/capacitaciones'), 1500)
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al unirse al curso'
+    toast.error(e.response?.data?.error || 'Error al unirse al curso')
   } finally {
     joining.value = false
   }
@@ -81,8 +82,6 @@ function typeLabel(t: string) {
         <h2 class="course-title">{{ curso.title }}</h2>
         <p class="course-desc">{{ curso.description || 'Sin descripci\u00f3n' }}</p>
         <span class="type-tag">{{ typeLabel(curso.type) }}</span>
-
-        <div v-if="error" class="alert alert-error" style="margin-top:8px">{{ error }}</div>
 
         <button v-if="auth.isLoggedIn" class="btn-join" :disabled="joining" @click="unirse">
           {{ joining ? 'Uni\u00e9ndose\u2026' : 'Unirme al curso' }}

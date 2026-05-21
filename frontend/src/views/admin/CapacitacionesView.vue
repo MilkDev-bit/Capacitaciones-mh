@@ -2,12 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
+import { toast } from '../../utils/toast'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(true)
 const showForm = ref(false)
-const error = ref('')
-const success = ref('')
 const search = ref('')
 
 const form = ref({ title: '', description: '', type: 'video', content: '' })
@@ -40,9 +39,8 @@ function onFile(e: Event) {
 }
 
 async function guardar() {
-  error.value = ''; success.value = ''
   if (!form.value.title || !form.value.type) {
-    error.value = 'El título y tipo son requeridos'; return
+    toast.error('El título y tipo son requeridos'); return
   }
   loading.value = true
   try {
@@ -54,22 +52,21 @@ async function guardar() {
     if (file.value) fd.append('file', file.value)
     if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
     await api.post('/admin/capacitaciones', fd)
-    success.value = 'Capacitación creada exitosamente'
+    toast.success('Capacitación creada exitosamente')
     showForm.value = false
     form.value = { title: '', description: '', type: 'video', content: '' }
     file.value = null
     thumbnailFile.value = null
     await load()
-    setTimeout(() => { success.value = '' }, 3000)
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loading.value = false
   }
 }
 
 async function eliminar(id: string) {
-  if (!confirm('¿Eliminar esta capacitación? Esta acción no se puede deshacer.')) return
+  if (!await toast.confirm('¿Eliminar esta capacitación? Esta acción no se puede deshacer.')) return
   await api.delete(`/admin/capacitaciones/${id}`)
   await load()
 }
@@ -102,12 +99,6 @@ function fileUrl(path: string) {
     </div>
 
     <!-- Alerts -->
-    <Transition name="slide-down">
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-    </Transition>
-    <Transition name="slide-down">
-      <div v-if="success" class="alert alert-success">{{ success }}</div>
-    </Transition>
 
     <!-- Form -->
     <Transition name="slide-down">

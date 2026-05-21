@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const examenes = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
-const error = ref('')
-const success = ref('')
 const search = ref('')
 
 const form = ref({
@@ -65,32 +64,30 @@ async function load() {
 onMounted(load)
 
 async function guardar() {
-  error.value = ''; success.value = ''
-  if (!form.value.title) { error.value = 'El titulo es requerido'; return }
-  if (!form.value.preguntas.length) { error.value = 'Agrega al menos una pregunta'; return }
+  if (!form.value.title) { toast.error('El titulo es requerido'); return }
+  if (!form.value.preguntas.length) { toast.error('Agrega al menos una pregunta'); return }
   for (const p of form.value.preguntas) {
-    if (!p.texto) { error.value = 'Todas las preguntas necesitan texto'; return }
-    if (p.valor <= 0) { error.value = 'El valor de cada pregunta debe ser mayor a 0'; return }
-    if (!p.opciones.some(o => o.es_correcta)) { error.value = 'Cada pregunta debe tener una respuesta correcta'; return }
-    if (p.opciones.some(o => !o.texto)) { error.value = 'Todas las opciones deben tener texto'; return }
+    if (!p.texto) { toast.error('Todas las preguntas necesitan texto'); return }
+    if (p.valor <= 0) { toast.error('El valor de cada pregunta debe ser mayor a 0'); return }
+    if (!p.opciones.some(o => o.es_correcta)) { toast.error('Cada pregunta debe tener una respuesta correcta'); return }
+    if (p.opciones.some(o => !o.texto)) { toast.error('Todas las opciones deben tener texto'); return }
   }
   loading.value = true
   try {
     await api.post('/admin/examenes', form.value)
-    success.value = 'Examen creado exitosamente'
+    toast.success('Examen creado exitosamente')
     showForm.value = false
     form.value = { title: '', description: '', preguntas: [] }
     await load()
-    setTimeout(() => { success.value = '' }, 3000)
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loading.value = false
   }
 }
 
 async function eliminar(id: string) {
-  if (!confirm('¿Eliminar este examen? Esta acción no se puede deshacer.')) return
+  if (!await toast.confirm('¿Eliminar este examen? Esta acción no se puede deshacer.')) return
   await api.delete(`/admin/examenes/${id}`)
   await load()
 }
@@ -108,14 +105,6 @@ async function eliminar(id: string) {
       </button>
     </div>
 
-    <Transition name="slide-down">
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-    </Transition>
-    <Transition name="slide-down">
-      <div v-if="success" class="alert alert-success">{{ success }}</div>
-    </Transition>
-
-    <!-- Form -->
     <Transition name="slide-down">
       <div v-if="showForm" class="ae-form-card">
         <div class="ae-form-header">

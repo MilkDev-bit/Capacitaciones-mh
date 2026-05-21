@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import api from '../../api'
+import { toast } from '../../utils/toast'
 
 const perfil = ref<any>(null)
 const stats = ref<any>({})
 const loading = ref(true)
 const saving = ref(false)
-const error = ref('')
-const success = ref('')
 
 const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
@@ -33,7 +32,7 @@ async function load() {
     form.value.phone = perfil.value.phone || ''
     form.value.specialty = perfil.value.specialty || ''
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'No pudimos cargar tu perfil'
+    toast.error(e.response?.data?.error || 'No pudimos cargar tu perfil')
   } finally {
     loading.value = false
   }
@@ -42,24 +41,22 @@ async function load() {
 onMounted(load)
 
 async function guardar() {
-  error.value = ''; success.value = ''
-  if (!form.value.name.trim()) { error.value = 'El nombre es requerido'; return }
+  if (!form.value.name.trim()) { toast.error('El nombre es requerido'); return }
   if (showPass.value) {
-    if (!password.value.nueva || password.value.nueva.length < 6) { error.value = 'La contraseña debe tener al menos 6 caracteres'; return }
-    if (password.value.nueva !== password.value.confirmar) { error.value = 'Las contraseñas no coinciden'; return }
+    if (!password.value.nueva || password.value.nueva.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return }
+    if (password.value.nueva !== password.value.confirmar) { toast.error('Las contraseñas no coinciden'); return }
   }
   saving.value = true
   try {
     const payload: any = { name: form.value.name, bio: form.value.bio, phone: form.value.phone, specialty: form.value.specialty }
     if (showPass.value && password.value.nueva) payload.password = password.value.nueva
     await api.put('/perfil', payload)
-    success.value = 'Perfil actualizado'
+    toast.success('Perfil actualizado')
     password.value = { nueva: '', confirmar: '' }
     showPass.value = false
     await load()
-    setTimeout(() => success.value = '', 3000)
   } catch (e: any) {
-    error.value = e.response?.data?.error || 'Error al guardar'
+    toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     saving.value = false
   }
@@ -127,13 +124,6 @@ async function guardar() {
 
       <!-- Main forms -->
       <main class="ip-main">
-        <Transition name="slide-down">
-          <div v-if="error" class="alert alert-error">{{ error }}</div>
-        </Transition>
-        <Transition name="slide-down">
-          <div v-if="success" class="alert alert-success">{{ success }}</div>
-        </Transition>
-
         <section class="ip-card">
           <div class="ip-section-head">
             <h2>Información personal</h2>
