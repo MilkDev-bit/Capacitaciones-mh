@@ -26,6 +26,9 @@ const preguntas = ref<any[]>([])
 const respuestas = ref<Record<string, any>>({})
 const resultadoInt = ref<any | null>(null)
 
+// Examen final del curso
+const examenFinal = ref<any | null>(null)
+
 // Foro
 const foroPosts = ref<any[]>([])
 const nuevoPost = ref({ titulo: '', contenido: '' })
@@ -83,6 +86,8 @@ async function load() {
     ])
     curso.value = cRes.data
     lecciones.value = lRes.data || []
+    // Si el curso ya estaba completado al entrar, mostrar el examen si lo hay
+    if (progreso.value === 100) await cargarExamenFinal()
   } catch (e: any) {
     loadError.value = e.response?.data?.error || 'No pudimos cargar el curso. Verifica tu conexión.'
   } finally {
@@ -138,6 +143,7 @@ async function marcarCompleta() {
     if (progreso.value === 100) {
       showConfetti.value = true
       setTimeout(() => { showConfetti.value = false }, 5000)
+      await cargarExamenFinal()
     }
 
     // Mostrar preguntas intermedias si hay
@@ -164,8 +170,32 @@ async function submitIntermedias() {
     }
     return r
   })
-  const res = await api.post(`/capacitaciones/${cursoId}/intermedias/submit`, payload)
-  resultadoInt.value = res.data
+  try {
+    const res = await api.post(`/capacitaciones/${cursoId}/intermedias/submit`, payload)
+    const items: any[] = res.data || []
+    // El backend devuelve [{pregunta_id, es_correcta}]; calculamos el puntaje aquí
+    const cerradas = items.filter((r: any) => r.es_correcta !== null && r.es_correcta !== undefined)
+    const correctas = cerradas.filter((r: any) => r.es_correcta === true).length
+    const total = cerradas.length
+    resultadoInt.value = {
+      puntaje: correctas,
+      puntaje_max: total,
+      porcentaje: total > 0 ? Math.round((correctas / total) * 100) : 100,
+    }
+  } catch {
+    toast.error('Error al enviar respuestas')
+  }
+}
+
+// ── Examen final ─────────────────────────────────────────────────────────────
+async function cargarExamenFinal() {
+  try {
+    const res = await api.get('/usuario/examenes')
+    const exams: any[] = res.data || []
+    examenFinal.value = exams.find(
+      (e: any) => e.capacitacion_id === cursoId && !e.ya_respondido && !e.bloqueado
+    ) ?? null
+  } catch { /* ignorar silenciosamente */ }
 }
 
 // ── Foro ────────────────────────────────────────────────────────────────────
@@ -855,6 +885,20 @@ function goBack() {
       </div>
     </Transition>
 
+    <!-- Examen Final Disponible -->
+    <Transition name="slide-up">
+      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner">
+        <span class="ver-examen-final-icon">🎓</span>
+        <div class="ver-examen-final-body">
+          <strong>Examen final disponible</strong>
+          <p>{{ examenFinal.title }}</p>
+        </div>
+        <router-link :to="`/usuario/examenes`" class="btn btn-primary ver-examen-final-btn">
+          Ir al examen
+        </router-link>
+      </div>
+    </Transition>
+
     <!-- Celebration Confetti Overlay -->
     <Transition name="fade">
       <div v-if="showConfetti" class="ver-confetti-overlay">
@@ -1540,4 +1584,21 @@ function goBack() {
 .fpc-btn-primary:hover { background: var(--brand-dark); }
 .fpc-btn-secondary { background: var(--surface-soft); color: var(--dark); }
 .fpc-btn-secondary:hover { background: rgba(0,0,0,.06); }
+
+/* Examen final banner */
+.ver-examen-final-banner {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px;
+  background: var(--dark); color: #fff;
+  padding: 14px 20px 14px 18px; border-radius: var(--r-xl);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35); z-index: 500;
+  max-width: 480px; width: calc(100% - 40px);
+}
+.ver-examen-final-icon { font-size: 1.8rem; flex-shrink: 0; }
+.ver-examen-final-body { flex: 1; min-width: 0; }
+.ver-examen-final-body strong { font-size: 0.95rem; font-weight: 800; display: block; }
+.ver-examen-final-body p { font-size: 0.82rem; opacity: .75; margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ver-examen-final-btn { flex-shrink: 0; font-size: 0.85rem !important; padding: 8px 16px !important; }
+.slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(.16,1,.3,1); }
+.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateX(-50%) translateY(24px); }
 </style>

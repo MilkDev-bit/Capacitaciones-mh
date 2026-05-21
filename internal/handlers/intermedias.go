@@ -150,10 +150,13 @@ func GetPreguntasIntermedias(c *gin.Context) {
 			  AND NOT EXISTS (SELECT 1 FROM respuestas_intermedias r WHERE r.pregunta_id=p.id AND r.user_id=$2)
 			ORDER BY p.orden`, capID, userID)
 	} else {
+		// Retorna preguntas ligadas a esta lección Y las sin asignar (NULL),
+		// excluyendo las ya respondidas por el usuario
 		rows, err = db.DB.Query(`
 			SELECT p.id, p.capacitacion_id, p.despues_de_leccion_id, p.texto, p.tipo, p.orden
 			FROM preguntas_intermedias p
-			WHERE p.capacitacion_id=$1 AND p.despues_de_leccion_id=$2
+			WHERE p.capacitacion_id=$1
+			  AND (p.despues_de_leccion_id=$2 OR p.despues_de_leccion_id IS NULL)
 			  AND NOT EXISTS (SELECT 1 FROM respuestas_intermedias r WHERE r.pregunta_id=p.id AND r.user_id=$3)
 			ORDER BY p.orden`, capID, leccionIDParam, userID)
 	}

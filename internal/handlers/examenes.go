@@ -190,6 +190,7 @@ func ListExamenesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
 		SELECT e.id, e.title, e.description, e.created_at,
+		       COALESCE(e.capacitacion_id::text,''),
 		       -- ya_respondido
 		       EXISTS(
 		           SELECT 1 FROM respuestas r WHERE r.examen_id=e.id AND r.user_id=$1
@@ -237,19 +238,20 @@ func ListExamenesUsuario(c *gin.Context) {
 	defer rows.Close()
 
 	type ExamenUsuario struct {
-		ID           string  `json:"id"`
-		Title        string  `json:"title"`
-		Description  string  `json:"description"`
-		CreatedAt    string  `json:"created_at"`
-		YaRespondido bool    `json:"ya_respondido"`
-		Porcentaje   float64 `json:"porcentaje"`
-		Bloqueado    bool    `json:"bloqueado"`
+		ID             string  `json:"id"`
+		Title          string  `json:"title"`
+		Description    string  `json:"description"`
+		CreatedAt      string  `json:"created_at"`
+		CapacitacionID string  `json:"capacitacion_id"`
+		YaRespondido   bool    `json:"ya_respondido"`
+		Porcentaje     float64 `json:"porcentaje"`
+		Bloqueado      bool    `json:"bloqueado"`
 	}
 	result := []ExamenUsuario{}
 	for rows.Next() {
 		var e ExamenUsuario
 		var createdAt interface{}
-		rows.Scan(&e.ID, &e.Title, &e.Description, &createdAt,
+		rows.Scan(&e.ID, &e.Title, &e.Description, &createdAt, &e.CapacitacionID,
 			&e.YaRespondido, &e.Porcentaje, &e.Bloqueado)
 		if t, ok := createdAt.(string); ok {
 			e.CreatedAt = t
