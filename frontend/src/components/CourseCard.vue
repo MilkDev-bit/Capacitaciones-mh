@@ -12,6 +12,7 @@ interface Course {
   is_public?: boolean
 }
 
+  
 const props = defineProps<{
   course: Course
   mode: 'enrolled' | 'public' | 'instructor'
