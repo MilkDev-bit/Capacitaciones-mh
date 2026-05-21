@@ -6,6 +6,11 @@ import api from '../../api'
 const examenes = ref<any[]>([])
 const router = useRouter()
 
+onMounted(async () => {
+  const res = await api.get('/mis-examenes')
+  examenes.value = res.data || []
+})
+
 function openInWindow(id: string) {
   window.open(
     '/usuario/examenes/' + id,
