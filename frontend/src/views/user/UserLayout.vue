@@ -62,8 +62,7 @@ function initials(name: string) {
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">
             <div class="topbar-avatar">{{ initials(auth.user?.name || '') }}</div>
-            <span class="topbar-name">{{ auth.user?.name }}</span>
-            <span class="badge badge-green">Estudiante</span>
+            <span class="topbar-name">{{ (auth.user?.name || '').slice(0, 20) }}</span>
             <svg class="topbar-chevron" :class="{ open: profileOpen }" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
             <Transition name="slide-down">
               <div v-if="profileOpen" class="profile-dropdown" @click.stop>
