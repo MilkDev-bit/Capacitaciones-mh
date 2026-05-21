@@ -156,39 +156,24 @@ async function forgotPassword() {
         </div>
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
         <p class="hero-subtitle">Cursos, lecciones, examenes y seguimiento en una sola experiencia de aprendizaje.</p>
-        <div class="hero-metrics" aria-label="Resumen de la plataforma">
-          <div>
-            <strong>24/7</strong>
-            <span>Acceso</span>
+        <div class="hero-features">
+          <div class="hero-feature">
+            <span class="hero-feature-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </span>
+            <span>Cursos con video, documentos y lecturas</span>
           </div>
-          <div>
-            <strong>3</strong>
-            <span>Roles</span>
+          <div class="hero-feature">
+            <span class="hero-feature-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </span>
+            <span>Exámenes y seguimiento de progreso</span>
           </div>
-          <div>
-            <strong>100%</strong>
-            <span>Progreso</span>
-          </div>
-        </div>
-        <div class="hero-preview" aria-hidden="true">
-          <div class="preview-top">
-            <span>Aula activa</span>
-            <strong>68%</strong>
-          </div>
-          <div class="preview-progress"><span></span></div>
-          <div class="preview-course">
-            <i>VID</i>
-            <div>
-              <strong>Seguridad operativa</strong>
-              <span>12 lecciones · examen final</span>
-            </div>
-          </div>
-          <div class="preview-course">
-            <i>PDF</i>
-            <div>
-              <strong>Protocolos internos</strong>
-              <span>Material de consulta</span>
-            </div>
+          <div class="hero-feature">
+            <span class="hero-feature-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            </span>
+            <span>Roles de Estudiante, Instructor y Admin</span>
           </div>
         </div>
       </div>
@@ -353,30 +338,19 @@ async function forgotPassword() {
 .hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
 .hero-title span { color: var(--brand); }
 .hero-subtitle { color: rgba(255,255,255,.72); font-size: 0.96rem; line-height: 1.6; max-width: 430px; }
-.hero-metrics {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 26px;
+.hero-features { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+.hero-feature {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 10px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.82); font-size: 0.88rem; font-weight: 500;
 }
-.hero-metrics div {
-  padding: 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px;
-  background: rgba(255,255,255,.07);
+.hero-feature-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(249,115,22,.2); border: 1px solid rgba(249,115,22,.3);
+  color: var(--brand); backdrop-filter: blur(4px);
 }
-.hero-metrics strong { display: block; color: #fff; font-size: 1.05rem; font-weight: 900; }
-.hero-metrics span { color: rgba(255,255,255,.58); font-size: 0.75rem; font-weight: 700; }
-.hero-preview {
-  margin-top: 24px; padding: 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 8px;
-  background: rgba(255,255,255,.1); box-shadow: 0 20px 60px rgba(0,0,0,.22);
-}
-.preview-top { display: flex; align-items: center; justify-content: space-between; color: rgba(255,255,255,.72); font-size: 0.78rem; font-weight: 800; }
-.preview-top strong { color: #fff; }
-.preview-progress { height: 7px; margin: 10px 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
-.preview-progress span { display: block; width: 68%; height: 100%; background: linear-gradient(90deg, var(--brand), #22c55e); }
-.preview-course { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.1); }
-.preview-course i {
-  width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  background: rgba(249,115,22,.22); color: #fff; font-style: normal; font-size: 0.72rem; font-weight: 900;
-}
-.preview-course strong { display: block; color: #fff; font-size: 0.86rem; }
-.preview-course span { color: rgba(255,255,255,.58); font-size: 0.76rem; }
 
 .auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); overflow-y: auto; }
 .auth-form-wrap { width: 100%; max-width: 440px; }

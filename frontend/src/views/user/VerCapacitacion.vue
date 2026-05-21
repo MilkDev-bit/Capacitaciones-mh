@@ -40,6 +40,9 @@ const showNuevoPost = ref(false)
 const expandedPost = ref<string | null>(null)
 const comentariosMap = ref<Record<string, any[]>>({})
 const nuevoComentario = ref<Record<string, string>>({})
+const foroLoading = ref(false)
+const foroError = ref('')
+const postLoading = ref(false)
 
 // Learning Aids
 const focusMode = ref(false)
@@ -106,20 +109,21 @@ async function selectLeccion(lec: any) {
   resultadoInt.value = null
   respuestas.value = {}
   
-  // Cargar nota local
-  const nota = localStorage.getItem(`cap_nota_${cursoId}_${lec.id}`)
-  if (nota) notasPersonales.value[lec.id] = nota
+  // Cargar nota local — siempre inicializar la clave para reactividad
+  notasPersonales.value[lec.id] = localStorage.getItem(`cap_nota_${cursoId}_${lec.id}`) || ''
 
+  await loadForo(lec.id) // maneja sus errores internamente
   try {
-    await loadForo(lec.id)
     await loadPreguntas(lec.id)
-  } catch { /* silently fail for non-critical */ }
+  } catch { /* silently fail */ }
 }
 
+let notaTimer: ReturnType<typeof setTimeout> | null = null
 function guardarNota() {
   if (selectedLeccion.value) {
     localStorage.setItem(`cap_nota_${cursoId}_${selectedLeccion.value.id}`, notasPersonales.value[selectedLeccion.value.id] || '')
-    showToast('Nota guardada')
+    if (notaTimer) clearTimeout(notaTimer)
+    notaTimer = setTimeout(() => showToast('✓ Nota guardada'), 1200)
   }
 }
 
@@ -169,16 +173,33 @@ async function submitIntermedias() {
 
 // ── Foro ────────────────────────────────────────────────────────────────────
 async function loadForo(leccionId: string) {
-  const res = await api.get(`/lecciones/${leccionId}/foro`)
-  foroPosts.value = res.data || []
+  foroLoading.value = true
+  foroError.value = ''
+  try {
+    const res = await api.get(`/lecciones/${leccionId}/foro`)
+    foroPosts.value = res.data || []
+  } catch {
+    foroError.value = 'No se pudieron cargar los posts del foro'
+  } finally {
+    foroLoading.value = false
+  }
 }
 
 async function crearPost() {
   if (!nuevoPost.value.titulo || !nuevoPost.value.contenido) return
-  await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, nuevoPost.value)
-  nuevoPost.value = { titulo: '', contenido: '' }
-  showNuevoPost.value = false
-  await loadForo(selectedLeccion.value.id)
+  postLoading.value = true
+  foroError.value = ''
+  try {
+    await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, nuevoPost.value)
+    nuevoPost.value = { titulo: '', contenido: '' }
+    showNuevoPost.value = false
+    await loadForo(selectedLeccion.value.id)
+    showToast('Post publicado')
+  } catch {
+    foroError.value = 'Error al publicar el post. Inténtalo de nuevo.'
+  } finally {
+    postLoading.value = false
+  }
 }
 
 async function eliminarPost(postId: string) {
@@ -504,7 +525,12 @@ function goBack() {
             <!-- Mis Notas -->
             <div class="ver-notes-section">
               <div class="ver-notes-head">
-                <h3>📝 Mis Notas</h3>
+                <h3 class="ver-section-title">
+                  <span class="gm-icon gm-icon-notes">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"/><path d="M17.5 2.5a2.121 2.121 0 013 3L12 14l-4 1 1-4 7.5-7.5z"/></svg>
+                  </span>
+                  Mis Notas
+                </h3>
                 <span class="ver-notes-status">{{ notasPersonales[selectedLeccion.id] ? 'Guardado localmente' : 'Escribe para guardar' }}</span>
               </div>
               <textarea 
@@ -534,7 +560,9 @@ function goBack() {
             <Transition name="slide-up">
               <div v-if="showIntermedias && preguntas.length > 0" class="ver-intermedias">
                 <div class="ver-int-head">
-                  <span style="font-size:1.4rem">🧠</span>
+                  <span class="gm-icon gm-icon-brain" style="width:38px;height:38px;flex-shrink:0">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2a7 7 0 014.9 11.9c-.7.7-1.2 1.6-1.4 2.6H8.5c-.2-1-.7-1.9-1.4-2.6A7 7 0 0112 2z"/><path d="M9 18h6M10 22h4"/></svg>
+                  </span>
                   <div>
                     <h3 style="font-weight:700;color:var(--dark);font-size:1rem">Preguntas de la lección</h3>
                     <p style="font-size:0.82rem;color:var(--muted)">Responde para reforzar tu aprendizaje</p>
@@ -567,12 +595,24 @@ function goBack() {
             <div class="ver-foro">
               <div class="ver-foro-head">
                 <div>
-                  <h3 style="font-weight:700;color:var(--dark);font-size:1rem">💬 Foro de la lección</h3>
+                  <h3 class="ver-section-title">
+                    <span class="gm-icon gm-icon-forum">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    </span>
+                    Foro de la lección
+                  </h3>
                   <p style="font-size:0.8rem;color:var(--muted);margin-top:2px">Pregunta o comenta sobre este contenido</p>
                 </div>
                 <button @click="showNuevoPost = !showNuevoPost" class="btn btn-secondary btn-sm">
-                  {{ showNuevoPost ? 'Cancelar' : '+ Nuevo post' }}
+                  <svg v-if="!showNuevoPost" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                  {{ showNuevoPost ? 'Cancelar' : 'Nuevo post' }}
                 </button>
+              </div>
+
+              <div v-if="foroError" class="foro-msg foro-msg-error">{{ foroError }}</div>
+              <div v-if="foroLoading" class="foro-loading">
+                <span class="btn-spinner" style="border-color:var(--brand-light);border-top-color:var(--brand)"></span>
+                <span>Cargando...</span>
               </div>
 
               <Transition name="slide-down">
@@ -580,24 +620,37 @@ function goBack() {
                   <input v-model="nuevoPost.titulo" placeholder="Título del post" class="field-input" style="margin-bottom:8px" />
                   <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="3" class="field-input" style="resize:vertical;margin-bottom:10px" />
                   <div style="display:flex;gap:8px">
-                    <button @click="crearPost" class="btn btn-primary btn-sm">Publicar</button>
+                    <button @click="crearPost" class="btn btn-primary btn-sm" :disabled="postLoading">
+                      <span v-if="postLoading" class="btn-spinner"></span>
+                      {{ postLoading ? 'Publicando...' : 'Publicar' }}
+                    </button>
                     <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
                   </div>
                 </div>
               </Transition>
 
-              <div v-if="foroPosts.length === 0" style="text-align:center;padding:28px;color:var(--muted);font-size:0.88rem">Sin posts aún. Sé el primero en preguntar.</div>
+              <div v-if="!foroLoading && foroPosts.length === 0" style="text-align:center;padding:28px;color:var(--muted);font-size:0.88rem">Sin posts aún. Sé el primero en preguntar.</div>
 
               <TransitionGroup name="list-item" tag="div" style="display:flex;flex-direction:column;gap:0;position:relative">
                 <div v-for="post in foroPosts" :key="post.id" class="ver-post">
                   <div class="ver-post-head" @click="togglePost(post.id)">
                     <div style="flex:1;min-width:0">
                       <p class="ver-post-title">{{ post.titulo }}</p>
-                      <p class="ver-post-meta">{{ post.user_name }} · {{ new Date(post.created_at).toLocaleDateString('es') }}</p>
+                      <p class="ver-post-meta">
+                        <router-link :to="`/usuario/perfil/${post.user_id}`" class="ver-user-link" @click.stop>{{ post.user_name }}</router-link>
+                        · {{ new Date(post.created_at).toLocaleDateString('es') }}
+                      </p>
                     </div>
                     <div style="display:flex;gap:6px;align-items:center">
-                      <button @click.stop="eliminarPost(post.id)" class="lec-btn del" title="Eliminar post">✕</button>
-                      <span class="ver-post-toggle">{{ expandedPost === post.id ? '▲' : '▼' }}</span>
+                      <button @click.stop="eliminarPost(post.id)" class="lec-btn del" title="Eliminar post">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                      </button>
+                      <span class="ver-post-toggle">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                          <path v-if="expandedPost === post.id" d="M18 15l-6-6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path v-else d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </span>
                     </div>
                   </div>
                   <Transition name="slide-down">
@@ -629,7 +682,11 @@ function goBack() {
     <Transition name="fade">
       <div v-if="showConfetti" class="ver-confetti-overlay">
         <div class="ver-confetti-card">
-          <div class="ver-confetti-icon">🎉</div>
+          <div class="ver-confetti-icon">
+            <span class="gm-icon gm-icon-trophy">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </span>
+          </div>
           <h2>¡Felicidades!</h2>
           <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
         </div>
@@ -998,18 +1055,72 @@ function goBack() {
 }
 
 /* Focus Mode */
+.ver-layout.focus-mode { grid-template-columns: 1fr; }
 .ver-layout.focus-mode .ver-sidebar { display: none; }
-.ver-layout.focus-mode .ver-main { margin-left: 0; }
-.ver-layout.focus-mode .ver-lec-header { max-width: 900px; margin: 0 auto 24px; }
-.ver-layout.focus-mode .ver-content-card { max-width: 900px; margin: 0 auto 24px; box-shadow: none; border-color: transparent; }
+.ver-layout.focus-mode .ver-main { width: 100%; }
+.ver-layout.focus-mode .ver-main-inner { max-width: 860px; }
+.ver-layout.focus-mode .ver-lec-header { max-width: 860px; }
+.ver-layout.focus-mode .ver-content-card { box-shadow: var(--shadow-md); }
+.ver-layout.focus-mode .ver-lesson-actions,
+.ver-layout.focus-mode .ver-next-suggestion,
+.ver-layout.focus-mode .ver-intermedias,
+.ver-layout.focus-mode .ver-notes-section,
+.ver-layout.focus-mode .ver-foro { max-width: 860px; }
 
 /* Notes Section */
 .ver-notes-section { margin-top: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
 .ver-notes-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.ver-notes-head h3 { font-size: 1rem; font-weight: 700; color: var(--dark); }
+.ver-section-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0; }
 .ver-notes-status { font-size: 0.75rem; color: var(--muted); background: var(--surface-soft); padding: 4px 8px; border-radius: 4px; }
 .ver-notes-input { font-size: 0.9rem; line-height: 1.5; resize: vertical; background: var(--bg); border: 1px solid var(--border-light); }
 .ver-notes-input:focus { background: var(--surface); border-color: var(--brand); }
+
+/* Glassmorphism icons */
+.gm-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  backdrop-filter: blur(8px);
+}
+.gm-icon-notes {
+  background: rgba(249,115,22,.12);
+  border: 1px solid rgba(249,115,22,.25);
+  color: var(--brand);
+}
+.gm-icon-forum {
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.28);
+  color: #3b82f6;
+}
+.gm-icon-brain {
+  background: rgba(234,179,8,.12);
+  border: 1px solid rgba(234,179,8,.28);
+  color: #ca8a04;
+}
+.gm-icon-trophy {
+  background: rgba(249,115,22,.15);
+  border: 1px solid rgba(249,115,22,.3);
+  color: var(--brand);
+  width: 80px !important; height: 80px !important;
+  border-radius: 20px;
+}
+
+/* Foro loading/error */
+.foro-loading { display: flex; align-items: center; gap: 10px; padding: 20px; color: var(--muted); font-size: 0.88rem; justify-content: center; }
+.foro-msg { padding: 10px 18px; font-size: 0.85rem; font-weight: 600; border-radius: var(--r-sm); margin: 8px 16px; }
+.foro-msg-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* Forum author link */
+.ver-user-link { color: var(--brand-dark); font-weight: 600; text-decoration: none; transition: color 0.15s; }
+.ver-user-link:hover { color: var(--brand); text-decoration: underline; }
+
+/* Lec delete button */
+.lec-btn.del {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px; border: none;
+  background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.lec-btn.del:hover { background: #fef2f2; color: #dc2626; }
 
 /* Confetti Overlay */
 .ver-confetti-overlay {

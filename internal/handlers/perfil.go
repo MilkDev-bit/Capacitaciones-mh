@@ -10,6 +10,33 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func GetPublicPerfil(c *gin.Context) {
+	targetID := c.Param("id")
+	var u models.User
+	err := db.DB.QueryRow(`
+		SELECT id, name, email, role,
+		       COALESCE(bio,''), COALESCE(avatar_url,''),
+		       COALESCE(specialty,''), created_at
+		FROM users WHERE id=$1`, targetID,
+	).Scan(&u.ID, &u.Name, &u.Email, &u.Role,
+		&u.Bio, &u.AvatarURL, &u.Specialty, &u.CreatedAt)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no encontrado"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":         u.ID,
+			"name":       u.Name,
+			"email":      u.Email,
+			"role":       u.Role,
+			"bio":        u.Bio,
+			"specialty":  u.Specialty,
+			"created_at": u.CreatedAt,
+		},
+	})
+}
+
 func GetPerfil(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	var u models.User

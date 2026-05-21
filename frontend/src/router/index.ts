@@ -16,6 +16,7 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/admin/CapacitacionesView.vue') },
         { path: 'examenes', component: () => import('../views/admin/ExamenesView.vue') },
         { path: 'usuarios', component: () => import('../views/admin/UsuariosView.vue') },
+        { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
     {
@@ -28,6 +29,7 @@ const router = createRouter({
         { path: 'examenes', component: () => import('../views/instructor/ExamenesInstructor.vue') },
         { path: 'estudiantes', component: () => import('../views/instructor/EstudiantesView.vue') },
         { path: 'perfil', component: () => import('../views/instructor/InstructorPerfilView.vue') },
+        { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
     {
@@ -42,6 +44,7 @@ const router = createRouter({
         { path: 'examenes/:id', component: () => import('../views/user/ResponderExamen.vue') },
         { path: 'capacitaciones/:id', component: () => import('../views/user/VerCapacitacion.vue') },
         { path: 'perfil', component: () => import('../views/user/PerfilView.vue') },
+        { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
   ],

@@ -75,6 +75,7 @@ func main() {
 			// Perfil
 			auth.GET("/perfil", handlers.GetPerfil)
 			auth.PUT("/perfil", handlers.UpdatePerfil)
+			auth.GET("/usuarios/:id/perfil", handlers.GetPublicPerfil)
 
 			// Cursos públicos (cualquier usuario autenticado)
 			auth.GET("/cursos-publicos", handlers.ListCursosPublicos)
