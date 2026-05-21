@@ -43,16 +43,20 @@ function toggleAll(selected: string[], pool: any[], setter: (v: string[]) => voi
 }
 
 async function load() {
-  const [estRes, capRes, exRes, usrRes] = await Promise.all([
-    api.get('/instructor/estudiantes'),
-    api.get('/instructor/capacitaciones'),
-    api.get('/instructor/examenes'),
-    api.get('/instructor/users'),
-  ])
-  estudiantes.value = estRes.data || []
-  capacitaciones.value = capRes.data || []
-  examenes.value = exRes.data || []
-  users.value = (usrRes.data || []).filter((u: any) => u.role === 'user')
+  try {
+    const [estRes, capRes, exRes, usrRes] = await Promise.all([
+      api.get('/instructor/estudiantes'),
+      api.get('/instructor/capacitaciones'),
+      api.get('/instructor/examenes'),
+      api.get('/instructor/users'),
+    ])
+    estudiantes.value = estRes.data || []
+    capacitaciones.value = capRes.data || []
+    examenes.value = exRes.data || []
+    users.value = (usrRes.data || []).filter((u: any) => u.role === 'user')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al cargar datos')
+  }
 }
 
 onMounted(load)

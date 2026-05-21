@@ -171,7 +171,7 @@ input[type="file"]::file-selector-button {
   background: linear-gradient(180deg, #1d1d1f 0%, #2c2c2e 100%);
   color: #fff;
   display: flex; flex-direction: column;
-  position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+  position: fixed; top: 0; left: 0; height: 100vh; z-index: 1200;
   transition: transform 0.35s var(--ease-apple);
 }
 .sidebar-nav .sn-brand {
