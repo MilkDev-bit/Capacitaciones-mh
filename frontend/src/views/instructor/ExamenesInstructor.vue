@@ -8,6 +8,44 @@ const capacitaciones = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
 
+// Resultados
+const resModal = ref<any>(null)          // examen activo en el modal
+const resLista = ref<any[]>([])          // lista de estudiantes que respondieron
+const resDetalle = ref<any[] | null>(null) // respuestas detalladas de un estudiante
+const resEstudiante = ref<any>(null)     // info del estudiante seleccionado
+const resLoading = ref(false)
+
+async function verResultados(ex: any) {
+  resModal.value = ex
+  resDetalle.value = null
+  resEstudiante.value = null
+  resLoading.value = true
+  try {
+    const r = await api.get(`/instructor/examenes/${ex.id}/resultados`)
+    resLista.value = r.data || []
+  } finally {
+    resLoading.value = false
+  }
+}
+
+async function verDetalle(est: any) {
+  if (!resModal.value) return
+  resEstudiante.value = est
+  resLoading.value = true
+  try {
+    const r = await api.get(`/instructor/examenes/${resModal.value.id}/resultados/${est.user_id}`)
+    resDetalle.value = r.data || []
+  } finally {
+    resLoading.value = false
+  }
+}
+
+function scoreColor(pct: number) {
+  if (pct >= 80) return '#10b981'
+  if (pct >= 60) return '#f59e0b'
+  return '#ef4444'
+}
+
 const form = ref({
   title: '',
   description: '',
@@ -269,9 +307,15 @@ async function eliminar(id: string) {
               </div>
             </div>
           </div>
-          <button @click="eliminar(ex.id)" class="icon-btn danger" :aria-label="`Eliminar examen ${ex.title}`">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          </button>
+          <div class="ex-card-actions">
+            <button @click.stop="verResultados(ex)" class="btn btn-secondary btn-sm" title="Ver respuestas de estudiantes">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              Resultados
+            </button>
+            <button @click="eliminar(ex.id)" class="icon-btn danger" :aria-label="`Eliminar examen ${ex.title}`">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </div>
         </div>
       </TransitionGroup>
 
@@ -284,6 +328,119 @@ async function eliminar(id: string) {
       </Transition>
     </div>
   </div>
+
+  <!-- ── Modal de resultados ─────────────────────────────────────────────── -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="resModal" class="res-overlay" @click.self="resModal = null">
+        <div class="res-panel">
+          <!-- Header -->
+          <div class="res-header">
+            <div>
+              <p class="res-header-label">Resultados del examen</p>
+              <h2 class="res-header-title">{{ resModal.title }}</h2>
+            </div>
+            <button class="icon-btn" @click="resModal = null" title="Cerrar">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div v-if="resLoading" class="res-loading">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Lista de estudiantes -->
+          <template v-else-if="!resDetalle">
+            <div v-if="resLista.length === 0" class="res-empty">
+              <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <p>Ningún estudiante ha respondido aún.</p>
+            </div>
+            <div v-else class="res-table-wrap">
+              <p class="res-count">{{ resLista.length }} estudiante{{ resLista.length !== 1 ? 's' : '' }} respondieron</p>
+              <table class="res-table">
+                <thead>
+                  <tr>
+                    <th>Estudiante</th>
+                    <th>Puntaje</th>
+                    <th>%</th>
+                    <th>Fecha</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="est in resLista" :key="est.user_id">
+                    <td>
+                      <div class="res-student-name">{{ est.nombre }}</div>
+                      <div class="res-student-email">{{ est.email }}</div>
+                    </td>
+                    <td class="res-score">{{ est.puntaje.toFixed(1) }} / {{ est.puntaje_max.toFixed(1) }}</td>
+                    <td>
+                      <span class="res-pct-badge" :style="{ background: scoreColor(est.porcentaje) + '20', color: scoreColor(est.porcentaje) }">
+                        {{ est.porcentaje.toFixed(0) }}%
+                      </span>
+                    </td>
+                    <td class="res-date">{{ new Date(est.respondido_at).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
+                    <td>
+                      <button class="btn btn-secondary btn-sm" @click="verDetalle(est)">Ver detalle</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <!-- Detalle de un estudiante -->
+          <template v-else>
+            <button class="res-back-btn" @click="resDetalle = null; resEstudiante = null">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              Volver a la lista
+            </button>
+            <div class="res-detalle-header">
+              <div class="res-detalle-user">{{ resEstudiante.nombre }}</div>
+              <div class="res-detalle-meta">
+                <span :style="{ color: scoreColor(resEstudiante.porcentaje) }" style="font-weight:700">
+                  {{ resEstudiante.porcentaje.toFixed(0) }}%
+                </span>
+                &nbsp;·&nbsp;
+                {{ resEstudiante.puntaje.toFixed(1) }} / {{ resEstudiante.puntaje_max.toFixed(1) }} pts
+              </div>
+            </div>
+            <div class="res-preguntas">
+              <div
+                v-for="(p, i) in resDetalle" :key="p.pregunta_id"
+                class="res-pregunta"
+                :class="p.respuesta_dada ? (p.tipo === 'open_text' ? 'open' : p.es_correcta ? 'correct' : 'wrong') : 'unanswered'"
+              >
+                <div class="res-pregunta-head">
+                  <span class="res-qnum">{{ i + 1 }}</span>
+                  <span class="res-qtexto">{{ p.texto }}</span>
+                  <span class="res-qval">{{ p.valor }} pt</span>
+                </div>
+                <div class="res-pregunta-body">
+                  <div v-if="!p.respuesta_dada" class="res-sin-respuesta">Sin respuesta</div>
+                  <template v-else>
+                    <div class="res-resp-row">
+                      <span class="res-resp-label">Respondió:</span>
+                      <span class="res-resp-val">{{ p.respuesta_dada }}</span>
+                      <span v-if="p.tipo !== 'open_text'" class="res-resp-icon">
+                        <svg v-if="p.es_correcta" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
+                        <svg v-else width="16" height="16" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+                      </span>
+                    </div>
+                    <div v-if="p.tipo !== 'open_text' && !p.es_correcta && p.respuesta_correcta" class="res-correcta-row">
+                      <span class="res-resp-label">Correcta:</span>
+                      <span class="res-resp-val correct-text">{{ p.respuesta_correcta }}</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -374,4 +531,79 @@ async function eliminar(id: string) {
   .ex-body { padding: 0 14px 32px; }
   .ex-pregunta-meta { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Botones de tarjeta ──────────────────────────────────────────────────────── */
+.ex-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ── Modal overlay ───────────────────────────────────────────────────────────── */
+.res-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.res-panel {
+  background: var(--surface); border-radius: var(--r-xl);
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  width: 100%; max-width: 780px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* ── Header del modal ────────────────────────────────────────────────────────── */
+.res-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 22px 24px 18px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+}
+.res-header-label { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand); margin-bottom: 2px; }
+.res-header-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin: 0; }
+
+/* ── Estados ─────────────────────────────────────────────────────────────────── */
+.res-loading { display: flex; justify-content: center; padding: 48px; }
+.res-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--muted); font-size: 0.9rem; }
+
+/* ── Tabla de resultados ─────────────────────────────────────────────────────── */
+.res-table-wrap { overflow-y: auto; padding: 20px 24px; flex: 1; }
+.res-count { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+.res-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.res-table th { text-align: left; padding: 8px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 2px solid var(--border-light); }
+.res-table td { padding: 12px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+.res-table tbody tr:hover { background: var(--bg); }
+.res-student-name { font-weight: 600; color: var(--dark); }
+.res-student-email { font-size: 0.78rem; color: var(--muted); }
+.res-score { font-weight: 600; color: var(--dark); white-space: nowrap; }
+.res-pct-badge { font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 10px; }
+.res-date { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+
+/* ── Botón volver + header detalle ──────────────────────────────────────────── */
+.res-back-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin: 16px 24px 0;
+  font-size: 0.83rem; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer; transition: color .15s;
+}
+.res-back-btn:hover { color: var(--brand); }
+.res-detalle-header { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 24px 14px; border-bottom: 1px solid var(--border-light); }
+.res-detalle-user { font-size: 1rem; font-weight: 700; color: var(--dark); }
+.res-detalle-meta { font-size: 0.88rem; color: var(--muted); }
+
+/* ── Preguntas del detalle ───────────────────────────────────────────────────── */
+.res-preguntas { overflow-y: auto; flex: 1; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+.res-pregunta {
+  border-radius: var(--r); padding: 14px 16px;
+  border-left: 4px solid var(--border); background: var(--bg);
+}
+.res-pregunta.correct  { border-left-color: #10b981; background: #f0fdf4; }
+.res-pregunta.wrong    { border-left-color: #ef4444; background: #fef2f2; }
+.res-pregunta.open     { border-left-color: #6366f1; background: #eef2ff; }
+.res-pregunta.unanswered { border-left-color: var(--border); opacity: .7; }
+.res-pregunta-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.res-qnum { font-size: 0.72rem; font-weight: 800; background: var(--brand); color: #fff; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-top: 2px; }
+.res-qtexto { flex: 1; font-weight: 600; color: var(--dark); font-size: 0.9rem; line-height: 1.5; }
+.res-qval { font-size: 0.75rem; font-weight: 700; color: var(--success); white-space: nowrap; flex-shrink: 0; }
+.res-pregunta-body { font-size: 0.87rem; display: flex; flex-direction: column; gap: 4px; padding-left: 4px; }
+.res-resp-row { display: flex; align-items: center; gap: 8px; }
+.res-resp-label { font-size: 0.76rem; font-weight: 700; color: var(--muted); min-width: 72px; }
+.res-resp-val { color: var(--dark); flex: 1; }
+.res-resp-icon { flex-shrink: 0; display: flex; }
+.res-correcta-row { display: flex; align-items: center; gap: 8px; }
+.correct-text { color: #10b981; font-weight: 600; }
+.res-sin-respuesta { font-size: 0.82rem; color: var(--muted); font-style: italic; }
 </style>

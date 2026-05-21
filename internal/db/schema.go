@@ -174,6 +174,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty VARCHAR(255) DEFAULT '';
 ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS media_url TEXT DEFAULT '';
 ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT '';
 
+-- Permitir respuestas abiertas sin opcion_id
+ALTER TABLE respuestas ALTER COLUMN opcion_id DROP NOT NULL;
+
 -- Likes en posts del foro
 CREATE TABLE IF NOT EXISTS foro_likes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

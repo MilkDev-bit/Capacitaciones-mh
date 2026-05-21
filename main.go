@@ -120,6 +120,8 @@ func main() {
 				instructor.GET("/examenes", handlers.InstructorListExamenes)
 				instructor.POST("/examenes", handlers.InstructorCreateExamen)
 				instructor.DELETE("/examenes/:id", handlers.InstructorDeleteExamen)
+				instructor.GET("/examenes/:id/resultados", handlers.InstructorGetResultados)
+				instructor.GET("/examenes/:id/resultados/:user_id", handlers.InstructorGetRespuestasUsuario)
 
 				instructor.GET("/estudiantes", handlers.InstructorListEstudiantes)
 				instructor.POST("/asignar", handlers.InstructorAsignar)
