@@ -20,6 +20,8 @@ const loadingLec = ref(false)
 const showLecForm = ref(false)
 const lecForm = ref({ title: '', description: '', type: 'video', content: '', orden: 1, duracion_min: 0 })
 const lecFile = ref<File | null>(null)
+const lecError = ref('')
+const lecSaving = ref(false)
 
 const intermedias = ref<any[]>([])
 const loadingInt = ref(false)
@@ -117,19 +119,27 @@ async function loadLecciones() {
 
 async function guardarLeccion() {
   if (!lecForm.value.title) return
-  const fd = new FormData()
-  fd.append('title', lecForm.value.title)
-  fd.append('description', lecForm.value.description)
-  fd.append('type', lecForm.value.type)
-  fd.append('content', lecForm.value.content)
-  fd.append('orden', String(lecForm.value.orden))
-  fd.append('duracion_min', String(lecForm.value.duracion_min || 0))
-  if (lecFile.value) fd.append('file', lecFile.value)
-  await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`, fd)
-  showLecForm.value = false
-  lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2, duracion_min: 0 }
-  lecFile.value = null
-  await loadLecciones()
+  lecError.value = ''
+  lecSaving.value = true
+  try {
+    const fd = new FormData()
+    fd.append('title', lecForm.value.title)
+    fd.append('description', lecForm.value.description)
+    fd.append('type', lecForm.value.type)
+    fd.append('content', lecForm.value.content)
+    fd.append('orden', String(lecForm.value.orden))
+    fd.append('duracion_min', String(lecForm.value.duracion_min || 0))
+    if (lecFile.value) fd.append('file', lecFile.value)
+    await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`, fd)
+    showLecForm.value = false
+    lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2, duracion_min: 0 }
+    lecFile.value = null
+    await loadLecciones()
+  } catch (e: any) {
+    lecError.value = e.response?.data?.error || 'Error al guardar la lección'
+  } finally {
+    lecSaving.value = false
+  }
 }
 
 async function eliminarLeccion(leccionId: string) {
@@ -223,7 +233,9 @@ function fileUrl(path: string) {
     <Transition name="slide-down">
       <div v-if="showForm" class="ci-form-card">
         <div class="ci-form-header">
-          <div class="ci-form-header-icon">📚</div>
+          <div class="ci-form-header-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
           <div>
             <h2 class="ci-form-title">Crear nuevo curso</h2>
             <p class="ci-form-sub">Completa la información básica para empezar</p>
@@ -270,9 +282,9 @@ function fileUrl(path: string) {
               <label class="ci-label" for="f-type">Tipo de contenido principal</label>
               <div class="ci-select-wrap">
                 <select id="f-type" class="ci-input ci-select" v-model="form.type">
-                  <option value="video">🎥 Video</option>
-                  <option value="document">📄 Documento PDF</option>
-                  <option value="text">📝 Texto / Lectura</option>
+                  <option value="video">Video</option>
+                  <option value="document">Documento PDF</option>
+                  <option value="text">Texto / Lectura</option>
                 </select>
               </div>
             </div>
@@ -337,11 +349,17 @@ function fileUrl(path: string) {
               <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="ci-card-cover-img" />
             </template>
             <template v-else>
-              <div class="ci-card-cover-icon">{{ c.type === 'video' ? '🎥' : c.type === 'document' ? '📄' : '📝' }}</div>
+              <div class="ci-card-cover-icon">
+                <svg v-if="c.type === 'video'" width="52" height="52" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="rgba(255,255,255,.85)" stroke="none"/></svg>
+                <svg v-else-if="c.type === 'document'" width="52" height="52" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <svg v-else width="52" height="52" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              </div>
             </template>
             <div class="ci-card-cover-badges">
               <span :class="['ci-badge-pub', c.is_public ? 'pub' : 'priv']">
-                {{ c.is_public ? '🌐 Público' : '🔒 Privado' }}
+                <svg v-if="c.is_public" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                <svg v-else width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+                {{ c.is_public ? 'Público' : 'Privado' }}
               </span>
             </div>
             <div class="ci-card-cover-overlay">
@@ -412,7 +430,9 @@ function fileUrl(path: string) {
         <div class="ci-mgmt-head">
           <div class="ci-mgmt-head-left">
             <div :class="['ci-mgmt-thumb', `cover-${selectedCurso.type}`]">
-              {{ selectedCurso.type === 'video' ? '🎥' : selectedCurso.type === 'document' ? '📄' : '📝' }}
+              <svg v-if="selectedCurso.type === 'video'" width="22" height="22" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="rgba(255,255,255,.9)" stroke="none"/></svg>
+              <svg v-else-if="selectedCurso.type === 'document'" width="22" height="22" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <svg v-else width="22" height="22" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             </div>
             <div>
               <h2 class="ci-mgmt-title">{{ selectedCurso.title }}</h2>
@@ -464,7 +484,8 @@ function fileUrl(path: string) {
             <Transition name="slide-down">
               <div v-if="showLecForm" class="ci-sub-form">
                 <div class="ci-sub-form-header">
-                  <span>📖 Nueva lección</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  Nueva lección
                 </div>
                 <div class="ci-form-grid">
                   <div class="ci-field ci-field-full">
@@ -479,10 +500,10 @@ function fileUrl(path: string) {
                     <label class="ci-label">Tipo de contenido</label>
                     <div class="ci-select-wrap">
                       <select class="ci-input ci-select" v-model="lecForm.type">
-                        <option value="video">🎥 Video</option>
-                        <option value="document">📄 PDF / Documento</option>
-                        <option value="text">📝 Texto</option>
-                        <option value="link">🔗 Enlace externo</option>
+                        <option value="video">Video</option>
+                        <option value="document">PDF / Documento</option>
+                        <option value="text">Texto</option>
+                        <option value="link">Enlace externo</option>
                       </select>
                     </div>
                   </div>
@@ -511,8 +532,15 @@ function fileUrl(path: string) {
                     <span class="ci-hint">Soporta YouTube, Vimeo y cualquier URL embebible.</span>
                   </div>
                 </div>
+                <div v-if="lecError" class="ci-lec-error">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                  {{ lecError }}
+                </div>
                 <div class="ci-sub-form-footer">
-                  <button class="ci-btn-primary ci-btn-sm" @click="guardarLeccion">Guardar lección</button>
+                  <button class="ci-btn-primary ci-btn-sm" @click="guardarLeccion" :disabled="lecSaving">
+                    <span v-if="lecSaving" class="ci-spinner"></span>
+                    {{ lecSaving ? 'Guardando...' : 'Guardar lección' }}
+                  </button>
                   <button class="ci-btn-ghost ci-btn-sm" @click="showLecForm = false">Cancelar</button>
                 </div>
               </div>
@@ -531,7 +559,7 @@ function fileUrl(path: string) {
 
             <!-- Empty lecciones -->
             <div v-else-if="lecciones.length === 0" class="ci-tab-empty">
-              <span style="font-size:2.2rem">📋</span>
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" style="color:var(--border)"><path d="M4 6h16M4 10h16M4 14h8"/></svg>
               <p>Sin lecciones aún. Agrega la primera con el botón de arriba.</p>
             </div>
 
@@ -543,7 +571,11 @@ function fileUrl(path: string) {
                 <div class="ci-lec-info">
                   <span class="ci-lec-title">{{ lec.title }}</span>
                   <span class="ci-lec-meta">
-                    {{ lec.type === 'video' ? '🎥 Video' : lec.type === 'document' ? '📄 PDF' : lec.type === 'link' ? '🔗 Enlace' : '📝 Texto' }}
+                    <svg v-if="lec.type === 'video'" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+                    <svg v-else-if="lec.type === 'document'" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <svg v-else-if="lec.type === 'link'" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    <svg v-else width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    {{ lec.type === 'video' ? 'Video' : lec.type === 'document' ? 'PDF' : lec.type === 'link' ? 'Enlace' : 'Texto' }}
                     <template v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</template>
                     <template v-if="lec.description"> · {{ lec.description }}</template>
                   </span>
@@ -569,7 +601,10 @@ function fileUrl(path: string) {
 
             <Transition name="slide-down">
               <div v-if="showIntForm" class="ci-sub-form">
-                <div class="ci-sub-form-header"><span>💬 Nueva pregunta intermedia</span></div>
+                <div class="ci-sub-form-header">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
+                  Nueva pregunta intermedia
+                </div>
                 <div style="display:flex;flex-direction:column;gap:12px">
                   <div class="ci-field ci-field-full">
                     <label class="ci-label">Texto de la pregunta <span class="ci-req">*</span></label>
@@ -633,7 +668,7 @@ function fileUrl(path: string) {
             </div>
 
             <div v-else-if="intermedias.length === 0" class="ci-tab-empty">
-              <span style="font-size:2.2rem">💡</span>
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" style="color:var(--border)"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
               <p>Sin preguntas intermedias. Aparecen entre lecciones para reforzar el aprendizaje.</p>
             </div>
 
@@ -657,7 +692,7 @@ function fileUrl(path: string) {
             </div>
 
             <div v-if="misExamenes.filter(e => e.capacitacion_id === selectedCurso.id).length === 0" class="ci-tab-empty">
-              <span style="font-size:2.2rem">📋</span>
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" style="color:var(--border)"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
               <p>Sin examen enlazado. Ve a la sección Exámenes y selecciona este curso.</p>
             </div>
 
@@ -716,7 +751,11 @@ function fileUrl(path: string) {
   display: flex; align-items: center; gap: 16px;
   padding: 24px 28px; background: var(--dark); color: #fff;
 }
-.ci-form-header-icon { font-size: 2rem; }
+.ci-form-header-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(255,255,255,.12); color: #fff; flex-shrink: 0;
+}
 .ci-form-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 2px; }
 .ci-form-sub   { font-size: 0.83rem; color: rgba(255,255,255,.65); margin: 0; }
 
@@ -840,6 +879,7 @@ function fileUrl(path: string) {
   position: absolute; top: 10px; right: 10px; z-index: 2;
 }
 .ci-badge-pub {
+  display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
   backdrop-filter: blur(6px);
 }
@@ -946,12 +986,19 @@ function fileUrl(path: string) {
   overflow: hidden; margin-bottom: 16px;
 }
 .ci-sub-form-header {
+  display: flex; align-items: center; gap: 8px;
   padding: 12px 16px; background: var(--border-light); font-size: 0.88rem; font-weight: 700; color: var(--dark);
 }
 .ci-sub-form > .ci-form-grid, .ci-sub-form > div { padding: 16px; }
 .ci-sub-form-footer {
   display: flex; gap: 8px; padding: 12px 16px;
   border-top: 1px solid var(--border-light); background: var(--surface);
+}
+
+.ci-lec-error {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px; background: var(--danger-bg); color: var(--danger);
+  font-size: 0.82rem; font-weight: 600; border-top: 1px solid var(--border-light);
 }
 
 /* Lesson list */
