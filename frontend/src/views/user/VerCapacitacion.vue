@@ -343,6 +343,11 @@ function getEmbedUrl(url: string): string {
   return url
 }
 
+function isEmbeddableLink(url: string): boolean {
+  if (!url) return false
+  return !!(url.match(/(?:youtube\.com\/watch|youtu\.be\/)/) || url.match(/vimeo\.com\/\d+/))
+}
+
 function typeLabel(t: string) {
   const map: Record<string, string> = { video: 'Video', document: 'PDF / Documento', text: 'Lectura', link: 'Enlace / Video' }
   return map[t] || t
@@ -601,11 +606,20 @@ function goBack() {
               <!-- Enlace externo: YouTube, Vimeo, otro -->
               <div v-else-if="selectedLeccion.type === 'link'">
                 <div v-if="selectedLeccion.content">
-                  <div class="ver-media-frame">
+                  <!-- YouTube / Vimeo: incrustar en iframe -->
+                  <div v-if="isEmbeddableLink(selectedLeccion.content)" class="ver-media-frame">
                     <iframe :src="getEmbedUrl(selectedLeccion.content)"
                       class="ver-media-fill"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowfullscreen />
+                  </div>
+                  <!-- Enlace genérico: no se puede incrustar, mostrar tarjeta -->
+                  <div v-else class="ver-link-card">
+                    <div class="ver-link-card-icon">🔗</div>
+                    <p class="ver-link-card-label">Este contenido se abre en una nueva pestaña</p>
+                    <p class="ver-link-card-url">{{ selectedLeccion.content }}</p>
+                    <a :href="selectedLeccion.content" target="_blank" rel="noopener noreferrer"
+                      class="btn btn-primary ver-link-card-btn">Abrir enlace →</a>
                   </div>
                   <div class="ver-resource-footer">
                     <a :href="selectedLeccion.content" target="_blank" rel="noopener"
@@ -1584,6 +1598,21 @@ function goBack() {
 .fpc-btn-primary:hover { background: var(--brand-dark); }
 .fpc-btn-secondary { background: var(--surface-soft); color: var(--dark); }
 .fpc-btn-secondary:hover { background: rgba(0,0,0,.06); }
+
+/* Tarjeta de enlace externo (no embebible) */
+.ver-link-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 48px 32px; text-align: center;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-xl); margin: 0;
+}
+.ver-link-card-icon { font-size: 3rem; line-height: 1; }
+.ver-link-card-label { font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0; }
+.ver-link-card-url {
+  font-size: 0.82rem; color: var(--muted); margin: 0;
+  word-break: break-all; max-width: 480px;
+}
+.ver-link-card-btn { font-size: 1rem; padding: 12px 28px; }
 
 /* Examen final banner */
 .ver-examen-final-banner {
