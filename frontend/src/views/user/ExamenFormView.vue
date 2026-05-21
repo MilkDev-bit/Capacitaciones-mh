@@ -15,6 +15,15 @@ onMounted(async () => {
   try {
     const res = await api.get(`/examenes/${route.params.id}`)
     examen.value = res.data
+    if (res.data.ya_respondido) {
+      resultado.value = {
+        porcentaje: res.data.porcentaje ?? 0,
+        puntaje: res.data.puntaje ?? 0,
+        puntaje_max: res.data.puntaje_max ?? 0,
+        ya_respondido: true,
+      }
+      submitted.value = true
+    }
   } catch {
     error.value = 'No se pudo cargar el exámen. Verifica que estés autenticado.'
   }
@@ -83,7 +92,9 @@ function closeWindow() {
             <svg v-if="resultado.porcentaje >= 60" width="64" height="64" fill="none" stroke="#10b981" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <svg v-else width="64" height="64" fill="none" stroke="#ef4444" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           </div>
-          <h2 class="gf-result-title">Tu respuesta fue registrada</h2>
+          <h2 class="gf-result-title">
+            {{ resultado.ya_respondido ? 'Ya completaste este exámen' : 'Tu respuesta fue registrada' }}
+          </h2>
           <div class="gf-score-ring" :style="{ '--color': getColor(resultado.porcentaje) }">
             <svg viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="44" fill="none" stroke="#e5e7eb" stroke-width="8"/>

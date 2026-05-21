@@ -143,7 +143,40 @@ func GetExamen(c *gin.Context) {
 		examen.Preguntas = append(examen.Preguntas, p)
 	}
 
+	if role == "user" {
+		uid, _ := c.Get("user_id")
+		yaRespondido, puntaje, puntajeMax, porcentaje := getExamenResultadoUsuario(id, uid.(string))
+		c.JSON(http.StatusOK, gin.H{
+			"id": examen.ID, "title": examen.Title, "description": examen.Description,
+			"created_at": examen.CreatedAt, "capacitacion_id": examen.CapacitacionID,
+			"capacitacion_nombre": examen.CapacitacionNombre, "preguntas": examen.Preguntas,
+			"ya_respondido": yaRespondido, "porcentaje": porcentaje,
+			"puntaje": puntaje, "puntaje_max": puntajeMax,
+		})
+		return
+	}
 	c.JSON(http.StatusOK, examen)
+}
+
+func getExamenResultadoUsuario(examenID, userID string) (yaRespondido bool, puntaje, puntajeMax, porcentaje float64) {
+	var count int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM respuestas WHERE user_id=$1 AND examen_id=$2`, userID, examenID).Scan(&count)
+	if count == 0 {
+		return
+	}
+	yaRespondido = true
+	db.DB.QueryRow(`
+		SELECT COALESCE(SUM(CASE WHEN o.es_correcta THEN p.valor ELSE 0 END),0),
+		       COALESCE(SUM(p.valor),0)
+		FROM respuestas r
+		INNER JOIN preguntas p ON p.id = r.pregunta_id
+		LEFT  JOIN opciones  o ON o.id = r.opcion_id
+		WHERE r.user_id=$1 AND r.examen_id=$2
+	`, userID, examenID).Scan(&puntaje, &puntajeMax)
+	if puntajeMax > 0 {
+		porcentaje = puntaje / puntajeMax * 100
+	}
+	return
 }
 
 func DeleteExamen(c *gin.Context) {
@@ -156,10 +189,45 @@ func DeleteExamen(c *gin.Context) {
 func ListExamenesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
-		SELECT e.id, e.title, e.description, e.created_at
+		SELECT e.id, e.title, e.description, e.created_at,
+		       -- ya_respondido
+		       EXISTS(
+		           SELECT 1 FROM respuestas r WHERE r.examen_id=e.id AND r.user_id=$1
+		       ) AS ya_respondido,
+		       -- porcentaje obtenido
+		       COALESCE((
+		           SELECT CASE WHEN SUM(p2.valor)>0
+		                       THEN SUM(CASE WHEN o2.es_correcta THEN p2.valor ELSE 0 END)/SUM(p2.valor)*100
+		                       ELSE 0 END
+		           FROM respuestas r2
+		           INNER JOIN preguntas p2 ON p2.id=r2.pregunta_id
+		           LEFT  JOIN opciones  o2 ON o2.id=r2.opcion_id
+		           WHERE r2.examen_id=e.id AND r2.user_id=$1
+		       ),0) AS porcentaje,
+		       -- bloqueado: enlazado a un curso y el usuario no lo completó todo
+		       CASE WHEN e.capacitacion_id IS NULL THEN false
+		            ELSE (
+		                EXISTS(
+		                    SELECT 1 FROM lecciones l
+		                    WHERE l.capacitacion_id=e.capacitacion_id
+		                    AND NOT EXISTS(
+		                        SELECT 1 FROM progreso_lecciones pl
+		                        WHERE pl.leccion_id=l.id AND pl.user_id=$1
+		                    )
+		                )
+		                OR EXISTS(
+		                    SELECT 1 FROM preguntas_intermedias pi
+		                    WHERE pi.capacitacion_id=e.capacitacion_id
+		                    AND NOT EXISTS(
+		                        SELECT 1 FROM respuestas_intermedias ri
+		                        WHERE ri.pregunta_id=pi.id AND ri.user_id=$1
+		                    )
+		                )
+		            )
+		       END AS bloqueado
 		FROM examenes e
-		INNER JOIN asignaciones a ON a.examen_id = e.id
-		WHERE a.user_id = $1
+		INNER JOIN asignaciones a ON a.examen_id=e.id
+		WHERE a.user_id=$1
 		ORDER BY e.created_at DESC
 	`, userID)
 	if err != nil {
@@ -167,10 +235,25 @@ func ListExamenesUsuario(c *gin.Context) {
 		return
 	}
 	defer rows.Close()
-	result := []models.Examen{}
+
+	type ExamenUsuario struct {
+		ID           string  `json:"id"`
+		Title        string  `json:"title"`
+		Description  string  `json:"description"`
+		CreatedAt    string  `json:"created_at"`
+		YaRespondido bool    `json:"ya_respondido"`
+		Porcentaje   float64 `json:"porcentaje"`
+		Bloqueado    bool    `json:"bloqueado"`
+	}
+	result := []ExamenUsuario{}
 	for rows.Next() {
-		var e models.Examen
-		rows.Scan(&e.ID, &e.Title, &e.Description, &e.CreatedAt)
+		var e ExamenUsuario
+		var createdAt interface{}
+		rows.Scan(&e.ID, &e.Title, &e.Description, &createdAt,
+			&e.YaRespondido, &e.Porcentaje, &e.Bloqueado)
+		if t, ok := createdAt.(string); ok {
+			e.CreatedAt = t
+		}
 		result = append(result, e)
 	}
 	c.JSON(http.StatusOK, result)
@@ -296,6 +379,14 @@ func InstructorGetRespuestasUsuario(c *gin.Context) {
 func SubmitExamen(c *gin.Context) {
 	examenID := c.Param("id")
 	userID, _ := c.Get("user_id")
+
+	// Bloquear re-envío
+	var existCount int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM respuestas WHERE user_id=$1 AND examen_id=$2`, userID, examenID).Scan(&existCount)
+	if existCount > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Ya has respondido este examen. Solicita a tu instructor que lo reasigne."})
+		return
+	}
 
 	var respuestas []models.Respuesta
 	if err := c.ShouldBindJSON(&respuestas); err != nil {

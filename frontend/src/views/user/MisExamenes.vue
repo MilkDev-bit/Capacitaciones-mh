@@ -18,6 +18,17 @@ function openInWindow(id: string) {
     'width=780,height=900,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no'
   )
 }
+
+function scoreColor(pct: number) {
+  if (pct >= 80) return '#10b981'
+  if (pct >= 60) return '#f59e0b'
+  return '#ef4444'
+}
+
+function handleCardClick(e: any) {
+  if (e.bloqueado || e.ya_respondido) return
+  router.push('/usuario/examenes/' + e.id)
+}
 </script>
 
 <template>
@@ -31,20 +42,59 @@ function openInWindow(id: string) {
       <div
         v-for="e in examenes" :key="e.id"
         class="exam-card"
-        @click="router.push('/usuario/examenes/' + e.id)"
-        tabindex="0" @keyup.enter="router.push('/usuario/examenes/' + e.id)"
+        :class="{ 'exam-card--locked': e.bloqueado, 'exam-card--done': e.ya_respondido }"
+        @click="handleCardClick(e)"
+        :style="e.bloqueado || e.ya_respondido ? 'cursor:default' : ''"
+        tabindex="0"
+        @keyup.enter="handleCardClick(e)"
       >
-        <div class="exam-thumb">
-          <span class="exam-icon"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
+        <!-- Thumb -->
+        <div class="exam-thumb" :class="e.bloqueado ? 'thumb--locked' : e.ya_respondido ? 'thumb--done' : ''">
+          <!-- Bloqueado -->
+          <span v-if="e.bloqueado" class="exam-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </span>
+          <!-- Ya respondido -->
+          <span v-else-if="e.ya_respondido" class="exam-icon">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <!-- Normal -->
+          <span v-else class="exam-icon"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>
+          <!-- Badge de puntaje si ya respondido -->
+          <div v-if="e.ya_respondido" class="score-badge" :style="{ background: scoreColor(e.porcentaje) }">
+            {{ e.porcentaje.toFixed(0) }}%
+          </div>
         </div>
+
         <div class="exam-body">
-          <span class="exam-badge">Exámen</span>
+          <!-- Badge estado -->
+          <span v-if="e.bloqueado" class="exam-badge badge--locked">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Bloqueado
+          </span>
+          <span v-else-if="e.ya_respondido" class="exam-badge badge--done">Completado</span>
+          <span v-else class="exam-badge">Exámen</span>
+
           <h3>{{ e.title }}</h3>
           <p>{{ e.description || 'Sin descripción' }}</p>
-          <div class="exam-meta" v-if="e.preguntas">
-            <span>📌 {{ e.preguntas.length }} preguntas</span>
+
+          <!-- Bloqueado: aviso -->
+          <p v-if="e.bloqueado" class="exam-lock-msg">
+            Completa todas las lecciones e intermedias del curso para desbloquear este exámen.
+          </p>
+
+          <!-- Completado: puntaje -->
+          <div v-else-if="e.ya_respondido" class="exam-score-row">
+            <div class="exam-score-bar">
+              <div class="exam-score-fill" :style="{ width: e.porcentaje + '%', background: scoreColor(e.porcentaje) }"></div>
+            </div>
+            <span class="exam-score-label" :style="{ color: scoreColor(e.porcentaje) }">
+              {{ e.porcentaje.toFixed(0) }}%
+            </span>
           </div>
-          <div class="exam-cta-row">
+
+          <!-- Disponible: botones -->
+          <div v-else class="exam-cta-row">
             <span class="exam-cta">Responder exámen →</span>
             <button
               class="exam-window-btn"
@@ -77,19 +127,36 @@ function openInWindow(id: string) {
   box-shadow: var(--shadow-sm); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
   display: flex; flex-direction: column;
 }
-.exam-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.exam-card:hover:not(.exam-card--locked):not(.exam-card--done) { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.exam-card--locked { opacity: .85; }
+.exam-card--done { cursor: default; }
 .exam-thumb {
   height: 130px;
   background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.thumb--locked { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+.thumb--done   { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.score-badge {
+  position: absolute; top: 10px; right: 10px;
+  color: #fff; font-size: 0.8rem; font-weight: 800;
+  padding: 3px 9px; border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
 }
 .exam-icon { font-size: 2.8rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
 .exam-body { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .exam-badge {
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
   color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px; border-radius: 4px;
-  display: inline-block; width: fit-content;
+  display: inline-flex; align-items: center; gap: 4px; width: fit-content;
 }
+.badge--locked { background: #f1f5f9; color: #64748b; }
+.badge--done   { background: #d1fae5; color: #065f46; }
+.exam-lock-msg { font-size: 0.79rem; color: var(--muted); font-style: italic; line-height: 1.4; }
+.exam-score-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.exam-score-bar { flex: 1; height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+.exam-score-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+.exam-score-label { font-size: 0.82rem; font-weight: 700; min-width: 36px; text-align: right; }
 .exam-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); }
 .exam-body p { font-size: 0.83rem; color: var(--muted); }
 .exam-meta { font-size: 0.8rem; color: var(--muted); }

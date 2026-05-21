@@ -13,6 +13,15 @@ const submitted = ref(false)
 onMounted(async () => {
   const res = await api.get(`/examenes/${route.params.id}`)
   examen.value = res.data
+  if (res.data.ya_respondido) {
+    resultado.value = {
+      porcentaje: res.data.porcentaje ?? 0,
+      puntaje: res.data.puntaje ?? 0,
+      puntaje_max: res.data.puntaje_max ?? 0,
+      ya_respondido: true,
+    }
+    submitted.value = true
+  }
 })
 
 async function enviar() {
@@ -26,7 +35,8 @@ async function enviar() {
   try {
     const payload = preguntas.map((p: any) => ({
       pregunta_id: String(p.id),
-      opcion_id: String(respuestas.value[p.id]),
+      opcion_id: p.tipo !== 'open_text' ? String(respuestas.value[p.id]) : '',
+      respuesta_texto: p.tipo === 'open_text' ? String(respuestas.value[p.id] || '') : '',
     }))
     const res = await api.post(`/examenes/${route.params.id}/submit`, payload)
     resultado.value = res.data
@@ -108,7 +118,7 @@ function getColor(pct: number) {
         <svg v-if="resultado.porcentaje >= 60" width="56" height="56" fill="none" stroke="#22c55e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <svg v-else width="56" height="56" fill="none" stroke="#f97316" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       </div>
-      <h2>Exámen completado</h2>
+      <h2>{{ resultado.ya_respondido ? 'Ya completaste este exámen' : 'Exámen completado' }}</h2>
       <div class="score-ring" :style="{ '--pct': resultado.porcentaje, '--color': getColor(resultado.porcentaje) }">
         <svg viewBox="0 0 100 100" class="ring-svg">
           <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border)" stroke-width="8"/>
