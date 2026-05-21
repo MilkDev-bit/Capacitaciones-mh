@@ -58,6 +58,9 @@ function onLecFile(e: Event) {
 async function guardar() {
   if (!form.value.title) { toast.error('El titulo es requerido'); return }
   loading.value = true
+  const loadingToast = file.value
+    ? toast.loading('Creando curso y subiendo archivo...')
+    : null
   try {
     const fd = new FormData()
     fd.append('title', form.value.title)
@@ -68,7 +71,6 @@ async function guardar() {
     fd.append('welcome_message', form.value.welcome_message)
     if (file.value) fd.append('file', file.value)
     if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
-    
     await api.post('/instructor/capacitaciones', fd)
     toast.success('Curso creado')
     showForm.value = false
@@ -80,6 +82,7 @@ async function guardar() {
     toast.error(e.response?.data?.error || 'Error al guardar')
   } finally {
     loading.value = false
+    loadingToast?.close()
   }
 }
 
@@ -117,6 +120,10 @@ async function loadLecciones() {
 async function guardarLeccion() {
   if (!lecForm.value.title) return
   lecError.value = ''
+  loadingLec.value = true
+  const loadingToast = lecFile.value
+    ? toast.loading(`Subiendo ${lecForm.value.type === 'video' ? 'video' : 'archivo'}... puede tardar unos segundos`)
+    : null
   try {
     const fd = new FormData()
     fd.append('title', lecForm.value.title)
@@ -127,12 +134,16 @@ async function guardarLeccion() {
     fd.append('duracion_min', String(lecForm.value.duracion_min || 0))
     if (lecFile.value) fd.append('file', lecFile.value)
     await api.post(`/instructor/capacitaciones/${selectedCurso.value.id}/lecciones`, fd)
+    toast.success('Lección creada correctamente')
     showLecForm.value = false
     lecForm.value = { title: '', description: '', type: 'video', content: '', orden: lecciones.value.length + 2, duracion_min: 0 }
     lecFile.value = null
     await loadLecciones()
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al guardar la lección')
+  } finally {
+    loadingLec.value = false
+    loadingToast?.close()
   }
 }
 

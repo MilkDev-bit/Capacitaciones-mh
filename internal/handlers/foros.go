@@ -2,11 +2,15 @@ package handlers
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func ListForoPosts(c *gin.Context) {
@@ -14,7 +18,9 @@ func ListForoPosts(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.leccion_id, p.user_id, u.name, p.titulo, p.contenido, p.created_at,
+		SELECT p.id, p.leccion_id, p.user_id, u.name, p.titulo, p.contenido,
+		       COALESCE(p.media_url,''), COALESCE(p.media_type,''),
+		       p.created_at,
 		       COUNT(DISTINCT fl.id) AS like_count,
 		       COALESCE(BOOL_OR(fl.user_id = $2::uuid), false) AS user_liked
 		FROM foro_posts p
@@ -32,7 +38,7 @@ func ListForoPosts(c *gin.Context) {
 	result := []models.ForoPost{}
 	for rows.Next() {
 		var p models.ForoPost
-		rows.Scan(&p.ID, &p.LeccionID, &p.UserID, &p.UserName, &p.Titulo, &p.Contenido, &p.CreatedAt, &p.LikeCount, &p.UserLiked)
+		rows.Scan(&p.ID, &p.LeccionID, &p.UserID, &p.UserName, &p.Titulo, &p.Contenido, &p.MediaURL, &p.MediaType, &p.CreatedAt, &p.LikeCount, &p.UserLiked)
 		result = append(result, p)
 	}
 	c.JSON(http.StatusOK, result)
@@ -42,20 +48,49 @@ func CreateForoPost(c *gin.Context) {
 	leccionID := c.Param("leccion_id")
 	userID, _ := c.Get("user_id")
 
-	var body struct {
-		Titulo    string `json:"titulo" binding:"required"`
-		Contenido string `json:"contenido" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	titulo := strings.TrimSpace(c.PostForm("titulo"))
+	contenido := strings.TrimSpace(c.PostForm("contenido"))
+	if titulo == "" || contenido == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "titulo y contenido son requeridos"})
 		return
 	}
 
+	var mediaURL, mediaType string
+	file, err := c.FormFile("media")
+	if err == nil {
+		if file.Size > 50*1024*1024 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "el archivo no puede superar 50 MB"})
+			return
+		}
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		imgExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true}
+		vidExts := map[string]bool{".mp4": true, ".webm": true, ".mov": true, ".avi": true}
+		if imgExts[ext] {
+			mediaType = "image"
+		} else if vidExts[ext] {
+			mediaType = "video"
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "solo se permiten imágenes (jpg,png,webp,gif) o videos (mp4,webm,mov)"})
+			return
+		}
+		newName := uuid.NewString() + ext
+		dest := filepath.Join("uploads", "foro", newName)
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+			return
+		}
+		if err := c.SaveUploadedFile(file, dest); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
+			return
+		}
+		mediaURL = "/" + filepath.ToSlash(dest)
+	}
+
 	var id string
-	err := db.DB.QueryRow(`
-		INSERT INTO foro_posts(leccion_id, user_id, titulo, contenido)
-		VALUES($1,$2,$3,$4) RETURNING id`,
-		leccionID, userID, body.Titulo, body.Contenido,
+	err = db.DB.QueryRow(`
+		INSERT INTO foro_posts(leccion_id, user_id, titulo, contenido, media_url, media_type)
+		VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+		leccionID, userID, titulo, contenido, mediaURL, mediaType,
 	).Scan(&id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

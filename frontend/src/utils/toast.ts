@@ -70,6 +70,29 @@ export const toast = {
     })
   },
 
+  loading(message: string, title = 'Subiendo...'): { close: () => void } {
+    let toastEl: HTMLDivElement | null = null
+    iziToast.show({
+      title,
+      message,
+      position: 'topRight',
+      timeout: false as any,
+      close: false,
+      progressBar: false,
+      backgroundColor: '#1e293b',
+      titleColor: '#fff',
+      messageColor: 'rgba(255,255,255,0.75)',
+      onOpened(_instance: any, toast: HTMLDivElement) {
+        toastEl = toast
+      },
+    })
+    return {
+      close() {
+        if (toastEl) iziToast.hide({ transitionOut: 'fadeOutUp' }, toastEl, 'custom')
+      },
+    }
+  },
+
   confirm(message: string, title = '¿Estás seguro?'): Promise<boolean> {
     return new Promise((resolve) => {
       iziToast.question({

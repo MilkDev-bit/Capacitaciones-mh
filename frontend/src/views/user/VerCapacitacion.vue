@@ -30,6 +30,10 @@ const resultadoInt = ref<any | null>(null)
 const foroPosts = ref<any[]>([])
 const nuevoPost = ref({ titulo: '', contenido: '' })
 const showNuevoPost = ref(false)
+const postFileInput = ref<HTMLInputElement | null>(null)
+const postFile = ref<File | null>(null)
+const postFilePreview = ref<string | null>(null)
+const postFileIsVideo = ref(false)
 const expandedPost = ref<string | null>(null)
 const comentariosMap = ref<Record<string, any[]>>({})
 const nuevoComentario = ref<Record<string, string>>({})
@@ -187,18 +191,51 @@ async function crearPost() {
   if (!nuevoPost.value.titulo || !nuevoPost.value.contenido) return
   postLoading.value = true
   foroError.value = ''
+  const loadingToast = postFile.value && postFileIsVideo.value
+    ? toast.loading('Subiendo video al foro...')
+    : null
   try {
-    await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, nuevoPost.value)
+    const fd = new FormData()
+    fd.append('titulo', nuevoPost.value.titulo)
+    fd.append('contenido', nuevoPost.value.contenido)
+    if (postFile.value) fd.append('media', postFile.value)
+    await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, fd)
     nuevoPost.value = { titulo: '', contenido: '' }
+    removePostFile()
     showNuevoPost.value = false
     await loadForo(selectedLeccion.value.id)
     toast.success('Post publicado')
   } catch {
     foroError.value = 'Error al publicar el post. Inténtalo de nuevo.'
+    toast.error('Error al publicar el post')
   } finally {
     postLoading.value = false
+    loadingToast?.close()
   }
 }
+
+function onPostFile(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0]
+  if (!f) return
+  if (f.size > 50 * 1024 * 1024) {
+    toast.error('El archivo no puede superar 50 MB')
+    return
+  }
+  postFile.value = f
+  postFileIsVideo.value = f.type.startsWith('video/')
+  if (postFilePreview.value) URL.revokeObjectURL(postFilePreview.value)
+  postFilePreview.value = URL.createObjectURL(f)
+}
+
+function removePostFile() {
+  postFile.value = null
+  if (postFilePreview.value) URL.revokeObjectURL(postFilePreview.value)
+  postFilePreview.value = null
+  postFileIsVideo.value = false
+  if (postFileInput.value) postFileInput.value.value = ''
+}
+
+function openMedia(url: string) { window.open(url, '_blank') }
 
 async function eliminarPost(postId: string) {
   if (!await toast.confirm('Eliminar este post?')) return
@@ -671,7 +708,22 @@ function goBack() {
                   </div>
                   <input v-model="nuevoPost.titulo" placeholder="Título de tu publicación..." class="field-input" style="margin-bottom:10px" />
                   <textarea v-model="nuevoPost.contenido" placeholder="¿Qué quieres compartir con el grupo?" rows="4" class="field-input" style="resize:vertical;margin-bottom:12px" />
+                  <!-- Previsualización de adjunto -->
+                  <div v-if="postFilePreview" class="fb-file-preview">
+                    <video v-if="postFileIsVideo" :src="postFilePreview" class="fb-preview-media" controls muted />
+                    <img v-else :src="postFilePreview" class="fb-preview-media" />
+                    <button class="fb-remove-file" @click="removePostFile" type="button" title="Quitar adjunto">
+                      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
                   <div class="fb-post-form-footer">
+                    <div class="fb-attach-area">
+                      <button type="button" class="fb-attach-btn" @click="postFileInput?.click()" title="Adjuntar imagen o video">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                        Adjuntar
+                      </button>
+                      <input ref="postFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onPostFile" />
+                    </div>
                     <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
                     <button @click="crearPost" class="btn btn-primary btn-sm" :disabled="postLoading || !nuevoPost.titulo || !nuevoPost.contenido">
                       <span v-if="postLoading" class="btn-spinner"></span>
@@ -709,6 +761,11 @@ function goBack() {
                   <div class="fb-post-body">
                     <h4 class="fb-post-title">{{ post.titulo }}</h4>
                     <p class="fb-post-content">{{ post.contenido }}</p>
+                    <!-- Media adjunta al post -->
+                    <div v-if="post.media_url" class="fb-post-media">
+                      <video v-if="post.media_type === 'video'" :src="post.media_url" class="fb-post-media-video" controls />
+                      <img v-else :src="post.media_url" class="fb-post-media-img" @click="openMedia(post.media_url)" title="Ver imagen completa" />
+                    </div>
                   </div>
 
                   <!-- Contador de likes y comentarios -->
@@ -1157,7 +1214,36 @@ function goBack() {
 .fb-close-btn:hover { background: #fef2f2; color: #dc2626; }
 .fb-post-form-author { display: flex; align-items: center; gap: 10px; }
 .fb-post-form-name { font-weight: 600; font-size: 0.9rem; color: var(--dark); }
-.fb-post-form-footer { display: flex; justify-content: flex-end; gap: 8px; }
+.fb-post-form-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.fb-attach-area { display: flex; align-items: center; gap: 6px; }
+.fb-attach-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 0.8rem; font-weight: 500; transition: background .15s, color .15s;
+}
+.fb-attach-btn:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
+.fb-file-preview {
+  position: relative; margin-bottom: 12px; border-radius: var(--r);
+  overflow: hidden; max-height: 220px; background: #000;
+}
+.fb-preview-media {
+  width: 100%; max-height: 220px; object-fit: contain; display: block;
+}
+.fb-remove-file {
+  position: absolute; top: 6px; right: 6px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,.55); border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.fb-remove-file:hover { background: rgba(0,0,0,.8); }
+.fb-post-media { margin-top: 10px; border-radius: var(--r); overflow: hidden; }
+.fb-post-media-img {
+  width: 100%; max-height: 400px; object-fit: cover; display: block; cursor: pointer;
+  transition: opacity .15s;
+}
+.fb-post-media-img:hover { opacity: .9; }
+.fb-post-media-video { width: 100%; max-height: 400px; display: block; background: #000; }
 
 /* Facebook: estado vacío */
 .fb-empty-foro {

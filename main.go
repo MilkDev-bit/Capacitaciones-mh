@@ -17,6 +17,7 @@ func main() {
 	for _, dir := range []string{
 		"uploads/videos", "uploads/documents",
 		"uploads/thumbnails", "uploads/avatars", "uploads/covers",
+		"uploads/foro",
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			log.Printf("warning: no se pudo crear %s: %v", dir, err)

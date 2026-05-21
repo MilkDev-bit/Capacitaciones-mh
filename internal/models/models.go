@@ -119,6 +119,8 @@ type ForoPost struct {
 	UserName    string           `json:"user_name,omitempty"`
 	Titulo      string           `json:"titulo"`
 	Contenido   string           `json:"contenido"`
+	MediaURL    string           `json:"media_url,omitempty"`
+	MediaType   string           `json:"media_type,omitempty"`
 	LikeCount   int              `json:"like_count"`
 	UserLiked   bool             `json:"user_liked"`
 	Comentarios []ForoComentario `json:"comentarios,omitempty"`
