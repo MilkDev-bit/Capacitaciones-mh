@@ -13,6 +13,16 @@ import (
 )
 
 func main() {
+	// Asegurar que existan los subdirectorios de uploads (necesario en Railway con volumen vacío)
+	for _, dir := range []string{
+		"uploads/videos", "uploads/documents",
+		"uploads/thumbnails", "uploads/avatars", "uploads/covers",
+	} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			log.Printf("warning: no se pudo crear %s: %v", dir, err)
+		}
+	}
+
 	r := gin.Default()
 
 	// CORS
@@ -76,6 +86,8 @@ func main() {
 			// Perfil
 			auth.GET("/perfil", handlers.GetPerfil)
 			auth.PUT("/perfil", handlers.UpdatePerfil)
+			auth.POST("/perfil/avatar", handlers.UploadAvatar)
+			auth.POST("/perfil/cover", handlers.UploadCover)
 			auth.GET("/usuarios/:id/perfil", handlers.GetPublicPerfil)
 
 			// Cursos públicos (cualquier usuario autenticado)

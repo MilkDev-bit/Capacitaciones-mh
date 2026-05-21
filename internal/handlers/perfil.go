@@ -2,11 +2,15 @@ package handlers
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,11 +19,11 @@ func GetPublicPerfil(c *gin.Context) {
 	var u models.User
 	err := db.DB.QueryRow(`
 		SELECT id, name, email, role,
-		       COALESCE(bio,''), COALESCE(avatar_url,''),
+		       COALESCE(bio,''), COALESCE(avatar_url,''), COALESCE(cover_url,''),
 		       COALESCE(specialty,''), created_at
 		FROM users WHERE id=$1`, targetID,
 	).Scan(&u.ID, &u.Name, &u.Email, &u.Role,
-		&u.Bio, &u.AvatarURL, &u.Specialty, &u.CreatedAt)
+		&u.Bio, &u.AvatarURL, &u.CoverURL, &u.Specialty, &u.CreatedAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no encontrado"})
 		return
@@ -42,11 +46,11 @@ func GetPerfil(c *gin.Context) {
 	var u models.User
 	err := db.DB.QueryRow(`
 		SELECT id, name, email, role,
-		       COALESCE(bio,''), COALESCE(avatar_url,''),
+		       COALESCE(bio,''), COALESCE(avatar_url,''), COALESCE(cover_url,''),
 		       COALESCE(phone,''), COALESCE(specialty,''), created_at
 		FROM users WHERE id=$1`, userID,
 	).Scan(&u.ID, &u.Name, &u.Email, &u.Role,
-		&u.Bio, &u.AvatarURL, &u.Phone, &u.Specialty, &u.CreatedAt)
+		&u.Bio, &u.AvatarURL, &u.CoverURL, &u.Phone, &u.Specialty, &u.CreatedAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no encontrado"})
 		return
@@ -120,4 +124,68 @@ func UpdatePerfil(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// UploadAvatar sube una imagen de perfil y actualiza avatar_url en la BD
+func UploadAvatar(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no se envió imagen"})
+		return
+	}
+	if file.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "la imagen no puede superar 5 MB"})
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "formato no permitido (jpg, png, webp)"})
+		return
+	}
+	newName := uuid.NewString() + ext
+	dest := filepath.Join("uploads", "avatars", newName)
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+		return
+	}
+	if err := c.SaveUploadedFile(file, dest); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando imagen"})
+		return
+	}
+	url := "/" + filepath.ToSlash(dest)
+	db.DB.Exec(`UPDATE users SET avatar_url=$1 WHERE id=$2`, url, userID)
+	c.JSON(http.StatusOK, gin.H{"url": url})
+}
+
+// UploadCover sube una imagen de portada y actualiza cover_url en la BD
+func UploadCover(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no se envió imagen"})
+		return
+	}
+	if file.Size > 10*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "la imagen no puede superar 10 MB"})
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "formato no permitido (jpg, png, webp)"})
+		return
+	}
+	newName := uuid.NewString() + ext
+	dest := filepath.Join("uploads", "covers", newName)
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+		return
+	}
+	if err := c.SaveUploadedFile(file, dest); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando imagen"})
+		return
+	}
+	url := "/" + filepath.ToSlash(dest)
+	db.DB.Exec(`UPDATE users SET cover_url=$1 WHERE id=$2`, url, userID)
+	c.JSON(http.StatusOK, gin.H{"url": url})
 }

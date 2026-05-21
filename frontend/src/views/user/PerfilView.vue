@@ -13,6 +13,11 @@ const password = ref({ nueva: '', confirmar: '' })
 const showPass = ref(false)
 const activeTab = ref<'info' | 'security'>('info')
 
+const avatarInput = ref<HTMLInputElement | null>(null)
+const coverInput = ref<HTMLInputElement | null>(null)
+const uploadingAvatar = ref(false)
+const uploadingCover = ref(false)
+
 const roleLabel = computed(() => {
   const labels: Record<string, string> = {
     admin: 'Administrador',
@@ -91,6 +96,44 @@ async function guardar() {
 function initials(name: string) {
   return name ? name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() : '?'
 }
+
+async function uploadAvatar(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { toast.error('La imagen no puede superar 5 MB'); return }
+  uploadingAvatar.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await api.post('/perfil/avatar', fd)
+    if (perfil.value) perfil.value.avatar_url = res.data.url
+    toast.success('Foto de perfil actualizada')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al subir imagen')
+  } finally {
+    uploadingAvatar.value = false
+    if (avatarInput.value) avatarInput.value.value = ''
+  }
+}
+
+async function uploadCover(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) { toast.error('La imagen no puede superar 10 MB'); return }
+  uploadingCover.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await api.post('/perfil/cover', fd)
+    if (perfil.value) perfil.value.cover_url = res.data.url
+    toast.success('Foto de portada actualizada')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al subir imagen')
+  } finally {
+    uploadingCover.value = false
+    if (coverInput.value) coverInput.value.value = ''
+  }
+}
 </script>
 
 <template>
@@ -111,15 +154,32 @@ function initials(name: string) {
     <div v-else class="fp-content">
 
       <!-- Cover photo -->
-      <div class="fp-cover">
-        <div class="fp-cover-gradient"></div>
-        <div class="fp-cover-overlay"></div>
+      <div class="fp-cover" @click="coverInput?.click()" title="Cambiar foto de portada">
+        <img v-if="perfil?.cover_url" :src="perfil.cover_url" class="fp-cover-img" />
+        <template v-else>
+          <div class="fp-cover-gradient"></div>
+          <div class="fp-cover-overlay"></div>
+        </template>
+        <div class="fp-cover-edit-hint">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Cambiar portada
+        </div>
+        <div v-if="uploadingCover" class="fp-cover-uploading"><div class="spinner" style="width:28px;height:28px"></div></div>
       </div>
+      <input ref="coverInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none" @change="uploadCover" />
 
       <!-- Barra de identidad: avatar + nombre + acción -->
       <div class="fp-identity-bar">
         <div class="fp-identity-left">
-          <div class="fp-avatar">{{ initials(form.name) }}</div>
+          <div class="fp-avatar-wrap" @click="avatarInput?.click()" title="Cambiar foto de perfil">
+            <img v-if="perfil?.avatar_url" :src="perfil.avatar_url" class="fp-avatar-photo" />
+            <div v-else class="fp-avatar-initials">{{ initials(form.name) }}</div>
+            <div class="fp-avatar-overlay">
+              <svg v-if="!uploadingAvatar" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <div v-else class="spinner" style="width:18px;height:18px;border-width:2px"></div>
+            </div>
+          </div>
+          <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none" @change="uploadAvatar" />
           <div class="fp-id-info">
             <h1 class="fp-name">{{ perfil?.name }}</h1>
             <div class="fp-id-meta">
@@ -251,6 +311,11 @@ function initials(name: string) {
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   overflow: hidden;
   flex-shrink: 0;
+  cursor: pointer;
+}
+.fp-cover-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
 }
 .fp-cover-gradient {
   position: absolute; inset: 0;
@@ -265,6 +330,22 @@ function initials(name: string) {
   background: radial-gradient(ellipse at 20% 80%, rgba(249,115,22,.3) 0%, transparent 60%),
               radial-gradient(ellipse at 80% 20%, rgba(239,68,68,.2) 0%, transparent 50%);
 }
+.fp-cover-edit-hint {
+  position: absolute; bottom: 12px; right: 14px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(0,0,0,.45); color: #fff;
+  font-size: 0.78rem; font-weight: 600;
+  backdrop-filter: blur(4px);
+  opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
+}
+.fp-cover:hover .fp-cover-edit-hint { opacity: 1; }
+.fp-cover-uploading {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+}
 
 /* ─── Barra de identidad ────────────────────────────────── */
 .fp-identity-bar {
@@ -277,15 +358,30 @@ function initials(name: string) {
   position: relative; z-index: 1;
 }
 .fp-identity-left { display: flex; align-items: flex-end; gap: 16px; }
-.fp-avatar {
+.fp-avatar-wrap {
+  position: relative;
   width: 88px; height: 88px; border-radius: 50%;
   border: 4px solid var(--surface);
+  margin-top: -44px; flex-shrink: 0;
+  cursor: pointer; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.fp-avatar-initials {
+  width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--brand), #ef4444);
   color: #fff; font-size: 2rem; font-weight: 900;
-  margin-top: -44px; flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0,0,0,.2);
 }
+.fp-avatar-photo {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.fp-avatar-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; opacity: 0; transition: opacity 0.2s;
+}
+.fp-avatar-wrap:hover .fp-avatar-overlay { opacity: 1; }
 .fp-id-info { padding-bottom: 4px; }
 .fp-name { font-size: 1.35rem; font-weight: 900; color: var(--dark); line-height: 1.2; margin-bottom: 6px; }
 .fp-id-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -364,7 +460,8 @@ function initials(name: string) {
 @media (max-width: 680px) {
   .fp-cover { height: 140px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .fp-identity-bar { flex-direction: column; align-items: flex-start; padding: 0 16px 16px; }
-  .fp-avatar { width: 72px; height: 72px; margin-top: -36px; font-size: 1.6rem; }
+  .fp-avatar-wrap { width: 72px; height: 72px; margin-top: -36px; }
+  .fp-avatar-initials { font-size: 1.6rem; }
   .fp-name { font-size: 1.15rem; }
   .fp-save-btn { width: 100%; justify-content: center; }
   .fp-stats-bar { padding: 10px 16px; }

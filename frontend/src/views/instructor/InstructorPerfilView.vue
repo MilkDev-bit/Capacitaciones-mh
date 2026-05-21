@@ -12,6 +12,28 @@ const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
 const showPass = ref(false)
 
+const avatarInput = ref<HTMLInputElement | null>(null)
+const uploadingAvatar = ref(false)
+
+async function uploadAvatar(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { toast.error('La imagen no puede superar 5 MB'); return }
+  uploadingAvatar.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await api.post('/perfil/avatar', fd)
+    if (perfil.value) perfil.value.avatar_url = res.data.url
+    toast.success('Foto de perfil actualizada')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al subir imagen')
+  } finally {
+    uploadingAvatar.value = false
+    if (avatarInput.value) avatarInput.value.value = ''
+  }
+}
+
 const completion = computed(() => {
   const fields = [form.value.name, form.value.bio, form.value.phone, form.value.specialty]
   return Math.round((fields.filter(v => String(v || '').trim()).length / fields.length) * 100)
@@ -86,7 +108,15 @@ async function guardar() {
       <!-- Sidebar -->
       <aside class="ip-sidebar">
         <div class="ip-card ip-profile-card">
-          <div class="ip-avatar">{{ initials(form.name) }}</div>
+          <div class="ip-avatar-wrap" @click="avatarInput?.click()" title="Cambiar foto de perfil">
+            <img v-if="perfil?.avatar_url" :src="perfil.avatar_url" class="ip-avatar-photo" />
+            <div v-else class="ip-avatar-initials">{{ initials(form.name) }}</div>
+            <div class="ip-avatar-overlay">
+              <svg v-if="!uploadingAvatar" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <div v-else class="spinner" style="width:18px;height:18px;border-width:2px"></div>
+            </div>
+          </div>
+          <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none" @change="uploadAvatar" />
           <h2 class="ip-name">{{ perfil?.name }}</h2>
           <p class="ip-email">{{ perfil?.email }}</p>
           <span class="ip-role-badge">Instructor</span>
@@ -187,11 +217,22 @@ async function guardar() {
 .ip-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .ip-card { padding: 24px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
 .ip-profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
-.ip-avatar {
-  width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--brand), #ef4444); color: #fff; font-size: 1.6rem; font-weight: 800;
-  box-shadow: 0 4px 16px rgba(249,115,22,.25); margin-bottom: 8px;
+.ip-avatar-wrap {
+  position: relative; width: 88px; height: 88px; border-radius: 50%;
+  overflow: hidden; cursor: pointer; margin-bottom: 8px;
+  box-shadow: 0 4px 16px rgba(249,115,22,.25);
 }
+.ip-avatar-initials {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--brand), #ef4444); color: #fff; font-size: 1.6rem; font-weight: 800;
+}
+.ip-avatar-photo { width: 100%; height: 100%; object-fit: cover; }
+.ip-avatar-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; opacity: 0; transition: opacity 0.2s;
+}
+.ip-avatar-wrap:hover .ip-avatar-overlay { opacity: 1; }
 .ip-name { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
 .ip-email { font-size: 0.82rem; color: var(--muted); overflow-wrap: anywhere; }
 .ip-role-badge { margin-top: 8px; padding: 4px 14px; border-radius: 999px; background: var(--brand-light); color: var(--brand-dark); font-size: 0.75rem; font-weight: 700; }

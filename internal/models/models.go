@@ -10,6 +10,7 @@ type User struct {
 	Role         string    `json:"role"`
 	Bio          string    `json:"bio,omitempty"`
 	AvatarURL    string    `json:"avatar_url,omitempty"`
+	CoverURL     string    `json:"cover_url,omitempty"`
 	Phone        string    `json:"phone,omitempty"`
 	Specialty    string    `json:"specialty,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
