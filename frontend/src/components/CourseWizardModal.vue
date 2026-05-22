@@ -21,7 +21,7 @@ const form = ref({
   content: '',
   is_public: false,
   welcome_message: '',
-  thumbnail_url: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
+  color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
 })
 
 const file = ref<File | null>(null)
@@ -56,9 +56,8 @@ async function guardar() {
     if (file.value) fd.append('file', file.value)
     if (thumbnailFile.value) {
       fd.append('thumbnail', thumbnailFile.value)
-    } else {
-      fd.append('thumbnail_url', form.value.thumbnail_url)
     }
+    fd.append('color', form.value.color)
 
     const res = await api.post('/instructor/capacitaciones', fd)
     toast.success('Curso creado')
@@ -111,7 +110,7 @@ async function guardar() {
         <div v-if="step === 2" class="step-pane slide-down-enter-active">
           <div class="field">
             <label>Color de portada (si no subes imagen)</label>
-            <GradientPicker v-model="form.thumbnail_url" />
+            <GradientPicker v-model="form.color" />
           </div>
           <div class="field mt-4">
             <label>Imagen de portada (Opcional)</label>
@@ -141,7 +140,7 @@ async function guardar() {
 
         <!-- Paso 4 -->
         <div v-if="step === 4" class="step-pane text-center slide-down-enter-active">
-          <div class="preview-card" :style="{ background: thumbnailFile ? 'var(--surface-soft)' : form.thumbnail_url }">
+          <div class="preview-card" :style="{ background: thumbnailFile ? 'var(--surface-soft)' : form.color }">
             <div v-if="thumbnailFile" class="preview-img-wrap">
               <span class="preview-text">Imagen seleccionada</span>
             </div>

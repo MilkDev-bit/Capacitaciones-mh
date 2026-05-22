@@ -99,8 +99,8 @@ function copyCode(code: string) {
 
     <div v-else class="courses-grid">
       <div v-for="c in courses" :key="c.id" class="course-card slide-down-enter-active">
-        <div class="course-thumb" :style="{ background: c.thumbnail_url && c.thumbnail_url.startsWith('linear-gradient') ? c.thumbnail_url : 'var(--surface-soft)' }">
-          <img v-if="c.thumbnail_url && !c.thumbnail_url.startsWith('linear-gradient')" :src="'http://localhost:8080' + c.thumbnail_url" alt="Cover" class="thumb-img" />
+        <div class="course-thumb" :style="{ background: c.thumbnail_url ? 'var(--surface-soft)' : (c.color || '#f97316') }">
+          <img v-if="c.thumbnail_url" :src="c.thumbnail_url" alt="Cover" class="thumb-img" />
           <div class="thumb-badges">
             <span class="badge" :class="c.is_public ? 'badge-success' : 'badge-warning'">
               {{ c.is_public ? 'Público' : 'Privado' }}

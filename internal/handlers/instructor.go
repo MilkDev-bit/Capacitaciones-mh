@@ -46,7 +46,8 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		SELECT id, title, description, type,
 		       COALESCE(file_path,''), COALESCE(content,''),
 		       instructor_id, is_public, COALESCE(codigo_acceso,''),
-		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), created_at
+		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''),
+		       COALESCE(color,'#f97316'), created_at
 		FROM capacitaciones
 		WHERE instructor_id = $1
 		ORDER BY created_at DESC
@@ -61,7 +62,7 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		var cap models.Capacitacion
 		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type,
 			&cap.FilePath, &cap.Content, &cap.InstructorID, &cap.IsPublic, &cap.CodigoAcceso,
-			&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.CreatedAt)
+			&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.Color, &cap.CreatedAt)
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)
@@ -75,6 +76,10 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 	content := c.PostForm("content")
 	isPublic := c.PostForm("is_public") == "true"
 	welcomeMessage := c.PostForm("welcome_message")
+	color := c.PostForm("color")
+	if color == "" {
+		color = "#f97316"
+	}
 
 	if title == "" || capType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "title y type son requeridos"})
@@ -99,7 +104,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
-	var thumbnailPath = c.PostForm("thumbnail_url")
+	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
@@ -112,9 +117,9 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 
 	var id string
 	err = db.DB.QueryRow(
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message, thumbnail_url)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(), welcomeMessage, thumbnailPath,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message, thumbnail_url, color)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(), welcomeMessage, thumbnailPath, color,
 	).Scan(&id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -143,6 +148,10 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 	content := c.PostForm("content")
 	isPublic := c.PostForm("is_public") == "true"
 	welcomeMessage := c.PostForm("welcome_message")
+	color := c.PostForm("color")
+	if color == "" {
+		color = "#f97316"
+	}
 
 	if title == "" || capType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "title y type son requeridos"})
@@ -164,9 +173,6 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 		}
 	}
 
-	if url := c.PostForm("thumbnail_url"); url != "" {
-		currentThumbPath = url
-	}
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
@@ -180,8 +186,8 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 	}
 
 	_, err = db.DB.Exec(
-		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8 WHERE id=$9`,
-		title, description, capType, currentFilePath, content, isPublic, welcomeMessage, currentThumbPath, id,
+		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9 WHERE id=$10`,
+		title, description, capType, currentFilePath, content, isPublic, welcomeMessage, currentThumbPath, color, id,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

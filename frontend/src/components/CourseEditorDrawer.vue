@@ -43,10 +43,8 @@ async function saveInfo() {
     fd.append('content', form.value.content || '')
     fd.append('is_public', String(form.value.is_public))
     fd.append('welcome_message', form.value.welcome_message || '')
+    fd.append('color', form.value.color || '#f97316')
     
-    if (!thumbnailFile.value && form.value.thumbnail_url) {
-      fd.append('thumbnail_url', form.value.thumbnail_url)
-    }
     if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
     if (file.value) fd.append('file', file.value)
 
@@ -91,7 +89,7 @@ async function saveInfo() {
           </div>
           <div class="field mt-4">
             <label>Color de Portada</label>
-            <GradientPicker v-model="form.thumbnail_url" />
+            <GradientPicker v-model="form.color" />
           </div>
           <div class="field mt-4">
             <label>Imagen de portada (Sobrescribe el color)</label>
