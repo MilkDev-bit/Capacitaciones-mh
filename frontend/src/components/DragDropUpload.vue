@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps<{
   accept?: string
@@ -13,6 +13,20 @@ const emit = defineEmits<{
 
 const isDragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const previewUrl = ref('')
+
+watch(() => props.modelValue, (newFile) => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  if (newFile && newFile.type.startsWith('image/')) {
+    previewUrl.value = URL.createObjectURL(newFile)
+  } else {
+    previewUrl.value = ''
+  }
+})
+
+onBeforeUnmount(() => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+})
 
 function triggerFileInput() {
   if (!props.disabled) fileInput.value?.click()
@@ -109,10 +123,14 @@ const formatSize = (bytes: number) => {
     </div>
     
     <div v-else class="dd-filled">
-      <div class="dd-file-icon">
-        <svg v-if="modelValue.type.startsWith('video/')" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
-        <svg v-else-if="modelValue.type.startsWith('image/')" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        <svg v-else width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <div class="dd-file-icon" :class="{'has-preview': previewUrl}">
+        <template v-if="previewUrl">
+          <img :src="previewUrl" alt="Preview" class="dd-img-preview" />
+        </template>
+        <template v-else>
+          <svg v-if="modelValue.type.startsWith('video/')" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
+          <svg v-else width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </template>
       </div>
       <div class="dd-file-info">
         <span class="dd-file-name" :title="modelValue.name">{{ modelValue.name }}</span>
@@ -225,6 +243,21 @@ const formatSize = (bytes: number) => {
   padding: 10px;
   border-radius: 10px;
   box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.dd-file-icon.has-preview {
+  padding: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.dd-img-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .dd-file-info {

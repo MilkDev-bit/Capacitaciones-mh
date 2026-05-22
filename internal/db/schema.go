@@ -166,6 +166,9 @@ CREATE TABLE IF NOT EXISTS respuestas_intermedias (
 -- Curso: mensaje de bienvenida y portada
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS welcome_message TEXT DEFAULT '';
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS thumbnail_url TEXT DEFAULT '';
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS color VARCHAR(7) DEFAULT '#f97316';
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS codigo_acceso VARCHAR(12);
 
 -- Perfil instructor: especialidad
 ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty VARCHAR(255) DEFAULT '';

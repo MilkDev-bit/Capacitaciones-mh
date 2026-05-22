@@ -1,0 +1,168 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import api from '../api'
+import { toast } from '../utils/toast'
+import DragDropUpload from './DragDropUpload.vue'
+import GradientPicker from './GradientPicker.vue'
+import ContentTypeSelector from './ContentTypeSelector.vue'
+import LessonList from './LessonList.vue'
+
+const props = defineProps<{
+  show: boolean
+  course: any
+}>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'updated'): void
+}>()
+
+const activeTab = ref('info') // info | lessons
+const loading = ref(false)
+const form = ref<any>({})
+const thumbnailFile = ref<File | null>(null)
+const file = ref<File | null>(null)
+
+watch(() => props.show, (val) => {
+  if (val && props.course) {
+    form.value = { ...props.course }
+    thumbnailFile.value = null
+    file.value = null
+    activeTab.value = 'info'
+  }
+})
+
+async function saveInfo() {
+  if (!form.value.title) return toast.error('Título requerido')
+  loading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('title', form.value.title)
+    fd.append('description', form.value.description || '')
+    fd.append('type', form.value.type)
+    fd.append('content', form.value.content || '')
+    fd.append('is_public', String(form.value.is_public))
+    fd.append('welcome_message', form.value.welcome_message || '')
+    
+    if (!thumbnailFile.value && form.value.thumbnail_url) {
+      fd.append('thumbnail_url', form.value.thumbnail_url)
+    }
+    if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
+    if (file.value) fd.append('file', file.value)
+
+    await api.put(`/instructor/capacitaciones/${form.value.id}`, fd)
+    toast.success('Curso actualizado')
+    emit('updated')
+  } catch(e:any) {
+    toast.error('Error al actualizar curso')
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="drawer-overlay" :class="{ open: show }" @mousedown.self="emit('close')">
+    <div class="drawer-content" :class="{ open: show }">
+      <div class="drawer-header">
+        <div>
+          <h2 class="drawer-title">Editor de Curso</h2>
+          <p class="drawer-sub">{{ form.title }}</p>
+        </div>
+        <button class="drawer-close" @click="emit('close')">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="drawer-tabs">
+        <button class="tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">Información</button>
+        <button class="tab" :class="{ active: activeTab === 'lessons' }" @click="activeTab = 'lessons'">Lecciones</button>
+      </div>
+
+      <div class="drawer-body">
+        <div v-if="activeTab === 'info'" class="tab-pane slide-down-enter-active">
+          <div class="field">
+            <label>Título del curso</label>
+            <input v-model="form.title" class="field-input" />
+          </div>
+          <div class="field mt-4">
+            <label>Descripción</label>
+            <textarea v-model="form.description" class="field-input" rows="3"></textarea>
+          </div>
+          <div class="field mt-4">
+            <label>Color de Portada</label>
+            <GradientPicker v-model="form.thumbnail_url" />
+          </div>
+          <div class="field mt-4">
+            <label>Imagen de portada (Sobrescribe el color)</label>
+            <DragDropUpload v-model="thumbnailFile" accept="image/*" />
+          </div>
+          <div class="field mt-4">
+            <label>Tipo de contenido</label>
+            <ContentTypeSelector v-model="form.type" />
+          </div>
+          <div class="field mt-4">
+            <label>Archivo principal nuevo (opcional)</label>
+            <DragDropUpload v-model="file" />
+          </div>
+          
+          <div class="field mt-6">
+            <label class="toggle-wrap">
+              <input type="checkbox" v-model="form.is_public" class="toggle-input">
+              <div class="toggle-slider"></div>
+              <div class="toggle-text">
+                <strong>Curso Público</strong>
+                <p>Visible para todos los usuarios</p>
+              </div>
+            </label>
+          </div>
+          
+          <div class="mt-6 text-right">
+            <button class="btn btn-primary" @click="saveInfo" :disabled="loading">
+              {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'lessons'" class="tab-pane slide-down-enter-active">
+          <LessonList v-if="form.id" :capId="form.id" />
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+.drawer-content { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 500px; background: var(--surface); box-shadow: -4px 0 24px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+.drawer-content.open { transform: translateX(0); }
+
+.drawer-header { padding: 24px; border-bottom: 1px solid var(--border-light); display: flex; align-items: flex-start; justify-content: space-between; }
+.drawer-title { font-size: 1.25rem; font-weight: 800; margin: 0; }
+.drawer-sub { font-size: 0.85rem; color: var(--muted); margin: 4px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+.drawer-close { background: var(--surface-soft); border: none; color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.drawer-close:hover { background: var(--border); color: var(--dark); }
+
+.drawer-tabs { display: flex; border-bottom: 1px solid var(--border-light); background: var(--surface-soft); }
+.tab { flex: 1; padding: 14px; background: none; border: none; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: var(--dark); }
+.tab.active { color: var(--brand); border-bottom-color: var(--brand); background: var(--surface); }
+
+.drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.text-right { text-align: right; }
+
+.toggle-wrap { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.toggle-input { display: none; }
+.toggle-slider { width: 44px; height: 24px; background: var(--border); border-radius: 12px; position: relative; transition: background 0.2s; flex-shrink: 0; margin-top: 2px; }
+.toggle-slider::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.toggle-input:checked + .toggle-slider { background: var(--success); }
+.toggle-input:checked + .toggle-slider::after { transform: translateX(20px); }
+.toggle-text strong { display: block; font-size: 0.95rem; color: var(--dark); }
+.toggle-text p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+</style>

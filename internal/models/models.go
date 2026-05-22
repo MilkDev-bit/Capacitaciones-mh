@@ -28,6 +28,7 @@ type Capacitacion struct {
 	CodigoAcceso   string    `json:"codigo_acceso,omitempty"`
 	WelcomeMessage string    `json:"welcome_message,omitempty"`
 	ThumbnailURL   string    `json:"thumbnail_url,omitempty"`
+	Color          string    `json:"color,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 

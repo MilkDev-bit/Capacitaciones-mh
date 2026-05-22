@@ -102,6 +102,7 @@ func main() {
 			{
 				instructor.GET("/capacitaciones", handlers.InstructorListCapacitaciones)
 				instructor.POST("/capacitaciones", handlers.InstructorCreateCapacitacion)
+				instructor.PUT("/capacitaciones/:id", handlers.InstructorUpdateCapacitacion)
 				instructor.DELETE("/capacitaciones/:id", handlers.InstructorDeleteCapacitacion)
 				instructor.PATCH("/capacitaciones/:id/toggle-public", handlers.InstructorTogglePublic)
 				instructor.POST("/capacitaciones/:id/reset-codigo", handlers.InstructorResetCodigo)
@@ -109,6 +110,7 @@ func main() {
 				// Lecciones de un curso
 				instructor.GET("/capacitaciones/:id/lecciones", handlers.InstructorListLecciones)
 				instructor.POST("/capacitaciones/:id/lecciones", handlers.InstructorCreateLeccion)
+				instructor.PUT("/capacitaciones/:id/lecciones/:leccion_id", handlers.InstructorUpdateLeccion)
 				instructor.DELETE("/capacitaciones/:id/lecciones/:leccion_id", handlers.InstructorDeleteLeccion)
 				instructor.PUT("/capacitaciones/:id/lecciones/reorder", handlers.InstructorReorderLecciones)
 
@@ -141,6 +143,7 @@ func main() {
 
 				admin.GET("/capacitaciones", handlers.ListCapacitaciones)
 				admin.POST("/capacitaciones", handlers.CreateCapacitacion)
+				admin.PUT("/capacitaciones/:id", handlers.UpdateCapacitacion)
 				admin.DELETE("/capacitaciones/:id", handlers.DeleteCapacitacion)
 
 				admin.GET("/examenes", handlers.ListExamenes)

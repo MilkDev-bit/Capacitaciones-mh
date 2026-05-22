@@ -113,6 +113,70 @@ func InstructorCreateLeccion(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
+func InstructorUpdateLeccion(c *gin.Context) {
+	capID := c.Param("id")
+	lecID := c.Param("leccion_id")
+	instructorID, _ := c.Get("user_id")
+
+	var owner string
+	if err := db.DB.QueryRow(`SELECT COALESCE(instructor_id::text,'') FROM capacitaciones WHERE id=$1`, capID).Scan(&owner); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "curso no encontrado"})
+		return
+	}
+	if owner != instructorID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "sin permisos"})
+		return
+	}
+
+	var currentFilePath string
+	err := db.DB.QueryRow(`SELECT COALESCE(file_path,'') FROM lecciones WHERE id=$1 AND capacitacion_id=$2`, lecID, capID).Scan(&currentFilePath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "lección no encontrada"})
+		return
+	}
+
+	title := c.PostForm("title")
+	description := c.PostForm("description")
+	lecType := c.PostForm("type")
+	content := c.PostForm("content")
+	duracion := c.PostForm("duracion_min")
+
+	if title == "" || lecType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title y type son requeridos"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err == nil {
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		newName := uuid.NewString() + ext
+		var dest string
+		if lecType == "video" {
+			dest = filepath.Join("uploads", "videos", newName)
+		} else {
+			dest = filepath.Join("uploads", "documents", newName)
+		}
+		if err := c.SaveUploadedFile(file, dest); err == nil {
+			currentFilePath = "/" + filepath.ToSlash(dest)
+		}
+	}
+
+	if duracion == "" {
+		duracion = "0"
+	}
+
+	_, err = db.DB.Exec(
+		`UPDATE lecciones SET title=$1, description=$2, type=$3, content=$4, duracion_min=$5::int, file_path=$6 WHERE id=$7 AND capacitacion_id=$8`,
+		title, description, lecType, content, duracion, currentFilePath, lecID, capID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
 func InstructorDeleteLeccion(c *gin.Context) {
 	capID := c.Param("id")
 	lecID := c.Param("leccion_id")

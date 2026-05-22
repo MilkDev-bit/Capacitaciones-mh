@@ -99,7 +99,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
-	var thumbnailPath string
+	var thumbnailPath = c.PostForm("thumbnail_url")
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
@@ -124,6 +124,71 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 	var codigo string
 	db.DB.QueryRow(`SELECT COALESCE(codigo_acceso,'') FROM capacitaciones WHERE id=$1`, id).Scan(&codigo)
 	c.JSON(http.StatusCreated, gin.H{"id": id, "codigo_acceso": codigo})
+}
+
+func InstructorUpdateCapacitacion(c *gin.Context) {
+	instructorID, _ := c.Get("user_id")
+	id := c.Param("id")
+
+	var currentFilePath, currentThumbPath string
+	err := db.DB.QueryRow(`SELECT COALESCE(file_path,''), COALESCE(thumbnail_url,'') FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID).Scan(&currentFilePath, &currentThumbPath)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "no autorizado o no encontrado"})
+		return
+	}
+
+	title := c.PostForm("title")
+	description := c.PostForm("description")
+	capType := c.PostForm("type")
+	content := c.PostForm("content")
+	isPublic := c.PostForm("is_public") == "true"
+	welcomeMessage := c.PostForm("welcome_message")
+
+	if title == "" || capType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title y type son requeridos"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err == nil {
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		newName := uuid.NewString() + ext
+		var dest string
+		if capType == "video" {
+			dest = filepath.Join("uploads", "videos", newName)
+		} else {
+			dest = filepath.Join("uploads", "documents", newName)
+		}
+		if err := c.SaveUploadedFile(file, dest); err == nil {
+			currentFilePath = "/" + filepath.ToSlash(dest)
+		}
+	}
+
+	if url := c.PostForm("thumbnail_url"); url != "" {
+		currentThumbPath = url
+	}
+	thumbFile, err := c.FormFile("thumbnail")
+	if err == nil {
+		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
+		newName := uuid.NewString() + ext
+		dest := filepath.Join("uploads", "thumbnails", newName)
+		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
+			currentThumbPath = "/" + filepath.ToSlash(dest)
+		}
+	} else if c.PostForm("remove_thumbnail") == "true" {
+		currentThumbPath = ""
+	}
+
+	_, err = db.DB.Exec(
+		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8 WHERE id=$9`,
+		title, description, capType, currentFilePath, content, isPublic, welcomeMessage, currentThumbPath, id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func InstructorDeleteCapacitacion(c *gin.Context) {
