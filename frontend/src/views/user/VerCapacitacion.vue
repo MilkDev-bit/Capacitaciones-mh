@@ -439,17 +439,23 @@ function goBack() {
       <aside :class="['ver-sidebar', sidebarOpen ? 'open' : '']">
         <div class="ver-sidebar-head">
           <button class="ver-back-btn" @click="goBack" title="Volver a mis cursos">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Mis cursos
           </button>
           <h2 class="ver-curso-nombre">{{ curso?.title }}</h2>
-          <p class="ver-course-meta">
-            {{ leccionesCompletadas }} de {{ lecciones.length }} lecciones
-            <span v-if="duracionTotal"> · {{ duracionTotal }} min</span>
-          </p>
+          <div class="ver-course-meta">
+            <span class="ver-meta-chip">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ leccionesCompletadas }}/{{ lecciones.length }} lecciones
+            </span>
+            <span v-if="duracionTotal" class="ver-meta-chip">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ duracionTotal }} min
+            </span>
+          </div>
           <div class="ver-progress-wrap">
             <div class="ver-progress-top">
-              <span>Progreso del curso</span>
+              <span>Tu progreso</span>
               <span class="ver-progress-pct">{{ progreso }}%</span>
             </div>
             <div class="ver-progress-bg">
@@ -463,15 +469,14 @@ function goBack() {
             :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '', isNextPending(lec) ? 'next-pending' : '']"
             :aria-current="selectedLeccion?.id === lec.id ? 'page' : undefined">
             <span class="ver-nav-num">
-              <svg v-if="lec.completada" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+              <svg v-if="lec.completada" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span v-else>{{ idx + 1 }}</span>
             </span>
             <div class="ver-nav-info">
               <p class="ver-nav-title">{{ lec.title }}</p>
-              <p class="ver-nav-meta">{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
+              <p class="ver-nav-meta"><span :class="['ver-type-dot', lec.type]"></span>{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
             </div>
             <span v-if="isNextPending(lec)" class="ver-next-badge">Siguiente</span>
-            <span :class="['ver-type-pip', lec.type]"></span>
           </button>
           <div v-if="lecciones.length === 0" class="ver-nav-empty">Sin lecciones</div>
         </nav>
@@ -978,11 +983,12 @@ function goBack() {
 
 /* Back button */
 .ver-back-btn {
-  display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
-  color: var(--muted); font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  padding: 4px 0; margin-bottom: 10px; transition: color 0.15s;
+  display: inline-flex; align-items: center; gap: 5px; background: none; border: none;
+  color: var(--muted); font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  padding: 3px 8px 3px 4px; margin-bottom: 14px; transition: all 0.15s;
+  border-radius: 999px;
 }
-.ver-back-btn:hover { color: var(--brand); }
+.ver-back-btn:hover { color: var(--brand); background: var(--brand-light); }
 
 /* Mobile toggle */
 .ver-mobile-toggle {
@@ -1004,10 +1010,10 @@ function goBack() {
 .ver-sidebar-overlay.open { display: block; }
 
 /* Next pending badge */
-.ver-nav-item.next-pending { border-left: 3px solid var(--brand); }
+.ver-nav-item.next-pending { border-left-color: var(--brand) !important; }
 .ver-next-badge {
-  font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--brand-dark); background: var(--brand-light); padding: 2px 7px;
+  font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px;
   border-radius: 999px; flex-shrink: 0; white-space: nowrap;
 }
 
@@ -1071,45 +1077,83 @@ function goBack() {
   width: 100%; background: var(--surface); border-right: 1.5px solid var(--border);
   display: flex; flex-direction: column; min-width: 0;
 }
-.ver-sidebar-head { padding: 20px; border-bottom: 1px solid var(--border); }
-.ver-curso-nombre { font-size: 0.92rem; font-weight: 800; color: var(--dark); line-height: 1.35; margin-bottom: 12px; }
-.ver-course-meta { color: var(--muted); font-size: 0.78rem; margin: -6px 0 12px; }
-.ver-progress-wrap { margin-top: 4px; }
-.ver-progress-top { display: flex; justify-content: space-between; font-size: 0.77rem; color: var(--muted); margin-bottom: 5px; }
-.ver-progress-pct { font-weight: 700; color: var(--brand); }
-.ver-progress-bg { height: 7px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
-.ver-progress-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: 4px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94); }
+.ver-sidebar-head {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+.ver-curso-nombre {
+  font-size: 0.93rem; font-weight: 800; color: var(--dark); line-height: 1.35;
+  margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.ver-course-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.ver-meta-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 600; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border-light);
+  padding: 2px 8px; border-radius: 999px;
+}
+.ver-progress-wrap { margin-top: 0; }
+.ver-progress-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; font-weight: 500;
+}
+.ver-progress-pct { font-weight: 800; color: var(--brand); font-size: 0.88rem; }
+.ver-progress-bg { height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+.ver-progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  border-radius: 4px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+  box-shadow: 0 0 8px rgba(249,115,22,0.35);
+}
 
-.ver-nav { flex: 1; padding: 10px; overflow-y: auto; }
+.ver-nav { flex: 1; padding: 8px; overflow-y: auto; }
 .ver-nav-item {
   width: 100%; text-align: left; padding: 10px 12px; border-radius: var(--r);
-  display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: none;
-  background: none; transition: all 0.15s; margin-bottom: 3px; position: relative;
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  border: none; border-left: 3px solid transparent;
+  background: none; transition: all 0.15s; margin-bottom: 2px; position: relative;
 }
-.ver-nav-item:hover  { background: var(--bg); }
-.ver-nav-item.active { background: var(--brand-light); }
-.ver-nav-item.done .ver-nav-num { background: var(--success); color: #fff; }
+.ver-nav-item:hover { background: var(--bg); border-left-color: var(--border); }
+.ver-nav-item.active { background: var(--brand-light); border-left-color: var(--brand); }
+.ver-nav-item.done .ver-nav-num {
+  background: #22c55e; color: #fff;
+  box-shadow: 0 2px 6px rgba(34,197,94,0.35);
+}
+.ver-nav-item.done .ver-nav-title { color: var(--muted); }
 
 .ver-nav-num {
-  width: 22px; height: 22px; border-radius: 50%; background: var(--border-light);
-  color: var(--muted); font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; margin-top: 1px;
-  transition: background 0.15s;
+  width: 24px; height: 24px; border-radius: 50%; background: var(--border-light);
+  color: var(--muted); font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
 }
-.ver-nav-item.active .ver-nav-num { background: var(--brand); color: #fff; }
+.ver-nav-item.active .ver-nav-num {
+  background: var(--brand); color: #fff;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.4);
+}
 
 .ver-nav-info { flex: 1; min-width: 0; }
-.ver-nav-title { font-size: 0.87rem; font-weight: 600; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); }
-.ver-nav-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.ver-nav-title {
+  font-size: 0.86rem; font-weight: 600; color: var(--dark);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
+}
+.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); font-weight: 700; }
+.ver-nav-meta {
+  font-size: 0.73rem; color: var(--muted); margin-top: 2px;
+  display: flex; align-items: center; gap: 4px;
+}
 
-.ver-type-pip { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 8px; }
-.ver-type-pip.video    { background: var(--brand); }
-.ver-type-pip.document { background: var(--info); }
-.ver-type-pip.text     { background: var(--success); }
-.ver-type-pip.link     { background: #8b5cf6; }
+.ver-type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.ver-type-dot.video    { background: var(--brand); }
+.ver-type-dot.document { background: #6366f1; }
+.ver-type-dot.text     { background: var(--success); }
+.ver-type-dot.link     { background: #8b5cf6; }
 
-.ver-nav-empty { text-align: center; padding: 24px; font-size: 0.85rem; color: var(--muted); }
+.ver-nav-empty {
+  text-align: center; padding: 32px 16px; font-size: 0.84rem; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
 
 /* Main content */
 .ver-main { min-width: 0; background: #f8fafc; }
