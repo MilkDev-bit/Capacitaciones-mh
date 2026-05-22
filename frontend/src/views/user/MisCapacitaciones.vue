@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
@@ -67,10 +67,37 @@ const cursosFiltrados = computed(() => {
   })
 })
 
+const TIPO_OPTS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'video', label: 'Video' },
+  { value: 'document', label: 'Documento' },
+  { value: 'text', label: 'Lectura' },
+  { value: 'link', label: 'Enlace' },
+]
+const exploreTypeFilter = ref('todos')
+const exploreSort = ref('reciente')
+const explorePage = ref(1)
+const EXPLORE_PAGE_SIZE = 12
+
 const publicosFiltrados = computed(() => {
   const term = normalize(search.value)
-  return cursosPublicos.value.filter((curso) => !term || hasMatch(curso, term))
+  let list = cursosPublicos.value.filter((c: any) => {
+    const typeOk = exploreTypeFilter.value === 'todos' || c.type === exploreTypeFilter.value
+    return typeOk && (!term || hasMatch(c, term))
+  })
+  if (exploreSort.value === 'az') list = [...list].sort((a: any, b: any) => a.title.localeCompare(b.title))
+  else if (exploreSort.value === 'za') list = [...list].sort((a: any, b: any) => b.title.localeCompare(a.title))
+  return list
 })
+
+const totalExplorePages = computed(() =>
+  Math.max(1, Math.ceil(publicosFiltrados.value.length / EXPLORE_PAGE_SIZE))
+)
+const publicosPaginados = computed(() => {
+  const start = (explorePage.value - 1) * EXPLORE_PAGE_SIZE
+  return publicosFiltrados.value.slice(start, start + EXPLORE_PAGE_SIZE)
+})
+watch([search, exploreTypeFilter, exploreSort], () => { explorePage.value = 1 })
 
 const totalLecciones = computed(() =>
   capacitaciones.value.reduce((total, curso) => total + (curso.total_lecciones || 0), 0)
@@ -284,9 +311,10 @@ async function unirseConCodigo() {
 
       <div v-else-if="cursosFiltrados.length" class="courses-grid">
         <article
-          v-for="c in cursosFiltrados"
+          v-for="(c, i) in cursosFiltrados"
           :key="c.id"
           class="course-card"
+          :style="{ '--anim-delay': `${i * 60}ms` }"
           tabindex="0"
           @click="openCourse(c.id)"
           @keyup.enter="openCourse(c.id)"
@@ -363,15 +391,34 @@ async function unirseConCodigo() {
       <div v-if="codigoError" class="alert alert-error learning-alert">{{ codigoError }}</div>
       <div v-if="codigoSuccess" class="alert alert-success learning-alert">{{ codigoSuccess }}</div>
 
+      <!-- Filtros de tipo y ordenamiento -->
+      <div class="explore-toolbar">
+        <div class="explore-type-filters">
+          <button
+            v-for="opt in TIPO_OPTS"
+            :key="opt.value"
+            :class="['explore-filter-chip', exploreTypeFilter === opt.value ? 'active' : '']"
+            @click="exploreTypeFilter = opt.value"
+          >{{ opt.label }}</button>
+        </div>
+        <div class="explore-sort">
+          <select v-model="exploreSort" class="sort-select" aria-label="Ordenar por">
+            <option value="reciente">Más reciente</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+          </select>
+        </div>
+      </div>
+
       <div class="section-head">
         <div>
-          <p class="section-label">Catalogo disponible</p>
-          <span>{{ publicosFiltrados.length }} resultado{{ publicosFiltrados.length !== 1 ? 's' : '' }}</span>
+          <p class="section-label">Catálogo disponible</p>
+          <span>{{ publicosFiltrados.length }} resultado{{ publicosFiltrados.length !== 1 ? 's' : '' }}{{ totalExplorePages > 1 ? ' · pág. ' + explorePage + '/' + totalExplorePages : '' }}</span>
         </div>
       </div>
 
       <div v-if="loadingPublicos" class="courses-grid">
-        <article v-for="n in 3" :key="n" class="course-card course-card-skeleton">
+        <article v-for="n in 6" :key="n" class="course-card course-card-skeleton">
           <div class="skeleton skel-thumb"></div>
           <div class="course-body">
             <div class="skeleton skel-title"></div>
@@ -380,17 +427,22 @@ async function unirseConCodigo() {
         </article>
       </div>
 
-      <div v-else-if="publicosFiltrados.length" class="courses-grid">
-        <article v-for="c in publicosFiltrados" :key="c.id" class="course-card public-course">
+      <div v-else-if="publicosPaginados.length" class="courses-grid">
+        <article
+          v-for="(c, i) in publicosPaginados"
+          :key="c.id"
+          class="course-card public-course"
+          :style="{ '--anim-delay': `${i * 50}ms` }"
+        >
           <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]" :style="c.thumbnail_url ? '' : { background: c.color || '#f97316' }">
             <template v-if="c.thumbnail_url">
               <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="course-thumb-img" />
-              <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
             </template>
             <template v-else>
               <span class="thumb-icon">{{ typeIcon[c.type] || 'CUR' }}</span>
-              <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
+              <span class="course-cover-pill">{{ typeLabel[c.type] || c.type }}</span>
             </template>
+            <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>
           </div>
           <div class="course-body">
             <div class="course-card-top">
@@ -398,7 +450,7 @@ async function unirseConCodigo() {
               <span class="course-lessons">Libre acceso</span>
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
-            <p class="course-desc">{{ c.description || 'Sin descripcion disponible.' }}</p>
+            <p class="course-desc">{{ c.description || 'Sin descripción disponible.' }}</p>
             <div class="course-footer-row">
               <span v-if="c.inscrito" class="badge badge-green">Ya inscrito</span>
               <button
@@ -416,8 +468,26 @@ async function unirseConCodigo() {
 
       <div v-else class="empty-state learning-empty">
         <div class="empty-icon">Buscar</div>
-        <h3>No hay cursos publicos disponibles</h3>
-        <p>Pide a tu instructor que comparta un enlace o codigo de acceso.</p>
+        <h3>{{ search || exploreTypeFilter !== 'todos' ? 'No encontramos cursos con ese filtro' : 'No hay cursos públicos disponibles' }}</h3>
+        <p>{{ search || exploreTypeFilter !== 'todos' ? 'Prueba con otro término o cambia el tipo de contenido.' : 'Pide a tu instructor que comparta un código de acceso.' }}</p>
+      </div>
+
+      <!-- Paginación -->
+      <div v-if="!loadingPublicos && totalExplorePages > 1" class="explore-pagination" aria-label="Paginación">
+        <button class="page-btn" :disabled="explorePage === 1" aria-label="Página anterior" @click="explorePage--">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <template v-for="p in totalExplorePages" :key="p">
+          <button
+            v-if="p === 1 || p === totalExplorePages || Math.abs(p - explorePage) <= 1"
+            :class="['page-btn', explorePage === p ? 'active' : '']"
+            @click="explorePage = p"
+          >{{ p }}</button>
+          <span v-else-if="p === explorePage - 2 || p === explorePage + 2" class="page-ellipsis">…</span>
+        </template>
+        <button class="page-btn" :disabled="explorePage === totalExplorePages" aria-label="Página siguiente" @click="explorePage++">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -630,40 +700,62 @@ async function unirseConCodigo() {
 .course-card {
   border: 1px solid var(--border-light);
   border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   cursor: pointer;
+  animation: fadeInUp 0.35s ease both;
+  animation-delay: var(--anim-delay, 0ms);
 }
 .course-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: rgba(249, 115, 22, 0.45);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
 }
 
 .course-card-skeleton {
   pointer-events: none;
+  animation: none;
 }
 
 .course-thumb {
-  height: 160px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  height: 168px;
   align-items: flex-end;
   justify-content: flex-start;
-  padding: 16px;
+  padding: 14px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
 }
-
+.course-thumb.has-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.08) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
 .course-thumb.has-image {
-  background: none;
+  background: #111;
 }
 .course-thumb-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 0;
+  transition: transform 0.4s ease;
 }
+.course-card:hover .course-thumb-img { transform: scale(1.06); }
 .thumb-icon {
-  color: rgba(255, 255, 255, 0.94);
+  position: relative;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1.85rem;
   font-weight: 900;
   letter-spacing: 0.02em;
-  filter: none;
 }
 
 .thumb-link {
@@ -674,13 +766,32 @@ async function unirseConCodigo() {
   position: absolute;
   top: 12px;
   left: 12px;
+  z-index: 3;
   padding: 4px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
   font-size: 0.72rem;
   font-weight: 800;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.enrolled-ribbon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.9);
   backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .course-card-top {
@@ -794,5 +905,108 @@ async function unirseConCodigo() {
   .code-field {
     width: 100%;
   }
+  .explore-toolbar { gap: 8px; }
+  .explore-sort { margin-left: 0; width: 100%; }
+  .sort-select { width: 100%; }
+  .explore-pagination { flex-wrap: wrap; }
+}
+
+/* ── Explorar toolbar ─────────────────────── */
+.explore-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.explore-type-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.explore-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
+}
+.explore-filter-chip:hover,
+.explore-filter-chip.active {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+.explore-sort { margin-left: auto; }
+.sort-select {
+  padding: 7px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--dark);
+  font-size: 0.84rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.16s;
+}
+.sort-select:focus { border-color: var(--brand); }
+
+/* ── Paginación ───────────────────────────── */
+.explore-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 6px;
+}
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
+}
+.page-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+.page-btn.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(249,115,22,0.35);
+}
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 </style>
