@@ -57,7 +57,7 @@ function initials(name: string) {
         <button class="topbar-hamburger" @click="sidebarOpen = true" aria-label="Abrir menú">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <span class="topbar-title">Mis aprendizajes</span>
+        <span class="topbar-title">Mis cursos</span>
         <div class="topbar-right">
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">

@@ -202,14 +202,23 @@ async function unirseConCodigo() {
 
       <div class="learning-stats" aria-label="Resumen de aprendizaje">
         <div class="learning-stat">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
           <span>{{ capacitaciones.length }}</span>
           <p>Cursos inscritos</p>
         </div>
         <div class="learning-stat">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <span>{{ leccionesCompletadas }}/{{ totalLecciones }}</span>
           <p>Lecciones completadas</p>
         </div>
         <div class="learning-stat">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <span>{{ promedioProgreso }}%</span>
           <p>Avance promedio</p>
         </div>
@@ -425,12 +434,22 @@ async function unirseConCodigo() {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
   gap: 22px;
-  padding: 32px 40px;
+  padding: 36px 44px;
   border-radius: var(--r-xl);
-  background: linear-gradient(135deg, var(--dark) 0%, #374151 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1c1917 100%);
   color: #fff;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.learning-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .learning-hero-copy {
@@ -486,23 +505,39 @@ async function unirseConCodigo() {
 }
 
 .learning-stat {
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.2s;
 }
-
+.learning-stat:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.stat-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: rgba(249,115,22,0.22);
+  color: #fb923c;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 2px;
+}
 .learning-stat span {
   display: block;
   color: #fff;
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   font-weight: 900;
+  line-height: 1;
 }
-
 .learning-stat p {
-  margin-top: 2px;
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 0.8rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.76rem;
+  font-weight: 500;
 }
 
 .learning-alert {
@@ -595,10 +630,13 @@ async function unirseConCodigo() {
 .course-card {
   border: 1px solid var(--border-light);
   border-radius: var(--r-lg);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  cursor: pointer;
 }
-
 .course-card:hover {
+  transform: translateY(-3px);
   border-color: rgba(249, 115, 22, 0.45);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
 }
 
 .course-card-skeleton {
@@ -606,7 +644,7 @@ async function unirseConCodigo() {
 }
 
 .course-thumb {
-  height: 148px;
+  height: 160px;
   align-items: flex-end;
   justify-content: flex-start;
   padding: 16px;
@@ -668,9 +706,13 @@ async function unirseConCodigo() {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-top: 8px;
+  padding-top: 10px;
   border-top: 1px solid var(--border-light);
+  color: var(--brand-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
 }
+.course-card:hover .course-cta { color: var(--brand); }
 
 .code-banner-polished {
   border: 1px solid rgba(249, 115, 22, 0.22);
