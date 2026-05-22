@@ -1,6 +1,8 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
+# Pasar VITE_RECAPTCHA_SITE_KEY como build arg para que Vite la inyecte en el bundle
+buildArgs = { VITE_RECAPTCHA_SITE_KEY = "${{VITE_RECAPTCHA_SITE_KEY}}" }
 
 [deploy]
 restartPolicyType = "on_failure"

@@ -2,6 +2,10 @@
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
 
+# Declarar ARG para que Railway lo inyecte en el build de Docker
+ARG VITE_RECAPTCHA_SITE_KEY
+ENV VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY
+
 COPY frontend/package*.json ./
 RUN npm ci --prefer-offline
 
