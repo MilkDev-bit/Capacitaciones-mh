@@ -32,7 +32,7 @@ func generateCode(n int) string {
 func uniqueCode() (string, error) {
 	const maxAttempts = 10
 	for i := 0; i < maxAttempts; i++ {
-		code := generateCode(6)
+		code := generateCode(8)
 		var existing string
 		err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE codigo_acceso=$1`, code).Scan(&existing)
 		if err == sql.ErrNoRows {
