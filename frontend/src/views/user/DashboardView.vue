@@ -143,28 +143,32 @@ function courseProgress(curso: any) {
         <button class="btn-link" @click="router.push('/usuario/capacitaciones')">Ver todos &rarr;</button>
       </div>
 
-      <div v-if="inProgress.length" class="courses-grid">
-        <article
+      <div v-if="inProgress.length" class="dash-course-list">
+        <button
           v-for="c in inProgress"
           :key="c.id"
-          class="course-card"
+          class="dash-course-item"
           @click="router.push('/usuario/capacitaciones/' + c.id)"
         >
-          <div class="course-body">
-            <h3 class="course-title">{{ c.title }}</h3>
-            <p class="course-desc">{{ c.description }}</p>
-            <div class="progress-wrap">
-              <div class="progress-top">
-                <span class="progress-label">{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
-                <span class="progress-pct">{{ courseProgress(c) }}%</span>
+          <div class="dash-course-band"></div>
+          <div class="dash-course-info">
+            <h3>{{ c.title }}</h3>
+            <p>{{ c.description }}</p>
+            <div class="dash-course-progress">
+              <div class="dash-progress-row">
+                <span>{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
+                <span class="dash-progress-pct">{{ courseProgress(c) }}%</span>
               </div>
               <div class="progress-bar-bg">
                 <div class="progress-bar-fill" :style="`width:${courseProgress(c)}%`" />
               </div>
             </div>
-            <div class="course-cta">Continuar aprendiendo &rarr;</div>
           </div>
-        </article>
+          <span class="dash-course-cta">
+            Continuar
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </button>
       </div>
       
       <div v-else class="dash-empty">
@@ -201,62 +205,143 @@ function courseProgress(curso: any) {
 </template>
 
 <style scoped>
-.dash-shell { display: flex; flex-direction: column; gap: 32px; }
+.dash-shell { display: flex; flex-direction: column; gap: 28px; }
 
-.dash-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.dash-welcome h1 { font-size: 1.8rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; }
-.dash-welcome p { color: var(--muted); margin-top: 4px; font-size: 0.95rem; }
-
-.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.dash-stat-card {
-  display: flex; align-items: center; gap: 16px; padding: 20px;
-  border-radius: var(--r-lg); background: var(--surface);
-  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
-  transition: transform 0.2s;
+.dash-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap; padding: 0 0 4px;
 }
-.dash-stat-card:hover { transform: translateY(-2px); }
+.dash-welcome h1 {
+  font-size: 1.9rem; font-weight: 900; color: var(--dark); letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.dash-welcome p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+/* Stat cards */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dash-stat-card {
+  display: flex; align-items: center; gap: 14px; padding: 18px 20px;
+  border-radius: var(--r-lg); background: var(--surface);
+  border: 1px solid var(--border-light); border-top: 3px solid transparent;
+  box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;
+  position: relative; overflow: hidden;
+}
+.dash-stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.dash-stat-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
+}
+.bg-violet { border-top-color: #7c3aed; }
+.bg-emerald { border-top-color: #059669; }
+.bg-sky     { border-top-color: #0284c7; }
+.bg-orange  { border-top-color: #f97316; }
 .dash-stat-icon {
-  width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem; flex-shrink: 0; background: rgba(0,0,0,0.04);
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .bg-violet .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
 .bg-emerald .dash-stat-icon { background: #d1fae5; color: #059669; }
-.bg-sky .dash-stat-icon { background: #e0f2fe; color: #0284c7; }
-.bg-orange .dash-stat-icon { background: #ffedd5; color: #ea580c; }
+.bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
+.bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
+.dash-stat-info strong {
+  display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark);
+}
+.dash-stat-info span {
+  font-size: 0.71rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); margin-top: 5px; display: block;
+}
 
-.dash-stat-info strong { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--dark); }
-.dash-stat-info span { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 4px; display: block; }
-
-.dash-section { display: flex; flex-direction: column; gap: 16px; }
-.dash-section-head { display: flex; justify-content: space-between; align-items: flex-end; }
-.dash-section-head h2 { font-size: 1.2rem; font-weight: 700; color: var(--dark); }
-.btn-link { background: none; border: none; color: var(--brand); font-weight: 600; cursor: pointer; transition: color 0.15s; }
+/* Sections */
+.dash-section { display: flex; flex-direction: column; gap: 14px; }
+.dash-section-head { display: flex; justify-content: space-between; align-items: center; }
+.dash-section-head h2 {
+  font-size: 1.1rem; font-weight: 800; color: var(--dark);
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-link {
+  background: none; border: none; color: var(--brand); font-size: 0.84rem;
+  font-weight: 700; cursor: pointer; transition: color 0.15s;
+}
 .btn-link:hover { color: var(--brand-dark); }
 
-.dash-empty {
-  padding: 48px 24px; text-align: center; background: var(--surface); border-radius: var(--r-lg);
-  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
+/* In-progress course cards - horizontal layout */
+.dash-course-list { display: flex; flex-direction: column; gap: 10px; }
+.dash-course-item {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: var(--r-lg); padding: 16px 20px;
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  text-align: left;
 }
-.dash-empty-icon { font-size: 3rem; }
-.dash-empty h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
-.dash-empty p { color: var(--muted); margin-bottom: 8px; }
+.dash-course-item:hover {
+  transform: translateX(3px); box-shadow: var(--shadow-md);
+  border-color: rgba(249,115,22,0.35);
+}
+.dash-course-band {
+  width: 4px; height: 52px; border-radius: 999px; flex-shrink: 0;
+  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+}
+.dash-course-item .dash-course-info { flex: 1; min-width: 0; }
+.dash-course-item h3 {
+  font-size: 0.95rem; font-weight: 700; color: var(--dark);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+}
+.dash-course-item p {
+  font-size: 0.8rem; color: var(--muted); margin-bottom: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dash-course-progress { flex: 1; min-width: 160px; }
+.dash-progress-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.72rem; color: var(--muted); margin-bottom: 5px;
+}
+.dash-progress-pct { font-weight: 800; color: var(--brand); }
+.dash-course-cta {
+  font-size: 0.8rem; font-weight: 700; color: var(--brand); flex-shrink: 0;
+  white-space: nowrap; display: flex; align-items: center; gap: 4px;
+  padding: 7px 14px; border-radius: 999px;
+  background: var(--brand-light); transition: background 0.15s;
+}
+.dash-course-item:hover .dash-course-cta { background: rgba(249,115,22,0.2); }
 
-.dash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.dash-action-card {
-  display: flex; align-items: center; gap: 16px; padding: 20px;
-  background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
-  box-shadow: var(--shadow-xs); text-align: left; transition: all 0.2s; cursor: pointer;
+/* Empty state */
+.dash-empty {
+  padding: 40px 24px; text-align: center; background: var(--surface);
+  border-radius: var(--r-lg); border: 1px dashed var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: var(--muted);
 }
-.dash-action-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--brand-border); }
-.dash-action-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-.dash-action-info strong { display: block; font-size: 0.95rem; font-weight: 700; color: var(--dark); }
-.dash-action-info p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.dash-empty-icon { color: var(--border); margin-bottom: 4px; }
+.dash-empty h3 { font-size: 1rem; font-weight: 700; color: var(--dark); }
+.dash-empty p { font-size: 0.88rem; }
+
+/* Quick actions */
+.dash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dash-action-card {
+  display: flex; align-items: center; gap: 16px; padding: 18px 20px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-xs);
+  text-align: left; transition: all 0.2s; cursor: pointer;
+}
+.dash-action-card:hover {
+  transform: translateY(-2px); box-shadow: var(--shadow-sm);
+  border-color: rgba(249,115,22,0.35);
+}
+.dash-action-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dash-action-info strong { display: block; font-size: 0.92rem; font-weight: 700; color: var(--dark); }
+.dash-action-info p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 
 @media (max-width: 900px) {
   .dash-stats { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {
   .dash-stats, .dash-actions { grid-template-columns: 1fr; }
+  .dash-course-item { flex-direction: column; align-items: flex-start; }
+  .dash-course-band { width: 36px; height: 4px; }
 }
 </style>
