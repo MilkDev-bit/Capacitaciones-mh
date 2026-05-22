@@ -277,6 +277,7 @@ function courseProgress(curso: any) {
 .bg-emerald .dash-stat-icon { background: #d1fae5; color: #059669; }
 .bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
 .bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
+.dash-stat-info { min-width: 0; flex: 1; overflow: hidden; }
 .dash-stat-info strong { display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark); }
 .dash-stat-info span {
   font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
@@ -378,7 +379,9 @@ function courseProgress(curso: any) {
   .dash-course-cta { width: 100%; justify-content: center; margin-top: 4px; }
 }
 @media (max-width: 400px) {
-  .dash-stat-card { padding: 14px; gap: 10px; }
-  .dash-stat-info strong { font-size: 1.3rem; }
+  .dash-stat-card { padding: 12px; gap: 8px; }
+  .dash-stat-icon { width: 38px; height: 38px; flex-shrink: 0; }
+  .dash-stat-info strong { font-size: 1.2rem; }
+  .dash-stat-info span { font-size: 0.65rem; }
 }
 </style>
