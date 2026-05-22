@@ -1,15 +1,44 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 
 const examenes = ref<any[]>([])
 const router = useRouter()
 
+// Filtros
+const statusFilter = ref('todos') // 'todos' | 'pendiente' | 'completado' | 'bloqueado'
+const dateFrom = ref('')
+const dateTo   = ref('')
+
 onMounted(async () => {
   const res = await api.get('/mis-examenes')
   examenes.value = res.data || []
 })
+
+const examensFiltrados = computed(() => {
+  return examenes.value.filter((e: any) => {
+    if (statusFilter.value === 'pendiente'  && (e.bloqueado || e.ya_respondido)) return false
+    if (statusFilter.value === 'completado' && !e.ya_respondido) return false
+    if (statusFilter.value === 'bloqueado'  && !e.bloqueado) return false
+    if (dateFrom.value || dateTo.value) {
+      const d = new Date(e.created_at)
+      if (dateFrom.value && d < new Date(dateFrom.value)) return false
+      if (dateTo.value   && d > new Date(dateTo.value + 'T23:59:59')) return false
+    }
+    return true
+  })
+})
+
+const hasFilters = computed(() =>
+  statusFilter.value !== 'todos' || !!dateFrom.value || !!dateTo.value
+)
+
+function clearFilters() {
+  statusFilter.value = 'todos'
+  dateFrom.value = ''
+  dateTo.value = ''
+}
 
 function openInWindow(id: string) {
   window.open(
@@ -38,9 +67,37 @@ function handleCardClick(e: any) {
       <p class="ph-sub">Completa los exámenes que te han asignado</p>
     </div>
 
-    <div v-if="examenes.length" class="exams-grid">
+    <!-- Barra de filtros -->
+    <div v-if="examenes.length" class="filter-bar">
+      <div class="status-chips">
+        <button
+          v-for="opt in [{ v:'todos',label:'Todos' },{ v:'pendiente',label:'Pendiente' },{ v:'completado',label:'Completado' },{ v:'bloqueado',label:'Bloqueado' }]"
+          :key="opt.v"
+          :class="['chip', statusFilter === opt.v ? 'chip--active' : '']"
+          @click="statusFilter = opt.v"
+        >{{ opt.label }}</button>
+      </div>
+      <div class="date-range">
+        <label class="date-label">Desde</label>
+        <input type="date" v-model="dateFrom" class="date-input" />
+        <span class="date-sep">→</span>
+        <label class="date-label">Hasta</label>
+        <input type="date" v-model="dateTo" class="date-input" />
+        <button v-if="hasFilters" class="clear-btn" @click="clearFilters">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          Limpiar
+        </button>
+      </div>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div v-if="examenes.length" class="results-info">
+      <span>{{ examensFiltrados.length }} resultado{{ examensFiltrados.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <div v-if="examensFiltrados.length" class="exams-grid">
       <div
-        v-for="(e, i) in examenes" :key="e.id"
+        v-for="(e, i) in examensFiltrados" :key="e.id"
         class="exam-card"
         :class="{ 'exam-card--locked': e.bloqueado, 'exam-card--done': e.ya_respondido }"
         :style="`--anim-delay: ${i * 60}ms`"
@@ -106,7 +163,15 @@ function handleCardClick(e: any) {
       </div>
     </div>
 
-    <div v-else class="empty-state">
+    <!-- Sin resultados por filtro -->
+    <div v-else-if="examenes.length && !examensFiltrados.length" class="empty-state">
+      <div class="empty-icon"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+      <h3>Sin resultados para ese filtro</h3>
+      <p>Prueba cambiando el estado o el rango de fechas.</p>
+      <button class="clear-btn clear-btn--center" @click="clearFilters">Limpiar filtros</button>
+    </div>
+
+    <div v-else-if="!examenes.length" class="empty-state">
       <div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
       <h3>No tienes exámenes asignados</h3>
       <p>Cuando tu instructor te asigne un exámen aparecerá aquí.</p>
@@ -121,12 +186,97 @@ function handleCardClick(e: any) {
 }
 
 /* Page header */
-.ph { margin-bottom: 28px; }
+.ph { margin-bottom: 20px; }
 .ph-title {
   font-size: 1.75rem; font-weight: 900; color: var(--dark);
   letter-spacing: -0.03em; line-height: 1.1;
 }
 .ph-sub { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.chip {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--brand); color: var(--brand); }
+.chip--active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.date-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.date-input {
+  font-size: 0.8rem;
+  padding: 5px 9px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--dark);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.date-input:focus { outline: none; border-color: var(--brand); }
+.date-sep { font-size: 0.8rem; color: var(--muted); }
+.clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.clear-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+.clear-btn--center { margin-top: 4px; }
+
+/* Contador */
+.results-info {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding-left: 2px;
+}
 
 /* Grid */
 .exams-grid {
@@ -264,9 +414,12 @@ function handleCardClick(e: any) {
 /* Responsive */
 @media (max-width: 900px) {
   .exams-grid { grid-template-columns: repeat(2, 1fr); }
+  .filter-bar { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 560px) {
   .exams-grid { grid-template-columns: 1fr; }
   .exam-thumb { height: 140px; }
+  .date-range { width: 100%; }
+  .date-input { flex: 1; min-width: 0; }
 }
 </style>
