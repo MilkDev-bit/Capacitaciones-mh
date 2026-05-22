@@ -40,11 +40,11 @@ function handleCardClick(e: any) {
 
     <div v-if="examenes.length" class="exams-grid">
       <div
-        v-for="e in examenes" :key="e.id"
+        v-for="(e, i) in examenes" :key="e.id"
         class="exam-card"
         :class="{ 'exam-card--locked': e.bloqueado, 'exam-card--done': e.ya_respondido }"
+        :style="`--anim-delay: ${i * 60}ms`"
         @click="handleCardClick(e)"
-        :style="e.bloqueado || e.ya_respondido ? 'cursor:default' : ''"
         tabindex="0"
         @keyup.enter="handleCardClick(e)"
       >
@@ -68,10 +68,7 @@ function handleCardClick(e: any) {
 
         <div class="exam-body">
           <!-- Badge estado -->
-          <span v-if="e.bloqueado" class="exam-badge badge--locked">
-            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Bloqueado
-          </span>
+          <span v-if="e.bloqueado" class="exam-badge badge--locked">Bloqueado</span>
           <span v-else-if="e.ya_respondido" class="exam-badge badge--done">Completado</span>
           <span v-else class="exam-badge">Exámen</span>
 
@@ -118,6 +115,11 @@ function handleCardClick(e: any) {
 </template>
 
 <style scoped>
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Page header */
 .ph { margin-bottom: 28px; }
 .ph-title {
@@ -143,14 +145,17 @@ function handleCardClick(e: any) {
   cursor: pointer;
   transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
   display: flex; flex-direction: column;
+  animation: fadeInUp 0.38s ease both;
+  animation-delay: var(--anim-delay, 0ms);
 }
 .exam-card:hover:not(.exam-card--locked):not(.exam-card--done) {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.1);
   border-color: rgba(249,115,22,0.3);
 }
 .exam-card--locked { opacity: 0.8; cursor: default; }
 .exam-card--done   { cursor: default; }
+.exam-card--done:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
 /* Thumbnail */
 .exam-thumb {
@@ -162,7 +167,15 @@ function handleCardClick(e: any) {
 .exam-thumb::before {
   content: '';
   position: absolute; inset: 0;
-  background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.15), transparent 60%);
+  background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.18), transparent 60%);
+}
+/* glass overlay visible on hover */
+.exam-card:not(.exam-card--locked):not(.exam-card--done):hover .exam-thumb::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 .thumb--locked { background: linear-gradient(135deg, #94a3b8 0%, #475569 100%); }
 .thumb--done   { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
@@ -172,7 +185,9 @@ function handleCardClick(e: any) {
   color: #fff; font-size: 0.82rem; font-weight: 800;
   padding: 4px 11px; border-radius: 999px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.25);
 }
 .exam-icon {
   position: relative; z-index: 1;
@@ -224,7 +239,6 @@ function handleCardClick(e: any) {
 }
 .exam-cta {
   font-size: 0.88rem; font-weight: 800; color: var(--brand);
-  display: flex; align-items: center; gap: 4px;
 }
 .exam-window-btn {
   display: inline-flex; align-items: center; gap: 5px;
@@ -247,5 +261,12 @@ function handleCardClick(e: any) {
 .empty-state h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); }
 .empty-state p { font-size: 0.88rem; max-width: 360px; }
 
-@media (max-width: 560px) { .exams-grid { grid-template-columns: 1fr; } }
+/* Responsive */
+@media (max-width: 900px) {
+  .exams-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .exams-grid { grid-template-columns: 1fr; }
+  .exam-thumb { height: 140px; }
+}
 </style>

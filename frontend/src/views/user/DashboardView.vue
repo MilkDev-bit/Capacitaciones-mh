@@ -110,19 +110,23 @@ function courseProgress(curso: any) {
 
 <template>
   <div class="dash-shell">
-    <header class="dash-header">
-      <div class="dash-welcome">
-        <h1>¡Hola, {{ firstName }}!</h1>
-        <p>Continúa aprendiendo donde lo dejaste.</p>
-      </div>
-      <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">
-        Explorar cursos
-      </button>
-    </header>
+    <div class="dash-hero">
+      <div class="dash-orb dash-orb--1"></div>
+      <div class="dash-orb dash-orb--2"></div>
+      <header class="dash-header">
+        <div class="dash-welcome">
+          <h1>¡Hola, {{ firstName }}!</h1>
+          <p>Continúa aprendiendo donde lo dejaste.</p>
+        </div>
+        <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">
+          Explorar cursos
+        </button>
+      </header>
+    </div>
 
     <!-- Stats -->
     <section v-if="!loading" class="dash-stats">
-      <div v-for="stat in statCards" :key="stat.label" :class="['dash-stat-card', stat.bgClass]">
+      <div v-for="(stat, i) in statCards" :key="stat.label" :class="['dash-stat-card', stat.bgClass]" :style="`--anim-delay: ${i * 80}ms`">
         <div class="dash-stat-icon">
           <svg v-if="stat.icon === 'book'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
           <svg v-else-if="stat.icon === 'check'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -145,9 +149,10 @@ function courseProgress(curso: any) {
 
       <div v-if="inProgress.length" class="dash-course-list">
         <button
-          v-for="c in inProgress"
+          v-for="(c, i) in inProgress"
           :key="c.id"
           class="dash-course-item"
+          :style="`--anim-delay: ${i * 70}ms`"
           @click="router.push('/usuario/capacitaciones/' + c.id)"
         >
           <div class="dash-course-band"></div>
@@ -172,7 +177,6 @@ function courseProgress(curso: any) {
       </div>
       
       <div v-else class="dash-empty">
-        <div class="dash-empty-icon"><svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
         <h3>No tienes cursos en progreso</h3>
         <p>¡Empieza alguno de tus cursos inscritos!</p>
         <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">Ir a mis cursos</button>
@@ -205,85 +209,110 @@ function courseProgress(curso: any) {
 </template>
 
 <style scoped>
-.dash-shell { display: flex; flex-direction: column; gap: 28px; }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(10px, -14px) scale(1.05); }
+}
+
+.dash-shell { display: flex; flex-direction: column; gap: 24px; }
+
+/* ── Hero ───────────────────────────────────────────── */
+.dash-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #292524 100%);
+  border-radius: var(--r-xl);
+  padding: 28px 28px 58px;
+  position: relative; overflow: hidden;
+  margin-bottom: -38px;
+}
+.dash-orb {
+  position: absolute; border-radius: 50%; pointer-events: none;
+}
+.dash-orb--1 {
+  width: 340px; height: 340px; top: -110px; right: -90px;
+  background: radial-gradient(circle, rgba(249,115,22,0.3) 0%, transparent 70%);
+  animation: floatOrb 9s ease-in-out infinite;
+}
+.dash-orb--2 {
+  width: 220px; height: 220px; bottom: -70px; left: 8%;
+  background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 70%);
+  animation: floatOrb 11s ease-in-out infinite reverse;
+}
 
 .dash-header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  flex-wrap: wrap; padding: 0 0 4px;
+  flex-wrap: wrap; position: relative; z-index: 1;
 }
 .dash-welcome h1 {
-  font-size: 1.9rem; font-weight: 900; color: var(--dark); letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-size: 2rem; font-weight: 900; color: #fff; letter-spacing: -0.03em; line-height: 1.1;
 }
-.dash-welcome p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+.dash-welcome p { color: rgba(255,255,255,0.6); margin-top: 6px; font-size: 0.95rem; }
 
-/* Stat cards */
-.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+/* ── Stat cards (glass) ─────────────────────────────── */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; position: relative; z-index: 2; }
 .dash-stat-card {
   display: flex; align-items: center; gap: 14px; padding: 18px 20px;
-  border-radius: var(--r-lg); background: var(--surface);
-  border: 1px solid var(--border-light); border-top: 3px solid transparent;
-  box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;
-  position: relative; overflow: hidden;
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.8); border-top: 3px solid transparent;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.95) inset;
+  transition: transform 0.22s, box-shadow 0.22s;
+  animation: fadeInUp 0.4s ease both;
+  animation-delay: var(--anim-delay, 0ms);
 }
-.dash-stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.dash-stat-card::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
-}
+.dash-stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.14); }
 .bg-violet { border-top-color: #7c3aed; }
 .bg-emerald { border-top-color: #059669; }
 .bg-sky     { border-top-color: #0284c7; }
 .bg-orange  { border-top-color: #f97316; }
 .dash-stat-icon {
   width: 46px; height: 46px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .bg-violet .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
 .bg-emerald .dash-stat-icon { background: #d1fae5; color: #059669; }
 .bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
 .bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
-.dash-stat-info strong {
-  display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark);
-}
+.dash-stat-info strong { display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark); }
 .dash-stat-info span {
-  font-size: 0.71rem; font-weight: 700; text-transform: uppercase;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--muted); margin-top: 5px; display: block;
 }
 
-/* Sections */
+/* ── Sections ───────────────────────────────────────── */
 .dash-section { display: flex; flex-direction: column; gap: 14px; }
 .dash-section-head { display: flex; justify-content: space-between; align-items: center; }
-.dash-section-head h2 {
-  font-size: 1.1rem; font-weight: 800; color: var(--dark);
-  display: flex; align-items: center; gap: 8px;
-}
+.dash-section-head h2 { font-size: 1.05rem; font-weight: 800; color: var(--dark); }
 .btn-link {
-  background: none; border: none; color: var(--brand); font-size: 0.84rem;
-  font-weight: 700; cursor: pointer; transition: color 0.15s;
+  background: none; border: none; color: var(--brand);
+  font-size: 0.84rem; font-weight: 700; cursor: pointer; transition: color 0.15s;
 }
 .btn-link:hover { color: var(--brand-dark); }
 
-/* In-progress course cards - horizontal layout */
+/* ── Course items ───────────────────────────────────── */
 .dash-course-list { display: flex; flex-direction: column; gap: 10px; }
 .dash-course-item {
   display: flex; align-items: center; gap: 16px;
   background: var(--surface); border: 1px solid var(--border-light);
   border-radius: var(--r-lg); padding: 16px 20px;
-  box-shadow: var(--shadow-sm); cursor: pointer;
+  box-shadow: var(--shadow-sm); cursor: pointer; text-align: left;
   transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
-  text-align: left;
+  animation: fadeInUp 0.35s ease both;
+  animation-delay: var(--anim-delay, 0ms);
 }
 .dash-course-item:hover {
-  transform: translateX(3px); box-shadow: var(--shadow-md);
+  transform: translateX(4px); box-shadow: var(--shadow-md);
   border-color: rgba(249,115,22,0.35);
 }
 .dash-course-band {
   width: 4px; height: 52px; border-radius: 999px; flex-shrink: 0;
   background: linear-gradient(180deg, var(--brand), var(--brand-dark));
 }
-.dash-course-item .dash-course-info { flex: 1; min-width: 0; }
+.dash-course-info { flex: 1; min-width: 0; }
 .dash-course-item h3 {
   font-size: 0.95rem; font-weight: 700; color: var(--dark);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
@@ -292,7 +321,6 @@ function courseProgress(curso: any) {
   font-size: 0.8rem; color: var(--muted); margin-bottom: 8px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.dash-course-progress { flex: 1; min-width: 160px; }
 .dash-progress-row {
   display: flex; justify-content: space-between;
   font-size: 0.72rem; color: var(--muted); margin-bottom: 5px;
@@ -306,18 +334,16 @@ function courseProgress(curso: any) {
 }
 .dash-course-item:hover .dash-course-cta { background: rgba(249,115,22,0.2); }
 
-/* Empty state */
+/* ── Empty state ────────────────────────────────────── */
 .dash-empty {
   padding: 40px 24px; text-align: center; background: var(--surface);
   border-radius: var(--r-lg); border: 1px dashed var(--border);
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  color: var(--muted);
 }
-.dash-empty-icon { color: var(--border); margin-bottom: 4px; }
 .dash-empty h3 { font-size: 1rem; font-weight: 700; color: var(--dark); }
-.dash-empty p { font-size: 0.88rem; }
+.dash-empty p { font-size: 0.88rem; color: var(--muted); }
 
-/* Quick actions */
+/* ── Quick actions ──────────────────────────────────── */
 .dash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .dash-action-card {
   display: flex; align-items: center; gap: 16px; padding: 18px 20px;
@@ -336,12 +362,21 @@ function courseProgress(curso: any) {
 .dash-action-info strong { display: block; font-size: 0.92rem; font-weight: 700; color: var(--dark); }
 .dash-action-info p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 
-@media (max-width: 900px) {
-  .dash-stats { grid-template-columns: 1fr 1fr; }
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 960px) {
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  .dash-course-item { gap: 12px; }
 }
-@media (max-width: 600px) {
-  .dash-stats, .dash-actions { grid-template-columns: 1fr; }
-  .dash-course-item { flex-direction: column; align-items: flex-start; }
-  .dash-course-band { width: 36px; height: 4px; }
+@media (max-width: 640px) {
+  .dash-hero { padding: 20px 20px 52px; margin-bottom: -32px; }
+  .dash-welcome h1 { font-size: 1.6rem; }
+  .dash-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .dash-actions { grid-template-columns: 1fr; }
+  .dash-course-item { flex-wrap: wrap; }
+  .dash-course-cta { width: 100%; justify-content: center; margin-top: 4px; }
+}
+@media (max-width: 400px) {
+  .dash-stat-card { padding: 14px; gap: 10px; }
+  .dash-stat-info strong { font-size: 1.3rem; }
 }
 </style>
