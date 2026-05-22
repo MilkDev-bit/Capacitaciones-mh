@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"crypto/rand"
+	"database/sql"
+	"fmt"
 	"log"
 	"math/big"
 	"net/http"
@@ -27,16 +29,23 @@ func generateCode(n int) string {
 }
 
 // uniqueCode genera un código que no exista ya en la tabla.
-func uniqueCode() string {
-	for {
+func uniqueCode() (string, error) {
+	const maxAttempts = 10
+	for i := 0; i < maxAttempts; i++ {
 		code := generateCode(6)
 		var existing string
 		err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE codigo_acceso=$1`, code).Scan(&existing)
-		if err != nil {
+		if err == sql.ErrNoRows {
 			// no existe → válido
-			return code
+			return code, nil
 		}
+		if err != nil {
+			// error real de base de datos
+			return "", err
+		}
+		// err == nil → código ya existe, reintentar
 	}
+	return "", fmt.Errorf("no se pudo generar un código único después de %d intentos", maxAttempts)
 }
 
 // ── Capacitaciones del instructor ─────────────────────────────────────────────
@@ -131,19 +140,22 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 	}
 
 	var id string
+	codigo, err := uniqueCode()
+	if err != nil {
+		log.Printf("[ERROR] uniqueCode: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al generar código de acceso"})
+		return
+	}
 	err = db.DB.QueryRow(
 		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message, thumbnail_url, color)
 		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
-		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(), welcomeMessage, thumbnailPath, color,
+		title, description, capType, filePath, content, instructorID, isPublic, codigo, welcomeMessage, thumbnailPath, color,
 	).Scan(&id)
 	if err != nil {
 		log.Printf("[ERROR] InstructorCreateCapacitacion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
-	// Devolver id y código
-	var codigo string
-	db.DB.QueryRow(`SELECT COALESCE(codigo_acceso,'') FROM capacitaciones WHERE id=$1`, id).Scan(&codigo)
 	c.JSON(http.StatusCreated, gin.H{"id": id, "codigo_acceso": codigo})
 }
 
@@ -535,7 +547,12 @@ func InstructorResetCodigo(c *gin.Context) {
 		return
 	}
 
-	newCode := uniqueCode()
+	newCode, err := uniqueCode()
+	if err != nil {
+		log.Printf("[ERROR] uniqueCode reset: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al generar nuevo código"})
+		return
+	}
 	_, err = db.DB.Exec(`UPDATE capacitaciones SET codigo_acceso=$1 WHERE id=$2`, newCode, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
