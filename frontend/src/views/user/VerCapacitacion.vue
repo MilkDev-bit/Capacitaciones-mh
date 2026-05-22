@@ -483,31 +483,45 @@ function goBack() {
           <div v-if="!selectedLeccion" class="ver-welcome-hero">
             <div class="ver-welcome-banner" :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : { background: curso?.color || '#f97316' }">
               <div class="ver-welcome-overlay"></div>
-              <div class="ver-welcome-content">
-                <span class="ver-welcome-badge">Módulo de Capacitación</span>
-                <h1 class="ver-welcome-title">{{ curso?.title }}</h1>
-                <p class="ver-welcome-desc">{{ curso?.description }}</p>
-                <div class="ver-welcome-stats">
-                  <div class="vw-stat">
-                    <strong>{{ lecciones.length }}</strong>
-                    <span>Lecciones</span>
+              <div class="ver-progress-strip-bar"><div class="ver-progress-strip-fill" :style="`width:${progreso}%`"></div></div>
+              <div class="ver-welcome-inner">
+                <div class="ver-welcome-content">
+                  <span class="ver-welcome-badge">Módulo de Capacitación</span>
+                  <h1 class="ver-welcome-title">{{ curso?.title }}</h1>
+                  <p class="ver-welcome-desc">{{ curso?.description }}</p>
+                  <button class="btn btn-primary btn-large mt-6" @click="startCourse">
+                    {{ progreso > 0 ? 'Continuar curso' : 'Comenzar curso' }}
+                  </button>
+                </div>
+                <div class="ver-welcome-aside">
+                  <div class="ver-ring-wrap">
+                    <svg class="ver-ring-svg" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" class="ver-ring-track"/>
+                      <circle cx="50" cy="50" r="40" class="ver-ring-prog"
+                        :stroke-dasharray="`${progreso * 2.513} 251.3`"
+                        transform="rotate(-90 50 50)"/>
+                    </svg>
+                    <div class="ver-ring-label">
+                      <strong>{{ progreso }}%</strong>
+                      <span>Completado</span>
+                    </div>
                   </div>
-                  <div class="vw-stat" v-if="tiempoRestante > 0">
-                    <strong>{{ tiempoRestante }}</strong>
-                    <span>Minutos restantes</span>
-                  </div>
-                  <div class="vw-stat" v-else-if="duracionTotal">
-                    <strong>{{ duracionTotal }}</strong>
-                    <span>Minutos totales</span>
-                  </div>
-                  <div class="vw-stat">
-                    <strong>{{ progreso }}%</strong>
-                    <span>Completado</span>
+                  <div class="ver-aside-stats">
+                    <div class="ver-aside-stat">
+                      <strong>{{ lecciones.length }}</strong>
+                      <span>Lecciones</span>
+                    </div>
+                    <div class="ver-aside-divider"></div>
+                    <div class="ver-aside-stat" v-if="tiempoRestante > 0">
+                      <strong>{{ tiempoRestante }}</strong>
+                      <span>Min restantes</span>
+                    </div>
+                    <div class="ver-aside-stat" v-else-if="duracionTotal">
+                      <strong>{{ duracionTotal }}</strong>
+                      <span>Min totales</span>
+                    </div>
                   </div>
                 </div>
-                <button class="btn btn-primary btn-large mt-6" @click="startCourse">
-                  {{ progreso > 0 ? 'Continuar curso' : 'Comenzar curso' }}
-                </button>
               </div>
             </div>
 
@@ -516,32 +530,46 @@ function goBack() {
               <h3>¿Cómo funciona?</h3>
               <div class="ver-steps">
                 <div class="ver-step">
-                  <div class="ver-step-num">1</div>
-                  <div>
+                  <div class="ver-step-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <div class="ver-step-body">
                     <strong>Ve el contenido</strong>
-                    <p>Mira el video, lee el documento o revisa el material de la lección.</p>
+                    <p>Mira el video, lee el documento o revisa el material.</p>
                   </div>
+                  <div class="ver-step-arrow">→</div>
                 </div>
                 <div class="ver-step">
-                  <div class="ver-step-num">2</div>
-                  <div>
+                  <div class="ver-step-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <div class="ver-step-body">
                     <strong>Marca completada</strong>
-                    <p>Cuando termines, presiona el botón "Marcar completada" para registrar tu avance.</p>
+                    <p>Registra tu avance lección por lección.</p>
                   </div>
+                  <div class="ver-step-arrow">→</div>
                 </div>
                 <div class="ver-step">
-                  <div class="ver-step-num">3</div>
-                  <div>
-                    <strong>Contesta las preguntas</strong>
-                    <p>Algunas lecciones tienen preguntas para reforzar lo aprendido.</p>
+                  <div class="ver-step-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
+                  <div class="ver-step-body">
+                    <strong>Contesta las preguntas</strong>
+                    <p>Refuerza tu aprendizaje con ejercicios.</p>
+                  </div>
+                  <div class="ver-step-arrow last"></div>
                 </div>
               </div>
             </div>
 
             <div class="ver-welcome-message" v-if="curso?.welcome_message">
-              <h3>Acerca de este curso</h3>
-              <p>{{ curso.welcome_message }}</p>
+              <div class="ver-wm-icon">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <h3>Acerca de este curso</h3>
+                <p>{{ curso.welcome_message }}</p>
+              </div>
             </div>
           </div>
 
@@ -988,16 +1016,25 @@ function goBack() {
   background: var(--surface); padding: 28px; border-radius: var(--r-lg);
   border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
 }
-.ver-how-it-works h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 18px; }
-.ver-steps { display: flex; flex-direction: column; gap: 16px; }
-.ver-step { display: flex; align-items: flex-start; gap: 14px; }
-.ver-step-num {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff;
-  font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+.ver-how-it-works h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 20px; }
+.ver-steps { display: flex; gap: 0; align-items: flex-start; }
+.ver-step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 10px; position: relative;
 }
-.ver-step strong { font-size: 0.9rem; font-weight: 700; color: var(--dark); display: block; }
-.ver-step p { font-size: 0.82rem; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.ver-step-icon {
+  width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+}
+.ver-step-body strong { font-size: 0.88rem; font-weight: 700; color: var(--dark); display: block; margin-bottom: 4px; }
+.ver-step-body p { font-size: 0.78rem; color: var(--muted); line-height: 1.45; max-width: 160px; margin: 0 auto; }
+.ver-step-arrow {
+  position: absolute; right: -6px; top: 14px;
+  font-size: 1.1rem; color: var(--border); z-index: 1;
+}
+.ver-step-arrow.last { display: none; }
 
 /* Next lesson suggestion */
 .ver-next-suggestion {
@@ -1081,35 +1118,76 @@ function goBack() {
 /* Welcome Hero */
 .ver-welcome-hero { display: flex; flex-direction: column; gap: 24px; }
 .ver-welcome-banner {
-  position: relative; padding: 60px 40px; border-radius: var(--r-xl);
+  position: relative; border-radius: var(--r-xl); overflow: hidden;
   background: linear-gradient(135deg, var(--dark) 0%, #374151 100%);
-  color: #fff; overflow: hidden; background-size: cover; background-position: center;
-  box-shadow: var(--shadow-md);
+  color: #fff; background-size: cover; background-position: center;
+  box-shadow: var(--shadow-lg);
 }
 .ver-welcome-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(90deg, rgba(29,29,31,0.95) 0%, rgba(29,29,31,0.7) 100%);
-  backdrop-filter: blur(4px);
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.72) 55%, rgba(10,10,12,0.3) 100%);
 }
-.ver-welcome-content { position: relative; z-index: 10; max-width: 600px; }
+.ver-progress-strip-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: rgba(255,255,255,0.12);
+}
+.ver-progress-strip-fill {
+  height: 100%; background: var(--brand);
+  transition: width 0.6s ease; border-radius: 0 2px 2px 0;
+}
+.ver-welcome-inner {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; gap: 40px;
+  padding: 52px 44px 60px;
+}
+.ver-welcome-content { flex: 1; min-width: 0; }
 .ver-welcome-badge {
-  display: inline-block; padding: 4px 12px; border-radius: 999px;
-  background: rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;
-  border: 1px solid rgba(255,255,255,0.1);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 18px;
+  border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px);
 }
-.ver-welcome-title { font-size: 2.2rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px; }
-.ver-welcome-desc { font-size: 1.05rem; color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 30px; }
-.ver-welcome-stats { display: flex; gap: 24px; margin-bottom: 30px; }
-.vw-stat { display: flex; flex-direction: column; gap: 4px; }
-.vw-stat strong { font-size: 1.4rem; font-weight: 800; color: var(--brand); }
-.vw-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.ver-welcome-title { font-size: 2rem; font-weight: 800; line-height: 1.18; letter-spacing: -0.025em; margin-bottom: 12px; }
+.ver-welcome-desc { font-size: 0.97rem; color: rgba(255,255,255,0.72); line-height: 1.55; max-width: 520px; }
+.ver-welcome-aside {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 20px;
+}
+.ver-ring-wrap {
+  position: relative; width: 110px; height: 110px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ver-ring-svg { width: 110px; height: 110px; }
+.ver-ring-track { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+.ver-ring-prog {
+  fill: none; stroke: var(--brand); stroke-width: 8;
+  stroke-linecap: round; stroke-dashoffset: 0;
+  transition: stroke-dasharray 0.6s ease;
+}
+.ver-ring-label {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+}
+.ver-ring-label strong { font-size: 1.4rem; font-weight: 800; color: #fff; line-height: 1; }
+.ver-ring-label span { font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.ver-aside-stats { display: flex; align-items: center; gap: 16px; }
+.ver-aside-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ver-aside-stat strong { font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1; }
+.ver-aside-stat span { font-size: 0.65rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.ver-aside-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.15); }
 .ver-welcome-message {
-  background: var(--surface); padding: 32px; border-radius: var(--r-lg);
+  background: var(--surface); padding: 20px 24px; border-radius: var(--r-lg);
   border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+  display: flex; gap: 16px; align-items: flex-start;
 }
-.ver-welcome-message h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 12px; }
-.ver-welcome-message p { font-size: 0.95rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.ver-wm-icon {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+  background: var(--brand-light); color: var(--brand); display: flex;
+  align-items: center; justify-content: center; margin-top: 2px;
+}
+.ver-welcome-message h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+.ver-welcome-message p { font-size: 0.9rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
 .btn-large { padding: 12px 24px; font-size: 1rem; font-weight: 600; }
 
 /* Lesson header */
