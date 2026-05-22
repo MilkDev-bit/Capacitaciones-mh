@@ -481,7 +481,7 @@ function goBack() {
       <main class="ver-main">
         <div class="ver-main-inner">
           <div v-if="!selectedLeccion" class="ver-welcome-hero">
-            <div class="ver-welcome-banner" :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : ''">
+            <div class="ver-welcome-banner" :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : { background: curso?.color || '#f97316' }">
               <div class="ver-welcome-overlay"></div>
               <div class="ver-welcome-content">
                 <span class="ver-welcome-badge">Módulo de Capacitación</span>

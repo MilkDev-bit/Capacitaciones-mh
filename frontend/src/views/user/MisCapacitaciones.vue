@@ -282,7 +282,7 @@ async function unirseConCodigo() {
           @click="openCourse(c.id)"
           @keyup.enter="openCourse(c.id)"
         >
-          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]">
+          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]" :style="c.thumbnail_url ? '' : { background: c.color || '#f97316' }">
             <template v-if="c.thumbnail_url">
               <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="course-thumb-img" />
             </template>
@@ -293,8 +293,6 @@ async function unirseConCodigo() {
           </div>
           <div class="course-body">
             <div class="course-card-top">
-              <span class="course-type-badge">{{ typeLabel[c.type] || c.type }}</span>
-              <span class="course-lessons">{{ c.total_lecciones || 0 }} lecciones</span>
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
             <p class="course-desc">{{ c.description || 'Sin descripcion disponible.' }}</p>
@@ -375,7 +373,7 @@ async function unirseConCodigo() {
 
       <div v-else-if="publicosFiltrados.length" class="courses-grid">
         <article v-for="c in publicosFiltrados" :key="c.id" class="course-card public-course">
-          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]">
+          <div :class="['course-thumb', c.thumbnail_url ? 'has-image' : (thumbClass[c.type] || 'thumb-default')]" :style="c.thumbnail_url ? '' : { background: c.color || '#f97316' }">
             <template v-if="c.thumbnail_url">
               <img :src="fileUrl(c.thumbnail_url)" alt="Portada del curso" class="course-thumb-img" />
               <span v-if="c.inscrito" class="enrolled-ribbon">Inscrito</span>

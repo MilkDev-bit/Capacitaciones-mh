@@ -159,7 +159,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT DISTINCT c.id, c.title, c.description, c.type,
 		       COALESCE(c.file_path,''), COALESCE(c.content,''),
-		       COALESCE(c.thumbnail_url,''), c.created_at
+		       COALESCE(c.thumbnail_url,''), COALESCE(c.color,'#f97316'), c.created_at
 		FROM capacitaciones c
 		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
 		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
@@ -174,7 +174,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	result := []models.Capacitacion{}
 	for rows.Next() {
 		var cap models.Capacitacion
-		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.ThumbnailURL, &cap.CreatedAt)
+		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.ThumbnailURL, &cap.Color, &cap.CreatedAt)
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)
@@ -186,10 +186,10 @@ func GetCapacitacion(c *gin.Context) {
 	var createdAt time.Time
 	err := db.DB.QueryRow(
 		`SELECT id, title, description, type, COALESCE(file_path,''), COALESCE(content,''),
-		        COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), created_at
+		        COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), COALESCE(color,'#f97316'), created_at
 		 FROM capacitaciones WHERE id=$1`, id,
 	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content,
-		&cap.WelcomeMessage, &cap.ThumbnailURL, &createdAt)
+		&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.Color, &createdAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no encontrado"})
 		return
