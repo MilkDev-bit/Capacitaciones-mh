@@ -464,14 +464,15 @@ function goBack() {
           </div>
         </div>
         <nav class="ver-nav">
+          <p class="ver-nav-section-label">Contenido del curso</p>
           <button v-for="(lec, idx) in lecciones" :key="lec.id"
             @click="selectLeccion(lec)"
             :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '', isNextPending(lec) ? 'next-pending' : '']"
             :aria-current="selectedLeccion?.id === lec.id ? 'page' : undefined">
-            <span class="ver-nav-num">
-              <svg v-if="lec.completada" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span v-else>{{ idx + 1 }}</span>
-            </span>
+            <div class="ver-nav-icon-grid">
+              <svg v-if="lec.completada" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span v-else class="ver-nav-num-text">{{ idx + 1 }}</span>
+            </div>
             <div class="ver-nav-info">
               <p class="ver-nav-title">{{ lec.title }}</p>
               <p class="ver-nav-meta"><span :class="['ver-type-dot', lec.type]"></span>{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
@@ -1010,7 +1011,7 @@ function goBack() {
 .ver-sidebar-overlay.open { display: block; }
 
 /* Next pending badge */
-.ver-nav-item.next-pending { border-left-color: var(--brand) !important; }
+.ver-nav-item.next-pending .ver-nav-icon-grid { background: rgba(249,115,22,0.15); color: var(--brand); }
 .ver-next-badge {
   font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px;
@@ -1074,73 +1075,76 @@ function goBack() {
 
 /* Sidebar */
 .ver-sidebar {
-  width: 100%; background: var(--surface); border-right: 1.5px solid var(--border);
+  width: 100%; background: #fff; border-right: 1px solid var(--border-light);
   display: flex; flex-direction: column; min-width: 0;
+  box-shadow: 4px 0 20px rgba(96, 107, 133, 0.07);
 }
 .ver-sidebar-head {
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border-light);
+}
+.ver-cursor-nombre-wrap {
+  display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px;
 }
 .ver-curso-nombre {
-  font-size: 0.93rem; font-weight: 800; color: var(--dark); line-height: 1.35;
-  margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 1rem; font-weight: 700; color: var(--dark); line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 0;
 }
 .ver-course-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .ver-meta-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.72rem; font-weight: 600; color: var(--muted);
-  background: var(--surface); border: 1px solid var(--border-light);
+  font-size: 0.71rem; font-weight: 600; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border-light);
   padding: 2px 8px; border-radius: 999px;
 }
 .ver-progress-wrap { margin-top: 0; }
 .ver-progress-top {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; font-weight: 500;
+  font-size: 0.74rem; color: var(--muted); margin-bottom: 7px; font-weight: 500;
 }
-.ver-progress-pct { font-weight: 800; color: var(--brand); font-size: 0.88rem; }
-.ver-progress-bg { height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+.ver-progress-pct { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
+.ver-progress-bg { height: 7px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
 .ver-progress-fill {
   height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark));
-  border-radius: 4px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+  border-radius: 999px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
   box-shadow: 0 0 8px rgba(249,115,22,0.35);
 }
 
 .ver-nav { flex: 1; padding: 8px; overflow-y: auto; }
+.ver-nav-section-label {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: var(--muted);
+  padding: 4px 12px 10px; margin: 0;
+}
 .ver-nav-item {
-  width: 100%; text-align: left; padding: 10px 12px; border-radius: var(--r);
-  display: flex; align-items: center; gap: 10px; cursor: pointer;
-  border: none; border-left: 3px solid transparent;
-  background: none; transition: all 0.15s; margin-bottom: 2px; position: relative;
+  width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  border: none; background: none;
+  transition: background 0.15s; margin-bottom: 1px; position: relative;
 }
-.ver-nav-item:hover { background: var(--bg); border-left-color: var(--border); }
-.ver-nav-item.active { background: var(--brand-light); border-left-color: var(--brand); }
-.ver-nav-item.done .ver-nav-num {
-  background: #22c55e; color: #fff;
-  box-shadow: 0 2px 6px rgba(34,197,94,0.35);
-}
+.ver-nav-item:hover { background: rgba(96, 107, 133, 0.07); }
+.ver-nav-item.active { background: var(--brand-light); }
+.ver-nav-item.done .ver-nav-icon-grid { background: #22c55e; color: #fff; box-shadow: 0 2px 8px rgba(34,197,94,0.3); }
 .ver-nav-item.done .ver-nav-title { color: var(--muted); }
+.ver-nav-item.active .ver-nav-icon-grid { background: var(--brand); color: #fff; box-shadow: 0 2px 10px rgba(249,115,22,0.35); }
 
-.ver-nav-num {
-  width: 24px; height: 24px; border-radius: 50%; background: var(--border-light);
-  color: var(--muted); font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
+.ver-nav-icon-grid {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--bg); color: var(--muted);
+  flex-shrink: 0; display: grid; place-items: center;
+  transition: all 0.15s; font-size: 0.75rem; font-weight: 700;
 }
-.ver-nav-item.active .ver-nav-num {
-  background: var(--brand); color: #fff;
-  box-shadow: 0 2px 8px rgba(249,115,22,0.4);
-}
+.ver-nav-num-text { font-size: 0.75rem; font-weight: 700; }
 
 .ver-nav-info { flex: 1; min-width: 0; }
 .ver-nav-title {
-  font-size: 0.86rem; font-weight: 600; color: var(--dark);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
+  font-size: 0.875rem; font-weight: 500; color: var(--dark);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
 }
-.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); font-weight: 700; }
+.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); font-weight: 600; }
 .ver-nav-meta {
-  font-size: 0.73rem; color: var(--muted); margin-top: 2px;
+  font-size: 0.72rem; color: var(--muted); margin-top: 2px;
   display: flex; align-items: center; gap: 4px;
 }
 
