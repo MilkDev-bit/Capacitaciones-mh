@@ -211,6 +211,11 @@ async function forgotPassword() {
               <span v-if="loading" class="btn-spinner"></span>
               {{ loading ? 'Entrando...' : 'Entrar a la plataforma' }}
             </button>
+            <p class="recaptcha-notice">
+              Protegido por reCAPTCHA &middot;
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacidad</a> &middot;
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Términos</a>
+            </p>
             <p class="form-footer">
               ¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">Regístrate gratis</button>
             </p>
@@ -275,6 +280,11 @@ async function forgotPassword() {
               <span v-if="regLoading" class="btn-spinner"></span>
               {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
             </button>
+            <p class="recaptcha-notice">
+              Protegido por reCAPTCHA &middot;
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacidad</a> &middot;
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Términos</a>
+            </p>
             <p class="form-footer">
               ¿Ya tienes cuenta? <button type="button" class="link-btn" @click="tab = 'login'">Inicia sesión</button>
             </p>
@@ -369,6 +379,12 @@ async function forgotPassword() {
 .role-card small { font-size: 0.72rem; color: var(--muted); line-height: 1.2; }
 .submit-btn { width: 100%; margin-top: 4px; display: flex; justify-content: center; align-items: center; gap: 8px; }
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.recaptcha-notice {
+  text-align: center; font-size: 0.72rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
+}
+.recaptcha-notice a { color: var(--muted); text-decoration: underline; }
+.recaptcha-notice a:hover { color: var(--brand); }
 .btn-spinner { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 .form-footer { text-align: center; font-size: 0.85rem; color: var(--muted); }
 .link-btn { background: none; border: none; color: var(--brand); font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; }

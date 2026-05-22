@@ -350,7 +350,7 @@ async function uploadCover(e: Event) {
 /* ─── Barra de identidad ────────────────────────────────── */
 .fp-identity-bar {
   display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 16px; padding: 0 24px 18px;
+  gap: 16px; padding: 10px 24px 18px;
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-top: none;
