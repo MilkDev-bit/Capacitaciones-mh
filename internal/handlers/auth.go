@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -21,7 +22,7 @@ type loginRequest struct {
 type registerRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 	Role     string `json:"role"`
 }
 
@@ -36,11 +37,9 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
+	// A01: el rol admin nunca puede asignarse por la API pública
 	role := "user"
-	if req.Role == "admin" {
-		// Solo permite crear admin si hay un header especial o ajusta según tu lógica
-		role = "admin"
-	} else if req.Role == "instructor" {
+	if req.Role == "instructor" {
 		role = "instructor"
 	}
 	var id string
@@ -66,17 +65,23 @@ func Login(c *gin.Context) {
 		`SELECT id, name, email, password_hash, role FROM users WHERE email=$1`, req.Email,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role)
 	if err != nil {
+		// A09: registrar intento fallido sin revelar si el email existe
+		log.Printf("[AUTH] login fallido (usuario no encontrado): ip=%s", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		// A09: registrar intento fallido
+		log.Printf("[AUTH] login fallido (contraseña incorrecta): ip=%s", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
 	}
+	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  user.ID,
 		"role": user.Role,
-		"exp":  time.Now().Add(24 * time.Hour).Unix(),
+		"iat":  now.Unix(),
+		"exp":  now.Add(24 * time.Hour).Unix(),
 	})
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {

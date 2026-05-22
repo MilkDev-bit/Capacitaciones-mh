@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/rand"
+	"log"
 	"math/big"
 	"net/http"
 	"path/filepath"
@@ -86,10 +87,19 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		return
 	}
 
+	// A06: validar tipos de archivo
+	allowedContent := map[string]map[string]bool{
+		"video":    {".mp4": true, ".webm": true, ".mov": true},
+		"document": {".pdf": true, ".doc": true, ".docx": true, ".pptx": true, ".xlsx": true},
+	}
 	var filePath string
 	file, err := c.FormFile("file")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(file.Filename))
+		if allowed, ok := allowedContent[capType]; ok && !allowed[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "tipo de archivo no permitido para el formato seleccionado"})
+			return
+		}
 		newName := uuid.NewString() + ext
 		var dest string
 		if capType == "video" {
@@ -104,10 +114,15 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
+	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
+		if !allowedThumb[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "miniatura: formato no permitido (jpg, png, webp)"})
+			return
+		}
 		newName := uuid.NewString() + ext
 		dest := filepath.Join("uploads", "thumbnails", newName)
 		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
@@ -122,7 +137,8 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		title, description, capType, filePath, content, instructorID, isPublic, uniqueCode(), welcomeMessage, thumbnailPath, color,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreateCapacitacion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
 	// Devolver id y código
@@ -190,7 +206,8 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 		title, description, capType, currentFilePath, content, isPublic, welcomeMessage, currentThumbPath, color, id,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorUpdateCapacitacion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la capacitación"})
 		return
 	}
 
@@ -202,7 +219,8 @@ func InstructorDeleteCapacitacion(c *gin.Context) {
 	id := c.Param("id")
 	res, err := db.DB.Exec(`DELETE FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorDeleteCapacitacion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
 	n, _ := res.RowsAffected()

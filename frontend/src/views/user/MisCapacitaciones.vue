@@ -67,24 +67,13 @@ const cursosFiltrados = computed(() => {
   })
 })
 
-const TIPO_OPTS = [
-  { value: 'todos', label: 'Todos' },
-  { value: 'video', label: 'Video' },
-  { value: 'document', label: 'Documento' },
-  { value: 'text', label: 'Lectura' },
-  { value: 'link', label: 'Enlace' },
-]
-const exploreTypeFilter = ref('todos')
 const exploreSort = ref('reciente')
 const explorePage = ref(1)
 const EXPLORE_PAGE_SIZE = 12
 
 const publicosFiltrados = computed(() => {
   const term = normalize(search.value)
-  let list = cursosPublicos.value.filter((c: any) => {
-    const typeOk = exploreTypeFilter.value === 'todos' || c.type === exploreTypeFilter.value
-    return typeOk && (!term || hasMatch(c, term))
-  })
+  let list = cursosPublicos.value.filter((c: any) => !term || hasMatch(c, term))
   if (exploreSort.value === 'az') list = [...list].sort((a: any, b: any) => a.title.localeCompare(b.title))
   else if (exploreSort.value === 'za') list = [...list].sort((a: any, b: any) => b.title.localeCompare(a.title))
   return list
@@ -97,7 +86,7 @@ const publicosPaginados = computed(() => {
   const start = (explorePage.value - 1) * EXPLORE_PAGE_SIZE
   return publicosFiltrados.value.slice(start, start + EXPLORE_PAGE_SIZE)
 })
-watch([search, exploreTypeFilter, exploreSort], () => { explorePage.value = 1 })
+watch([search, exploreSort], () => { explorePage.value = 1 })
 
 const totalLecciones = computed(() =>
   capacitaciones.value.reduce((total, curso) => total + (curso.total_lecciones || 0), 0)
@@ -391,16 +380,8 @@ async function unirseConCodigo() {
       <div v-if="codigoError" class="alert alert-error learning-alert">{{ codigoError }}</div>
       <div v-if="codigoSuccess" class="alert alert-success learning-alert">{{ codigoSuccess }}</div>
 
-      <!-- Filtros de tipo y ordenamiento -->
+      <!-- Ordenamiento -->
       <div class="explore-toolbar">
-        <div class="explore-type-filters">
-          <button
-            v-for="opt in TIPO_OPTS"
-            :key="opt.value"
-            :class="['explore-filter-chip', exploreTypeFilter === opt.value ? 'active' : '']"
-            @click="exploreTypeFilter = opt.value"
-          >{{ opt.label }}</button>
-        </div>
         <div class="explore-sort">
           <select v-model="exploreSort" class="sort-select" aria-label="Ordenar por">
             <option value="reciente">Más reciente</option>
@@ -468,8 +449,8 @@ async function unirseConCodigo() {
 
       <div v-else class="empty-state learning-empty">
         <div class="empty-icon">Buscar</div>
-        <h3>{{ search || exploreTypeFilter !== 'todos' ? 'No encontramos cursos con ese filtro' : 'No hay cursos públicos disponibles' }}</h3>
-        <p>{{ search || exploreTypeFilter !== 'todos' ? 'Prueba con otro término o cambia el tipo de contenido.' : 'Pide a tu instructor que comparta un código de acceso.' }}</p>
+        <h3>{{ search ? 'No encontramos cursos con ese término' : 'No hay cursos públicos disponibles' }}</h3>
+        <p>{{ search ? 'Prueba con otro término de búsqueda.' : 'Pide a tu instructor que comparta un código de acceso.' }}</p>
       </div>
 
       <!-- Paginación -->

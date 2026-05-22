@@ -96,7 +96,6 @@ func UpdatePerfil(c *gin.Context) {
 		Bio       string `json:"bio"`
 		Phone     string `json:"phone"`
 		Specialty string `json:"specialty"`
-		AvatarURL string `json:"avatar_url"`
 		Password  string `json:"password"` // opcional: nueva contraseña
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -107,8 +106,8 @@ func UpdatePerfil(c *gin.Context) {
 	if body.Name != "" {
 		db.DB.Exec(`UPDATE users SET name=$1 WHERE id=$2`, body.Name, userID)
 	}
-	db.DB.Exec(`UPDATE users SET bio=$1, phone=$2, specialty=$3, avatar_url=$4 WHERE id=$5`,
-		body.Bio, body.Phone, body.Specialty, body.AvatarURL, userID)
+	db.DB.Exec(`UPDATE users SET bio=$1, phone=$2, specialty=$3 WHERE id=$4`,
+		body.Bio, body.Phone, body.Specialty, userID)
 
 	if body.Password != "" {
 		if len(body.Password) < 6 {

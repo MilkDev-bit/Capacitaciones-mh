@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -58,10 +59,19 @@ func CreateCapacitacion(c *gin.Context) {
 		return
 	}
 
+	// A06: validar tipo de archivo para el contenido del curso
+	allowedContent := map[string]map[string]bool{
+		"video":    {".mp4": true, ".webm": true, ".mov": true},
+		"document": {".pdf": true, ".doc": true, ".docx": true, ".pptx": true, ".xlsx": true},
+	}
 	var filePath string
 	file, err := c.FormFile("file")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(file.Filename))
+		if allowed, ok := allowedContent[capType]; ok && !allowed[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "tipo de archivo no permitido para el formato seleccionado"})
+			return
+		}
 		newName := uuid.NewString() + ext
 		var dest string
 		if capType == "video" {
@@ -76,10 +86,16 @@ func CreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
+	// A06: validar tipo de miniatura
+	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
+		if !allowedThumb[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "miniatura: formato no permitido (jpg, png, webp)"})
+			return
+		}
 		newName := uuid.NewString() + ext
 		dest := filepath.Join("uploads", "thumbnails", newName)
 		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
@@ -94,7 +110,9 @@ func CreateCapacitacion(c *gin.Context) {
 		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// A10: no exponer detalles internos al cliente
+		log.Printf("[ERROR] CreateCapacitacion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})

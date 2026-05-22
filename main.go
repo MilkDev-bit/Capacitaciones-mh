@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/handlers"
@@ -24,11 +25,33 @@ func main() {
 		}
 	}
 
+	// A02: modo release en producción para no exponer rutas/stack traces
+	if os.Getenv("GIN_MODE") != "" {
+		gin.SetMode(os.Getenv("GIN_MODE"))
+	} else if os.Getenv("RAILWAY_ENVIRONMENT") != "" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// A04/A07: verificar JWT_SECRET al inicio
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Println("[SECURITY] JWT_SECRET no definido — la clave de firma es conocida. Configura esta variable en producción.")
+	}
+
 	r := gin.Default()
 
-	// CORS
+	// A02: CORS restringido al origen permitido (no wildcard)
+	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+	if allowedOrigin == "" {
+		allowedOrigin = "http://localhost:5173" // solo desarrollo
+	}
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		// A02: security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		// CORS
+		c.Header("Access-Control-Allow-Origin", allowedOrigin)
 		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type")
 		if c.Request.Method == http.MethodOptions {
@@ -53,8 +76,11 @@ func main() {
 		api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 
 		// Auth
-		api.POST("/register", handlers.Register)
-		api.POST("/login", handlers.Login)
+		// A07: rate limiting en endpoints de autenticación
+		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute)    // 10 intentos / 15 min por IP
+		registerLimiter := middleware.NewRateLimiter(5, time.Hour)       // 5 registros / hora por IP
+		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
+		api.POST("/login", loginLimiter.Middleware(), handlers.Login)
 		// Preview público de curso por código (sin auth, para página de invitación)
 		api.GET("/preview-curso/:codigo", handlers.PreviewCurso)
 
