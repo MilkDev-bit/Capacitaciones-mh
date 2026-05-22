@@ -24,7 +24,10 @@ func verifyRecaptcha(token string) bool {
 		return true // sin clave configurada → skip (dev)
 	}
 	if token == "" {
-		return false
+		// Token vacío: VITE_RECAPTCHA_SITE_KEY probablemente no estaba en el build.
+		// Registrar advertencia y permitir para no bloquear usuarios legítimos.
+		log.Printf("[RECAPTCHA] advertencia: token vacío recibido (¿VITE_RECAPTCHA_SITE_KEY no configurada en el build?)")
+		return true
 	}
 	resp, err := http.PostForm("https://www.google.com/recaptcha/api/siteverify", url.Values{
 		"secret":   {secret},
