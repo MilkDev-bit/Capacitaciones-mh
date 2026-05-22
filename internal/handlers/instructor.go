@@ -28,7 +28,25 @@ func generateCode(n int) string {
 	return string(b)
 }
 
-// uniqueCode genera un código que no exista ya en la tabla.
+// codeFromUUID deriva un código de acceso de 8 caracteres a partir de un UUID.
+// Usa los primeros 8 bytes del UUID mapeados al charset de 32 chars.
+// 256 % 32 == 0 → distribución perfectamente uniforme, sin sesgo.
+// Dos UUIDs distintos (únicos por definición) producen códigos distintos con
+// probabilidad abrumadoramente alta sin necesitar consulta a la BD.
+func codeFromUUID(id string) string {
+	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	u, err := uuid.Parse(id)
+	if err != nil {
+		return generateCode(8) // fallback improbable
+	}
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = chars[u[i]%32]
+	}
+	return string(b)
+}
+
+// uniqueCode genera un código aleatorio único (usado solo en reset de código).
 func uniqueCode() (string, error) {
 	const maxAttempts = 10
 	for i := 0; i < maxAttempts; i++ {
@@ -36,14 +54,11 @@ func uniqueCode() (string, error) {
 		var existing string
 		err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE codigo_acceso=$1`, code).Scan(&existing)
 		if err == sql.ErrNoRows {
-			// no existe → válido
 			return code, nil
 		}
 		if err != nil {
-			// error real de base de datos
 			return "", err
 		}
-		// err == nil → código ya existe, reintentar
 	}
 	return "", fmt.Errorf("no se pudo generar un código único después de %d intentos", maxAttempts)
 }
@@ -139,18 +154,14 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		}
 	}
 
-	var id string
-	codigo, err := uniqueCode()
-	if err != nil {
-		log.Printf("[ERROR] uniqueCode: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al generar código de acceso"})
-		return
-	}
-	err = db.DB.QueryRow(
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message, thumbnail_url, color)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
-		title, description, capType, filePath, content, instructorID, isPublic, codigo, welcomeMessage, thumbnailPath, color,
-	).Scan(&id)
+	// Generar UUID en Go → derivar código determinísticamente (sin consulta a BD)
+	id := uuid.NewString()
+	codigo := codeFromUUID(id)
+	_, err = db.DB.Exec(
+		`INSERT INTO capacitaciones(id, title, description, type, file_path, content, instructor_id, is_public, codigo_acceso, welcome_message, thumbnail_url, color)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+		id, title, description, capType, filePath, content, instructorID, isPublic, codigo, welcomeMessage, thumbnailPath, color,
+	)
 	if err != nil {
 		log.Printf("[ERROR] InstructorCreateCapacitacion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
