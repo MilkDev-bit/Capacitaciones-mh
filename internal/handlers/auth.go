@@ -15,21 +15,27 @@ import (
 )
 
 type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email          string `json:"email" binding:"required,email"`
+	Password       string `json:"password" binding:"required"`
+	RecaptchaToken string `json:"recaptcha_token"`
 }
 
 type registerRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role"`
+	Name           string `json:"name" binding:"required"`
+	Email          string `json:"email" binding:"required,email"`
+	Password       string `json:"password" binding:"required,min=8"`
+	Role           string `json:"role"`
+	RecaptchaToken string `json:"recaptcha_token"`
 }
 
 func Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !verifyRecaptcha(req.RecaptchaToken) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "verificación de seguridad fallida"})
 		return
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -58,6 +64,10 @@ func Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !verifyRecaptcha(req.RecaptchaToken) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "verificación de seguridad fallida"})
 		return
 	}
 	var user models.User

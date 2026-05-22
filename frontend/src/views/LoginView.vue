@@ -5,6 +5,7 @@ import api from '../api'
 import router from '../router'
 import { useRoute } from 'vue-router'
 import { toast } from '../utils/toast'
+import { getRecaptchaToken } from '../utils/recaptcha'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -70,7 +71,8 @@ async function submit() {
   }
   loading.value = true
   try {
-    const res = await api.post('/login', { email: email.value, password: password.value })
+    const recaptcha_token = await getRecaptchaToken('login')
+    const res = await api.post('/login', { email: email.value, password: password.value, recaptcha_token })
     auth.token = res.data.token
     auth.user = res.data.user
     localStorage.setItem('token', res.data.token)
@@ -104,7 +106,8 @@ async function register() {
   
   regLoading.value = true
   try {
-    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value })
+    const recaptcha_token = await getRecaptchaToken('register')
+    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value, recaptcha_token })
     toast.success('¡Cuenta creada! Redirigiendo...')
     setTimeout(() => { 
       tab.value = 'login'
