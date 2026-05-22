@@ -1088,7 +1088,7 @@ function goBack() {
 }
 .ver-curso-nombre {
   font-size: 1rem; font-weight: 700; color: var(--dark); line-height: 1.3;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   margin: 0;
 }
 .ver-course-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }

@@ -297,6 +297,7 @@ function courseProgress(curso: any) {
 /* ── Course items ───────────────────────────────────── */
 .dash-course-list { display: flex; flex-direction: column; gap: 10px; }
 .dash-course-item {
+  width: 100%; min-width: 0;
   display: flex; align-items: center; gap: 16px;
   background: var(--surface); border: 1px solid var(--border-light);
   border-radius: var(--r-lg); padding: 16px 20px;

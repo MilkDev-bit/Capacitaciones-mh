@@ -454,7 +454,7 @@ function cardColor(c: any) {
 .ac-card-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); line-height: 1.35; }
 .ac-card-desc {
   font-size: 0.82rem; color: var(--muted); line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .ac-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-light); }
 .ac-card-date { font-size: 0.75rem; color: var(--subtle); }

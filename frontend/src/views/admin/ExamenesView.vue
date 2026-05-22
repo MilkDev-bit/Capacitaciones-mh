@@ -300,7 +300,7 @@ async function eliminar(id: string) {
 }
 .ae-card-body { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .ae-card-body h3 { font-size: 0.97rem; font-weight: 700; color: var(--dark); }
-.ae-card-body p { font-size: 0.82rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ae-card-body p { font-size: 0.82rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ae-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-light); margin-top: 4px; }
 .ae-card-footer span { font-size: 0.75rem; color: var(--subtle); }
 
