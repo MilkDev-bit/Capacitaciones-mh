@@ -83,8 +83,12 @@ func main() {
 		// A07: rate limiting en endpoints de autenticación
 		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute) // 10 intentos / 15 min por IP
 		registerLimiter := middleware.NewRateLimiter(5, time.Hour)    // 5 registros / hora por IP
+		forgotLimiter := middleware.NewRateLimiter(5, 15*time.Minute) // 5 intentos / 15 min por IP
+		resetLimiter := middleware.NewRateLimiter(10, 15*time.Minute) // 10 intentos / 15 min por IP
 		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
 		api.POST("/login", loginLimiter.Middleware(), handlers.Login)
+		api.POST("/forgot-password", forgotLimiter.Middleware(), handlers.ForgotPassword)
+		api.POST("/reset-password", resetLimiter.Middleware(), handlers.ResetPassword)
 		// Preview público de curso por código (sin auth, para página de invitación)
 		api.GET("/preview-curso/:codigo", handlers.PreviewCurso)
 

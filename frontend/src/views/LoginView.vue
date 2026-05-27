@@ -128,15 +128,18 @@ async function forgotPassword() {
     return
   }
   forgotLoading.value = true
-  // Simulate network request
-  setTimeout(() => {
-    forgotLoading.value = false
+  try {
+    await api.post('/forgot-password', { email: forgotEmail.value })
     toast.success('Si el correo existe, recibirás instrucciones para recuperar tu contraseña.')
     setTimeout(() => {
       tab.value = 'login'
       forgotEmail.value = ''
-    }, 4000)
-  }, 1200)
+    }, 2500)
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No se pudo enviar el correo de recuperación')
+  } finally {
+    forgotLoading.value = false
+  }
 }
 </script>
 
