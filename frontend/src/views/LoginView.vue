@@ -29,6 +29,11 @@ const regLoading = ref(false)
 // Forgot password state
 const forgotEmail = ref('')
 const forgotLoading = ref(false)
+const forgotStep = ref<1 | 2>(1)
+const resetCode = ref('')
+const newPassword = ref('')
+const newPasswordConfirm = ref('')
+const showNewPass = ref(false)
 
 // Validation helpers
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
@@ -130,13 +135,46 @@ async function forgotPassword() {
   forgotLoading.value = true
   try {
     await api.post('/forgot-password', { email: forgotEmail.value })
-    toast.success('Si el correo existe, recibirás instrucciones para recuperar tu contraseña.')
+    toast.success('Si el correo existe, recibirás el código de recuperación.')
+    forgotStep.value = 2
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No se pudo enviar el correo de recuperación')
+  } finally {
+    forgotLoading.value = false
+  }
+}
+
+async function resetPassword() {
+  if (!resetCode.value.trim()) {
+    toast.error('Ingresa el código recibido en tu correo')
+    return
+  }
+  if (newPassword.value.length < 8) {
+    toast.error('La contraseña debe tener al menos 8 caracteres')
+    return
+  }
+  if (newPassword.value !== newPasswordConfirm.value) {
+    toast.error('Las contraseñas no coinciden')
+    return
+  }
+  forgotLoading.value = true
+  try {
+    await api.post('/reset-password', {
+      email: forgotEmail.value,
+      code: resetCode.value.trim(),
+      new_password: newPassword.value,
+    })
+    toast.success('¡Contraseña actualizada! Ya puedes iniciar sesión.')
     setTimeout(() => {
       tab.value = 'login'
       forgotEmail.value = ''
-    }, 2500)
+      resetCode.value = ''
+      newPassword.value = ''
+      newPasswordConfirm.value = ''
+      forgotStep.value = 1
+    }, 1500)
   } catch (e: any) {
-    toast.error(e.response?.data?.error || 'No se pudo enviar el correo de recuperación')
+    toast.error(e.response?.data?.error || 'Código inválido o expirado')
   } finally {
     forgotLoading.value = false
   }
@@ -201,7 +239,7 @@ async function forgotPassword() {
             <div class="form-group">
               <div style="display:flex; justify-content: space-between; align-items: baseline;">
                 <label>Contraseña</label>
-                <button type="button" class="link-btn-sm" @click="tab = 'forgot'">¿Olvidaste tu contraseña?</button>
+                <button type="button" class="link-btn-sm" @click="tab = 'forgot'; forgotStep = 1">¿Olvidaste tu contraseña?</button>
               </div>
               <div class="pass-wrap">
                 <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
@@ -293,12 +331,12 @@ async function forgotPassword() {
             </p>
           </form>
 
-          <!-- FORGOT PASSWORD FORM -->
-          <form v-else-if="tab === 'forgot'" @submit.prevent="forgotPassword" class="auth-form forgot-form">
+          <!-- FORGOT PASSWORD FORM - PASO 1: ingresar correo -->
+          <form v-else-if="tab === 'forgot' && forgotStep === 1" @submit.prevent="forgotPassword" class="auth-form forgot-form">
             <div class="forgot-header">
               <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
               <h2>Recuperar contraseña</h2>
-              <p>Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña.</p>
+              <p>Ingresa tu correo y te enviaremos un código para restablecer tu contraseña.</p>
             </div>
             
             <div class="form-group">
@@ -308,10 +346,50 @@ async function forgotPassword() {
 
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading">
               <span v-if="forgotLoading" class="btn-spinner"></span>
-              {{ forgotLoading ? 'Enviando...' : 'Enviar instrucciones' }}
+              {{ forgotLoading ? 'Enviando...' : 'Enviar código' }}
             </button>
             <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="tab = 'login'" :disabled="forgotLoading">
               Volver al inicio de sesión
+            </button>
+          </form>
+
+          <!-- FORGOT PASSWORD FORM - PASO 2: ingresar código y nueva contraseña -->
+          <form v-else-if="tab === 'forgot' && forgotStep === 2" @submit.prevent="resetPassword" class="auth-form forgot-form">
+            <div class="forgot-header">
+              <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3-8.57A2 2 0 012.02 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+              <h2>Ingresa el código</h2>
+              <p>Revisa tu correo <strong>{{ forgotEmail }}</strong> e ingresa el código recibido.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Código de verificación</label>
+              <input class="field-input" v-model="resetCode" type="text" placeholder="XXX-XXX" autocomplete="one-time-code" required />
+            </div>
+
+            <div class="form-group">
+              <label>Nueva contraseña</label>
+              <div class="pass-wrap">
+                <input class="field-input" v-model="newPassword" :type="showNewPass ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
+                <button type="button" class="pass-toggle" @click="showNewPass = !showNewPass">
+                  {{ showNewPass ? 'Ocultar' : 'Ver' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Confirmar contraseña</label>
+              <input class="field-input" v-model="newPasswordConfirm" :type="showNewPass ? 'text' : 'password'" placeholder="Repite tu nueva contraseña" autocomplete="new-password" required minlength="8" />
+              <div v-if="newPasswordConfirm && newPassword !== newPasswordConfirm" class="form-hint error-hint">
+                Las contraseñas no coinciden
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading || (!!newPasswordConfirm && newPassword !== newPasswordConfirm)">
+              <span v-if="forgotLoading" class="btn-spinner"></span>
+              {{ forgotLoading ? 'Actualizando...' : 'Restablecer contraseña' }}
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="forgotStep = 1" :disabled="forgotLoading">
+              Volver atrás
             </button>
           </form>
         </Transition>
