@@ -44,7 +44,7 @@ func ListCapacitaciones(c *gin.Context) {
 func CreateCapacitacion(c *gin.Context) {
 	title := c.PostForm("title")
 	description := c.PostForm("description")
-	capType := c.PostForm("type") // video | document | text
+	capType := c.PostForm("type")
 	content := c.PostForm("content")
 	welcomeMsg := c.PostForm("welcome_message")
 	isPublicStr := c.PostForm("is_public")
@@ -59,7 +59,6 @@ func CreateCapacitacion(c *gin.Context) {
 		return
 	}
 
-	// A06: validar tipo de archivo para el contenido del curso
 	allowedContent := map[string]map[string]bool{
 		"video":    {".mp4": true, ".webm": true, ".mov": true},
 		"document": {".pdf": true, ".doc": true, ".docx": true, ".pptx": true, ".xlsx": true},
@@ -86,7 +85,6 @@ func CreateCapacitacion(c *gin.Context) {
 		filePath = "/" + filepath.ToSlash(dest)
 	}
 
-	// A06: validar tipo de miniatura
 	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
@@ -110,7 +108,6 @@ func CreateCapacitacion(c *gin.Context) {
 		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath,
 	).Scan(&id)
 	if err != nil {
-		// A10: no exponer detalles internos al cliente
 		log.Printf("[ERROR] CreateCapacitacion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
@@ -134,7 +131,6 @@ func UpdateCapacitacion(c *gin.Context) {
 		return
 	}
 
-	// Optional new thumbnail
 	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
@@ -171,7 +167,6 @@ func DeleteCapacitacion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// Para usuario: lista solo las asignadas
 func ListCapacitacionesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`

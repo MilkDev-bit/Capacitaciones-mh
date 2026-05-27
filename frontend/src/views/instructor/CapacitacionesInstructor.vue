@@ -136,7 +136,6 @@ function copyCode(code: string) {
       </div>
     </div>
 
-    <!-- Modals -->
     <CourseWizardModal 
       v-if="showWizard" 
       @close="showWizard = false" 

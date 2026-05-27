@@ -100,7 +100,6 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
       </div>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs-bar">
       <button :class="['tab-pill', activeTab === 'asignar' ? 'active' : '']" @click="activeTab = 'asignar'">
         Asignar contenido
@@ -113,7 +112,6 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
       </button>
     </div>
 
-    <!-- TAB: Asignar -->
     <div v-if="activeTab === 'asignar'" class="au-tab-content">
       <div class="au-assign-card">
         <div class="au-assign-header">
@@ -156,7 +154,6 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
       </div>
     </div>
 
-    <!-- TAB: Asignaciones -->
     <div v-if="activeTab === 'asignaciones'" class="au-tab-content">
       <div class="au-search-bar">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>
@@ -180,9 +177,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
       <div v-else class="empty-state"><div class="empty-icon"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><h3>Sin asignaciones</h3><p>Asigna contenido a usuarios desde la pestaña "Asignar contenido".</p></div>
     </div>
 
-    <!-- TAB: Usuarios -->
     <div v-if="activeTab === 'usuarios'" class="au-tab-content">
-      <!-- Role summary -->
       <div class="au-role-stats">
         <div class="au-role-stat">
           <span class="au-role-dot" style="background:var(--info)"></span>

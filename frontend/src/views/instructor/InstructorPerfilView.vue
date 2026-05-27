@@ -98,7 +98,6 @@ async function guardar() {
 
 <template>
   <div class="ip-page">
-    <!-- Header -->
     <header class="ip-header">
       <div>
         <h1 class="ip-title">Mi Perfil</h1>
@@ -109,14 +108,12 @@ async function guardar() {
       </button>
     </header>
 
-    <!-- Loading skeleton -->
     <div v-if="loading" class="ip-grid">
       <div class="ip-card"><div class="skeleton" style="width:80px;height:80px;border-radius:50%"></div><div class="skeleton" style="height:18px;width:60%;margin-top:14px"></div><div class="skeleton" style="height:12px;width:40%;margin-top:8px"></div></div>
       <div class="ip-card"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:40px;width:100%;margin-top:12px"></div><div class="skeleton" style="height:40px;width:100%;margin-top:8px"></div></div>
     </div>
 
     <div v-else class="ip-grid">
-      <!-- Sidebar -->
       <aside class="ip-sidebar">
         <div class="ip-card ip-profile-card">
           <div class="ip-avatar-wrap" @click="avatarInput?.click()" title="Cambiar foto de perfil">
@@ -143,7 +140,6 @@ async function guardar() {
           </div>
         </div>
 
-        <!-- Stats -->
         <div class="ip-card ip-stats-card">
           <h3>Estadísticas</h3>
           <div class="ip-stats-grid">
@@ -163,7 +159,6 @@ async function guardar() {
         </div>
       </aside>
 
-      <!-- Main forms -->
       <main class="ip-main">
         <section class="ip-card">
           <div class="ip-section-head">

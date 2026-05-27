@@ -1,6 +1,5 @@
 import iziToast from 'izitoast'
 
-// Apply global defaults matching app theme
 iziToast.settings({
   transitionIn: 'fadeInDown',
   transitionOut: 'fadeOutUp',

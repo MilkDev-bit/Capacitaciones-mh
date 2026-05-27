@@ -13,8 +13,6 @@ type ipBucket struct {
 	resetAt time.Time
 }
 
-// RateLimiter es un limitador de tasa por IP en memoria.
-// NOTA: en despliegues multi-instancia usar Redis.
 type RateLimiter struct {
 	mu      sync.Mutex
 	buckets map[string]*ipBucket
@@ -46,7 +44,6 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
-// Middleware devuelve un gin.HandlerFunc que limita peticiones por IP.
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()

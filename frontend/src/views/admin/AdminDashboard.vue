@@ -70,7 +70,6 @@ const statCards = computed(() => [
       </div>
     </header>
 
-    <!-- Stats -->
     <section v-if="!loading" class="ad-stats">
       <div v-for="stat in statCards" :key="stat.label" class="ad-stat-card">
         <div class="ad-stat-icon" :style="{ background: stat.bg, color: stat.accent }">
@@ -93,7 +92,6 @@ const statCards = computed(() => [
       </div>
     </section>
 
-    <!-- Quick actions -->
     <section v-if="!loading" class="ad-section">
       <h2 class="ad-section-title">Acciones rápidas</h2>
       <div class="ad-actions">
@@ -124,7 +122,6 @@ const statCards = computed(() => [
       </div>
     </section>
 
-    <!-- Recent assignments -->
     <section v-if="!loading && recentAssignments.length" class="ad-section">
       <div class="ad-section-head">
         <h2 class="ad-section-title">Asignaciones recientes</h2>

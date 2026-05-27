@@ -56,7 +56,6 @@ func GetPerfil(c *gin.Context) {
 		return
 	}
 
-	// Build stats
 	stats := gin.H{}
 
 	if u.Role == "user" {
@@ -96,7 +95,7 @@ func UpdatePerfil(c *gin.Context) {
 		Bio       string `json:"bio"`
 		Phone     string `json:"phone"`
 		Specialty string `json:"specialty"`
-		Password  string `json:"password"` // opcional: nueva contraseña
+		Password  string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -125,7 +124,6 @@ func UpdatePerfil(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// UploadAvatar sube una imagen de perfil y actualiza avatar_url en la BD
 func UploadAvatar(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	file, err := c.FormFile("file")
@@ -157,7 +155,6 @@ func UploadAvatar(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
-// UploadCover sube una imagen de portada y actualiza cover_url en la BD
 func UploadCover(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	file, err := c.FormFile("file")

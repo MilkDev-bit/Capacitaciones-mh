@@ -20,7 +20,7 @@ type Capacitacion struct {
 	ID             string    `json:"id"`
 	Title          string    `json:"title"`
 	Description    string    `json:"description"`
-	Type           string    `json:"type"` // video | document | text | course
+	Type           string    `json:"type"`
 	FilePath       string    `json:"file_path,omitempty"`
 	Content        string    `json:"content,omitempty"`
 	InstructorID   *string   `json:"instructor_id,omitempty"`
@@ -37,12 +37,12 @@ type Leccion struct {
 	CapacitacionID string    `json:"capacitacion_id"`
 	Title          string    `json:"title"`
 	Description    string    `json:"description,omitempty"`
-	Type           string    `json:"type"` // video | document | text
+	Type           string    `json:"type"`
 	FilePath       string    `json:"file_path,omitempty"`
 	Content        string    `json:"content,omitempty"`
 	Orden          int       `json:"orden"`
 	DuracionMin    int       `json:"duracion_min,omitempty"`
-	Completada     bool      `json:"completada,omitempty"` // calculado por usuario
+	Completada     bool      `json:"completada,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
@@ -61,7 +61,7 @@ type Pregunta struct {
 	ID       string   `json:"id"`
 	ExamenID string   `json:"examen_id"`
 	Texto    string   `json:"texto"`
-	Tipo     string   `json:"tipo"` // multiple_choice | true_false | open_text
+	Tipo     string   `json:"tipo"`
 	Valor    float64  `json:"valor"`
 	Orden    int      `json:"orden"`
 	Opciones []Opcion `json:"opciones,omitempty"`
@@ -101,7 +101,7 @@ type PreguntaIntermedia struct {
 	CapacitacionID     string             `json:"capacitacion_id"`
 	DespuesDeLeccionID *string            `json:"despues_de_leccion_id,omitempty"`
 	Texto              string             `json:"texto"`
-	Tipo               string             `json:"tipo"` // multiple_choice | true_false | open_text
+	Tipo               string             `json:"tipo"`
 	Orden              int                `json:"orden"`
 	Opciones           []OpcionIntermedia `json:"opciones,omitempty"`
 }

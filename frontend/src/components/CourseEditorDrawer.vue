@@ -17,7 +17,7 @@ const emit = defineEmits<{
   (e: 'updated'): void
 }>()
 
-const activeTab = ref('info') // info | lessons
+const activeTab = ref('info')
 const loading = ref(false)
 const form = ref<any>({})
 const thumbnailFile = ref<File | null>(null)

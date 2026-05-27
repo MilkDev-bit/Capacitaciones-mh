@@ -54,14 +54,11 @@ onMounted(async () => {
 
 <template>
   <div class="pp-page">
-
-    <!-- Botón volver -->
     <button class="pp-back" @click="router.back()">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Volver
     </button>
 
-    <!-- Skeleton -->
     <div v-if="loading" class="pp-skeleton">
       <div class="skeleton pp-cover-skel"></div>
       <div class="pp-id-skel">
@@ -73,23 +70,19 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Error -->
     <div v-else-if="error" class="pp-error">
       <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
       <p>{{ error }}</p>
       <button class="btn btn-secondary btn-sm" @click="router.back()">Volver</button>
     </div>
 
-    <!-- Perfil -->
     <div v-else-if="user" class="pp-content">
 
-      <!-- Foto de portada -->
       <div class="pp-cover">
         <div :class="['pp-cover-grad', roleClass]"></div>
         <div class="pp-cover-pattern"></div>
       </div>
 
-      <!-- Barra identidad: avatar sobre portada, nombre, rol, acciones -->
       <div class="pp-identity">
         <div class="pp-identity-left">
           <div :class="['pp-avatar', roleClass]">{{ initials(user.name) }}</div>
@@ -109,7 +102,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Botón acción contacto -->
         <div class="pp-actions">
           <button v-if="!contactVisible" class="btn btn-primary pp-action-btn" @click="contactVisible = true">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -122,13 +114,10 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Contenido principal (dos columnas) -->
       <div class="pp-body">
 
-        <!-- Col izquierda: Presentación / Sobre mí -->
         <div class="pp-col-left">
 
-          <!-- Card: Intro -->
           <div class="pp-card">
             <h3 class="pp-card-title">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -138,7 +127,6 @@ onMounted(async () => {
             <p v-else class="pp-bio pp-bio-empty">Este usuario no ha escrito una descripción todavía.</p>
           </div>
 
-          <!-- Card: Datos -->
           <div class="pp-card">
             <h3 class="pp-card-title">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
@@ -162,7 +150,6 @@ onMounted(async () => {
 
         </div>
 
-        <!-- Col derecha: Contacto -->
         <div class="pp-col-right">
           <div class="pp-card pp-contact-card">
             <h3 class="pp-card-title">
@@ -206,7 +193,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* ─── Página ─────────────────────────────────── */
 .pp-page { display: flex; flex-direction: column; gap: 0; max-width: 960px; margin: 0 auto; }
 
 .pp-back {
@@ -217,17 +203,14 @@ onMounted(async () => {
 }
 .pp-back:hover { color: var(--brand); }
 
-/* Skeleton */
 .pp-skeleton { display: flex; flex-direction: column; gap: 0; }
 .pp-cover-skel { height: 200px; border-radius: var(--r-xl) var(--r-xl) 0 0; }
 .pp-id-skel { display: flex; gap: 16px; padding: 16px 28px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border-light); border-top: none; }
 .pp-avatar-skel { width: 92px; height: 92px; border-radius: 50%; margin-top: -46px; flex-shrink: 0; }
 
-/* Error */
 .pp-error { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 60px 24px; text-align: center; color: var(--muted); }
 .pp-error p { font-size: 0.92rem; }
 
-/* ─── Cover ──────────────────────────────────── */
 .pp-cover {
   position: relative; height: 200px;
   border-radius: var(--r-xl) var(--r-xl) 0 0; overflow: hidden;
@@ -248,7 +231,6 @@ onMounted(async () => {
               radial-gradient(ellipse at 20% 20%, rgba(255,255,255,.04) 0%, transparent 50%);
 }
 
-/* ─── Identidad ──────────────────────────────── */
 .pp-identity {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 16px; padding: 0 28px 20px;
@@ -287,7 +269,6 @@ onMounted(async () => {
 .pp-actions { padding-bottom: 8px; }
 .pp-action-btn { display: inline-flex; align-items: center; gap: 7px; }
 
-/* ─── Body (dos columnas) ────────────────────── */
 .pp-body {
   display: grid; grid-template-columns: 1fr 320px;
   gap: 18px; margin-top: 18px;
@@ -296,7 +277,6 @@ onMounted(async () => {
 .pp-col-left { display: flex; flex-direction: column; gap: 16px; }
 .pp-col-right { display: flex; flex-direction: column; gap: 16px; }
 
-/* ─── Cards ──────────────────────────────────── */
 .pp-card {
   background: var(--surface); border: 1px solid var(--border-light);
   border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-sm);
@@ -307,16 +287,11 @@ onMounted(async () => {
   margin: 0 0 14px;
 }
 
-/* Bio */
 .pp-bio { font-size: 0.9rem; color: var(--text); line-height: 1.7; white-space: pre-wrap; margin: 0; }
 .pp-bio-empty { color: var(--muted); font-style: italic; }
-
-/* Info list */
 .pp-info-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .pp-info-list li { display: flex; align-items: center; gap: 9px; font-size: 0.87rem; color: var(--text); }
 .pp-info-list li svg { flex-shrink: 0; color: var(--muted); }
-
-/* Contact card */
 .pp-contact-locked { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px 0; text-align: center; }
 .pp-contact-lock-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .pp-contact-locked p { font-size: 0.84rem; color: var(--muted); margin: 0; }
@@ -336,7 +311,7 @@ onMounted(async () => {
 .pp-copy-btn:hover { border-color: var(--brand); color: var(--brand); }
 .pp-mailto-btn { display: inline-flex; align-items: center; gap: 7px; }
 
-/* ─── Responsive ─────────────────────────────── */
+
 @media (max-width: 720px) {
   .pp-body { grid-template-columns: 1fr; }
   .pp-cover { height: 140px; }

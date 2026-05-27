@@ -12,13 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// ── Instructor: CRUD de lecciones ─────────────────────────────────────────────
-
 func InstructorListLecciones(c *gin.Context) {
 	capID := c.Param("id")
 	instructorID, _ := c.Get("user_id")
 
-	// Verificar pertenencia
 	var owner string
 	if err := db.DB.QueryRow(`SELECT COALESCE(instructor_id::text,'') FROM capacitaciones WHERE id=$1`, capID).Scan(&owner); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "curso no encontrado"})
@@ -52,7 +49,6 @@ func InstructorCreateLeccion(c *gin.Context) {
 	capID := c.Param("id")
 	instructorID, _ := c.Get("user_id")
 
-	// Verificar pertenencia
 	var owner string
 	if err := db.DB.QueryRow(`SELECT COALESCE(instructor_id::text,'') FROM capacitaciones WHERE id=$1`, capID).Scan(&owner); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "curso no encontrado"})
@@ -226,8 +222,6 @@ func InstructorReorderLecciones(c *gin.Context) {
 	tx.Commit()
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
-
-// ── Usuario: ver lecciones con progreso ───────────────────────────────────────
 
 func GetLeccionesConProgreso(c *gin.Context) {
 	capID := c.Param("id")

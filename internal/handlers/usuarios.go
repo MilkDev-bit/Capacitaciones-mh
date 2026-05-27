@@ -32,7 +32,6 @@ func Asignar(c *gin.Context) {
 		req.UserID, req.CapacitacionID, req.ExamenID,
 	).Scan(&id)
 	if err != nil {
-		// Si no retornó nada (conflicto), igual es ok
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}

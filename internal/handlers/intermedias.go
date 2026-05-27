@@ -128,8 +128,6 @@ func InstructorDeletePreguntaIntermedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// ── Usuario: responder preguntas intermedias ────────────────────────────────
-
 func GetPreguntasIntermedias(c *gin.Context) {
 	capID := c.Param("id")
 	leccionIDParam := c.Query("despues_de_leccion_id")
@@ -150,8 +148,7 @@ func GetPreguntasIntermedias(c *gin.Context) {
 			  AND NOT EXISTS (SELECT 1 FROM respuestas_intermedias r WHERE r.pregunta_id=p.id AND r.user_id=$2)
 			ORDER BY p.orden`, capID, userID)
 	} else {
-		// Retorna preguntas ligadas a esta lección Y las sin asignar (NULL),
-		// excluyendo las ya respondidas por el usuario
+
 		rows, err = db.DB.Query(`
 			SELECT p.id, p.capacitacion_id, p.despues_de_leccion_id, p.texto, p.tipo, p.orden
 			FROM preguntas_intermedias p

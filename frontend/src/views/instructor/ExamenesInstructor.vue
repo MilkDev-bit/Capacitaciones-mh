@@ -8,7 +8,6 @@ const capacitaciones = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
 
-// Resultados
 const resModal = ref<any>(null)
 const resLista = ref<any[]>([])
 const resDetalle = ref<any[] | null>(null)
@@ -200,7 +199,6 @@ async function eliminar(id: string) {
     </div>
 
     <div class="ex-body">
-      <!-- New Exam Form -->
       <Transition name="slide-down">
         <div v-if="showForm" class="form-card ex-form-card">
           <h2 class="form-card-title">Crear nuevo examen</h2>
@@ -222,7 +220,6 @@ async function eliminar(id: string) {
             </div>
           </div>
 
-          <!-- Questions -->
           <div class="ex-preguntas-head">
             <span class="ex-preguntas-label">Preguntas <span class="pill-count">{{ form.preguntas.length }}</span></span>
             <button @click="addPregunta" class="btn btn-secondary btn-sm" type="button">
@@ -264,13 +261,11 @@ async function eliminar(id: string) {
                 </div>
               </div>
 
-              <!-- Open text notice -->
               <div v-if="p.tipo === 'open_text'" class="ex-open-notice">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
                 Pregunta de respuesta abierta. No requiere opciones.
               </div>
 
-              <!-- True/False options -->
               <div v-if="p.tipo === 'true_false'" class="ex-tf-opts">
                 <p class="ex-opts-label">¿Cuál es correcta?</p>
                 <div style="display:flex;gap:12px">
@@ -285,7 +280,6 @@ async function eliminar(id: string) {
                 </div>
               </div>
 
-              <!-- Multiple choice options -->
               <div v-if="p.tipo === 'multiple_choice'" class="ex-mc-opts">
                 <div class="ex-opts-bar">
                   <p class="ex-opts-label">Opciones — marca la correcta</p>
@@ -320,7 +314,6 @@ async function eliminar(id: string) {
         </div>
       </Transition>
 
-      <!-- Examenes List -->
       <TransitionGroup name="list-item" tag="div" class="ex-list">
         <div v-for="ex in examenes" :key="ex.id" class="ex-card">
           <div class="ex-card-left">
@@ -359,12 +352,10 @@ async function eliminar(id: string) {
     </div>
   </div>
 
-  <!-- ── Modal de resultados ─────────────────────────────────────────────── -->
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="resModal && !detalleVisible" class="res-overlay" @click.self="resModal = null">
         <div class="res-panel">
-          <!-- Header -->
           <div class="res-header">
             <div>
               <p class="res-header-label">Resultados del examen</p>
@@ -375,12 +366,10 @@ async function eliminar(id: string) {
             </button>
           </div>
 
-          <!-- Loading -->
           <div v-if="resLoading" class="res-loading">
             <div class="spinner"></div>
           </div>
 
-          <!-- Lista de estudiantes -->
           <template v-else-if="!resDetalle">
             <div v-if="resLista.length === 0" class="res-empty">
               <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -419,18 +408,13 @@ async function eliminar(id: string) {
               </table>
             </div>
           </template>
-
-          <!-- Detalle de un estudiante (ya no va aquí — se abre en panel fullscreen) -->
         </div>
       </div>
     </Transition>
   </Teleport>
 
-  <!-- ── Panel full-screen de detalle ─────────────────────────────────────── -->
   <Teleport to="body">
     <div v-if="detalleVisible" class="det-overlay">
-
-      <!-- Cabecera sticky -->
       <div class="det-header">
         <div class="det-header-left">
           <button class="det-back" @click="cerrarDetalle">
@@ -451,7 +435,6 @@ async function eliminar(id: string) {
         </div>
       </div>
 
-      <!-- Barra de filtros / stats -->
       <div class="det-stats-bar">
         <button
           v-for="f in [
@@ -471,7 +454,6 @@ async function eliminar(id: string) {
         </button>
       </div>
 
-      <!-- Cuerpo scrollable -->
       <div class="det-body">
         <div v-if="resLoading" class="det-loading"><div class="spinner"></div></div>
         <template v-else>
@@ -578,7 +560,6 @@ async function eliminar(id: string) {
 .ex-opcion-row.correct { border-color: var(--success); background: var(--success-bg); }
 .ex-radio-label { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); cursor: pointer; white-space: nowrap; }
 
-/* Exam list cards */
 .ex-list { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .ex-card {
   background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--border-light);
@@ -608,10 +589,8 @@ async function eliminar(id: string) {
   .res-overlay  { inset: 0; }
 }
 
-/* ── Botones de tarjeta ──────────────────────────────────────────────────────── */
 .ex-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* ── Modal overlay ───────────────────────────────────────────────────────────── */
 .res-overlay {
   position: fixed; inset: 0 0 0 var(--sidebar-w); background: rgba(15,23,42,.45);
   display: flex; align-items: center; justify-content: center;
@@ -624,7 +603,6 @@ async function eliminar(id: string) {
   display: flex; flex-direction: column; overflow: hidden;
 }
 
-/* ── Header del modal ────────────────────────────────────────────────────────── */
 .res-header {
   display: flex; align-items: flex-start; justify-content: space-between;
   padding: 22px 24px 18px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
@@ -632,11 +610,9 @@ async function eliminar(id: string) {
 .res-header-label { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand); margin-bottom: 2px; }
 .res-header-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin: 0; }
 
-/* ── Estados ─────────────────────────────────────────────────────────────────── */
 .res-loading { display: flex; justify-content: center; padding: 48px; }
 .res-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--muted); font-size: 0.9rem; }
 
-/* ── Tabla de resultados ─────────────────────────────────────────────────────── */
 .res-table-wrap { overflow-y: auto; padding: 20px 24px; flex: 1; }
 .res-count { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
 .res-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
@@ -648,8 +624,6 @@ async function eliminar(id: string) {
 .res-score { font-weight: 600; color: var(--dark); white-space: nowrap; }
 .res-pct-badge { font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 10px; }
 .res-date { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
-
-/* ── Botón volver + header detalle ──────────────────────────────────────────── */
 .res-back-btn {
   display: inline-flex; align-items: center; gap: 6px; margin: 16px 24px 0;
   font-size: 0.83rem; font-weight: 600; color: var(--muted);
@@ -659,8 +633,6 @@ async function eliminar(id: string) {
 .res-detalle-header { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 24px 14px; border-bottom: 1px solid var(--border-light); }
 .res-detalle-user { font-size: 1rem; font-weight: 700; color: var(--dark); }
 .res-detalle-meta { font-size: 0.88rem; color: var(--muted); }
-
-/* ── Preguntas del detalle ───────────────────────────────────────────────────── */
 .res-preguntas { overflow-y: auto; flex: 1; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 12px; }
 .res-pregunta {
   border-radius: var(--r); padding: 14px 16px;
@@ -683,7 +655,6 @@ async function eliminar(id: string) {
 .correct-text { color: #10b981; font-weight: 600; }
 .res-sin-respuesta { font-size: 0.82rem; color: var(--muted); font-style: italic; }
 
-/* ── Panel fullscreen de detalle ────────────────────────────────────── */
 .det-overlay {
   position: fixed; inset: 0 0 0 var(--sidebar-w); z-index: 1100;
   background: var(--bg);
@@ -691,13 +662,11 @@ async function eliminar(id: string) {
   overflow: hidden;
 }
 
-/* Transición deslizamiento desde abajo */
 .slide-up-enter-active { transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .25s; }
 .slide-up-leave-active { transition: transform .2s ease-in, opacity .15s; }
 .slide-up-enter-from  { transform: translateY(30px); opacity: 0; }
 .slide-up-leave-to    { transform: translateY(30px); opacity: 0; }
 
-/* Cabecera sticky */
 .det-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border-light);
@@ -721,7 +690,6 @@ async function eliminar(id: string) {
 }
 .det-pts { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 
-/* Barra de filtros */
 .det-stats-bar {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 28px; background: var(--surface); border-bottom: 1px solid var(--border-light);
@@ -738,7 +706,6 @@ async function eliminar(id: string) {
 .det-stat-chip.active { border-color: var(--brand); color: var(--brand); background: rgba(249,115,22,.08); }
 .det-chip-count { font-size: 0.78rem; font-weight: 800; }
 
-/* Cuerpo scrollable */
 .det-body {
   flex: 1; overflow-y: auto; padding: 28px;
   display: flex; flex-direction: column; gap: 16px;
@@ -747,7 +714,6 @@ async function eliminar(id: string) {
 .det-loading { display: flex; justify-content: center; padding: 60px; }
 .det-empty { text-align: center; color: var(--muted); font-size: 0.9rem; padding: 40px; }
 
-/* Tarjeta de pregunta */
 .det-q-card {
   background: var(--surface); border-radius: var(--r-lg);
   border: 1.5px solid var(--border-light); overflow: hidden;
@@ -784,7 +750,6 @@ async function eliminar(id: string) {
 .tag-unanswered { background: var(--bg); color: var(--muted); border: 1px solid var(--border-light); }
 .det-q-val { font-size: 0.78rem; font-weight: 700; color: var(--success); white-space: nowrap; }
 
-/* Respuestas */
 .det-q-answers {
   padding: 14px 20px 16px 62px;
   display: flex; flex-direction: column; gap: 8px;

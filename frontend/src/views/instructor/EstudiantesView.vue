@@ -97,12 +97,10 @@ async function asignar() {
       </button>
     </div>
 
-    <!-- Formulario de asignación -->
     <div v-if="showAssign" class="form-card">
       <p class="form-card-title">Asignar contenido</p>
       <div class="assign-grid">
 
-        <!-- Estudiantes -->
         <div class="assign-section">
           <div class="assign-sec-header">
             <span class="assign-sec-title">Estudiantes</span>
@@ -125,7 +123,6 @@ async function asignar() {
           </div>
         </div>
 
-        <!-- Capacitaciones -->
         <div class="assign-section">
           <div class="assign-sec-header">
             <span class="assign-sec-title">Capacitaciones</span>
@@ -148,7 +145,6 @@ async function asignar() {
           </div>
         </div>
 
-        <!-- Exámenes -->
         <div class="assign-section">
           <div class="assign-sec-header">
             <span class="assign-sec-title">Exámenes</span>
@@ -185,7 +181,6 @@ async function asignar() {
       </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-box">
         <div class="stat-num">{{ capacitaciones.length }}</div>
@@ -205,7 +200,6 @@ async function asignar() {
       </div>
     </div>
 
-    <!-- Tabla de estudiantes -->
     <div class="info-tip">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
       <span>Los estudiantes que se inscriban a tus cursos <strong>públicos</strong> aparecerán aquí automáticamente.</span>
@@ -243,8 +237,6 @@ async function asignar() {
 .ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
 .form-card { background: var(--surface); border-radius: var(--r-lg); padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border-light); }
 .form-card-title { font-size: 1.1rem; font-weight: 800; color: var(--dark); margin-bottom: 20px; }
-
-/* Multi-assign grid */
 .assign-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
 .assign-section { background: var(--bg); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
 .assign-sec-header { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }

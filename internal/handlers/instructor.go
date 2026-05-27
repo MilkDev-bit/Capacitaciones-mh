@@ -17,7 +17,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// generateCode devuelve un código alfanumérico en mayúsculas de n caracteres.
 func generateCode(n int) string {
 	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	b := make([]byte, n)
@@ -28,16 +27,11 @@ func generateCode(n int) string {
 	return string(b)
 }
 
-// codeFromUUID deriva un código de acceso de 8 caracteres a partir de un UUID.
-// Usa los primeros 8 bytes del UUID mapeados al charset de 32 chars.
-// 256 % 32 == 0 → distribución perfectamente uniforme, sin sesgo.
-// Dos UUIDs distintos (únicos por definición) producen códigos distintos con
-// probabilidad abrumadoramente alta sin necesitar consulta a la BD.
 func codeFromUUID(id string) string {
 	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	u, err := uuid.Parse(id)
 	if err != nil {
-		return generateCode(8) // fallback improbable
+		return generateCode(8)
 	}
 	b := make([]byte, 8)
 	for i := range b {
@@ -46,7 +40,6 @@ func codeFromUUID(id string) string {
 	return string(b)
 }
 
-// uniqueCode genera un código aleatorio único (usado solo en reset de código).
 func uniqueCode() (string, error) {
 	const maxAttempts = 10
 	for i := 0; i < maxAttempts; i++ {
@@ -62,8 +55,6 @@ func uniqueCode() (string, error) {
 	}
 	return "", fmt.Errorf("no se pudo generar un código único después de %d intentos", maxAttempts)
 }
-
-// ── Capacitaciones del instructor ─────────────────────────────────────────────
 
 func InstructorListCapacitaciones(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
@@ -111,7 +102,6 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		return
 	}
 
-	// A06: validar tipos de archivo
 	allowedContent := map[string]map[string]bool{
 		"video":    {".mp4": true, ".webm": true, ".mov": true},
 		"document": {".pdf": true, ".doc": true, ".docx": true, ".pptx": true, ".xlsx": true},
@@ -154,7 +144,6 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		}
 	}
 
-	// Generar UUID en Go → derivar código determinísticamente (sin consulta a BD)
 	id := uuid.NewString()
 	codigo := codeFromUUID(id)
 	_, err = db.DB.Exec(
@@ -272,8 +261,6 @@ func InstructorTogglePublic(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"is_public": !current})
 }
 
-// ── Exámenes del instructor ────────────────────────────────────────────────────
-
 func InstructorListExamenes(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
@@ -374,11 +361,8 @@ func InstructorDeleteExamen(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// ── Estudiantes del instructor ─────────────────────────────────────────────────
-
 func InstructorListEstudiantes(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
-	// Usuarios inscritos en capacitaciones propias del instructor
 	rows, err := db.DB.Query(`
 		SELECT DISTINCT u.id, u.name, u.email, u.role, u.created_at
 		FROM users u
@@ -401,7 +385,6 @@ func InstructorListEstudiantes(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// InstructorAsignar asigna un usuario a un curso/examen del instructor
 func InstructorAsignar(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 
@@ -415,7 +398,6 @@ func InstructorAsignar(c *gin.Context) {
 		return
 	}
 
-	// Verificar que la capacitacion/examen pertenece al instructor
 	if req.CapacitacionID != nil {
 		var owner string
 		err := db.DB.QueryRow(`SELECT COALESCE(instructor_id::text,'') FROM capacitaciones WHERE id=$1`, *req.CapacitacionID).Scan(&owner)
@@ -445,8 +427,6 @@ func InstructorAsignar(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
-
-// ── Cursos públicos (cualquier usuario autenticado) ───────────────────────────
 
 func ListCursosPublicos(c *gin.Context) {
 	userID, _ := c.Get("user_id")
@@ -484,8 +464,6 @@ func ListCursosPublicos(c *gin.Context) {
 func Inscribirse(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	capID := c.Param("id")
-
-	// Verificar que el curso es público
 	var isPublic bool
 	err := db.DB.QueryRow(`SELECT is_public FROM capacitaciones WHERE id=$1`, capID).Scan(&isPublic)
 	if err != nil || !isPublic {
@@ -504,8 +482,6 @@ func Inscribirse(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// ── Unirse por código (cualquier usuario autenticado) ─────────────────────────
-
 func UnirseConCodigo(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
@@ -517,7 +493,6 @@ func UnirseConCodigo(c *gin.Context) {
 		return
 	}
 
-	// Buscar el curso por código (case-insensitive, trimmed)
 	code := strings.ToUpper(strings.TrimSpace(body.Codigo))
 	var cap models.Capacitacion
 	err := db.DB.QueryRow(
@@ -545,12 +520,9 @@ func UnirseConCodigo(c *gin.Context) {
 	})
 }
 
-// InstructorResetCodigo genera un nuevo código de acceso para un curso del instructor
 func InstructorResetCodigo(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	id := c.Param("id")
-
-	// Verificar propiedad
 	var existing string
 	err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID).Scan(&existing)
 	if err != nil {
@@ -572,7 +544,6 @@ func InstructorResetCodigo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"codigo_acceso": newCode})
 }
 
-// PreviewCurso devuelve info pública de un curso por código (sin autenticación)
 func PreviewCurso(c *gin.Context) {
 	code := strings.ToUpper(strings.TrimSpace(c.Param("codigo")))
 	var cap models.Capacitacion

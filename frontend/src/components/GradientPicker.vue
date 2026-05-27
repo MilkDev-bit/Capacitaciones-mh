@@ -10,15 +10,15 @@ const emit = defineEmits<{
 }>()
 
 const gradients = [
-  'linear-gradient(135deg, #f97316 0%, #dc2626 100%)', // brand orange to red
-  'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', // blue to indigo
-  'linear-gradient(135deg, #10b981 0%, #059669 100%)', // emerald to green
-  'linear-gradient(135deg, #0f766e 0%, #2563eb 100%)', // teal to blue
-  'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', // violet to purple
-  'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', // pink to rose
-  'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', // amber to orange
-  'linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)', // teal
-  'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', // slate dark
+  'linear-gradient(135deg, #f97316 0%, #dc2626 100%)', 
+  'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', 
+  'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+  'linear-gradient(135deg, #0f766e 0%, #2563eb 100%)', 
+  'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', 
+  'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', 
+  'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
+  'linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)', 
+  'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
 ]
 
 function selectGradient(g: string) {

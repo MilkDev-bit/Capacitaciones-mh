@@ -81,7 +81,6 @@ async function guardar() {
         </button>
       </div>
 
-      <!-- Stepper -->
       <div class="stepper">
         <div class="step" :class="{ active: step >= 1 }"><div class="step-num">1</div><div class="step-text">Información</div></div>
         <div class="step-line" :class="{ active: step >= 2 }"></div>
@@ -93,7 +92,6 @@ async function guardar() {
       </div>
 
       <div class="modal-body">
-        <!-- Paso 1 -->
         <div v-if="step === 1" class="step-pane slide-down-enter-active">
           <div class="field">
             <label>Título del curso <span class="req">*</span></label>
@@ -106,7 +104,6 @@ async function guardar() {
           </div>
         </div>
 
-        <!-- Paso 2 -->
         <div v-if="step === 2" class="step-pane slide-down-enter-active">
           <div class="field">
             <label>Color de portada (si no subes imagen)</label>
@@ -122,7 +119,6 @@ async function guardar() {
           </div>
         </div>
 
-        <!-- Paso 3 -->
         <div v-if="step === 3" class="step-pane slide-down-enter-active">
           <div class="field">
             <label>Tipo de contenido principal</label>
@@ -138,7 +134,6 @@ async function guardar() {
           </div>
         </div>
 
-        <!-- Paso 4 -->
         <div v-if="step === 4" class="step-pane text-center slide-down-enter-active">
           <div class="preview-card" :style="{ background: thumbnailFile ? 'var(--surface-soft)' : form.color }">
             <div v-if="thumbnailFile" class="preview-img-wrap">

@@ -6,9 +6,6 @@ import (
 	"os"
 )
 
-// sendPasswordResetEmail envía el código de recuperación por correo.
-// Requiere las variables de entorno: SMTP_HOST, SMTP_PORT (default 587),
-// SMTP_USER, SMTP_PASS, SMTP_FROM (default = SMTP_USER).
 func sendPasswordResetEmail(to, code string) error {
 	host := os.Getenv("SMTP_HOST")
 	if host == "" {

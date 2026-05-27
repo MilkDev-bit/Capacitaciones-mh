@@ -18,7 +18,7 @@ type createExamenRequest struct {
 
 type preguntaRequest struct {
 	Texto    string          `json:"texto" binding:"required"`
-	Tipo     string          `json:"tipo"` // multiple_choice | true_false | open_text
+	Tipo     string          `json:"tipo"`
 	Valor    float64         `json:"valor" binding:"required,gt=0"`
 	Orden    int             `json:"orden"`
 	Opciones []opcionRequest `json:"opciones"`
@@ -185,7 +185,6 @@ func DeleteExamen(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// Usuario: solo exámenes asignados
 func ListExamenesUsuario(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
@@ -261,7 +260,6 @@ func ListExamenesUsuario(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// InstructorGetResultados lista los usuarios que respondieron un examen con su puntaje
 func InstructorGetResultados(c *gin.Context) {
 	examenID := c.Param("id")
 	instructorID, _ := c.Get("user_id")
@@ -321,7 +319,6 @@ func InstructorGetResultados(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// InstructorGetRespuestasUsuario devuelve las respuestas detalladas de un usuario en un examen
 func InstructorGetRespuestasUsuario(c *gin.Context) {
 	examenID := c.Param("id")
 	userID := c.Param("user_id")
@@ -382,7 +379,6 @@ func SubmitExamen(c *gin.Context) {
 	examenID := c.Param("id")
 	userID, _ := c.Get("user_id")
 
-	// Bloquear re-envío
 	var existCount int
 	db.DB.QueryRow(`SELECT COUNT(*) FROM respuestas WHERE user_id=$1 AND examen_id=$2`, userID, examenID).Scan(&existCount)
 	if existCount > 0 {
@@ -410,7 +406,6 @@ func SubmitExamen(c *gin.Context) {
 		puntajeMax += valor
 
 		if tipo == "open_text" {
-			// Respuesta abierta: se guarda sin calificar automáticamente
 			db.DB.Exec(`
 				INSERT INTO respuestas(user_id, examen_id, pregunta_id, respuesta_texto)
 				VALUES($1,$2,$3,$4)

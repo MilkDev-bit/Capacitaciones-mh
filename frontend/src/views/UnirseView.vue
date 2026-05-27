@@ -53,7 +53,7 @@ function typeLabel(t: string) {
 <template>
   <div class="join-bg">
     <div class="join-card">
-      <!-- Brand -->
+    
       <div class="brand-bar">
         <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
           <rect width="40" height="40" rx="8" fill="#f97316"/>
@@ -62,20 +62,17 @@ function typeLabel(t: string) {
         <span class="brand-name">Capacitaciones MH</span>
       </div>
 
-      <!-- Loading -->
       <div v-if="loading" class="state-center">
         <div class="spin-ring"></div>
         <p class="state-text">Buscando curso&hellip;</p>
       </div>
 
-      <!-- &Eacute;xito al unirse -->
       <div v-else-if="joined" class="state-center">
         <div class="icon-circle success">&#10003;</div>
         <h2 class="state-title">&iexcl;Te uniste al curso!</h2>
         <p class="state-text">Redirigiendo a tus capacitaciones&hellip;</p>
       </div>
 
-      <!-- Vista previa del curso -->
       <div v-else-if="curso" class="course-preview">
         <div class="invite-badge">Invitaci&oacute;n a curso</div>
         <div class="code-box">{{ codigo.toUpperCase() }}</div>
@@ -94,7 +91,6 @@ function typeLabel(t: string) {
         </div>
       </div>
 
-      <!-- Error / c&oacute;digo inv&aacute;lido -->
       <div v-else class="state-center">
         <div class="icon-circle danger">&#10007;</div>
         <h2 class="state-title">C&oacute;digo no v&aacute;lido</h2>

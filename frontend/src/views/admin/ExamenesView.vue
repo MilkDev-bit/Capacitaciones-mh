@@ -126,7 +126,6 @@ async function eliminar(id: string) {
             </div>
           </div>
 
-          <!-- Preguntas -->
           <div class="ae-preguntas">
             <div class="ae-preguntas-header">
               <span>{{ form.preguntas.length }} pregunta{{ form.preguntas.length !== 1 ? 's' : '' }} · {{ totalPuntos }} pts</span>
@@ -173,7 +172,6 @@ async function eliminar(id: string) {
       </div>
     </Transition>
 
-    <!-- Search -->
     <div class="ae-search-bar">
       <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
@@ -181,7 +179,6 @@ async function eliminar(id: string) {
       <input v-model="search" placeholder="Buscar exámenes..." />
     </div>
 
-    <!-- Grid -->
     <div v-if="filtered.length" class="ae-grid">
       <div v-for="e in filtered" :key="e.id" class="ae-card">
         <div class="ae-card-cover">

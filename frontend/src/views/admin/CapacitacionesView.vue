@@ -147,7 +147,6 @@ function cardColor(c: any) {
 </script>
 <template>
   <div class="ac-shell">
-    <!-- Header -->
     <div class="ac-topbar">
       <div>
         <h1 class="ac-title">Capacitaciones</h1>
@@ -159,7 +158,6 @@ function cardColor(c: any) {
       </button>
     </div>
 
-    <!-- Search -->
     <div class="ac-search-bar">
       <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/>
@@ -167,7 +165,6 @@ function cardColor(c: any) {
       <input v-model="search" placeholder="Buscar capacitaciones..." />
     </div>
 
-    <!-- Skeleton -->
     <div v-if="loading && !capacitaciones.length" class="ac-grid">
       <div v-for="n in 6" :key="n" class="ac-card ac-card-skel">
         <div class="skeleton" style="height:130px;border-radius:var(--r-lg) var(--r-lg) 0 0"></div>
@@ -178,10 +175,8 @@ function cardColor(c: any) {
       </div>
     </div>
 
-    <!-- Grid -->
     <div v-else-if="filtered.length" class="ac-grid">
       <div v-for="c in filtered" :key="c.id" class="ac-card">
-        <!-- Cover -->
         <div class="ac-card-cover" :style="c.thumbnail_url ? '' : ('background:' + cardColor(c))">
           <template v-if="c.thumbnail_url">
             <img :src="fileUrl(c.thumbnail_url)" alt="Portada" class="ac-card-cover-img" />
@@ -196,7 +191,6 @@ function cardColor(c: any) {
           <span class="ac-card-type-badge">{{ typeLabel(c.type) }}</span>
           <span v-if="c.is_public" class="ac-card-public-badge">Publico</span>
         </div>
-        <!-- Body -->
         <div class="ac-card-body">
           <h3>{{ c.title }}</h3>
           <p class="ac-card-desc">{{ c.description || 'Sin descripcion' }}</p>
@@ -215,7 +209,6 @@ function cardColor(c: any) {
       </div>
     </div>
 
-    <!-- Empty state -->
     <div v-else class="empty-state">
       <div class="empty-icon">
         <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
@@ -226,14 +219,12 @@ function cardColor(c: any) {
     </div>
   </div>
 
-  <!-- Drawer teleported to body -->
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="showDrawer" class="drawer-backdrop" @click="closeDrawer" />
     </Transition>
     <Transition name="slide-right">
       <div v-if="showDrawer" class="ac-drawer" role="dialog">
-        <!-- Header -->
         <div class="drawer-header">
           <div class="drawer-header-info">
             <div class="drawer-header-icon">
@@ -249,10 +240,7 @@ function cardColor(c: any) {
           </button>
         </div>
 
-        <!-- Body -->
         <div class="drawer-body">
-
-          <!-- 1. Informacion basica -->
           <div class="drawer-section">
             <div class="drawer-section-label">
               <span class="section-num">1</span>
@@ -276,7 +264,6 @@ function cardColor(c: any) {
             </div>
           </div>
 
-          <!-- 2. Tipo y contenido -->
           <div class="drawer-section">
             <div class="drawer-section-label">
               <span class="section-num">2</span>
@@ -317,7 +304,6 @@ function cardColor(c: any) {
             </div>
           </div>
 
-          <!-- 3. Personalizacion -->
           <div class="drawer-section">
             <div class="drawer-section-label">
               <span class="section-num">3</span>
@@ -361,7 +347,6 @@ function cardColor(c: any) {
             </div>
           </div>
 
-          <!-- 4. Acceso -->
           <div class="drawer-section">
             <div class="drawer-section-label">
               <span class="section-num">4</span>
@@ -390,7 +375,6 @@ function cardColor(c: any) {
 
         </div>
 
-        <!-- Footer -->
         <div class="drawer-footer">
           <button class="btn btn-primary drawer-save-btn" :disabled="saving" @click="guardar">
             <svg v-if="!saving" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
@@ -405,14 +389,12 @@ function cardColor(c: any) {
 </template>
 
 <style scoped>
-/* Shell */
 .ac-shell { display: flex; flex-direction: column; gap: 20px; }
 .ac-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ac-new-btn { display: flex; align-items: center; gap: 7px; }
 .ac-title { font-size: 1.65rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; }
 .ac-sub { color: var(--muted); font-size: 0.88rem; margin-top: 3px; }
 
-/* Search */
 .ac-search-bar {
   display: flex; align-items: center; gap: 10px; padding: 11px 16px;
   border: 1.5px solid var(--border); border-radius: var(--r);
@@ -421,11 +403,7 @@ function cardColor(c: any) {
 }
 .ac-search-bar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--dark); font-size: 0.9rem; }
 .ac-search-bar:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
-
-/* Grid */
 .ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
-
-/* Card */
 .ac-card {
   background: var(--surface); border-radius: var(--r-lg); overflow: hidden;
   border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
@@ -468,13 +446,11 @@ function cardColor(c: any) {
 .btn-icon-edit:hover { background: rgba(59,130,246,.1); border-color: #3b82f6; color: #3b82f6; }
 .btn-icon-danger:hover { background: rgba(239,68,68,.1); border-color: var(--danger); color: var(--danger); }
 
-/* Backdrop */
 .drawer-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   backdrop-filter: blur(2px); z-index: 1400;
 }
 
-/* Drawer */
 .ac-drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: 520px; max-width: 100vw;
   background: var(--bg); z-index: 1401;
@@ -483,7 +459,6 @@ function cardColor(c: any) {
   border-left: 1px solid var(--border);
 }
 
-/* Drawer header */
 .drawer-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px; border-bottom: 1px solid var(--border);
@@ -505,7 +480,6 @@ function cardColor(c: any) {
 }
 .drawer-close:hover { background: rgba(255,255,255,.22); color: #fff; }
 
-/* Drawer body */
 .drawer-body { flex: 1; overflow-y: auto; }
 .drawer-section { padding: 22px 24px; border-bottom: 1px solid var(--border-light); }
 .drawer-section:last-child { border-bottom: 0; }
@@ -520,7 +494,6 @@ function cardColor(c: any) {
   background: var(--brand); color: #fff; font-size: 0.72rem; font-weight: 900; flex-shrink: 0;
 }
 
-/* Fields */
 .drawer-fields { display: flex; flex-direction: column; gap: 14px; }
 .dfield { display: flex; flex-direction: column; gap: 5px; }
 .dfield-full { width: 100%; }
@@ -528,7 +501,6 @@ function cardColor(c: any) {
 .dfield .req { color: var(--danger); }
 .dfield-hint { font-size: 0.74rem; color: var(--muted); }
 
-/* Type selector */
 .type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .type-opt {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -541,7 +513,6 @@ function cardColor(c: any) {
 .type-opt:hover { border-color: var(--brand); color: var(--brand); }
 .type-opt-active { border-color: var(--brand) !important; background: rgba(249,115,22,.06) !important; color: var(--brand) !important; }
 
-/* Color palette */
 .color-palette { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .color-dot {
   width: 28px; height: 28px; border-radius: 50%; border: 3px solid transparent;
@@ -568,7 +539,6 @@ function cardColor(c: any) {
 .color-preview-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
 .color-preview-label { font-size: 0.8rem; color: var(--dark); font-weight: 500; }
 
-/* Thumb preview */
 .thumb-preview-wrap {
   display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
   padding: 10px; background: var(--surface); border-radius: var(--r);
@@ -577,7 +547,6 @@ function cardColor(c: any) {
 .thumb-preview-img { width: 72px; height: 42px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .thumb-preview-label { font-size: 0.76rem; color: var(--muted); }
 
-/* Toggle */
 .toggle-row {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px 16px; background: var(--surface); border-radius: var(--r-lg);
@@ -600,7 +569,6 @@ function cardColor(c: any) {
 }
 .toggle-btn-on .toggle-thumb { transform: translateX(20px); }
 
-/* Footer */
 .drawer-footer {
   display: flex; align-items: center; gap: 10px; padding: 16px 24px;
   border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
@@ -614,13 +582,11 @@ function cardColor(c: any) {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity .25s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-right-enter-active, .slide-right-leave-active { transition: transform .3s cubic-bezier(0.32,0.72,0,1); }
 .slide-right-enter-from, .slide-right-leave-to { transform: translateX(100%); }
 
-/* Responsive */
 @media (max-width: 600px) {
   .ac-topbar { flex-direction: column; align-items: stretch; }
   .ac-grid { grid-template-columns: 1fr; }

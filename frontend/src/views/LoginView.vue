@@ -11,13 +11,11 @@ const auth = useAuthStore()
 const route = useRoute()
 const tab = ref<'login' | 'register' | 'forgot'>('login')
 
-// Login state
 const email = ref('')
 const password = ref('')
 const showPass = ref(false)
 const loading = ref(false)
 
-// Register state
 const regName = ref('')
 const regEmail = ref('')
 const regPassword = ref('')
@@ -26,7 +24,7 @@ const showRegPass = ref(false)
 const regRole = ref('user')
 const regLoading = ref(false)
 
-// Forgot password state
+
 const forgotEmail = ref('')
 const forgotLoading = ref(false)
 const forgotStep = ref<1 | 2>(1)
@@ -35,10 +33,8 @@ const newPassword = ref('')
 const newPasswordConfirm = ref('')
 const showNewPass = ref(false)
 
-// Validation helpers
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
-// Password strength calculation
 const passStrength = computed(() => {
   const p = regPassword.value
   if (!p) return 0
@@ -230,7 +226,6 @@ async function resetPassword() {
         </div>
 
         <Transition name="fade-slide" mode="out-in">
-          <!-- LOGIN FORM -->
           <form v-if="tab === 'login'" @submit.prevent="submit" class="auth-form">
             <div class="form-group">
               <label>Correo electrónico</label>
@@ -262,7 +257,6 @@ async function resetPassword() {
             </p>
           </form>
 
-          <!-- REGISTER FORM -->
           <form v-else-if="tab === 'register'" @submit.prevent="register" class="auth-form">
             <div class="form-group">
               <label>Nombre completo</label>
@@ -282,7 +276,7 @@ async function resetPassword() {
                     {{ showRegPass ? 'Ocultar' : 'Ver' }}
                   </button>
                 </div>
-                <!-- Password Strength -->
+          
                 <div class="pass-strength" v-if="regPassword">
                   <div class="strength-bar">
                     <div class="strength-fill" :style="{ width: `${passStrength}%`, backgroundColor: strengthColor }"></div>
@@ -331,7 +325,6 @@ async function resetPassword() {
             </p>
           </form>
 
-          <!-- FORGOT PASSWORD FORM - PASO 1: ingresar correo -->
           <form v-else-if="tab === 'forgot' && forgotStep === 1" @submit.prevent="forgotPassword" class="auth-form forgot-form">
             <div class="forgot-header">
               <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
@@ -353,7 +346,6 @@ async function resetPassword() {
             </button>
           </form>
 
-          <!-- FORGOT PASSWORD FORM - PASO 2: ingresar código y nueva contraseña -->
           <form v-else-if="tab === 'forgot' && forgotStep === 2" @submit.prevent="resetPassword" class="auth-form forgot-form">
             <div class="forgot-header">
               <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3-8.57A2 2 0 012.02 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
