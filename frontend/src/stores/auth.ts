@@ -39,5 +39,17 @@ export const useAuthStore = defineStore('auth', () => {
     setTimeout(() => router.push('/login'), 800)
   }
 
-  return { token, user, isLoggedIn, isAdmin, isInstructor, login, logout }
+  function handleSessionExpired() {
+    const hadToken = !!token.value
+    token.value = null
+    user.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    if (hadToken) {
+      toast.warning('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'Sesión expirada')
+      setTimeout(() => router.push('/login'), 2000)
+    }
+  }
+
+  return { token, user, isLoggedIn, isAdmin, isInstructor, login, logout, handleSessionExpired }
 })

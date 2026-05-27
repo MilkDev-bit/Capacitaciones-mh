@@ -44,7 +44,7 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
-	// A01: el rol admin nunca puede asignarse por la API pública
+
 	role := "user"
 	if req.Role == "instructor" {
 		role = "instructor"
@@ -76,13 +76,13 @@ func Login(c *gin.Context) {
 		`SELECT id, name, email, password_hash, role FROM users WHERE email=$1`, req.Email,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role)
 	if err != nil {
-		// A09: registrar intento fallido sin revelar si el email existe
+
 		log.Printf("[AUTH] login fallido (usuario no encontrado): ip=%s", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		// A09: registrar intento fallido
+
 		log.Printf("[AUTH] login fallido (contraseña incorrecta): ip=%s", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
@@ -96,7 +96,9 @@ func Login(c *gin.Context) {
 	})
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "changeme_secret_key_32chars_long!!"
+		log.Printf("[AUTH] JWT_SECRET no configurado")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de configuración del servidor"})
+		return
 	}
 	signed, err := token.SignedString([]byte(secret))
 	if err != nil {
@@ -109,7 +111,6 @@ func Login(c *gin.Context) {
 	})
 }
 
-// ForgotPassword genera un código de 6 chars y lo envía al correo del usuario.
 func ForgotPassword(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -119,16 +120,13 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Verificar que el usuario existe (sin revelar si no existe)
 	var userID string
 	err := db.DB.QueryRow(`SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
 	if err != nil {
-		// No revelar si el email está registrado (anti-enumeración)
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}
 
-	// Generar código alfanumérico de 6 chars (misma entropía que generateCode)
 	code := fmt.Sprintf("%s-%s", generateCode(3), generateCode(3))
 	hash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.DefaultCost)
 	if err != nil {
@@ -136,7 +134,6 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Eliminar tokens previos del mismo email y guardar el nuevo
 	db.DB.Exec(`DELETE FROM password_resets WHERE email=$1`, req.Email)
 	_, err = db.DB.Exec(
 		`INSERT INTO password_resets(email, code_hash, expires_at) VALUES($1,$2,$3)`,
@@ -157,7 +154,6 @@ func ForgotPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-// ResetPassword verifica el código y actualiza la contraseña.
 func ResetPassword(c *gin.Context) {
 	var req struct {
 		Email       string `json:"email" binding:"required,email"`
@@ -192,14 +188,25 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	_, err = db.DB.Exec(`UPDATE users SET password_hash=$1 WHERE email=$2`, string(hash), req.Email)
+	tx, err := db.DB.Begin()
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		return
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec(`UPDATE users SET password_hash=$1 WHERE email=$2`, string(hash), req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la contraseña"})
 		return
 	}
-
-	// Marcar el token como usado
-	db.DB.Exec(`UPDATE password_resets SET used=true WHERE id=$1`, resetID)
+	if _, err = tx.Exec(`UPDATE password_resets SET used=true WHERE id=$1`, resetID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

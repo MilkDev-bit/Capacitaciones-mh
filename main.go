@@ -11,6 +11,7 @@ import (
 	"Prueba-Go/internal/handlers"
 	"Prueba-Go/internal/middleware"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,7 +33,7 @@ func main() {
 	}
 
 	if os.Getenv("JWT_SECRET") == "" {
-		log.Println("[SECURITY] JWT_SECRET no definido — la clave de firma es conocida. Configura esta variable en producción.")
+		log.Fatal("[SECURITY] JWT_SECRET no definido — configura esta variable antes de arrancar")
 	}
 
 	r := gin.Default()
@@ -42,6 +43,13 @@ func main() {
 		allowedOrigin = "http://localhost:5173"
 	}
 
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{allowedOrigin},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+		MaxAge:       12 * time.Hour,
+	}))
+
 	r.Use(func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
 		if !strings.HasPrefix(c.Request.URL.Path, "/uploads/documents/") {
@@ -49,13 +57,6 @@ func main() {
 		}
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Header("Access-Control-Allow-Origin", allowedOrigin)
-		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type")
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
 		c.Next()
 	})
 
@@ -71,8 +72,8 @@ func main() {
 		api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 
 		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute)
-		registerLimiter := middleware.NewRateLimiter(5, time.Hour)    
-		forgotLimiter := middleware.NewRateLimiter(5, 15*time.Minute) 
+		registerLimiter := middleware.NewRateLimiter(5, time.Hour)
+		forgotLimiter := middleware.NewRateLimiter(5, 15*time.Minute)
 		resetLimiter := middleware.NewRateLimiter(10, 15*time.Minute)
 		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
 		api.POST("/login", loginLimiter.Middleware(), handlers.Login)

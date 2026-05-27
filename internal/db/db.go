@@ -15,8 +15,6 @@ var DB *sql.DB
 func Connect() {
 	var dsn string
 
-	// Railway inyecta DATABASE_URL automáticamente al vincular el plugin de PostgreSQL.
-	// lib/pq acepta la URL directamente, que ya incluye los parámetros SSL de Railway.
 	if url := os.Getenv("DATABASE_URL"); url != "" {
 		dsn = url
 	} else {
@@ -34,7 +32,11 @@ func Connect() {
 	if err != nil {
 		log.Fatalf("Error abriendo base de datos: %v", err)
 	}
-	// Retry ping hasta 10 intentos (Railway puede tardar unos segundos en levantar el plugin de PostgreSQL)
+
+	DB.SetMaxOpenConns(25)
+	DB.SetMaxIdleConns(25)
+	DB.SetConnMaxLifetime(5 * time.Minute)
+
 	for i := 1; i <= 10; i++ {
 		if err = DB.Ping(); err == nil {
 			log.Println("Conexión a PostgreSQL exitosa")
