@@ -6,7 +6,7 @@ import { toast } from '../utils/toast'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
-  const user = ref<{ id: string; name: string; email: string; role: string } | null>(
+  const user = ref<{ id: string; name: string; email: string; role: string; avatar_url?: string } | null>(
     JSON.parse(localStorage.getItem('user') || 'null')
   )
 

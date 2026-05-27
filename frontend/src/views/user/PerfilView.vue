@@ -2,6 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
+import { useAuthStore } from '../../stores/auth'
+
+const auth = useAuthStore()
 
 const perfil = ref<any>(null)
 const stats = ref<any>({})
@@ -43,6 +46,10 @@ async function load() {
     form.value.bio = perfil.value.bio || ''
     form.value.phone = perfil.value.phone || ''
     form.value.specialty = perfil.value.specialty || ''
+    if (auth.user && perfil.value.avatar_url) {
+      auth.user = { ...auth.user, avatar_url: perfil.value.avatar_url }
+      localStorage.setItem('user', JSON.stringify(auth.user))
+    }
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'No pudimos cargar tu perfil')
   } finally {
@@ -107,6 +114,10 @@ async function uploadAvatar(e: Event) {
     fd.append('file', file)
     const res = await api.post('/perfil/avatar', fd)
     if (perfil.value) perfil.value.avatar_url = res.data.url
+    if (auth.user) {
+      auth.user = { ...auth.user, avatar_url: res.data.url }
+      localStorage.setItem('user', JSON.stringify(auth.user))
+    }
     toast.success('Foto de perfil actualizada')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al subir imagen')

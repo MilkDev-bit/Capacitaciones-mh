@@ -61,13 +61,19 @@ function initials(name: string) {
         <div class="topbar-right">
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">
-            <div class="topbar-avatar">{{ initials(auth.user?.name || '') }}</div>
+            <div class="topbar-avatar">
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="avatar-img" alt="avatar" />
+              <template v-else>{{ initials(auth.user?.name || '') }}</template>
+            </div>
             <span class="topbar-name">{{ (auth.user?.name || '').slice(0, 20) }}</span>
             <svg class="topbar-chevron" :class="{ open: profileOpen }" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
             <Transition name="slide-down">
               <div v-if="profileOpen" class="profile-dropdown" @click.stop>
                 <div class="pd-header">
-                  <div class="pd-avatar">{{ initials(auth.user?.name || '') }}</div>
+                  <div class="pd-avatar">
+                    <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="avatar-img" alt="avatar" />
+                    <template v-else>{{ initials(auth.user?.name || '') }}</template>
+                  </div>
                   <div class="pd-info">
                     <strong>{{ auth.user?.name }}</strong>
                     <span>{{ auth.user?.email }}</span>
