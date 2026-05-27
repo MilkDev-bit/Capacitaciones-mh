@@ -327,8 +327,12 @@ function timeAgo(dateStr: string) {
 }
 
 function fileUrl(path: string) {
-  // path ya viene con /uploads/... desde el backend
-  return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  // path ya viene con /uploads/... desde el backend.
+  // Si VITE_API_URL incluye /api, lo removemos para construir bien URLs de archivos estáticos.
+  const base = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '')
+  return `${base}${path}`
 }
 
 function getEmbedUrl(url: string): string {

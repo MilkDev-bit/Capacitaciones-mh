@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"Prueba-Go/internal/db"
@@ -47,8 +48,10 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		// A02: security headers
 		c.Header("X-Content-Type-Options", "nosniff")
-		// Necesario para permitir previsualizaciones internas (PDF/documentos) en iframes del mismo origen.
-		c.Header("X-Frame-Options", "SAMEORIGIN")
+		// Chrome puede bloquear el visor PDF embebido si el archivo también lleva X-Frame-Options.
+		if !strings.HasPrefix(c.Request.URL.Path, "/uploads/documents/") {
+			c.Header("X-Frame-Options", "SAMEORIGIN")
+		}
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		// CORS
