@@ -102,14 +102,17 @@ async function createLesson() {
   fd.append("orden", String(lessons.value.length));
   if (createFile.value) fd.append("file", createFile.value);
 
+  const loadingToast = toast.loading("Creando lección...");
   try {
     await api.post(`/instructor/capacitaciones/${props.capId}/lecciones`, fd);
+    loadingToast.close();
     toast.success("Lección creada");
     showCreate.value = false;
     createForm.value = { title: "", description: "", type: "video", content: "", duracion_min: 0 };
     createFile.value = null;
     fetchLessons();
   } catch (e: any) {
+    loadingToast.close();
     toast.error("Error al crear");
   }
 }
