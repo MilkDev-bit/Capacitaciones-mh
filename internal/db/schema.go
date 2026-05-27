@@ -200,6 +200,25 @@ CREATE TABLE IF NOT EXISTS password_resets (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
+
+CREATE INDEX IF NOT EXISTS idx_preguntas_examen_id ON preguntas(examen_id);
+CREATE INDEX IF NOT EXISTS idx_opciones_pregunta_id ON opciones(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_respuestas_user_id ON respuestas(user_id);
+CREATE INDEX IF NOT EXISTS idx_respuestas_examen_id ON respuestas(examen_id);
+CREATE INDEX IF NOT EXISTS idx_respuestas_pregunta_id ON respuestas(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_lecciones_capacitacion_id ON lecciones(capacitacion_id);
+CREATE INDEX IF NOT EXISTS idx_progreso_user_id ON progreso_lecciones(user_id);
+CREATE INDEX IF NOT EXISTS idx_progreso_leccion_id ON progreso_lecciones(leccion_id);
+CREATE INDEX IF NOT EXISTS idx_inscripciones_user_id ON inscripciones(user_id);
+CREATE INDEX IF NOT EXISTS idx_inscripciones_capacitacion_id ON inscripciones(capacitacion_id);
+CREATE INDEX IF NOT EXISTS idx_asignaciones_user_id ON asignaciones(user_id);
+CREATE INDEX IF NOT EXISTS idx_asignaciones_examen_id ON asignaciones(examen_id);
+CREATE INDEX IF NOT EXISTS idx_foro_posts_leccion_id ON foro_posts(leccion_id);
+CREATE INDEX IF NOT EXISTS idx_foro_posts_user_id ON foro_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_foro_comentarios_post_id ON foro_comentarios(post_id);
+CREATE INDEX IF NOT EXISTS idx_preguntas_int_capacitacion_id ON preguntas_intermedias(capacitacion_id);
+CREATE INDEX IF NOT EXISTS idx_respuestas_int_user_id ON respuestas_intermedias(user_id);
+CREATE INDEX IF NOT EXISTS idx_respuestas_int_pregunta_id ON respuestas_intermedias(pregunta_id);
 `
 
 func Migrate() {

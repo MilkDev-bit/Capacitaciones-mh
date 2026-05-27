@@ -14,7 +14,7 @@ type ipBucket struct {
 }
 
 type RateLimiter struct {
-	mu      sync.Mutex
+	mu      sync.RWMutex
 	buckets map[string]*ipBucket
 	max     int
 	window  time.Duration
@@ -47,9 +47,21 @@ func (rl *RateLimiter) cleanup() {
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
-		rl.mu.Lock()
-		b, ok := rl.buckets[ip]
 		now := time.Now()
+
+		rl.mu.RLock()
+		b, ok := rl.buckets[ip]
+		if ok && !now.After(b.resetAt) && b.count >= rl.max {
+			rl.mu.RUnlock()
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "demasiados intentos, intenta más tarde",
+			})
+			return
+		}
+		rl.mu.RUnlock()
+
+		rl.mu.Lock()
+		b, ok = rl.buckets[ip]
 		if !ok || now.After(b.resetAt) {
 			rl.buckets[ip] = &ipBucket{count: 1, resetAt: now.Add(rl.window)}
 			rl.mu.Unlock()
