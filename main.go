@@ -47,7 +47,8 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		// A02: security headers
 		c.Header("X-Content-Type-Options", "nosniff")
-		c.Header("X-Frame-Options", "DENY")
+		// Necesario para permitir previsualizaciones internas (PDF/documentos) en iframes del mismo origen.
+		c.Header("X-Frame-Options", "SAMEORIGIN")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		// CORS
@@ -77,8 +78,8 @@ func main() {
 
 		// Auth
 		// A07: rate limiting en endpoints de autenticación
-		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute)    // 10 intentos / 15 min por IP
-		registerLimiter := middleware.NewRateLimiter(5, time.Hour)       // 5 registros / hora por IP
+		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute) // 10 intentos / 15 min por IP
+		registerLimiter := middleware.NewRateLimiter(5, time.Hour)    // 5 registros / hora por IP
 		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
 		api.POST("/login", loginLimiter.Middleware(), handlers.Login)
 		// Preview público de curso por código (sin auth, para página de invitación)

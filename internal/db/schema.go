@@ -189,6 +189,17 @@ CREATE TABLE IF NOT EXISTS foro_likes (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(post_id, user_id)
 );
+
+-- Tokens de recuperación de contraseña (códigos de 1 solo uso, 15 min de vida)
+CREATE TABLE IF NOT EXISTS password_resets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
 `
 
 func Migrate() {
