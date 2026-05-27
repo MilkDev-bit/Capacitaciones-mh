@@ -35,6 +35,7 @@ func main() {
 	if os.Getenv("JWT_SECRET") == "" {
 		log.Fatal("[SECURITY] JWT_SECRET no definido — configura esta variable antes de arrancar")
 	}
+	middleware.SetSecret([]byte(os.Getenv("JWT_SECRET")))
 
 	r := gin.Default()
 

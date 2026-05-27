@@ -7,6 +7,7 @@ import (
 	"Prueba-Go/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type createExamenRequest struct {
@@ -123,24 +124,32 @@ func GetExamen(c *gin.Context) {
 	}
 
 	rows, _ := db.DB.Query(`SELECT id, texto, COALESCE(tipo,'multiple_choice'), valor, orden FROM preguntas WHERE examen_id=$1 ORDER BY orden`, id)
-	defer rows.Close()
+	var preguntaIDs []string
 	for rows.Next() {
 		var p models.Pregunta
 		rows.Scan(&p.ID, &p.Texto, &p.Tipo, &p.Valor, &p.Orden)
-
-		if p.Tipo != "open_text" {
-			opRows, _ := db.DB.Query(`SELECT id, texto, es_correcta FROM opciones WHERE pregunta_id=$1`, p.ID)
-			for opRows.Next() {
-				var o models.Opcion
-				opRows.Scan(&o.ID, &o.Texto, &o.EsCorrecta)
-				if role != "admin" && role != "instructor" {
-					o.EsCorrecta = false
-				}
-				p.Opciones = append(p.Opciones, o)
-			}
-			opRows.Close()
-		}
 		examen.Preguntas = append(examen.Preguntas, p)
+		if p.Tipo != "open_text" {
+			preguntaIDs = append(preguntaIDs, p.ID)
+		}
+	}
+	rows.Close()
+
+	if len(preguntaIDs) > 0 {
+		opcionesMap := make(map[string][]models.Opcion)
+		opRows, _ := db.DB.Query(`SELECT id, texto, es_correcta, pregunta_id FROM opciones WHERE pregunta_id = ANY($1)`, pq.Array(preguntaIDs))
+		for opRows.Next() {
+			var o models.Opcion
+			opRows.Scan(&o.ID, &o.Texto, &o.EsCorrecta, &o.PreguntaID)
+			if role != "admin" && role != "instructor" {
+				o.EsCorrecta = false
+			}
+			opcionesMap[o.PreguntaID] = append(opcionesMap[o.PreguntaID], o)
+		}
+		opRows.Close()
+		for i := range examen.Preguntas {
+			examen.Preguntas[i].Opciones = opcionesMap[examen.Preguntas[i].ID]
+		}
 	}
 
 	if role == "user" {
@@ -392,12 +401,19 @@ func SubmitExamen(c *gin.Context) {
 		return
 	}
 
+	tx, err := db.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		return
+	}
+	defer tx.Rollback()
+
 	var puntaje, puntajeMax float64
 
 	for _, r := range respuestas {
 		var valor float64
 		var tipo string
-		err := db.DB.QueryRow(
+		err := tx.QueryRow(
 			`SELECT valor, COALESCE(tipo,'multiple_choice') FROM preguntas WHERE id=$1 AND examen_id=$2`, r.PreguntaID, examenID,
 		).Scan(&valor, &tipo)
 		if err != nil {
@@ -406,7 +422,7 @@ func SubmitExamen(c *gin.Context) {
 		puntajeMax += valor
 
 		if tipo == "open_text" {
-			db.DB.Exec(`
+			tx.Exec(`
 				INSERT INTO respuestas(user_id, examen_id, pregunta_id, respuesta_texto)
 				VALUES($1,$2,$3,$4)
 				ON CONFLICT(user_id, examen_id, pregunta_id) DO UPDATE SET respuesta_texto=$4, respondido_at=NOW()
@@ -414,19 +430,24 @@ func SubmitExamen(c *gin.Context) {
 		} else {
 			var esCorrecta bool
 			if r.OpcionID != "" {
-				db.DB.QueryRow(
+				tx.QueryRow(
 					`SELECT es_correcta FROM opciones WHERE id=$1 AND pregunta_id=$2`, r.OpcionID, r.PreguntaID,
 				).Scan(&esCorrecta)
 				if esCorrecta {
 					puntaje += valor
 				}
-				db.DB.Exec(`
+				tx.Exec(`
 					INSERT INTO respuestas(user_id, examen_id, pregunta_id, opcion_id)
 					VALUES($1,$2,$3,$4)
 					ON CONFLICT(user_id, examen_id, pregunta_id) DO UPDATE SET opcion_id=$4, respondido_at=NOW()
 				`, userID, examenID, r.PreguntaID, r.OpcionID)
 			}
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		return
 	}
 
 	porcentaje := 0.0

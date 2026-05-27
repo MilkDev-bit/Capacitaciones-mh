@@ -9,6 +9,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret []byte
+
+func SetSecret(s []byte) {
+	jwtSecret = s
+}
+
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
@@ -17,13 +23,12 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
-		secret := []byte(getSecret())
 
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return secret, nil
+			return jwtSecret, nil
 		})
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
