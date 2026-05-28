@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -15,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/uuid"
 )
 
@@ -78,26 +79,77 @@ func configureBucketCORS() {
 	if allowedOrigin == "" {
 		allowedOrigin = "*"
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	_, err := client.PutBucketCors(ctx, &s3.PutBucketCorsInput{
-		Bucket: aws.String(bucket),
-		CORSConfiguration: &s3types.CORSConfiguration{
-			CORSRules: []s3types.CORSRule{
-				{
-					AllowedOrigins: []string{allowedOrigin},
-					AllowedMethods: []string{"PUT", "GET", "HEAD"},
-					AllowedHeaders: []string{"content-type", "cache-control"},
-					MaxAgeSeconds:  aws.Int32(86400),
+
+	// Prefer Cloudflare's own API — requires CF_ACCOUNT_ID + CF_API_TOKEN with
+	// "Cloudflare R2 Storage: Edit" permission. More reliable than S3 PutBucketCors
+	// which requires an "Admin Read & Write" S3 token.
+	accountID := os.Getenv("CF_ACCOUNT_ID")
+	apiToken := os.Getenv("CF_API_TOKEN")
+	if accountID != "" && apiToken != "" {
+		if err := configureCORSViaCloudflareAPI(accountID, apiToken, allowedOrigin); err != nil {
+			slog.Error("R2: CORS vía Cloudflare API falló", "error", err)
+		} else {
+			slog.Info("R2: CORS configurado vía Cloudflare API", "origin", allowedOrigin)
+		}
+		return
+	}
+
+	slog.Warn("R2: CF_ACCOUNT_ID y CF_API_TOKEN no configurados — configura CORS manualmente en el dashboard de Cloudflare R2 o agrega esas variables de entorno")
+}
+
+// configureCORSViaCloudflareAPI uses Cloudflare's REST API to set the bucket CORS
+// policy. The API token must have the 'Cloudflare R2 Storage: Edit' permission.
+func configureCORSViaCloudflareAPI(accountID, apiToken, allowedOrigin string) error {
+	type corsAllowed struct {
+		Origins []string `json:"origins"`
+		Methods []string `json:"methods"`
+		Headers []string `json:"headers"`
+	}
+	type corsRule struct {
+		Allowed       corsAllowed `json:"allowed"`
+		MaxAgeSeconds int         `json:"maxAgeSeconds"`
+	}
+	type corsPayload struct {
+		Rules []corsRule `json:"rules"`
+	}
+
+	payload := corsPayload{
+		Rules: []corsRule{
+			{
+				Allowed: corsAllowed{
+					Origins: []string{allowedOrigin},
+					Methods: []string{"PUT", "GET", "HEAD"},
+					Headers: []string{"content-type"},
 				},
+				MaxAgeSeconds: 86400,
 			},
 		},
-	})
-	if err != nil {
-		slog.Warn("R2: no se pudo configurar CORS", "error", err)
-	} else {
-		slog.Info("R2: CORS configurado", "origin", allowedOrigin)
 	}
+	body, _ := json.Marshal(payload)
+
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/r2/buckets/%s/cors",
+		accountID, bucket)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		var respBody bytes.Buffer
+		respBody.ReadFrom(resp.Body)
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, respBody.String())
+	}
+	return nil
 }
 
 func UploadFile(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error) {
