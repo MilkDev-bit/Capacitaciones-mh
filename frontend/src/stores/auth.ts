@@ -1,13 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import * as Sentry from '@sentry/vue'
 import api from '../api'
 import router from '../router'
 import { toast } from '../utils/toast'
 
+interface UserProfile {
+  id: string
+  name: string
+  email: string
+  role: string
+  avatar_url?: string
+}
+
+interface LoginResponse {
+  user: UserProfile
+}
+
 export const useAuthStore = defineStore('auth', () => {
   // El token JWT vive en una cookie HttpOnly — no accesible desde JS.
   // Solo almacenamos el perfil del usuario en localStorage (no es sensible).
-  const user = ref<{ id: string; name: string; email: string; role: string; avatar_url?: string } | null>(
+  const user = ref<UserProfile | null>(
     (() => {
       try {
         const raw = localStorage.getItem('user')
@@ -25,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isInstructor = computed(() => user.value?.role === 'instructor')
 
   async function login(email: string, password: string) {
-    const res = await api.post('/login', { email, password })
+    const res = await api.post<LoginResponse>('/login', { email, password })
     // El servidor ya seteó la cookie HttpOnly; solo guardamos el perfil.
     user.value = res.data.user
     localStorage.setItem('user', JSON.stringify(res.data.user))
@@ -40,7 +53,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     if (!await toast.confirm('¿Deseas cerrar sesión?', 'Cerrar sesión')) return
-    await api.post('/logout').catch(() => {}) // limpia la cookie en el servidor
+    await api.post('/logout').catch((err) => {
+      Sentry.captureException(err, { tags: { action: 'logout' } })
+    }) // limpia la cookie en el servidor
     user.value = null
     localStorage.removeItem('user')
     toast.success('¡Hasta pronto! Sesión cerrada correctamente.', 'Hasta pronto')

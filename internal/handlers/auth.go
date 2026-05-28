@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,12 +51,18 @@ func Register(c *gin.Context) {
 		role = "instructor"
 	}
 	var id string
-	err = db.DB.QueryRow(
+	err = db.DB.QueryRowContext(
+		c.Request.Context(),
 		`INSERT INTO users(name,email,password_hash,role) VALUES($1,$2,$3,$4) RETURNING id`,
 		req.Name, req.Email, string(hash), role,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "el email ya está registrado"})
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			c.JSON(http.StatusConflict, gin.H{"error": "el email ya está registrado"})
+		} else {
+			slog.Error("Register: error al insertar usuario", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+		}
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
@@ -76,7 +83,8 @@ func Login(c *gin.Context) {
 	const dummyHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK/6xVHMa"
 
 	var user models.User
-	err := db.DB.QueryRow(
+	err := db.DB.QueryRowContext(
+		c.Request.Context(),
 		`SELECT id, name, email, password_hash, role, token_version FROM users WHERE email=$1`, req.Email,
 	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role, &user.TokenVersion)
 	if err != nil {
@@ -112,6 +120,7 @@ func Login(c *gin.Context) {
 	}
 	// Determinar si estamos en producción (Railway) para usar Secure cookie
 	secure := os.Getenv("RAILWAY_ENVIRONMENT") != ""
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("auth_token", signed, 24*60*60, "/", "", secure, true)
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{"id": user.ID, "name": user.Name, "email": user.Email, "role": user.Role},
@@ -121,6 +130,7 @@ func Login(c *gin.Context) {
 func Logout(c *gin.Context) {
 	secure := os.Getenv("RAILWAY_ENVIRONMENT") != ""
 	// MaxAge=-1 hace que el navegador elimine la cookie inmediatamente
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("auth_token", "", -1, "/", "", secure, true)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
@@ -135,7 +145,7 @@ func ForgotPassword(c *gin.Context) {
 	}
 
 	var userID string
-	err := db.DB.QueryRow(`SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
+	err := db.DB.QueryRowContext(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
@@ -148,8 +158,9 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	db.DB.Exec(`DELETE FROM password_resets WHERE email=$1`, req.Email)
-	_, err = db.DB.Exec(
+	db.DB.ExecContext(c.Request.Context(), `DELETE FROM password_resets WHERE email=$1`, req.Email) //nolint:errcheck
+	_, err = db.DB.ExecContext(
+		c.Request.Context(),
 		`INSERT INTO password_resets(email, code_hash, expires_at) VALUES($1,$2,$3)`,
 		req.Email, string(hash), time.Now().Add(15*time.Minute),
 	)
@@ -180,7 +191,8 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	var resetID, codeHash string
-	err := db.DB.QueryRow(
+	err := db.DB.QueryRowContext(
+		c.Request.Context(),
 		`SELECT id, code_hash FROM password_resets
 		 WHERE email=$1 AND used=false AND expires_at > NOW()
 		 ORDER BY created_at DESC LIMIT 1`,
@@ -202,7 +214,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	tx, err := db.DB.Begin()
+	tx, err := db.DB.BeginTx(c.Request.Context(), nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return

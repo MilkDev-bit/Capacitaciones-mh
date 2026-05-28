@@ -232,6 +232,7 @@ func main() {
 	}
 
 	db.Connect()
+	defer db.DB.Close()
 	db.Migrate()
 	storage.Init()
 
