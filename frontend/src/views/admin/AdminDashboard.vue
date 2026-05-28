@@ -37,14 +37,14 @@ async function loadData() {
   loading.value = true
   try {
     const [u, c, e, a] = await Promise.all([
-      api.get('/admin/users'),
-      api.get('/admin/capacitaciones'),
-      api.get('/admin/examenes'),
+      api.get('/admin/users', { params: { limit: 500 } }),
+      api.get('/admin/capacitaciones', { params: { limit: 500 } }),
+      api.get('/admin/examenes', { params: { limit: 500 } }),
       api.get('/admin/asignaciones'),
     ])
-    users.value = u.data || []
-    capacitaciones.value = c.data || []
-    examenes.value = e.data || []
+    users.value = u.data.data || []
+    capacitaciones.value = c.data.data || []
+    examenes.value = e.data.data || []
     asignaciones.value = a.data || []
   } finally {
     loading.value = false

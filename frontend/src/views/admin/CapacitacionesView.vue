@@ -10,6 +10,9 @@ const saving = ref(false)
 const showDrawer = ref(false)
 const editingId = ref<string | null>(null)
 const search = ref('')
+const page = ref(1)
+const totalPages = ref(1)
+const limit = 20
 
 const PRESET_COLORS = [
   { hex: '#f97316', name: 'Naranja' },
@@ -52,8 +55,9 @@ const filtered = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const res = await api.get('/admin/capacitaciones')
-    capacitaciones.value = res.data || []
+    const res = await api.get('/admin/capacitaciones', { params: { page: page.value, limit } })
+    capacitaciones.value = res.data.data || []
+    totalPages.value = Math.ceil((res.data.total || 0) / limit) || 1
   } finally {
     loading.value = false
   }
@@ -216,6 +220,12 @@ function cardColor(c: any) {
       <h3>{{ search ? 'Sin resultados' : 'No hay capacitaciones' }}</h3>
       <p>{{ search ? 'Prueba con otro termino de busqueda.' : 'Crea la primera capacitacion para empezar.' }}</p>
       <button v-if="!search" class="btn btn-primary" @click="openCreate">Crear primera capacitacion</button>
+    </div>
+
+    <div v-if="totalPages > 1" class="pagination-controls" style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+      <button class="btn btn-secondary" :disabled="page <= 1" @click="page--; load()">← Anterior</button>
+      <span style="line-height:2">Página {{ page }} / {{ totalPages }}</span>
+      <button class="btn btn-secondary" :disabled="page >= totalPages" @click="page++; load()">Siguiente →</button>
     </div>
   </div>
 

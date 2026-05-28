@@ -12,6 +12,7 @@ import (
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -69,7 +70,8 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorListCapacitaciones: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -114,18 +116,16 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "tipo de archivo no permitido para el formato seleccionado"})
 			return
 		}
-		newName := uuid.NewString() + ext
-		var dest string
+		prefix := "documents"
 		if capType == "video" {
-			dest = filepath.Join("uploads", "videos", newName)
-		} else {
-			dest = filepath.Join("uploads", "documents", newName)
+			prefix = "videos"
 		}
-		if err := c.SaveUploadedFile(file, dest); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
+		filePath, err = storage.UploadMultipart(c.Request.Context(), file, prefix)
+		if err != nil {
+			log.Printf("[ERROR] InstructorCreateCapacitacion upload file: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
-		filePath = "/" + filepath.ToSlash(dest)
 	}
 
 	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
@@ -137,10 +137,10 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "miniatura: formato no permitido (jpg, png, webp)"})
 			return
 		}
-		newName := uuid.NewString() + ext
-		dest := filepath.Join("uploads", "thumbnails", newName)
-		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
-			thumbnailPath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
+			thumbnailPath = u
+		} else {
+			log.Printf("[WARN] InstructorCreateCapacitacion thumbnail upload: %v", e)
 		}
 	}
 
@@ -188,26 +188,23 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 
 	file, err := c.FormFile("file")
 	if err == nil {
-		ext := strings.ToLower(filepath.Ext(file.Filename))
-		newName := uuid.NewString() + ext
-		var dest string
+		prefix := "documents"
 		if capType == "video" {
-			dest = filepath.Join("uploads", "videos", newName)
-		} else {
-			dest = filepath.Join("uploads", "documents", newName)
+			prefix = "videos"
 		}
-		if err := c.SaveUploadedFile(file, dest); err == nil {
-			currentFilePath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), file, prefix); e == nil {
+			currentFilePath = u
+		} else {
+			log.Printf("[WARN] InstructorUpdateCapacitacion file upload: %v", e)
 		}
 	}
 
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
-		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
-		newName := uuid.NewString() + ext
-		dest := filepath.Join("uploads", "thumbnails", newName)
-		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
-			currentThumbPath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
+			currentThumbPath = u
+		} else {
+			log.Printf("[WARN] InstructorUpdateCapacitacion thumbnail upload: %v", e)
 		}
 	} else if c.PostForm("remove_thumbnail") == "true" {
 		currentThumbPath = ""
@@ -255,7 +252,8 @@ func InstructorTogglePublic(c *gin.Context) {
 	}
 	_, err = db.DB.Exec(`UPDATE capacitaciones SET is_public=$1 WHERE id=$2`, !current, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorTogglePublic: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"is_public": !current})
@@ -268,7 +266,8 @@ func InstructorListExamenes(c *gin.Context) {
 		FROM examenes WHERE instructor_id=$1 ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorListExamenes: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -295,7 +294,8 @@ func InstructorCreateExamen(c *gin.Context) {
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreateExamen tx.Begin: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer tx.Rollback()
@@ -306,7 +306,8 @@ func InstructorCreateExamen(c *gin.Context) {
 		req.Title, req.Description, instructorID, req.CapacitacionID,
 	).Scan(&examenID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreateExamen insert: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
@@ -321,7 +322,8 @@ func InstructorCreateExamen(c *gin.Context) {
 			examenID, p.Texto, tipo, p.Valor, p.Orden,
 		).Scan(&preguntaID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("[ERROR] InstructorCreateExamen insert pregunta: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 			return
 		}
 		if tipo != "open_text" {
@@ -331,7 +333,8 @@ func InstructorCreateExamen(c *gin.Context) {
 					preguntaID, o.Texto, o.EsCorrecta,
 				)
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					log.Printf("[ERROR] InstructorCreateExamen insert opcion: %v", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 					return
 				}
 			}
@@ -339,7 +342,8 @@ func InstructorCreateExamen(c *gin.Context) {
 	}
 
 	if err = tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreateExamen commit: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": examenID})
@@ -350,7 +354,8 @@ func InstructorDeleteExamen(c *gin.Context) {
 	id := c.Param("id")
 	res, err := db.DB.Exec(`DELETE FROM examenes WHERE id=$1 AND instructor_id=$2`, id, instructorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorDeleteExamen: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	n, _ := res.RowsAffected()
@@ -372,7 +377,8 @@ func InstructorListEstudiantes(c *gin.Context) {
 		ORDER BY u.name
 	`, instructorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorListEstudiantes: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -441,7 +447,8 @@ func ListCursosPublicos(c *gin.Context) {
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListCursosPublicos: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -476,7 +483,8 @@ func Inscribirse(c *gin.Context) {
 		userID, capID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Inscribirse: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
@@ -508,7 +516,8 @@ func UnirseConCodigo(c *gin.Context) {
 		userID, cap.ID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] UnirseConCodigo: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -538,7 +547,8 @@ func InstructorResetCodigo(c *gin.Context) {
 	}
 	_, err = db.DB.Exec(`UPDATE capacitaciones SET codigo_acceso=$1 WHERE id=$2`, newCode, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorResetCodigo update: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"codigo_acceso": newCode})

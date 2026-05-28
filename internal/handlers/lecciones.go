@@ -1,15 +1,14 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
-	"path/filepath"
-	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func InstructorListLecciones(c *gin.Context) {
@@ -31,7 +30,8 @@ func InstructorListLecciones(c *gin.Context) {
 		       COALESCE(file_path,''), COALESCE(content,''), orden, COALESCE(duracion_min,0), created_at
 		FROM lecciones WHERE capacitacion_id=$1 ORDER BY orden`, capID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorListLecciones: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -74,19 +74,17 @@ func InstructorCreateLeccion(c *gin.Context) {
 	var filePath string
 	file, err := c.FormFile("file")
 	if err == nil {
-		ext := strings.ToLower(filepath.Ext(file.Filename))
-		newName := uuid.NewString() + ext
-		var dest string
+		prefix := "documents"
 		if lecType == "video" {
-			dest = filepath.Join("uploads", "videos", newName)
-		} else {
-			dest = filepath.Join("uploads", "documents", newName)
+			prefix = "videos"
 		}
-		if err := c.SaveUploadedFile(file, dest); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
+		var e error
+		filePath, e = storage.UploadMultipart(c.Request.Context(), file, prefix)
+		if e != nil {
+			log.Printf("[ERROR] InstructorCreateLeccion upload: %v", e)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
-		filePath = "/" + filepath.ToSlash(dest)
 	}
 
 	if orden == "" {
@@ -103,7 +101,8 @@ func InstructorCreateLeccion(c *gin.Context) {
 		capID, title, description, lecType, filePath, content, orden, duracion,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreateLeccion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
@@ -144,16 +143,14 @@ func InstructorUpdateLeccion(c *gin.Context) {
 
 	file, err := c.FormFile("file")
 	if err == nil {
-		ext := strings.ToLower(filepath.Ext(file.Filename))
-		newName := uuid.NewString() + ext
-		var dest string
+		prefix := "documents"
 		if lecType == "video" {
-			dest = filepath.Join("uploads", "videos", newName)
-		} else {
-			dest = filepath.Join("uploads", "documents", newName)
+			prefix = "videos"
 		}
-		if err := c.SaveUploadedFile(file, dest); err == nil {
-			currentFilePath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), file, prefix); e == nil {
+			currentFilePath = u
+		} else {
+			log.Printf("[WARN] InstructorUpdateLeccion upload: %v", e)
 		}
 	}
 
@@ -166,7 +163,8 @@ func InstructorUpdateLeccion(c *gin.Context) {
 		title, description, lecType, content, duracion, currentFilePath, lecID, capID,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorUpdateLeccion: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
@@ -236,7 +234,8 @@ func GetLeccionesConProgreso(c *gin.Context) {
 		WHERE l.capacitacion_id = $1
 		ORDER BY l.orden`, capID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] GetLeccionesConProgreso: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()

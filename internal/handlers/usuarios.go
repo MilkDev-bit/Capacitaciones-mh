@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -58,7 +59,8 @@ func ListAsignaciones(c *gin.Context) {
 		rows, err = db.DB.Query(`SELECT id, user_id, capacitacion_id, examen_id, assigned_at FROM asignaciones`)
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListAsignaciones: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
@@ -81,9 +83,13 @@ func ListAsignaciones(c *gin.Context) {
 }
 
 func ListUsers(c *gin.Context) {
-	rows, err := db.DB.Query(`SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC`)
+	limit, offset, page := parsePagination(c)
+	var total int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
+	rows, err := db.DB.Query(`SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListUsers: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -93,5 +99,5 @@ func ListUsers(c *gin.Context) {
 		rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.CreatedAt)
 		result = append(result, u)
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"data": result, "total": total, "page": page, "limit": limit})
 }

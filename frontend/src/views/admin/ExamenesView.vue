@@ -7,6 +7,9 @@ const examenes = ref<any[]>([])
 const showForm = ref(false)
 const loading = ref(false)
 const search = ref('')
+const page = ref(1)
+const totalPages = ref(1)
+const limit = 20
 
 const form = ref({
   title: '',
@@ -54,8 +57,9 @@ function setCorrecta(pi: number, oi: number) {
 async function load() {
   loading.value = true
   try {
-    const res = await api.get('/admin/examenes')
-    examenes.value = res.data || []
+    const res = await api.get('/admin/examenes', { params: { page: page.value, limit } })
+    examenes.value = res.data.data || []
+    totalPages.value = Math.ceil((res.data.total || 0) / limit) || 1
   } finally {
     loading.value = false
   }
@@ -200,6 +204,12 @@ async function eliminar(id: string) {
       <h3>{{ search ? 'Sin resultados' : 'No hay exámenes' }}</h3>
       <p>{{ search ? 'Prueba con otro término.' : 'Crea el primer examen de la plataforma.' }}</p>
       <button v-if="!search" class="btn btn-primary" @click="showForm = true">Crear primer examen</button>
+    </div>
+
+    <div v-if="totalPages > 1" class="pagination-controls" style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+      <button class="btn btn-secondary" :disabled="page <= 1" @click="page--; load()">← Anterior</button>
+      <span style="line-height:2">Página {{ page }} / {{ totalPages }}</span>
+      <button class="btn btn-secondary" :disabled="page >= totalPages" @click="page++; load()">Siguiente →</button>
     </div>
   </div>
 </template>

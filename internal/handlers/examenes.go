@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -39,7 +40,8 @@ func CreateExamen(c *gin.Context) {
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateExamen tx.Begin: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer tx.Rollback()
@@ -50,7 +52,8 @@ func CreateExamen(c *gin.Context) {
 		req.Title, req.Description, req.CapacitacionID,
 	).Scan(&examenID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateExamen insert examen: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
@@ -65,7 +68,8 @@ func CreateExamen(c *gin.Context) {
 			examenID, p.Texto, tipo, p.Valor, p.Orden,
 		).Scan(&preguntaID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("[ERROR] CreateExamen insert pregunta: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 			return
 		}
 		if tipo != "open_text" {
@@ -75,7 +79,8 @@ func CreateExamen(c *gin.Context) {
 					preguntaID, o.Texto, o.EsCorrecta,
 				)
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					log.Printf("[ERROR] CreateExamen insert opcion: %v", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 					return
 				}
 			}
@@ -83,16 +88,21 @@ func CreateExamen(c *gin.Context) {
 	}
 
 	if err = tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateExamen commit: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": examenID})
 }
 
 func ListExamenes(c *gin.Context) {
-	rows, err := db.DB.Query(`SELECT id, title, description, created_at FROM examenes ORDER BY created_at DESC`)
+	limit, offset, page := parsePagination(c)
+	var total int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM examenes`).Scan(&total)
+	rows, err := db.DB.Query(`SELECT id, title, description, created_at FROM examenes ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListExamenes: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -102,7 +112,7 @@ func ListExamenes(c *gin.Context) {
 		rows.Scan(&e.ID, &e.Title, &e.Description, &e.CreatedAt)
 		result = append(result, e)
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"data": result, "total": total, "page": page, "limit": limit})
 }
 
 func GetExamen(c *gin.Context) {
@@ -240,7 +250,8 @@ func ListExamenesUsuario(c *gin.Context) {
 		ORDER BY e.created_at DESC
 	`, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListExamenesUsuario: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -298,7 +309,8 @@ func InstructorGetResultados(c *gin.Context) {
 		ORDER BY MAX(r.respondido_at) DESC
 	`, examenID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorGetResultados: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -358,7 +370,8 @@ func InstructorGetRespuestasUsuario(c *gin.Context) {
 		ORDER BY p.orden
 	`, examenID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorGetRespuestasUsuario: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()

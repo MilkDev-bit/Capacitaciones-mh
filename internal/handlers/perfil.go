@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -140,17 +140,12 @@ func UploadAvatar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "formato no permitido (jpg, png, webp)"})
 		return
 	}
-	newName := uuid.NewString() + ext
-	dest := filepath.Join("uploads", "avatars", newName)
-	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+	url, err := storage.UploadMultipart(c.Request.Context(), file, "avatars")
+	if err != nil {
+		log.Printf("[ERROR] UploadAvatar: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
-	if err := c.SaveUploadedFile(file, dest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando imagen"})
-		return
-	}
-	url := "/" + filepath.ToSlash(dest)
 	db.DB.Exec(`UPDATE users SET avatar_url=$1 WHERE id=$2`, url, userID)
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }
@@ -171,17 +166,12 @@ func UploadCover(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "formato no permitido (jpg, png, webp)"})
 		return
 	}
-	newName := uuid.NewString() + ext
-	dest := filepath.Join("uploads", "covers", newName)
-	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+	url, err := storage.UploadMultipart(c.Request.Context(), file, "covers")
+	if err != nil {
+		log.Printf("[ERROR] UploadCover: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
-	if err := c.SaveUploadedFile(file, dest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando imagen"})
-		return
-	}
-	url := "/" + filepath.ToSlash(dest)
 	db.DB.Exec(`UPDATE users SET cover_url=$1 WHERE id=$2`, url, userID)
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }

@@ -48,12 +48,12 @@ async function load() {
       api.get('/instructor/estudiantes'),
       api.get('/instructor/capacitaciones'),
       api.get('/instructor/examenes'),
-      api.get('/instructor/users'),
+      api.get('/instructor/users', { params: { limit: 500 } }),
     ])
     estudiantes.value = estRes.data || []
     capacitaciones.value = capRes.data || []
     examenes.value = exRes.data || []
-    users.value = (usrRes.data || []).filter((u: any) => u.role === 'user')
+    users.value = (usrRes.data.data || []).filter((u: any) => u.role === 'user')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al cargar datos')
   }

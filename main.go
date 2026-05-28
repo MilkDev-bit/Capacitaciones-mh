@@ -1,31 +1,25 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/handlers"
 	"Prueba-Go/internal/middleware"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	for _, dir := range []string{
-		"uploads/videos", "uploads/documents",
-		"uploads/thumbnails", "uploads/avatars", "uploads/covers",
-		"uploads/foro",
-	} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			log.Printf("warning: no se pudo crear %s: %v", dir, err)
-		}
-	}
-
 	if os.Getenv("GIN_MODE") != "" {
 		gin.SetMode(os.Getenv("GIN_MODE"))
 	} else if os.Getenv("RAILWAY_ENVIRONMENT") != "" {
@@ -61,7 +55,6 @@ func main() {
 		c.Next()
 	})
 
-	r.Static("/uploads", "./uploads")
 	r.Static("/assets", "./frontend/dist/assets")
 	r.StaticFile("/", "./frontend/dist/index.html")
 	r.NoRoute(func(c *gin.Context) {
@@ -170,16 +163,32 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Servidor iniciado en http://localhost:%s", port)
-
-	go func() {
-		if err := r.Run(":" + port); err != nil {
-			log.Fatalf("Error en r.Run: %v", err)
-		}
-	}()
 
 	db.Connect()
 	db.Migrate()
+	storage.Init()
 
-	select {}
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+
+	go func() {
+		log.Printf("Servidor iniciado en http://localhost:%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Error iniciando servidor: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+	log.Println("Apagando servidor...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("[ERROR] Shutdown: %v", err)
+	}
+	log.Println("Servidor apagado correctamente")
 }

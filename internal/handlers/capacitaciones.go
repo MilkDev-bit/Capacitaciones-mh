@@ -9,21 +9,25 @@ import (
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func ListCapacitaciones(c *gin.Context) {
+	limit, offset, page := parsePagination(c)
+	var total int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM capacitaciones`).Scan(&total)
 	rows, err := db.DB.Query(`
 		SELECT id, title, description, type,
 		       COALESCE(file_path,''), COALESCE(content,''),
 		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''),
 		       COALESCE(color,'#f97316'), is_public,
 		       COALESCE(codigo_acceso,''), created_at
-		FROM capacitaciones ORDER BY created_at DESC`)
+		FROM capacitaciones ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListCapacitaciones: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -38,7 +42,7 @@ func ListCapacitaciones(c *gin.Context) {
 			&cap.CodigoAcceso, &createdAt)
 		result = append(result, cap)
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"data": result, "total": total, "page": page, "limit": limit})
 }
 
 func CreateCapacitacion(c *gin.Context) {
@@ -71,22 +75,20 @@ func CreateCapacitacion(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "tipo de archivo no permitido para el formato seleccionado"})
 			return
 		}
-		newName := uuid.NewString() + ext
-		var dest string
+		prefix := "documents"
 		if capType == "video" {
-			dest = filepath.Join("uploads", "videos", newName)
-		} else {
-			dest = filepath.Join("uploads", "documents", newName)
+			prefix = "videos"
 		}
-		if err := c.SaveUploadedFile(file, dest); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
+		filePath, err = storage.UploadMultipart(c.Request.Context(), file, prefix)
+		if err != nil {
+			log.Printf("[ERROR] CreateCapacitacion upload file: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
-		filePath = "/" + filepath.ToSlash(dest)
 	}
 
-	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 	var thumbnailPath string
+	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
@@ -94,10 +96,10 @@ func CreateCapacitacion(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "miniatura: formato no permitido (jpg, png, webp)"})
 			return
 		}
-		newName := uuid.NewString() + ext
-		dest := filepath.Join("uploads", "thumbnails", newName)
-		if err := c.SaveUploadedFile(thumbFile, dest); err == nil {
-			thumbnailPath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
+			thumbnailPath = u
+		} else {
+			log.Printf("[WARN] CreateCapacitacion thumbnail upload: %v", e)
 		}
 	}
 
@@ -134,11 +136,10 @@ func UpdateCapacitacion(c *gin.Context) {
 	var thumbnailPath string
 	thumbFile, err := c.FormFile("thumbnail")
 	if err == nil {
-		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
-		newName := uuid.NewString() + ext
-		dest := filepath.Join("uploads", "thumbnails", newName)
-		if saveErr := c.SaveUploadedFile(thumbFile, dest); saveErr == nil {
-			thumbnailPath = "/" + filepath.ToSlash(dest)
+		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
+			thumbnailPath = u
+		} else {
+			log.Printf("[WARN] UpdateCapacitacion thumbnail upload: %v", e)
 		}
 	}
 
@@ -155,7 +156,8 @@ func UpdateCapacitacion(c *gin.Context) {
 		)
 	}
 	if execErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": execErr.Error()})
+		log.Printf("[ERROR] UpdateCapacitacion: %v", execErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
@@ -180,7 +182,8 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListCapacitacionesUsuario: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()

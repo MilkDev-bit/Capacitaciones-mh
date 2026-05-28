@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func ListForoPosts(c *gin.Context) {
@@ -30,7 +30,8 @@ func ListForoPosts(c *gin.Context) {
 		GROUP BY p.id, u.name
 		ORDER BY p.created_at DESC`, leccionID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListForoPosts: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -73,17 +74,14 @@ func CreateForoPost(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "solo se permiten imágenes (jpg,png,webp,gif) o videos (mp4,webm,mov)"})
 			return
 		}
-		newName := uuid.NewString() + ext
-		dest := filepath.Join("uploads", "foro", newName)
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear directorio"})
+		var u string
+		u, err = storage.UploadMultipart(c.Request.Context(), file, "foro")
+		if err != nil {
+			log.Printf("[ERROR] CreateForoPost upload: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
-		if err := c.SaveUploadedFile(file, dest); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
-			return
-		}
-		mediaURL = "/" + filepath.ToSlash(dest)
+		mediaURL = u
 	}
 
 	var id string
@@ -93,7 +91,8 @@ func CreateForoPost(c *gin.Context) {
 		leccionID, userID, titulo, contenido, mediaURL, mediaType,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateForoPost: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
@@ -127,7 +126,8 @@ func ListForoComentarios(c *gin.Context) {
 		WHERE fc.post_id = $1
 		ORDER BY fc.created_at ASC`, postID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] ListForoComentarios: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -160,7 +160,8 @@ func CreateForoComentario(c *gin.Context) {
 		postID, userID, body.Contenido,
 	).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] CreateForoComentario: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})

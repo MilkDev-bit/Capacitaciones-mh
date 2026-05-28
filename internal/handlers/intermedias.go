@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -40,7 +41,8 @@ func InstructorListPreguntasIntermedias(c *gin.Context) {
 		SELECT id, capacitacion_id, despues_de_leccion_id, texto, tipo, orden
 		FROM preguntas_intermedias WHERE capacitacion_id=$1 ORDER BY orden`, capID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorListPreguntasIntermedias: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
@@ -84,7 +86,8 @@ func InstructorCreatePreguntaIntermedia(c *gin.Context) {
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreatePreguntaIntermedia tx.Begin: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer tx.Rollback()
@@ -96,7 +99,8 @@ func InstructorCreatePreguntaIntermedia(c *gin.Context) {
 		capID, req.DespuesDeLeccionID, req.Texto, req.Tipo, req.Orden,
 	).Scan(&pID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] InstructorCreatePreguntaIntermedia insert: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
@@ -158,7 +162,8 @@ func GetPreguntasIntermedias(c *gin.Context) {
 			ORDER BY p.orden`, capID, leccionIDParam, userID)
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] GetPreguntasIntermedias: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 	defer rows.Close()
