@@ -34,7 +34,6 @@ import router from '../router'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const fakeUser = { id: 'u1', name: 'Test User', email: 'test@test.com', role: 'user' }
-const fakeToken = 'token.jwt.fake'
 
 beforeEach(() => {
   setActivePinia(createPinia())
