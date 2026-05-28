@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
+import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import ContentTypeSelector from './ContentTypeSelector.vue'
@@ -44,9 +45,16 @@ async function saveInfo() {
     fd.append('is_public', String(form.value.is_public))
     fd.append('welcome_message', form.value.welcome_message || '')
     fd.append('color', form.value.color || '#f97316')
-    
-    if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
-    if (file.value) fd.append('file', file.value)
+
+    if (thumbnailFile.value) {
+      const thumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
+      fd.append('thumbnail_url', thumbUrl)
+    }
+    if (file.value) {
+      const prefix = form.value.type === 'video' ? 'videos' : 'documents'
+      const fileUrl = await uploadToR2(file.value, prefix)
+      fd.append('file_url', fileUrl)
+    }
 
     await api.put(`/instructor/capacitaciones/${form.value.id}`, fd)
     toast.success('Curso actualizado')

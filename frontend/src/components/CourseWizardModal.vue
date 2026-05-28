@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
+import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import ContentTypeSelector from './ContentTypeSelector.vue'
@@ -42,8 +43,9 @@ function prevStep() {
 async function guardar() {
   if (!form.value.title) { toast.error('El titulo es requerido'); return }
   loading.value = true
-  const loadingToast = file.value
-    ? toast.loading('Creando curso y subiendo archivo...')
+  const hasMedia = (form.value.type === 'video' || form.value.type === 'document') && file.value
+  const loadingToast = (hasMedia || thumbnailFile.value)
+    ? toast.loading('Subiendo archivos...')
     : null
   try {
     const fd = new FormData()
@@ -53,11 +55,17 @@ async function guardar() {
     fd.append('content', form.value.content)
     fd.append('is_public', String(form.value.is_public))
     fd.append('welcome_message', form.value.welcome_message)
-    if (file.value) fd.append('file', file.value)
-    if (thumbnailFile.value) {
-      fd.append('thumbnail', thumbnailFile.value)
-    }
     fd.append('color', form.value.color)
+
+    if (file.value && hasMedia) {
+      const prefix = form.value.type === 'video' ? 'videos' : 'documents'
+      const fileUrl = await uploadToR2(file.value, prefix)
+      fd.append('file_url', fileUrl)
+    }
+    if (thumbnailFile.value) {
+      const thumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
+      fd.append('thumbnail_url', thumbUrl)
+    }
 
     const res = await api.post('/instructor/capacitaciones', fd)
     toast.success('Curso creado')

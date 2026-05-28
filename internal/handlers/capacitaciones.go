@@ -69,8 +69,9 @@ func CreateCapacitacion(c *gin.Context) {
 		"document": {".pdf": true, ".doc": true, ".docx": true, ".pptx": true, ".xlsx": true},
 	}
 	var filePath string
-	file, err := c.FormFile("file")
-	if err == nil {
+	if fu := c.PostForm("file_url"); fu != "" {
+		filePath = fu
+	} else if file, ferr := c.FormFile("file"); ferr == nil {
 		ext := strings.ToLower(filepath.Ext(file.Filename))
 		if allowed, ok := allowedContent[capType]; ok && !allowed[ext] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "tipo de archivo no permitido para el formato seleccionado"})
@@ -80,9 +81,10 @@ func CreateCapacitacion(c *gin.Context) {
 		if capType == "video" {
 			prefix = "videos"
 		}
-		filePath, err = storage.UploadMultipart(c.Request.Context(), file, prefix)
-		if err != nil {
-			slog.Error("CreateCapacitacion: subida archivo", "error", err)
+		var uploadErr error
+		filePath, uploadErr = storage.UploadMultipart(c.Request.Context(), file, prefix)
+		if uploadErr != nil {
+			slog.Error("CreateCapacitacion: subida archivo", "error", uploadErr)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
@@ -90,8 +92,9 @@ func CreateCapacitacion(c *gin.Context) {
 
 	var thumbnailPath string
 	allowedThumb := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
-	thumbFile, err := c.FormFile("thumbnail")
-	if err == nil {
+	if tu := c.PostForm("thumbnail_url"); tu != "" {
+		thumbnailPath = tu
+	} else if thumbFile, ferr := c.FormFile("thumbnail"); ferr == nil {
 		ext := strings.ToLower(filepath.Ext(thumbFile.Filename))
 		if !allowedThumb[ext] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "miniatura: formato no permitido (jpg, png, webp)"})
@@ -105,12 +108,11 @@ func CreateCapacitacion(c *gin.Context) {
 	}
 
 	var id string
-	err = db.DB.QueryRow(
+	if err := db.DB.QueryRow(
 		`INSERT INTO capacitaciones(title, description, type, file_path, content, welcome_message, is_public, color, thumbnail_url)
 		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
 		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath,
-	).Scan(&id)
-	if err != nil {
+	).Scan(&id); err != nil {
 		slog.Error("CreateCapacitacion: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
@@ -135,8 +137,9 @@ func UpdateCapacitacion(c *gin.Context) {
 	}
 
 	var thumbnailPath string
-	thumbFile, err := c.FormFile("thumbnail")
-	if err == nil {
+	if tu := c.PostForm("thumbnail_url"); tu != "" {
+		thumbnailPath = tu
+	} else if thumbFile, ferr := c.FormFile("thumbnail"); ferr == nil {
 		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
 			thumbnailPath = u
 		} else {
