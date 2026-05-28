@@ -59,12 +59,16 @@ function close() {
 
   <aside
     :class="[
-      'fixed top-0 left-0 h-full w-60 bg-gray-900 flex flex-col z-30 transition-transform duration-300',
+      'fixed top-0 left-0 h-full w-60 bg-gray-900 flex flex-col z-30 transition-transform duration-300 overflow-hidden relative',
       open ? 'translate-x-0' : '-translate-x-full',
       'lg:translate-x-0 lg:static lg:flex',
     ]"
     aria-label="Sidebar"
   >
+    <div class="bubbles" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
 
     <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
       <div class="w-9 h-9 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
@@ -117,3 +121,38 @@ function close() {
     </div>
   </aside>
 </template>
+
+<style scoped>
+.bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.bubbles span {
+  position: absolute;
+  bottom: -80px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.16);
+  animation: sb-bubble-rise linear infinite;
+}
+.bubbles span:nth-child(1) { width: 30px; height: 30px; left: 10%;  animation-duration: 8s;   animation-delay: 0s;   }
+.bubbles span:nth-child(2) { width: 18px; height: 18px; left: 28%;  animation-duration: 6s;   animation-delay: 1.4s; }
+.bubbles span:nth-child(3) { width: 46px; height: 46px; left: 45%;  animation-duration: 11s;  animation-delay: 0.6s; background: rgba(255,255,255,.04); }
+.bubbles span:nth-child(4) { width: 14px; height: 14px; left: 62%;  animation-duration: 7s;   animation-delay: 3s;   }
+.bubbles span:nth-child(5) { width: 36px; height: 36px; left: 78%;  animation-duration: 9s;   animation-delay: 1.8s; }
+.bubbles span:nth-child(6) { width: 22px; height: 22px; left: 18%;  animation-duration: 10s;  animation-delay: 4.5s; background: rgba(249,115,22,.07); }
+.bubbles span:nth-child(7) { width: 40px; height: 40px; left: 55%;  animation-duration: 7.5s; animation-delay: 2.2s; }
+.bubbles span:nth-child(8) { width: 16px; height: 16px; left: 88%;  animation-duration: 6.5s; animation-delay: 0.9s; }
+
+@keyframes sb-bubble-rise {
+  0%   { transform: translateY(0) scale(1);    opacity: 0; }
+  12%  { opacity: .85; }
+  85%  { opacity: .5; }
+  100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+}
+
+aside > *:not(.bubbles) { position: relative; z-index: 1; }
+</style>
