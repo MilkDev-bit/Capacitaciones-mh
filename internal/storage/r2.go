@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/uuid"
 )
 
@@ -66,8 +67,36 @@ func Init() {
 
 	if bucket == "" || endpoint == "" || accessKey == "" || secretKey == "" {
 		slog.Warn("una o más variables R2 no están configuradas")
+		return
+	}
+	slog.Info("R2 inicializado", "bucket", bucket, "endpoint", endpoint)
+	go configureBucketCORS()
+}
+
+func configureBucketCORS() {
+	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+	if allowedOrigin == "" {
+		allowedOrigin = "*"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	_, err := client.PutBucketCors(ctx, &s3.PutBucketCorsInput{
+		Bucket: aws.String(bucket),
+		CORSConfiguration: &s3types.CORSConfiguration{
+			CORSRules: []s3types.CORSRule{
+				{
+					AllowedOrigins: []string{allowedOrigin},
+					AllowedMethods: []string{"PUT", "GET", "HEAD"},
+					AllowedHeaders: []string{"content-type", "cache-control"},
+					MaxAgeSeconds:  aws.Int32(86400),
+				},
+			},
+		},
+	})
+	if err != nil {
+		slog.Warn("R2: no se pudo configurar CORS", "error", err)
 	} else {
-		slog.Info("R2 inicializado", "bucket", bucket, "endpoint", endpoint)
+		slog.Info("R2: CORS configurado", "origin", allowedOrigin)
 	}
 }
 
@@ -120,9 +149,8 @@ func GeneratePresignedURL(ctx context.Context, prefix, ext string, ttl time.Dura
 	key := fmt.Sprintf("%s/%s/%s%s", prefix, year, uuid.NewString(), ext)
 	pc := s3.NewPresignClient(client)
 	req, presignErr := pc.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:       aws.String(bucket),
-		Key:          aws.String(key),
-		CacheControl: aws.String("public, max-age=31536000"),
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
 	}, s3.WithPresignExpires(ttl))
 	if presignErr != nil {
 		return "", "", presignErr
