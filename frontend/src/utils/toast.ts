@@ -71,6 +71,7 @@ export const toast = {
 
   loading(message: string, title = 'Subiendo...'): { close: () => void } {
     let toastEl: HTMLDivElement | null = null
+    let pendingClose = false
     iziToast.show({
       title,
       message,
@@ -83,11 +84,18 @@ export const toast = {
       messageColor: 'rgba(255,255,255,0.75)',
       onOpened(_instance: any, toast: HTMLDivElement) {
         toastEl = toast
+        if (pendingClose) {
+          iziToast.hide({ transitionOut: 'fadeOutUp' }, toastEl, 'custom')
+        }
       },
     })
     return {
       close() {
-        if (toastEl) iziToast.hide({ transitionOut: 'fadeOutUp' }, toastEl, 'custom')
+        if (toastEl) {
+          iziToast.hide({ transitionOut: 'fadeOutUp' }, toastEl, 'custom')
+        } else {
+          pendingClose = true
+        }
       },
     }
   },
