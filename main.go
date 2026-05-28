@@ -96,6 +96,21 @@ func main() {
 	r.Static("/assets", "./frontend/dist/assets")
 	r.StaticFile("/", "./frontend/dist/index.html")
 	r.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		// Bloquear prefijos sensibles y rutas de API no registradas
+		for _, prefix := range []string{"/.git", "/.env", "/.vite", "/actuator", "/api/"} {
+			if strings.HasPrefix(p, prefix) {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
+		// Si la ruta parece una petición de archivo (tiene extensión), devolver 404.
+		// Las rutas del SPA nunca llevan extensión de archivo.
+		base := p[strings.LastIndex(p, "/")+1:]
+		if dot := strings.LastIndex(base, "."); dot > 0 {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
 		c.File("./frontend/dist/index.html")
 	})
 
