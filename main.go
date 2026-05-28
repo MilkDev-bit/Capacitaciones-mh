@@ -53,6 +53,7 @@ func main() {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:              dsn,
 			Environment:      env,
+			EnableTracing:    true,
 			TracesSampleRate: 0.1,
 		}); err != nil {
 			slog.Warn("Sentry init failed", "error", err)
