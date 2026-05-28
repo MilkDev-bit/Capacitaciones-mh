@@ -179,6 +179,10 @@ async function resetPassword() {
 <template>
   <div class="auth-page">
     <div class="auth-hero">
+      <div class="bubbles" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
       <div class="hero-content">
         <div class="hero-logo">
           <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
@@ -401,6 +405,38 @@ async function resetPassword() {
   width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
   background: rgba(249,115,22,.2); border: 1px solid rgba(249,115,22,.3);
   color: var(--brand); backdrop-filter: blur(4px);
+}
+
+/* Bubbles animation */
+.bubbles {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+}
+.bubbles span {
+  position: absolute; bottom: -120px;
+  border-radius: 50%;
+  background: rgba(249,115,22,.12);
+  border: 1px solid rgba(249,115,22,.18);
+  animation: bubble-rise linear infinite;
+  backdrop-filter: blur(2px);
+}
+
+/* Each bubble: different size, position, duration, delay */
+.bubbles span:nth-child(1)  { width: 48px;  height: 48px;  left: 8%;   animation-duration: 9s;  animation-delay: 0s;   }
+.bubbles span:nth-child(2)  { width: 28px;  height: 28px;  left: 18%;  animation-duration: 7s;  animation-delay: 1.5s; }
+.bubbles span:nth-child(3)  { width: 70px;  height: 70px;  left: 32%;  animation-duration: 11s; animation-delay: 0.8s; background: rgba(255,255,255,.05); }
+.bubbles span:nth-child(4)  { width: 22px;  height: 22px;  left: 45%;  animation-duration: 6s;  animation-delay: 3s;   }
+.bubbles span:nth-child(5)  { width: 54px;  height: 54px;  left: 58%;  animation-duration: 10s; animation-delay: 1s;   background: rgba(249,115,22,.08); }
+.bubbles span:nth-child(6)  { width: 18px;  height: 18px;  left: 68%;  animation-duration: 7.5s;animation-delay: 2.2s; }
+.bubbles span:nth-child(7)  { width: 36px;  height: 36px;  left: 76%;  animation-duration: 8s;  animation-delay: 0.3s; }
+.bubbles span:nth-child(8)  { width: 60px;  height: 60px;  left: 85%;  animation-duration: 12s; animation-delay: 4s;   background: rgba(255,255,255,.04); }
+.bubbles span:nth-child(9)  { width: 26px;  height: 26px;  left: 24%;  animation-duration: 9.5s;animation-delay: 5s;   }
+.bubbles span:nth-child(10) { width: 42px;  height: 42px;  left: 52%;  animation-duration: 8.5s;animation-delay: 2.8s; background: rgba(249,115,22,.1); }
+
+@keyframes bubble-rise {
+  0%   { transform: translateY(0)   scale(1)   rotate(0deg);   opacity: 0; }
+  10%  { opacity: 1; }
+  80%  { opacity: .7; }
+  100% { transform: translateY(-110vh) scale(1.15) rotate(30deg); opacity: 0; }
 }
 
 .auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); overflow-y: auto; }
