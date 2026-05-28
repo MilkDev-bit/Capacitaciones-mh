@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -49,6 +50,12 @@ func Init() {
 		Credentials:  credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
 		Region:       "auto",
 	})
+
+	if bucket == "" || endpoint == "" || accessKey == "" || secretKey == "" {
+		log.Println("[storage] ADVERTENCIA: una o más variables R2 no están configuradas")
+	} else {
+		log.Printf("[storage] R2 inicializado — bucket: %s, endpoint: %s", bucket, endpoint)
+	}
 }
 
 func UploadFile(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error) {
