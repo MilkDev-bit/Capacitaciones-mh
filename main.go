@@ -103,6 +103,8 @@ func main() {
 			auth.POST("/perfil/cover", handlers.UploadCover)
 			auth.GET("/usuarios/:id/perfil", handlers.GetPublicPerfil)
 
+			auth.GET("/presign", handlers.PresignUpload)
+
 			auth.GET("/cursos-publicos", handlers.ListCursosPublicos)
 			auth.POST("/inscribirse/:id", handlers.Inscribirse)
 			auth.POST("/unirse-con-codigo", handlers.UnirseConCodigo)

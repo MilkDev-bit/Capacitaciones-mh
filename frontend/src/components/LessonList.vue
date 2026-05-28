@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import api from "../api";
 import { toast } from "../utils/toast";
+import { uploadToR2 } from "../utils/upload";
 import DragDropUpload from "./DragDropUpload.vue";
 import ContentTypeSelector from "./ContentTypeSelector.vue";
 
@@ -73,7 +74,22 @@ async function saveEdit() {
   fd.append("type", editForm.value.type);
   fd.append("content", editForm.value.content);
   fd.append("duracion_min", String(editForm.value.duracion_min || 0));
-  if (editFile.value) fd.append("file", editFile.value);
+
+  if (editFile.value) {
+    const isMedia = editForm.value.type === "video" || editForm.value.type === "document";
+    if (isMedia) {
+      const uploadingToast = toast.loading("Subiendo archivo...");
+      try {
+        const prefix = editForm.value.type === "video" ? "videos" : "documents";
+        const fileUrl = await uploadToR2(editFile.value, prefix);
+        fd.append("file_url", fileUrl);
+      } finally {
+        uploadingToast.close();
+      }
+    } else {
+      fd.append("file", editFile.value);
+    }
+  }
 
   try {
     await api.put(`/instructor/capacitaciones/${props.capId}/lecciones/${editForm.value.id}`, fd);
@@ -100,7 +116,22 @@ async function createLesson() {
   fd.append("content", createForm.value.content);
   fd.append("duracion_min", String(createForm.value.duracion_min || 0));
   fd.append("orden", String(lessons.value.length));
-  if (createFile.value) fd.append("file", createFile.value);
+
+  if (createFile.value) {
+    const isMedia = createForm.value.type === "video" || createForm.value.type === "document";
+    if (isMedia) {
+      const uploadingToast = toast.loading("Subiendo archivo...");
+      try {
+        const prefix = createForm.value.type === "video" ? "videos" : "documents";
+        const fileUrl = await uploadToR2(createFile.value, prefix);
+        fd.append("file_url", fileUrl);
+      } finally {
+        uploadingToast.close();
+      }
+    } else {
+      fd.append("file", createFile.value);
+    }
+  }
 
   const loadingToast = toast.loading("Creando lección...");
   try {

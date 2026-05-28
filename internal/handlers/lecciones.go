@@ -72,8 +72,9 @@ func InstructorCreateLeccion(c *gin.Context) {
 	}
 
 	var filePath string
-	file, err := c.FormFile("file")
-	if err == nil {
+	if fu := c.PostForm("file_url"); fu != "" {
+		filePath = fu
+	} else if file, ferr := c.FormFile("file"); ferr == nil {
 		prefix := "documents"
 		if lecType == "video" {
 			prefix = "videos"
@@ -95,7 +96,7 @@ func InstructorCreateLeccion(c *gin.Context) {
 	}
 
 	var id string
-	err = db.DB.QueryRow(`
+	err := db.DB.QueryRow(`
 		INSERT INTO lecciones(capacitacion_id, title, description, type, file_path, content, orden, duracion_min)
 		VALUES($1,$2,$3,$4,$5,$6,$7::int,$8::int) RETURNING id`,
 		capID, title, description, lecType, filePath, content, orden, duracion,
@@ -141,8 +142,9 @@ func InstructorUpdateLeccion(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("file")
-	if err == nil {
+	if fu := c.PostForm("file_url"); fu != "" {
+		currentFilePath = fu
+	} else if file, ferr := c.FormFile("file"); ferr == nil {
 		prefix := "documents"
 		if lecType == "video" {
 			prefix = "videos"
