@@ -145,11 +145,11 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	if err := sendPasswordResetEmail(req.Email, code); err != nil {
-		log.Printf("[FORGOT] error enviando email a %s: %v", req.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo enviar el correo. Verifica tu dirección o contacta soporte."})
-		return
-	}
+	go func(email, token string) {
+		if err := sendPasswordResetEmail(email, token); err != nil {
+			log.Printf("[FORGOT] error enviando email a %s: %v", email, err)
+		}
+	}(req.Email, code)
 
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

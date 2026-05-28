@@ -129,3 +129,21 @@ func GeneratePresignedURL(ctx context.Context, prefix, ext string, ttl time.Dura
 	}
 	return req.URL, publicURL + "/" + key, nil
 }
+
+// GeneratePresignedGetURL returns a time-limited GET URL for serving private R2 objects.
+func GeneratePresignedGetURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	pc := s3.NewPresignClient(client)
+	req, err := pc.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(ttl))
+	if err != nil {
+		return "", err
+	}
+	return req.URL, nil
+}
+
+// ExtractKeyFromURL extracts the R2 object key from a full public URL.
+func ExtractKeyFromURL(fileURL string) string {
+	return strings.TrimPrefix(fileURL, publicURL+"/")
+}

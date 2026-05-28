@@ -17,14 +17,14 @@ import (
 func ListCapacitaciones(c *gin.Context) {
 	limit, offset, page := parsePagination(c)
 	var total int
-	db.DB.QueryRow(`SELECT COUNT(*) FROM capacitaciones`).Scan(&total)
+	db.DB.QueryRow(`SELECT COUNT(*) FROM capacitaciones WHERE deleted_at IS NULL`).Scan(&total)
 	rows, err := db.DB.Query(`
 		SELECT id, title, description, type,
 		       COALESCE(file_path,''), COALESCE(content,''),
 		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''),
 		       COALESCE(color,'#f97316'), is_public,
 		       COALESCE(codigo_acceso,''), created_at
-		FROM capacitaciones ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		FROM capacitaciones WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] ListCapacitaciones: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
@@ -165,7 +165,7 @@ func UpdateCapacitacion(c *gin.Context) {
 
 func DeleteCapacitacion(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`DELETE FROM capacitaciones WHERE id=$1`, id)
+	db.DB.Exec(`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -178,7 +178,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 		FROM capacitaciones c
 		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
 		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
-		WHERE a.user_id = $1 OR i.user_id = $1
+		WHERE (a.user_id = $1 OR i.user_id = $1) AND c.deleted_at IS NULL
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
@@ -203,7 +203,7 @@ func GetCapacitacion(c *gin.Context) {
 	err := db.DB.QueryRow(
 		`SELECT id, title, description, type, COALESCE(file_path,''), COALESCE(content,''),
 		        COALESCE(welcome_message,''), COALESCE(thumbnail_url,''), COALESCE(color,'#f97316'), created_at
-		 FROM capacitaciones WHERE id=$1`, id,
+		 FROM capacitaciones WHERE id=$1 AND deleted_at IS NULL`, id,
 	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content,
 		&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.Color, &createdAt)
 	if err != nil {

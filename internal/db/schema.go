@@ -219,6 +219,14 @@ CREATE INDEX IF NOT EXISTS idx_foro_comentarios_post_id ON foro_comentarios(post
 CREATE INDEX IF NOT EXISTS idx_preguntas_int_capacitacion_id ON preguntas_intermedias(capacitacion_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_int_user_id ON respuestas_intermedias(user_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_int_pregunta_id ON respuestas_intermedias(pregunta_id);
+
+-- Soft deletes: los recursos borrados se ocultan pero se preserva el historial de estudiantes
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE examenes       ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE lecciones      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_capacitaciones_deleted_at ON capacitaciones(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_examenes_deleted_at       ON examenes(deleted_at)       WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_lecciones_deleted_at      ON lecciones(deleted_at)      WHERE deleted_at IS NULL;
 `
 
 func Migrate() {

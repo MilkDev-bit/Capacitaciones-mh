@@ -32,6 +32,7 @@ func main() {
 	middleware.SetSecret([]byte(os.Getenv("JWT_SECRET")))
 
 	r := gin.Default()
+	r.MaxMultipartMemory = 50 << 20 // 50 MB
 
 	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
 	if allowedOrigin == "" {

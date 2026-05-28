@@ -98,8 +98,8 @@ func CreateExamen(c *gin.Context) {
 func ListExamenes(c *gin.Context) {
 	limit, offset, page := parsePagination(c)
 	var total int
-	db.DB.QueryRow(`SELECT COUNT(*) FROM examenes`).Scan(&total)
-	rows, err := db.DB.Query(`SELECT id, title, description, created_at FROM examenes ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	db.DB.QueryRow(`SELECT COUNT(*) FROM examenes WHERE deleted_at IS NULL`).Scan(&total)
+	rows, err := db.DB.Query(`SELECT id, title, description, created_at FROM examenes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] ListExamenes: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
@@ -125,7 +125,7 @@ func GetExamen(c *gin.Context) {
 		        e.capacitacion_id, COALESCE(cap.title,'')
 		 FROM examenes e
 		 LEFT JOIN capacitaciones cap ON cap.id = e.capacitacion_id
-		 WHERE e.id=$1`, id,
+		 WHERE e.id=$1 AND e.deleted_at IS NULL`, id,
 	).Scan(&examen.ID, &examen.Title, &examen.Description, &examen.CreatedAt,
 		&examen.CapacitacionID, &examen.CapacitacionNombre)
 	if err != nil {
@@ -218,7 +218,7 @@ func getExamenResultadoUsuario(examenID, userID string) (yaRespondido bool, punt
 
 func DeleteExamen(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`DELETE FROM examenes WHERE id=$1`, id)
+	db.DB.Exec(`UPDATE examenes SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
@@ -28,7 +29,7 @@ func InstructorListLecciones(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT id, capacitacion_id, title, COALESCE(description,''), type,
 		       COALESCE(file_path,''), COALESCE(content,''), orden, COALESCE(duracion_min,0), created_at
-		FROM lecciones WHERE capacitacion_id=$1 ORDER BY orden`, capID)
+		FROM lecciones WHERE capacitacion_id=$1 AND deleted_at IS NULL ORDER BY orden`, capID)
 	if err != nil {
 		log.Printf("[ERROR] InstructorListLecciones: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
@@ -188,7 +189,7 @@ func InstructorDeleteLeccion(c *gin.Context) {
 		return
 	}
 
-	db.DB.Exec(`DELETE FROM lecciones WHERE id=$1 AND capacitacion_id=$2`, lecID, capID)
+	db.DB.Exec(`UPDATE lecciones SET deleted_at=NOW() WHERE id=$1 AND capacitacion_id=$2 AND deleted_at IS NULL`, lecID, capID)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -233,7 +234,7 @@ func GetLeccionesConProgreso(c *gin.Context) {
 		       CASE WHEN p.leccion_id IS NOT NULL THEN true ELSE false END AS completada
 		FROM lecciones l
 		LEFT JOIN progreso_lecciones p ON p.leccion_id = l.id AND p.user_id = $2
-		WHERE l.capacitacion_id = $1
+		WHERE l.capacitacion_id = $1 AND l.deleted_at IS NULL
 		ORDER BY l.orden`, capID, userID)
 	if err != nil {
 		log.Printf("[ERROR] GetLeccionesConProgreso: %v", err)
@@ -246,6 +247,17 @@ func GetLeccionesConProgreso(c *gin.Context) {
 		var l models.Leccion
 		rows.Scan(&l.ID, &l.CapacitacionID, &l.Title, &l.Description, &l.Type,
 			&l.FilePath, &l.Content, &l.Orden, &l.DuracionMin, &l.CreatedAt, &l.Completada)
+		// Reemplazar la URL pública por una URL firmada con TTL de 2 horas para video/documento
+		if (l.Type == "video" || l.Type == "document") && l.FilePath != "" {
+			key := storage.ExtractKeyFromURL(l.FilePath)
+			if key != "" {
+				if signed, err := storage.GeneratePresignedGetURL(c.Request.Context(), key, 2*time.Hour); err == nil {
+					l.FilePath = signed
+				} else {
+					log.Printf("[WARN] GetLeccionesConProgreso presign %s: %v", key, err)
+				}
+			}
+		}
 		result = append(result, l)
 	}
 	c.JSON(http.StatusOK, result)

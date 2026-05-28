@@ -66,7 +66,7 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		       COALESCE(welcome_message,''), COALESCE(thumbnail_url,''),
 		       COALESCE(color,'#f97316'), created_at
 		FROM capacitaciones
-		WHERE instructor_id = $1
+		WHERE instructor_id = $1 AND deleted_at IS NULL
 		ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
@@ -164,7 +164,7 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 	id := c.Param("id")
 
 	var currentFilePath, currentThumbPath string
-	err := db.DB.QueryRow(`SELECT COALESCE(file_path,''), COALESCE(thumbnail_url,'') FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID).Scan(&currentFilePath, &currentThumbPath)
+	err := db.DB.QueryRow(`SELECT COALESCE(file_path,''), COALESCE(thumbnail_url,'') FROM capacitaciones WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID).Scan(&currentFilePath, &currentThumbPath)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "no autorizado o no encontrado"})
 		return
@@ -226,7 +226,7 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 func InstructorDeleteCapacitacion(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	id := c.Param("id")
-	res, err := db.DB.Exec(`DELETE FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID)
+	res, err := db.DB.Exec(`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID)
 	if err != nil {
 		log.Printf("[ERROR] InstructorDeleteCapacitacion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
@@ -245,7 +245,7 @@ func InstructorTogglePublic(c *gin.Context) {
 	id := c.Param("id")
 
 	var current bool
-	err := db.DB.QueryRow(`SELECT is_public FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID).Scan(&current)
+	err := db.DB.QueryRow(`SELECT is_public FROM capacitaciones WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID).Scan(&current)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no encontrado o sin permisos"})
 		return
@@ -263,7 +263,7 @@ func InstructorListExamenes(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	rows, err := db.DB.Query(`
 		SELECT id, title, description, created_at
-		FROM examenes WHERE instructor_id=$1 ORDER BY created_at DESC
+		FROM examenes WHERE instructor_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
 		log.Printf("[ERROR] InstructorListExamenes: %v", err)
@@ -352,7 +352,7 @@ func InstructorCreateExamen(c *gin.Context) {
 func InstructorDeleteExamen(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	id := c.Param("id")
-	res, err := db.DB.Exec(`DELETE FROM examenes WHERE id=$1 AND instructor_id=$2`, id, instructorID)
+	res, err := db.DB.Exec(`UPDATE examenes SET deleted_at=NOW() WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID)
 	if err != nil {
 		log.Printf("[ERROR] InstructorDeleteExamen: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
@@ -443,7 +443,7 @@ func ListCursosPublicos(c *gin.Context) {
 		       c.instructor_id, c.is_public, c.created_at,
 		       EXISTS(SELECT 1 FROM inscripciones i WHERE i.capacitacion_id=c.id AND i.user_id=$1) as inscrito
 		FROM capacitaciones c
-		WHERE c.is_public = true
+		WHERE c.is_public = true AND c.deleted_at IS NULL
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
@@ -472,7 +472,7 @@ func Inscribirse(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	capID := c.Param("id")
 	var isPublic bool
-	err := db.DB.QueryRow(`SELECT is_public FROM capacitaciones WHERE id=$1`, capID).Scan(&isPublic)
+	err := db.DB.QueryRow(`SELECT is_public FROM capacitaciones WHERE id=$1 AND deleted_at IS NULL`, capID).Scan(&isPublic)
 	if err != nil || !isPublic {
 		c.JSON(http.StatusForbidden, gin.H{"error": "el curso no existe o no es público"})
 		return
@@ -504,7 +504,7 @@ func UnirseConCodigo(c *gin.Context) {
 	code := strings.ToUpper(strings.TrimSpace(body.Codigo))
 	var cap models.Capacitacion
 	err := db.DB.QueryRow(
-		`SELECT id, title, description, type FROM capacitaciones WHERE codigo_acceso=$1`, code,
+		`SELECT id, title, description, type FROM capacitaciones WHERE codigo_acceso=$1 AND deleted_at IS NULL`, code,
 	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "código inválido o curso no encontrado"})
@@ -533,7 +533,7 @@ func InstructorResetCodigo(c *gin.Context) {
 	instructorID, _ := c.Get("user_id")
 	id := c.Param("id")
 	var existing string
-	err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE id=$1 AND instructor_id=$2`, id, instructorID).Scan(&existing)
+	err := db.DB.QueryRow(`SELECT id FROM capacitaciones WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID).Scan(&existing)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "no autorizado o no encontrado"})
 		return
@@ -558,7 +558,7 @@ func PreviewCurso(c *gin.Context) {
 	code := strings.ToUpper(strings.TrimSpace(c.Param("codigo")))
 	var cap models.Capacitacion
 	err := db.DB.QueryRow(
-		`SELECT id, title, description, type FROM capacitaciones WHERE codigo_acceso=$1`, code,
+		`SELECT id, title, description, type FROM capacitaciones WHERE codigo_acceso=$1 AND deleted_at IS NULL`, code,
 	).Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "código inválido o curso no encontrado"})
