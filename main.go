@@ -171,6 +171,8 @@ func main() {
 				admin.GET("/examenes", handlers.ListExamenes)
 				admin.POST("/examenes", handlers.CreateExamen)
 				admin.DELETE("/examenes/:id", handlers.DeleteExamen)
+
+				admin.POST("/migrate-local-to-r2", handlers.MigrateLocalToR2)
 			}
 		}
 	}
