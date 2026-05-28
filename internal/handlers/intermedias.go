@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -41,7 +41,7 @@ func InstructorListPreguntasIntermedias(c *gin.Context) {
 		SELECT id, capacitacion_id, despues_de_leccion_id, texto, tipo, orden
 		FROM preguntas_intermedias WHERE capacitacion_id=$1 ORDER BY orden`, capID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorListPreguntasIntermedias: %v", err)
+		slog.Error("InstructorListPreguntasIntermedias", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -80,13 +80,13 @@ func InstructorCreatePreguntaIntermedia(c *gin.Context) {
 
 	var req preguntaIntermediaReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreatePreguntaIntermedia tx.Begin: %v", err)
+		slog.Error("InstructorCreatePreguntaIntermedia: Begin", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -99,7 +99,7 @@ func InstructorCreatePreguntaIntermedia(c *gin.Context) {
 		capID, req.DespuesDeLeccionID, req.Texto, req.Tipo, req.Orden,
 	).Scan(&pID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreatePreguntaIntermedia insert: %v", err)
+		slog.Error("InstructorCreatePreguntaIntermedia: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -162,7 +162,7 @@ func GetPreguntasIntermedias(c *gin.Context) {
 			ORDER BY p.orden`, capID, leccionIDParam, userID)
 	}
 	if err != nil {
-		log.Printf("[ERROR] GetPreguntasIntermedias: %v", err)
+		slog.Error("GetPreguntasIntermedias", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -194,7 +194,7 @@ func SubmitPreguntasIntermedias(c *gin.Context) {
 		RespuestaTexto string  `json:"respuesta_texto"`
 	}
 	if err := c.ShouldBindJSON(&respuestas); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -32,7 +32,7 @@ type registerRequest struct {
 func Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 	if !verifyRecaptcha(req.RecaptchaToken) {
@@ -64,7 +64,7 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 	if !verifyRecaptcha(req.RecaptchaToken) {
@@ -73,17 +73,17 @@ func Login(c *gin.Context) {
 	}
 	var user models.User
 	err := db.DB.QueryRow(
-		`SELECT id, name, email, password_hash, role FROM users WHERE email=$1`, req.Email,
-	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role)
+		`SELECT id, name, email, password_hash, role, token_version FROM users WHERE email=$1`, req.Email,
+	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role, &user.TokenVersion)
 	if err != nil {
 
-		log.Printf("[AUTH] login fallido (usuario no encontrado): ip=%s", c.ClientIP())
+		slog.Warn("login fallido: usuario no encontrado", "ip", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 
-		log.Printf("[AUTH] login fallido (contraseña incorrecta): ip=%s", c.ClientIP())
+		slog.Warn("login fallido: contraseña incorrecta", "ip", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
 		return
 	}
@@ -91,12 +91,13 @@ func Login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  user.ID,
 		"role": user.Role,
+		"ver":  user.TokenVersion,
 		"iat":  now.Unix(),
 		"exp":  now.Add(24 * time.Hour).Unix(),
 	})
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		log.Printf("[AUTH] JWT_SECRET no configurado")
+		slog.Error("JWT_SECRET no configurado")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de configuración del servidor"})
 		return
 	}
@@ -140,14 +141,14 @@ func ForgotPassword(c *gin.Context) {
 		req.Email, string(hash), time.Now().Add(15*time.Minute),
 	)
 	if err != nil {
-		log.Printf("[FORGOT] error guardando token: %v", err)
+		slog.Error("ForgotPassword: error guardando token", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
 
 	go func(email, token string) {
 		if err := sendPasswordResetEmail(email, token); err != nil {
-			log.Printf("[FORGOT] error enviando email a %s: %v", email, err)
+			slog.Error("ForgotPassword: error enviando email", "email", email, "error", err)
 		}
 	}(req.Email, code)
 
@@ -161,7 +162,7 @@ func ResetPassword(c *gin.Context) {
 		NewPassword string `json:"new_password" binding:"required,min=8"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
@@ -195,7 +196,7 @@ func ResetPassword(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	if _, err = tx.Exec(`UPDATE users SET password_hash=$1 WHERE email=$2`, string(hash), req.Email); err != nil {
+	if _, err = tx.Exec(`UPDATE users SET password_hash=$1, token_version=token_version+1 WHERE email=$2`, string(hash), req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la contraseña"})
 		return
 	}

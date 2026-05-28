@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/sanitize"
 	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +31,7 @@ func ListForoPosts(c *gin.Context) {
 		GROUP BY p.id, u.name
 		ORDER BY p.created_at DESC`, leccionID, userID)
 	if err != nil {
-		log.Printf("[ERROR] ListForoPosts: %v", err)
+		slog.Error("ListForoPosts", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -49,8 +50,8 @@ func CreateForoPost(c *gin.Context) {
 	leccionID := c.Param("leccion_id")
 	userID, _ := c.Get("user_id")
 
-	titulo := strings.TrimSpace(c.PostForm("titulo"))
-	contenido := strings.TrimSpace(c.PostForm("contenido"))
+	titulo := sanitize.Text(strings.TrimSpace(c.PostForm("titulo")))
+	contenido := sanitize.HTML(strings.TrimSpace(c.PostForm("contenido")))
 	if titulo == "" || contenido == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "titulo y contenido son requeridos"})
 		return
@@ -77,7 +78,7 @@ func CreateForoPost(c *gin.Context) {
 		var u string
 		u, err = storage.UploadMultipart(c.Request.Context(), file, "foro")
 		if err != nil {
-			log.Printf("[ERROR] CreateForoPost upload: %v", err)
+			slog.Error("CreateForoPost: subida archivo", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
@@ -91,7 +92,7 @@ func CreateForoPost(c *gin.Context) {
 		leccionID, userID, titulo, contenido, mediaURL, mediaType,
 	).Scan(&id)
 	if err != nil {
-		log.Printf("[ERROR] CreateForoPost: %v", err)
+		slog.Error("CreateForoPost: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -126,7 +127,7 @@ func ListForoComentarios(c *gin.Context) {
 		WHERE fc.post_id = $1
 		ORDER BY fc.created_at ASC`, postID)
 	if err != nil {
-		log.Printf("[ERROR] ListForoComentarios: %v", err)
+		slog.Error("ListForoComentarios", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -152,6 +153,7 @@ func CreateForoComentario(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	body.Contenido = sanitize.HTML(body.Contenido)
 
 	var id string
 	err := db.DB.QueryRow(`
@@ -160,7 +162,7 @@ func CreateForoComentario(c *gin.Context) {
 		postID, userID, body.Contenido,
 	).Scan(&id)
 	if err != nil {
-		log.Printf("[ERROR] CreateForoComentario: %v", err)
+		slog.Error("CreateForoComentario: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}

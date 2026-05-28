@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -65,9 +65,9 @@ func Init() {
 	})
 
 	if bucket == "" || endpoint == "" || accessKey == "" || secretKey == "" {
-		log.Println("[storage] ADVERTENCIA: una o más variables R2 no están configuradas")
+		slog.Warn("una o más variables R2 no están configuradas")
 	} else {
-		log.Printf("[storage] R2 inicializado — bucket: %s, endpoint: %s", bucket, endpoint)
+		slog.Info("R2 inicializado", "bucket", bucket, "endpoint", endpoint)
 	}
 }
 

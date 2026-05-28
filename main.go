@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,15 @@ import (
 )
 
 func main() {
+	// Logs estructurados en JSON — legibles por Railway, Datadog, CloudWatch, etc.
+	logLevel := slog.LevelInfo
+	if os.Getenv("LOG_LEVEL") == "debug" {
+		logLevel = slog.LevelDebug
+	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	})))
+
 	if os.Getenv("GIN_MODE") != "" {
 		gin.SetMode(os.Getenv("GIN_MODE"))
 	} else if os.Getenv("RAILWAY_ENVIRONMENT") != "" {
@@ -27,7 +37,8 @@ func main() {
 	}
 
 	if os.Getenv("JWT_SECRET") == "" {
-		log.Fatal("[SECURITY] JWT_SECRET no definido — configura esta variable antes de arrancar")
+		slog.Error("JWT_SECRET no definido — configura esta variable antes de arrancar")
+		os.Exit(1)
 	}
 	middleware.SetSecret([]byte(os.Getenv("JWT_SECRET")))
 
@@ -147,6 +158,7 @@ func main() {
 			admin.Use(middleware.AdminRequired())
 			{
 				admin.GET("/users", handlers.ListUsers)
+				admin.POST("/users/:id/revoke-sessions", handlers.RevokeUserSessions)
 				admin.POST("/asignar", handlers.Asignar)
 				admin.DELETE("/asignar/:id", handlers.DesAsignar)
 				admin.GET("/asignaciones", handlers.ListAsignaciones)

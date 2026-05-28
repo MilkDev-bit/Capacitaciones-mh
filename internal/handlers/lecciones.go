@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -83,7 +84,7 @@ func InstructorCreateLeccion(c *gin.Context) {
 		var e error
 		filePath, e = storage.UploadMultipart(c.Request.Context(), file, prefix)
 		if e != nil {
-			log.Printf("[ERROR] InstructorCreateLeccion upload: %v", e)
+			slog.Error("InstructorCreateLeccion: subida archivo", "error", e)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
@@ -103,7 +104,7 @@ func InstructorCreateLeccion(c *gin.Context) {
 		capID, title, description, lecType, filePath, content, orden, duracion,
 	).Scan(&id)
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreateLeccion: %v", err)
+		slog.Error("InstructorCreateLeccion: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -153,7 +154,7 @@ func InstructorUpdateLeccion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), file, prefix); e == nil {
 			currentFilePath = u
 		} else {
-			log.Printf("[WARN] InstructorUpdateLeccion upload: %v", e)
+			slog.Warn("InstructorUpdateLeccion: subida archivo", "error", e)
 		}
 	}
 
@@ -166,7 +167,7 @@ func InstructorUpdateLeccion(c *gin.Context) {
 		title, description, lecType, content, duracion, currentFilePath, lecID, capID,
 	)
 	if err != nil {
-		log.Printf("[ERROR] InstructorUpdateLeccion: %v", err)
+		slog.Error("InstructorUpdateLeccion: UPDATE", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -212,7 +213,7 @@ func InstructorReorderLecciones(c *gin.Context) {
 		Orden int    `json:"orden"`
 	}
 	if err := c.ShouldBindJSON(&orden); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
@@ -237,7 +238,7 @@ func GetLeccionesConProgreso(c *gin.Context) {
 		WHERE l.capacitacion_id = $1 AND l.deleted_at IS NULL
 		ORDER BY l.orden`, capID, userID)
 	if err != nil {
-		log.Printf("[ERROR] GetLeccionesConProgreso: %v", err)
+		slog.Error("GetLeccionesConProgreso", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}

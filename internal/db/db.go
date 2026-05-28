@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -30,7 +30,8 @@ func Connect() {
 	var err error
 	DB, err = sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalf("Error abriendo base de datos: %v", err)
+		slog.Error("Error abriendo base de datos", "error", err)
+		os.Exit(1)
 	}
 
 	DB.SetMaxOpenConns(25)
@@ -39,13 +40,14 @@ func Connect() {
 
 	for i := 1; i <= 10; i++ {
 		if err = DB.Ping(); err == nil {
-			log.Println("Conexión a PostgreSQL exitosa")
+			slog.Info("Conexión a PostgreSQL exitosa")
 			return
 		}
-		log.Printf("DB no disponible, intento %d/10: %v", i, err)
+		slog.Warn("DB no disponible", "intento", i, "error", err)
 		time.Sleep(3 * time.Second)
 	}
-	log.Fatalf("No se pudo conectar a la base de datos tras 10 intentos: %v", err)
+	slog.Error("No se pudo conectar a la base de datos tras 10 intentos", "error", err)
+	os.Exit(1)
 }
 
 func getEnv(key, fallback string) string {

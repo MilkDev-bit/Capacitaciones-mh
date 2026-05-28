@@ -51,5 +51,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.23 // indirect
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.102.0 // indirect
 	github.com/aws/smithy-go v1.25.1 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/gin-contrib/cors v1.7.7 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 )

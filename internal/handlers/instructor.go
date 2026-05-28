@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"math/big"
 	"net/http"
 	"path/filepath"
@@ -70,7 +71,7 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorListCapacitaciones: %v", err)
+		slog.Error("InstructorListCapacitaciones", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -122,7 +123,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		}
 		filePath, err = storage.UploadMultipart(c.Request.Context(), file, prefix)
 		if err != nil {
-			log.Printf("[ERROR] InstructorCreateCapacitacion upload file: %v", err)
+			slog.Error("InstructorCreateCapacitacion: subida archivo", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
@@ -140,7 +141,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
 			thumbnailPath = u
 		} else {
-			log.Printf("[WARN] InstructorCreateCapacitacion thumbnail upload: %v", e)
+			slog.Warn("InstructorCreateCapacitacion: subida miniatura", "error", e)
 		}
 	}
 
@@ -152,7 +153,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		id, title, description, capType, filePath, content, instructorID, isPublic, codigo, welcomeMessage, thumbnailPath, color,
 	)
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreateCapacitacion: %v", err)
+		slog.Error("InstructorCreateCapacitacion: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
@@ -195,7 +196,7 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), file, prefix); e == nil {
 			currentFilePath = u
 		} else {
-			log.Printf("[WARN] InstructorUpdateCapacitacion file upload: %v", e)
+			slog.Warn("InstructorUpdateCapacitacion: subida archivo", "error", e)
 		}
 	}
 
@@ -204,7 +205,7 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
 			currentThumbPath = u
 		} else {
-			log.Printf("[WARN] InstructorUpdateCapacitacion thumbnail upload: %v", e)
+			slog.Warn("InstructorUpdateCapacitacion: subida miniatura", "error", e)
 		}
 	} else if c.PostForm("remove_thumbnail") == "true" {
 		currentThumbPath = ""
@@ -215,7 +216,7 @@ func InstructorUpdateCapacitacion(c *gin.Context) {
 		title, description, capType, currentFilePath, content, isPublic, welcomeMessage, currentThumbPath, color, id,
 	)
 	if err != nil {
-		log.Printf("[ERROR] InstructorUpdateCapacitacion: %v", err)
+		slog.Error("InstructorUpdateCapacitacion: UPDATE", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la capacitación"})
 		return
 	}
@@ -228,7 +229,7 @@ func InstructorDeleteCapacitacion(c *gin.Context) {
 	id := c.Param("id")
 	res, err := db.DB.Exec(`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorDeleteCapacitacion: %v", err)
+		slog.Error("InstructorDeleteCapacitacion", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
@@ -252,7 +253,7 @@ func InstructorTogglePublic(c *gin.Context) {
 	}
 	_, err = db.DB.Exec(`UPDATE capacitaciones SET is_public=$1 WHERE id=$2`, !current, id)
 	if err != nil {
-		log.Printf("[ERROR] InstructorTogglePublic: %v", err)
+		slog.Error("InstructorTogglePublic", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -266,7 +267,7 @@ func InstructorListExamenes(c *gin.Context) {
 		FROM examenes WHERE instructor_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC
 	`, instructorID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorListExamenes: %v", err)
+		slog.Error("InstructorListExamenes", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -288,13 +289,13 @@ func InstructorCreateExamen(c *gin.Context) {
 
 	var req createExamenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreateExamen tx.Begin: %v", err)
+		slog.Error("InstructorCreateExamen: Begin", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -306,7 +307,7 @@ func InstructorCreateExamen(c *gin.Context) {
 		req.Title, req.Description, instructorID, req.CapacitacionID,
 	).Scan(&examenID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorCreateExamen insert: %v", err)
+		slog.Error("InstructorCreateExamen: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -322,7 +323,7 @@ func InstructorCreateExamen(c *gin.Context) {
 			examenID, p.Texto, tipo, p.Valor, p.Orden,
 		).Scan(&preguntaID)
 		if err != nil {
-			log.Printf("[ERROR] InstructorCreateExamen insert pregunta: %v", err)
+			slog.Error("InstructorCreateExamen: INSERT pregunta", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 			return
 		}
@@ -333,7 +334,7 @@ func InstructorCreateExamen(c *gin.Context) {
 					preguntaID, o.Texto, o.EsCorrecta,
 				)
 				if err != nil {
-					log.Printf("[ERROR] InstructorCreateExamen insert opcion: %v", err)
+					slog.Error("InstructorCreateExamen: INSERT opcion", "error", err)
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 					return
 				}
@@ -342,7 +343,7 @@ func InstructorCreateExamen(c *gin.Context) {
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Printf("[ERROR] InstructorCreateExamen commit: %v", err)
+		slog.Error("InstructorCreateExamen: Commit", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -354,7 +355,7 @@ func InstructorDeleteExamen(c *gin.Context) {
 	id := c.Param("id")
 	res, err := db.DB.Exec(`UPDATE examenes SET deleted_at=NOW() WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, id, instructorID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorDeleteExamen: %v", err)
+		slog.Error("InstructorDeleteExamen", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -377,7 +378,7 @@ func InstructorListEstudiantes(c *gin.Context) {
 		ORDER BY u.name
 	`, instructorID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorListEstudiantes: %v", err)
+		slog.Error("InstructorListEstudiantes", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -396,7 +397,7 @@ func InstructorAsignar(c *gin.Context) {
 
 	var req asignarRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 	if req.CapacitacionID == nil && req.ExamenID == nil {
@@ -447,7 +448,7 @@ func ListCursosPublicos(c *gin.Context) {
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
-		log.Printf("[ERROR] ListCursosPublicos: %v", err)
+		slog.Error("ListCursosPublicos", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -483,7 +484,7 @@ func Inscribirse(c *gin.Context) {
 		userID, capID,
 	)
 	if err != nil {
-		log.Printf("[ERROR] Inscribirse: %v", err)
+		slog.Error("Inscribirse: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -516,7 +517,7 @@ func UnirseConCodigo(c *gin.Context) {
 		userID, cap.ID,
 	)
 	if err != nil {
-		log.Printf("[ERROR] UnirseConCodigo: %v", err)
+		slog.Error("UnirseConCodigo: INSERT inscripcion", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -541,7 +542,7 @@ func InstructorResetCodigo(c *gin.Context) {
 
 	newCode, err := uniqueCode()
 	if err != nil {
-		log.Printf("[ERROR] uniqueCode reset: %v", err)
+		slog.Error("InstructorResetCodigo: UPDATE", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al generar nuevo código"})
 		return
 	}

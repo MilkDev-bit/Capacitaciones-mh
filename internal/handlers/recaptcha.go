@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +21,7 @@ func verifyRecaptcha(token string) bool {
 		return true
 	}
 	if token == "" {
-		log.Printf("[RECAPTCHA] advertencia: token vacío recibido (¿VITE_RECAPTCHA_SITE_KEY no configurada en el build?)")
+		slog.Warn("reCAPTCHA: token vacío recibido")
 		return true
 	}
 	resp, err := http.PostForm("https://www.google.com/recaptcha/api/siteverify", url.Values{
@@ -29,19 +29,18 @@ func verifyRecaptcha(token string) bool {
 		"response": {token},
 	})
 	if err != nil {
-		log.Printf("[RECAPTCHA] error al contactar Google: %v", err)
+		slog.Error("reCAPTCHA: error al contactar Google", "error", err)
 		return false
 	}
 	defer resp.Body.Close()
 
 	var r recaptchaResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		log.Printf("[RECAPTCHA] error al decodificar respuesta: %v", err)
+		slog.Error("reCAPTCHA: error al decodificar respuesta", "error", err)
 		return false
 	}
 	if !r.Success || r.Score < 0.5 {
-		log.Printf("[RECAPTCHA] verificación fallida — success=%v score=%.2f errors=%v",
-			r.Success, r.Score, r.ErrorCodes)
+		slog.Warn("reCAPTCHA: verificación fallida", "success", r.Success, "score", r.Score, "errors", r.ErrorCodes)
 		return false
 	}
 	return true

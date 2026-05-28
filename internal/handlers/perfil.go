@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -98,7 +98,7 @@ func UpdatePerfil(c *gin.Context) {
 		Password  string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
@@ -142,7 +142,7 @@ func UploadAvatar(c *gin.Context) {
 	}
 	url, err := storage.UploadMultipart(c.Request.Context(), file, "avatars")
 	if err != nil {
-		log.Printf("[ERROR] UploadAvatar: %v", err)
+		slog.Error("UploadAvatar", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -168,7 +168,7 @@ func UploadCover(c *gin.Context) {
 	}
 	url, err := storage.UploadMultipart(c.Request.Context(), file, "covers")
 	if err != nil {
-		log.Printf("[ERROR] UploadCover: %v", err)
+		slog.Error("UploadCover", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -197,7 +197,7 @@ func BecomeInstructor(c *gin.Context) {
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Printf("[ERROR] BecomeInstructor tx: %v", err)
+		slog.Error("BecomeInstructor: Begin", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -206,7 +206,7 @@ func BecomeInstructor(c *gin.Context) {
 	if req.Bio != "" || req.Specialty != "" {
 		_, err = tx.Exec(`UPDATE users SET bio=$1, specialty=$2 WHERE id=$3`, req.Bio, req.Specialty, userID)
 		if err != nil {
-			log.Printf("[ERROR] BecomeInstructor update profile: %v", err)
+			slog.Error("BecomeInstructor: UPDATE perfil", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 			return
 		}
@@ -214,13 +214,13 @@ func BecomeInstructor(c *gin.Context) {
 
 	_, err = tx.Exec(`UPDATE users SET role='instructor' WHERE id=$1 AND role='user'`, userID)
 	if err != nil {
-		log.Printf("[ERROR] BecomeInstructor update role: %v", err)
+		slog.Error("BecomeInstructor: UPDATE role", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Printf("[ERROR] BecomeInstructor commit: %v", err)
+		slog.Error("BecomeInstructor: Commit", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/sanitize"
 	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,7 @@ func ListCapacitaciones(c *gin.Context) {
 		       COALESCE(codigo_acceso,''), created_at
 		FROM capacitaciones WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		log.Printf("[ERROR] ListCapacitaciones: %v", err)
+		slog.Error("ListCapacitaciones", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -47,10 +48,10 @@ func ListCapacitaciones(c *gin.Context) {
 
 func CreateCapacitacion(c *gin.Context) {
 	title := c.PostForm("title")
-	description := c.PostForm("description")
+	description := sanitize.HTML(c.PostForm("description"))
 	capType := c.PostForm("type")
-	content := c.PostForm("content")
-	welcomeMsg := c.PostForm("welcome_message")
+	content := sanitize.HTML(c.PostForm("content"))
+	welcomeMsg := sanitize.HTML(c.PostForm("welcome_message"))
 	isPublicStr := c.PostForm("is_public")
 	isPublic := isPublicStr == "true"
 	color := c.PostForm("color")
@@ -81,7 +82,7 @@ func CreateCapacitacion(c *gin.Context) {
 		}
 		filePath, err = storage.UploadMultipart(c.Request.Context(), file, prefix)
 		if err != nil {
-			log.Printf("[ERROR] CreateCapacitacion upload file: %v", err)
+			slog.Error("CreateCapacitacion: subida archivo", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error subiendo archivo"})
 			return
 		}
@@ -99,7 +100,7 @@ func CreateCapacitacion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
 			thumbnailPath = u
 		} else {
-			log.Printf("[WARN] CreateCapacitacion thumbnail upload: %v", e)
+			slog.Warn("CreateCapacitacion: subida miniatura", "error", e)
 		}
 	}
 
@@ -110,7 +111,7 @@ func CreateCapacitacion(c *gin.Context) {
 		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath,
 	).Scan(&id)
 	if err != nil {
-		log.Printf("[ERROR] CreateCapacitacion: %v", err)
+		slog.Error("CreateCapacitacion: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
@@ -120,8 +121,8 @@ func CreateCapacitacion(c *gin.Context) {
 func UpdateCapacitacion(c *gin.Context) {
 	id := c.Param("id")
 	title := c.PostForm("title")
-	description := c.PostForm("description")
-	welcomeMsg := c.PostForm("welcome_message")
+	description := sanitize.HTML(c.PostForm("description"))
+	welcomeMsg := sanitize.HTML(c.PostForm("welcome_message"))
 	isPublicStr := c.PostForm("is_public")
 	isPublic := isPublicStr == "true"
 	color := c.PostForm("color")
@@ -139,7 +140,7 @@ func UpdateCapacitacion(c *gin.Context) {
 		if u, e := storage.UploadMultipart(c.Request.Context(), thumbFile, "thumbnails"); e == nil {
 			thumbnailPath = u
 		} else {
-			log.Printf("[WARN] UpdateCapacitacion thumbnail upload: %v", e)
+			slog.Warn("UpdateCapacitacion: subida miniatura", "error", e)
 		}
 	}
 
@@ -156,7 +157,7 @@ func UpdateCapacitacion(c *gin.Context) {
 		)
 	}
 	if execErr != nil {
-		log.Printf("[ERROR] UpdateCapacitacion: %v", execErr)
+		slog.Error("UpdateCapacitacion: UPDATE", "error", execErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -182,7 +183,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 		ORDER BY c.created_at DESC
 	`, userID)
 	if err != nil {
-		log.Printf("[ERROR] ListCapacitacionesUsuario: %v", err)
+		slog.Error("ListCapacitacionesUsuario", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}

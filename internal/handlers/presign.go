@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -59,7 +59,7 @@ func PresignUpload(c *gin.Context) {
 
 	uploadURL, finalURL, err := storage.GeneratePresignedURL(c.Request.Context(), prefix, ext, 15*time.Minute)
 	if err != nil {
-		log.Printf("[ERROR] PresignUpload: %v", err)
+		slog.Error("PresignUpload", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}

@@ -1,6 +1,9 @@
 package db
 
-import "log"
+import (
+	"log/slog"
+	"os"
+)
 
 const Schema = `
 CREATE TABLE IF NOT EXISTS users (
@@ -227,11 +230,15 @@ ALTER TABLE lecciones      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAU
 CREATE INDEX IF NOT EXISTS idx_capacitaciones_deleted_at ON capacitaciones(deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_examenes_deleted_at       ON examenes(deleted_at)       WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_lecciones_deleted_at      ON lecciones(deleted_at)      WHERE deleted_at IS NULL;
+
+-- Revocación de JWT: token_version permite invalidar tokens activos al cambiar contraseña o al banear usuario
+ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1;
 `
 
 func Migrate() {
 	if _, err := DB.Exec(Schema); err != nil {
-		log.Fatalf("Error ejecutando migración: %v", err)
+		slog.Error("Error ejecutando migración", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Migración ejecutada correctamente")
+	slog.Info("Migración ejecutada correctamente")
 }

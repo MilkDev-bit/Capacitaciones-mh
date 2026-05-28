@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -19,7 +19,7 @@ type asignarRequest struct {
 func Asignar(c *gin.Context) {
 	var req asignarRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 	if req.CapacitacionID == nil && req.ExamenID == nil {
@@ -59,7 +59,7 @@ func ListAsignaciones(c *gin.Context) {
 		rows, err = db.DB.Query(`SELECT id, user_id, capacitacion_id, examen_id, assigned_at FROM asignaciones`)
 	}
 	if err != nil {
-		log.Printf("[ERROR] ListAsignaciones: %v", err)
+		slog.Error("ListAsignaciones", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -88,7 +88,7 @@ func ListUsers(c *gin.Context) {
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
 	rows, err := db.DB.Query(`SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		log.Printf("[ERROR] ListUsers: %v", err)
+		slog.Error("ListUsers", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -100,4 +100,21 @@ func ListUsers(c *gin.Context) {
 		result = append(result, u)
 	}
 	c.JSON(http.StatusOK, gin.H{"data": result, "total": total, "page": page, "limit": limit})
+}
+
+// RevokeUserSessions incrementa token_version del usuario, invalidando todos sus JWTs activos.
+// Solo accesible para admins.
+func RevokeUserSessions(c *gin.Context) {
+	userID := c.Param("id")
+	res, err := db.DB.Exec(`UPDATE users SET token_version=token_version+1 WHERE id=$1`, userID)
+	if err != nil {
+		slog.Error("RevokeUserSessions", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no encontrado"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

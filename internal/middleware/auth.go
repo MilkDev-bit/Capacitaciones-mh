@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"Prueba-Go/internal/db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,7 +37,22 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 		claims, _ := token.Claims.(jwt.MapClaims)
-		c.Set("user_id", claims["sub"])
+
+		// Verificar token_version: si el usuario cambió su contraseña o fue baneado,
+		// la versión en la BD será mayor y el token queda revocado.
+		userID, _ := claims["sub"].(string)
+		claimVer, _ := claims["ver"].(float64)
+		var dbVer int
+		if err := db.DB.QueryRow(`SELECT token_version FROM users WHERE id=$1`, userID).Scan(&dbVer); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
+			return
+		}
+		if int(claimVer) != dbVer {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "sesión expirada, inicia sesión de nuevo"})
+			return
+		}
+
+		c.Set("user_id", userID)
 		c.Set("role", claims["role"])
 		c.Next()
 	}

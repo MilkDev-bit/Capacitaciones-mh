@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"Prueba-Go/internal/db"
@@ -34,13 +34,13 @@ type opcionRequest struct {
 func CreateExamen(c *gin.Context) {
 	var req createExamenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Printf("[ERROR] CreateExamen tx.Begin: %v", err)
+		slog.Error("CreateExamen: Begin", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -52,7 +52,7 @@ func CreateExamen(c *gin.Context) {
 		req.Title, req.Description, req.CapacitacionID,
 	).Scan(&examenID)
 	if err != nil {
-		log.Printf("[ERROR] CreateExamen insert examen: %v", err)
+		slog.Error("CreateExamen: INSERT examen", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -68,7 +68,7 @@ func CreateExamen(c *gin.Context) {
 			examenID, p.Texto, tipo, p.Valor, p.Orden,
 		).Scan(&preguntaID)
 		if err != nil {
-			log.Printf("[ERROR] CreateExamen insert pregunta: %v", err)
+			slog.Error("CreateExamen: INSERT pregunta", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 			return
 		}
@@ -79,7 +79,7 @@ func CreateExamen(c *gin.Context) {
 					preguntaID, o.Texto, o.EsCorrecta,
 				)
 				if err != nil {
-					log.Printf("[ERROR] CreateExamen insert opcion: %v", err)
+					slog.Error("CreateExamen: INSERT opcion", "error", err)
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 					return
 				}
@@ -88,7 +88,7 @@ func CreateExamen(c *gin.Context) {
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Printf("[ERROR] CreateExamen commit: %v", err)
+		slog.Error("CreateExamen: Commit", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -101,7 +101,7 @@ func ListExamenes(c *gin.Context) {
 	db.DB.QueryRow(`SELECT COUNT(*) FROM examenes WHERE deleted_at IS NULL`).Scan(&total)
 	rows, err := db.DB.Query(`SELECT id, title, description, created_at FROM examenes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		log.Printf("[ERROR] ListExamenes: %v", err)
+		slog.Error("ListExamenes", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -268,7 +268,7 @@ func ListExamenesUsuario(c *gin.Context) {
 		ORDER BY e.created_at DESC
 	`, userID)
 	if err != nil {
-		log.Printf("[ERROR] ListExamenesUsuario: %v", err)
+		slog.Error("ListExamenesUsuario", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -327,7 +327,7 @@ func InstructorGetResultados(c *gin.Context) {
 		ORDER BY MAX(r.respondido_at) DESC
 	`, examenID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorGetResultados: %v", err)
+		slog.Error("InstructorGetResultados", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -388,7 +388,7 @@ func InstructorGetRespuestasUsuario(c *gin.Context) {
 		ORDER BY p.orden
 	`, examenID, userID)
 	if err != nil {
-		log.Printf("[ERROR] InstructorGetRespuestasUsuario: %v", err)
+		slog.Error("InstructorGetRespuestasUsuario", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
@@ -428,7 +428,7 @@ func SubmitExamen(c *gin.Context) {
 
 	var respuestas []models.Respuesta
 	if err := c.ShouldBindJSON(&respuestas); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		bindError(c, err)
 		return
 	}
 
