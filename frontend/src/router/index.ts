@@ -1,15 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return Date.now() / 1000 > payload.exp
-  } catch {
-    return true
-  }
-}
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -63,11 +54,10 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const auth = useAuthStore()
-  const token = auth.token
   const user = auth.user
 
-  if (to.meta.requiresAuth && (!token || isTokenExpired(token))) {
-    auth.logout()
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    auth.handleSessionExpired()
     next('/login')
     return
   }

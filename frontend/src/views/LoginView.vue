@@ -73,9 +73,8 @@ async function submit() {
   try {
     const recaptcha_token = await getRecaptchaToken('login')
     const res = await api.post('/login', { email: email.value, password: password.value, recaptcha_token })
-    auth.token = res.data.token
+    // El token JWT viene en cookie HttpOnly — solo guardamos el perfil
     auth.user = res.data.user
-    localStorage.setItem('token', res.data.token)
     localStorage.setItem('user', JSON.stringify(res.data.user))
     toast.success(`¡Bienvenido/a, ${res.data.user.name}!`, 'Sesión iniciada')
     const redirect = route.query.redirect as string | undefined

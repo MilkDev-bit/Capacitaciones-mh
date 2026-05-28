@@ -44,35 +44,33 @@ beforeEach(() => {
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 describe('useAuthStore – login', () => {
-  it('guarda token y usuario en el store tras login exitoso', async () => {
+  it('guarda usuario en el store tras login exitoso', async () => {
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: fakeUser },
+      data: { user: fakeUser },
     })
 
     const store = useAuthStore()
     await store.login(fakeUser.email, 'password123')
 
-    expect(store.token).toBe(fakeToken)
     expect(store.user?.id).toBe(fakeUser.id)
     expect(store.isLoggedIn).toBe(true)
   })
 
-  it('persiste token en localStorage', async () => {
+  it('persiste perfil de usuario en localStorage', async () => {
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: fakeUser },
+      data: { user: fakeUser },
     })
 
     const store = useAuthStore()
     await store.login(fakeUser.email, 'password123')
 
-    expect(localStorage.getItem('token')).toBe(fakeToken)
     expect(JSON.parse(localStorage.getItem('user')!).id).toBe(fakeUser.id)
   })
 
   it('redirige al admin si rol es admin', async () => {
     const adminUser = { ...fakeUser, role: 'admin' }
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: adminUser },
+      data: { user: adminUser },
     })
 
     const store = useAuthStore()
@@ -84,7 +82,7 @@ describe('useAuthStore – login', () => {
   it('redirige al instructor si rol es instructor', async () => {
     const instUser = { ...fakeUser, role: 'instructor' }
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: instUser },
+      data: { user: instUser },
     })
 
     const store = useAuthStore()
@@ -95,35 +93,34 @@ describe('useAuthStore – login', () => {
 })
 
 describe('useAuthStore – logout', () => {
-  it('limpia token y usuario al hacer logout', async () => {
-    vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: fakeUser },
-    })
+  it('limpia usuario al hacer logout', async () => {
+    vi.mocked(api.post)
+      .mockResolvedValueOnce({ data: { user: fakeUser } }) // login
+      .mockResolvedValueOnce({})                           // logout
     const store = useAuthStore()
     await store.login(fakeUser.email, 'password123')
 
     await store.logout()
 
-    expect(store.token).toBeNull()
     expect(store.user).toBeNull()
     expect(store.isLoggedIn).toBe(false)
-    expect(localStorage.getItem('token')).toBeNull()
+    expect(localStorage.getItem('user')).toBeNull()
   })
 })
 
 describe('useAuthStore – handleSessionExpired', () => {
   it('limpia el estado cuando la sesión expira', async () => {
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: fakeUser },
+      data: { user: fakeUser },
     })
     const store = useAuthStore()
     await store.login(fakeUser.email, 'password123')
 
     store.handleSessionExpired()
 
-    expect(store.token).toBeNull()
     expect(store.user).toBeNull()
-    expect(localStorage.getItem('token')).toBeNull()
+    expect(store.isLoggedIn).toBe(false)
+    expect(localStorage.getItem('user')).toBeNull()
   })
 
   it('no muestra toast si no había sesión activa', () => {
@@ -138,7 +135,7 @@ describe('useAuthStore – computed', () => {
   it('isAdmin es true solo cuando el rol es admin', async () => {
     const adminUser = { ...fakeUser, role: 'admin' }
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: adminUser },
+      data: { user: adminUser },
     })
     const store = useAuthStore()
     await store.login(adminUser.email, 'pass')
@@ -150,7 +147,7 @@ describe('useAuthStore – computed', () => {
   it('isInstructor es true solo cuando el rol es instructor', async () => {
     const instUser = { ...fakeUser, role: 'instructor' }
     vi.mocked(api.post).mockResolvedValueOnce({
-      data: { token: fakeToken, user: instUser },
+      data: { user: instUser },
     })
     const store = useAuthStore()
     await store.login(instUser.email, 'pass')

@@ -64,18 +64,24 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.MaxMultipartMemory = 50 << 20 // 50 MB
+	r.MaxMultipartMemory = 8 << 20 // 8 MB en memoria; el resto va a disco temporal
 
-	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
-	if allowedOrigin == "" {
-		allowedOrigin = "http://localhost:5173"
+	// ALLOWED_ORIGIN acepta lista separada por comas: "https://a.com,https://b.com"
+	allowedOriginsRaw := os.Getenv("ALLOWED_ORIGIN")
+	if allowedOriginsRaw == "" {
+		allowedOriginsRaw = "http://localhost:5173"
+	}
+	allowedOrigins := strings.Split(allowedOriginsRaw, ",")
+	for i, o := range allowedOrigins {
+		allowedOrigins[i] = strings.TrimSpace(o)
 	}
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{allowedOrigin},
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Authorization", "Content-Type"},
-		MaxAge:       12 * time.Hour,
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type"},
+		AllowCredentials: true, // necesario para cookies HttpOnly
+		MaxAge:           12 * time.Hour,
 	}))
 
 	// Captura panics y errores con Sentry (no-op si Sentry no está configurado)
@@ -97,20 +103,14 @@ func main() {
 	r.StaticFile("/", "./frontend/dist/index.html")
 	r.NoRoute(func(c *gin.Context) {
 		p := c.Request.URL.Path
-		// Bloquear prefijos sensibles y rutas de API no registradas
+		// Bloquear prefijos sensibles — devuelven 404 real
 		for _, prefix := range []string{"/.git", "/.env", "/.vite", "/actuator", "/api/"} {
 			if strings.HasPrefix(p, prefix) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
 		}
-		// Si la ruta parece una petición de archivo (tiene extensión), devolver 404.
-		// Las rutas del SPA nunca llevan extensión de archivo.
-		base := p[strings.LastIndex(p, "/")+1:]
-		if dot := strings.LastIndex(base, "."); dot > 0 {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
+		// Todo lo demás es una ruta de la SPA — Vue Router maneja el 404 internamente.
 		c.File("./frontend/dist/index.html")
 	})
 
@@ -124,6 +124,7 @@ func main() {
 		resetLimiter := middleware.NewRateLimiter(10, 15*time.Minute)
 		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
 		api.POST("/login", loginLimiter.Middleware(), handlers.Login)
+		api.POST("/logout", handlers.Logout)
 		api.POST("/forgot-password", forgotLimiter.Middleware(), handlers.ForgotPassword)
 		api.POST("/reset-password", resetLimiter.Middleware(), handlers.ResetPassword)
 		api.GET("/preview-curso/:codigo", handlers.PreviewCurso)
