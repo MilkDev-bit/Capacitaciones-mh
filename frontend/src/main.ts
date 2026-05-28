@@ -22,6 +22,8 @@ if (sentryDsn) {
       Sentry.browserTracingIntegration({ router }),
       Sentry.replayIntegration(),
     ],
+    sendDefaultPii: true,
+    tracePropagationTargets: [/^\/api/, window.location.origin],
     // Captura el 10% de trazas de rendimiento en producción
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
     // Captura el 10% de replays de sesión; 100% al haber un error
