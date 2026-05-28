@@ -70,6 +70,7 @@ function close() {
       <span></span><span></span><span></span><span></span>
     </div>
 
+    <div class="sidebar-content">
     <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
       <div class="w-9 h-9 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
         <svg width="18" height="18" viewBox="0 0 44 44" fill="none">
@@ -119,6 +120,7 @@ function close() {
         Cerrar sesión
       </button>
     </div>
+    </div><!-- /sidebar-content -->
   </aside>
 </template>
 
@@ -154,5 +156,12 @@ function close() {
   100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
 }
 
-aside > *:not(.bubbles) { position: relative; z-index: 1; }
+.sidebar-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 </style>
