@@ -4,6 +4,16 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { toast } from '../../utils/toast'
+import VideoPlayer from '../../components/VideoPlayer.vue'
+
+const videoProgressKey = (lecId: string) => `vp_${cursoId}_${lecId}`
+function savedVideoTime(lecId: string): number {
+  return Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
+}
+function onVideoTimeUpdate(seconds: number) {
+  if (selectedLeccion.value)
+    localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -620,7 +630,12 @@ function goBack() {
             <section class="ver-content-card">
               <!-- Video subido -->
               <div v-if="selectedLeccion.type === 'video'" class="ver-media-frame ver-media-video">
-                <video v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)" controls class="ver-media-fill" />
+                <VideoPlayer
+                  v-if="selectedLeccion.file_path"
+                  :src="fileUrl(selectedLeccion.file_path)"
+                  :saved-time="savedVideoTime(selectedLeccion.id)"
+                  @timeupdate="onVideoTimeUpdate"
+                />
                 <div v-else class="ver-media-empty">Sin video disponible</div>
               </div>
 

@@ -16,6 +16,8 @@ import (
 	"Prueba-Go/internal/middleware"
 	"Prueba-Go/internal/storage"
 
+	sentry "github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -42,6 +44,24 @@ func main() {
 	}
 	middleware.SetSecret([]byte(os.Getenv("JWT_SECRET")))
 
+	// Sentry — solo si se proporciona el DSN
+	if dsn := os.Getenv("SENTRY_DSN"); dsn != "" {
+		env := os.Getenv("RAILWAY_ENVIRONMENT")
+		if env == "" {
+			env = "development"
+		}
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              dsn,
+			Environment:      env,
+			TracesSampleRate: 0.1,
+		}); err != nil {
+			slog.Warn("Sentry init failed", "error", err)
+		} else {
+			slog.Info("Sentry inicializado", "environment", env)
+			defer sentry.Flush(2 * time.Second)
+		}
+	}
+
 	r := gin.Default()
 	r.MaxMultipartMemory = 50 << 20 // 50 MB
 
@@ -56,6 +76,11 @@ func main() {
 		AllowHeaders: []string{"Authorization", "Content-Type"},
 		MaxAge:       12 * time.Hour,
 	}))
+
+	// Captura panics y errores con Sentry (no-op si Sentry no está configurado)
+	if os.Getenv("SENTRY_DSN") != "" {
+		r.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
+	}
 
 	r.Use(func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
