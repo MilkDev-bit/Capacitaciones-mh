@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"Prueba-Go/internal/cache"
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/models"
 	"Prueba-Go/internal/storage"
@@ -159,6 +160,7 @@ func InstructorCreateCapacitacion(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
 		return
 	}
+	cache.C.Flush() // invalidate public course cache
 	c.JSON(http.StatusCreated, gin.H{"id": id, "codigo_acceso": codigo})
 }
 
@@ -242,6 +244,7 @@ func InstructorDeleteCapacitacion(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "no autorizado o no encontrado"})
 		return
 	}
+	cache.C.Flush() // invalidate public course cache
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -261,6 +264,7 @@ func InstructorTogglePublic(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 		return
 	}
+	cache.C.Flush() // invalidate public course cache
 	c.JSON(http.StatusOK, gin.H{"is_public": !current})
 }
 
@@ -441,6 +445,19 @@ func InstructorAsignar(c *gin.Context) {
 
 func ListCursosPublicos(c *gin.Context) {
 	userID, _ := c.Get("user_id")
+
+	type CursoPublico struct {
+		models.Capacitacion
+		Inscrito bool `json:"inscrito"`
+	}
+
+	// Cache the public course list per user so enrolled status is correct.
+	cacheKey := "cursos_publicos:" + userID.(string)
+	if cached, found := cache.C.Get(cacheKey); found {
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
 	rows, err := db.DB.Query(`
 		SELECT c.id, c.title, c.description, c.type,
 		       COALESCE(c.file_path,''), COALESCE(c.content,''),
@@ -458,11 +475,6 @@ func ListCursosPublicos(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	type CursoPublico struct {
-		models.Capacitacion
-		Inscrito bool `json:"inscrito"`
-	}
-
 	result := []CursoPublico{}
 	for rows.Next() {
 		var cp CursoPublico
@@ -470,6 +482,7 @@ func ListCursosPublicos(c *gin.Context) {
 			&cp.FilePath, &cp.Content, &cp.ThumbnailURL, &cp.InstructorID, &cp.IsPublic, &cp.CreatedAt, &cp.Inscrito)
 		result = append(result, cp)
 	}
+	cache.C.Set(cacheKey, result, 0) // uses default TTL (2 min)
 	c.JSON(http.StatusOK, result)
 }
 

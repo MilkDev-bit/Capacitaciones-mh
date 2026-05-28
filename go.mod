@@ -55,4 +55,5 @@ require (
 	github.com/gin-contrib/cors v1.7.7 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 )
