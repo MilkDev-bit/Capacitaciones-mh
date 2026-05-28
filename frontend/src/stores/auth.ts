@@ -45,7 +45,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     toast.success('¡Hasta pronto! Sesión cerrada correctamente.', 'Hasta pronto')
-    setTimeout(() => router.push('/login'), 800)
+    router.push('/login')
   }
 
   function handleSessionExpired() {

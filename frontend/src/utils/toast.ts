@@ -113,6 +113,9 @@ export const toast = {
         backgroundColor: '#ffffff',
         titleColor: '#1d1d1f',
         messageColor: '#86868b',
+        onClosed() {
+          document.querySelectorAll('.iziToast-overlay').forEach(el => el.remove())
+        },
         buttons: [
           [
             '<button style="background:#f97316;color:#fff;border:none;padding:9px 22px;border-radius:9999px;font-weight:700;cursor:pointer;font-size:0.9rem;box-shadow:0 4px 12px rgba(249,115,22,.3)">Confirmar</button>',
