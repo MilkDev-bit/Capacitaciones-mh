@@ -9,13 +9,17 @@ export async function uploadToR2(file: File, prefix: string): Promise<string> {
   const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? 'bin')
   const { data } = await api.get('/presign', { params: { prefix, ext } })
 
-  await fetch(data.upload_url, {
+  const res = await fetch(data.upload_url, {
     method: 'PUT',
     body: file,
     headers: {
       'Content-Type': file.type || 'application/octet-stream',
     },
   })
+
+  if (!res.ok) {
+    throw new Error(`Error al subir archivo (${res.status})`)
+  }
 
   return data.final_url as string
 }

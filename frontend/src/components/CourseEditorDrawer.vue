@@ -46,21 +46,33 @@ async function saveInfo() {
     fd.append('welcome_message', form.value.welcome_message || '')
     fd.append('color', form.value.color || '#f97316')
 
+    let newThumbUrl = ''
     if (thumbnailFile.value) {
-      const thumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
-      fd.append('thumbnail_url', thumbUrl)
+      const uploadingToast = toast.loading('Subiendo portada...')
+      try {
+        newThumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
+        fd.append('thumbnail_url', newThumbUrl)
+      } finally {
+        uploadingToast.close()
+      }
     }
     if (file.value) {
-      const prefix = form.value.type === 'video' ? 'videos' : 'documents'
-      const fileUrl = await uploadToR2(file.value, prefix)
-      fd.append('file_url', fileUrl)
+      const uploadingToast = toast.loading('Subiendo archivo...')
+      try {
+        const prefix = form.value.type === 'video' ? 'videos' : 'documents'
+        const fileUrl = await uploadToR2(file.value, prefix)
+        fd.append('file_url', fileUrl)
+      } finally {
+        uploadingToast.close()
+      }
     }
 
     await api.put(`/instructor/capacitaciones/${form.value.id}`, fd)
+    if (newThumbUrl) form.value.thumbnail_url = newThumbUrl
     toast.success('Curso actualizado')
     emit('updated')
   } catch(e:any) {
-    toast.error('Error al actualizar curso')
+    toast.error(e?.message || 'Error al actualizar curso')
   } finally {
     loading.value = false
   }
