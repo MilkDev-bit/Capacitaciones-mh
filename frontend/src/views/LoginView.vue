@@ -21,7 +21,6 @@ const regEmail = ref('')
 const regPassword = ref('')
 const regConfirmPassword = ref('')
 const showRegPass = ref(false)
-const regRole = ref('user')
 const regLoading = ref(false)
 
 
@@ -108,7 +107,7 @@ async function register() {
   regLoading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('register')
-    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, role: regRole.value, recaptcha_token })
+    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, recaptcha_token })
     toast.success('¡Cuenta creada! Redirigiendo...')
     setTimeout(() => { 
       tab.value = 'login'
@@ -296,21 +295,6 @@ async function resetPassword() {
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Tipo de cuenta</label>
-              <div class="role-grid">
-                <button type="button" :class="['role-card', regRole === 'user' ? 'selected' : '']" @click="regRole = 'user'">
-                  <span class="role-icon">EST</span>
-                  <strong>Estudiante</strong>
-                  <small>Aprende a tu ritmo</small>
-                </button>
-                <button type="button" :class="['role-card', regRole === 'instructor' ? 'selected' : '']" @click="regRole = 'instructor'">
-                  <span class="role-icon">INS</span>
-                  <strong>Instructor</strong>
-                  <small>Crea y gestiona</small>
-                </button>
-              </div>
-            </div>
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading || !passwordsMatch || passStrength < 50">
               <span v-if="regLoading" class="btn-spinner"></span>
               {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
