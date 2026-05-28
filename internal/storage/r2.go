@@ -20,13 +20,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	client    *s3.Client
-	bucket    string
-	publicURL string
-)
-
-var mimeTypes = map[string]string{
+// MimeTypes maps file extensions to their MIME content-type.
+// Exported so callers (e.g. presign handler) can resolve the correct type.
+var MimeTypes = map[string]string{
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
 	".png":  "image/png",
@@ -53,24 +49,42 @@ var dangerousMIME = map[string]bool{
 	"application/xhtml+xml":  true,
 }
 
+// StorageService encapsulates the R2 client and bucket configuration.
+// Use Init for the package-level singleton or New to create an isolated instance
+// (e.g. in unit tests with a mock S3 client).
+type StorageService struct {
+	client    *s3.Client
+	bucket    string
+	publicURL string
+}
+
+// defaultSvc is the package-level singleton, created by Init.
+var defaultSvc *StorageService
+
+// New creates a StorageService from an existing S3 client. Intended for testing.
+func New(client *s3.Client, bucket, publicURL string) *StorageService {
+	return &StorageService{client: client, bucket: bucket, publicURL: publicURL}
+}
+
 func Init() {
-	bucket = os.Getenv("R2_BUCKET")
-	publicURL = strings.TrimRight(os.Getenv("R2_PUBLIC_URL"), "/")
+	bkt := os.Getenv("R2_BUCKET")
+	pubURL := strings.TrimRight(os.Getenv("R2_PUBLIC_URL"), "/")
 	endpoint := os.Getenv("R2_ENDPOINT")
 	accessKey := os.Getenv("R2_ACCESS_KEY_ID")
 	secretKey := os.Getenv("R2_SECRET_ACCESS_KEY")
 
-	client = s3.New(s3.Options{
+	c := s3.New(s3.Options{
 		BaseEndpoint: aws.String(endpoint),
 		Credentials:  credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
 		Region:       "auto",
 	})
+	defaultSvc = &StorageService{client: c, bucket: bkt, publicURL: pubURL}
 
-	if bucket == "" || endpoint == "" || accessKey == "" || secretKey == "" {
+	if bkt == "" || endpoint == "" || accessKey == "" || secretKey == "" {
 		slog.Warn("una o más variables R2 no están configuradas")
 		return
 	}
-	slog.Info("R2 inicializado", "bucket", bucket, "endpoint", endpoint)
+	slog.Info("R2 inicializado", "bucket", bkt, "endpoint", endpoint)
 	go configureBucketCORS()
 }
 
@@ -128,7 +142,7 @@ func configureCORSViaCloudflareAPI(accountID, apiToken, allowedOrigin string) er
 	body, _ := json.Marshal(payload)
 
 	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/r2/buckets/%s/cors",
-		accountID, bucket)
+		accountID, defaultSvc.bucket)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -152,9 +166,11 @@ func configureCORSViaCloudflareAPI(accountID, apiToken, allowedOrigin string) er
 	return nil
 }
 
-func UploadFile(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error) {
-	_, err := client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:        aws.String(bucket),
+// --- StorageService methods ---
+
+func (s *StorageService) UploadFile(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error) {
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:        aws.String(s.bucket),
 		Key:           aws.String(key),
 		Body:          body,
 		ContentType:   aws.String(contentType),
@@ -164,10 +180,10 @@ func UploadFile(ctx context.Context, key, contentType string, body io.Reader, si
 	if err != nil {
 		return "", err
 	}
-	return publicURL + "/" + key, nil
+	return s.publicURL + "/" + key, nil
 }
 
-func UploadMultipart(ctx context.Context, fh *multipart.FileHeader, prefix string) (string, error) {
+func (s *StorageService) UploadMultipart(ctx context.Context, fh *multipart.FileHeader, prefix string) (string, error) {
 	f, err := fh.Open()
 	if err != nil {
 		return "", err
@@ -185,36 +201,38 @@ func UploadMultipart(ctx context.Context, fh *multipart.FileHeader, prefix strin
 	}
 
 	ext := strings.ToLower(filepath.Ext(fh.Filename))
-	ct, ok := mimeTypes[ext]
+	ct, ok := MimeTypes[ext]
 	if !ok {
 		ct = "application/octet-stream"
 	}
 	year := time.Now().Format("2006")
 	key := fmt.Sprintf("%s/%s/%s%s", prefix, year, uuid.NewString(), ext)
-	return UploadFile(ctx, key, ct, f, fh.Size)
+	return s.UploadFile(ctx, key, ct, f, fh.Size)
 }
 
-// GeneratePresignedURL returns a time-limited PUT URL for direct client-to-R2 uploads
-// and the permanent public URL the file will have once uploaded.
-func GeneratePresignedURL(ctx context.Context, prefix, ext string, ttl time.Duration) (uploadURL, finalURL string, err error) {
+// GeneratePresignedURL returns a time-limited PUT URL for direct client-to-R2 uploads.
+// contentType is locked into the signed URL so R2 rejects uploads with a different MIME type,
+// preventing an attacker from substituting the MIME type after the URL is issued.
+func (s *StorageService) GeneratePresignedURL(ctx context.Context, prefix, ext, contentType string, ttl time.Duration) (uploadURL, finalURL string, err error) {
 	year := time.Now().Format("2006")
 	key := fmt.Sprintf("%s/%s/%s%s", prefix, year, uuid.NewString(), ext)
-	pc := s3.NewPresignClient(client)
+	pc := s3.NewPresignClient(s.client)
 	req, presignErr := pc.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
 	}, s3.WithPresignExpires(ttl))
 	if presignErr != nil {
 		return "", "", presignErr
 	}
-	return req.URL, publicURL + "/" + key, nil
+	return req.URL, s.publicURL + "/" + key, nil
 }
 
 // GeneratePresignedGetURL returns a time-limited GET URL for serving private R2 objects.
-func GeneratePresignedGetURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
-	pc := s3.NewPresignClient(client)
+func (s *StorageService) GeneratePresignedGetURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	pc := s3.NewPresignClient(s.client)
 	req, err := pc.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	}, s3.WithPresignExpires(ttl))
 	if err != nil {
@@ -223,7 +241,47 @@ func GeneratePresignedGetURL(ctx context.Context, key string, ttl time.Duration)
 	return req.URL, nil
 }
 
+// DeleteFile removes an object from R2. Call this when a course, lesson, or profile
+// asset is deleted to avoid orphaned files accruing storage costs.
+func (s *StorageService) DeleteFile(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return err
+}
+
+// ExtractKeyFromURL extracts the R2 object key from a full public URL.
+func (s *StorageService) ExtractKeyFromURL(fileURL string) string {
+	return strings.TrimPrefix(fileURL, s.publicURL+"/")
+}
+
+// --- Package-level wrappers (backward-compatible public API) ---
+
+func UploadFile(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error) {
+	return defaultSvc.UploadFile(ctx, key, contentType, body, size)
+}
+
+func UploadMultipart(ctx context.Context, fh *multipart.FileHeader, prefix string) (string, error) {
+	return defaultSvc.UploadMultipart(ctx, fh, prefix)
+}
+
+// GeneratePresignedURL requires contentType to be locked into the signed URL,
+// preventing an attacker from substituting the MIME type on upload.
+func GeneratePresignedURL(ctx context.Context, prefix, ext, contentType string, ttl time.Duration) (string, string, error) {
+	return defaultSvc.GeneratePresignedURL(ctx, prefix, ext, contentType, ttl)
+}
+
+func GeneratePresignedGetURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	return defaultSvc.GeneratePresignedGetURL(ctx, key, ttl)
+}
+
+// DeleteFile removes an R2 object by key.
+func DeleteFile(ctx context.Context, key string) error {
+	return defaultSvc.DeleteFile(ctx, key)
+}
+
 // ExtractKeyFromURL extracts the R2 object key from a full public URL.
 func ExtractKeyFromURL(fileURL string) string {
-	return strings.TrimPrefix(fileURL, publicURL+"/")
+	return defaultSvc.ExtractKeyFromURL(fileURL)
 }

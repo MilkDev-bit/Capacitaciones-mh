@@ -57,7 +57,12 @@ func PresignUpload(c *gin.Context) {
 		return
 	}
 
-	uploadURL, finalURL, err := storage.GeneratePresignedURL(c.Request.Context(), prefix, ext, 15*time.Minute)
+	ct, ok := storage.MimeTypes[ext]
+	if !ok {
+		ct = "application/octet-stream"
+	}
+
+	uploadURL, finalURL, err := storage.GeneratePresignedURL(c.Request.Context(), prefix, ext, ct, 15*time.Minute)
 	if err != nil {
 		slog.Error("PresignUpload", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
@@ -65,7 +70,8 @@ func PresignUpload(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"upload_url": uploadURL,
-		"final_url":  finalURL,
+		"upload_url":   uploadURL,
+		"final_url":    finalURL,
+		"content_type": ct,
 	})
 }
