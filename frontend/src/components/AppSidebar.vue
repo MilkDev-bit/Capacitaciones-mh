@@ -61,7 +61,7 @@ function close() {
     :class="[
       'fixed top-0 left-0 h-full w-60 bg-gray-900 flex flex-col z-30 transition-transform duration-300 overflow-hidden relative',
       open ? 'translate-x-0' : '-translate-x-full',
-      'lg:translate-x-0 lg:static lg:flex',
+      'lg:translate-x-0 lg:relative lg:flex',
     ]"
     aria-label="Sidebar"
   >
