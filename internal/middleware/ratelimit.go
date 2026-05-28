@@ -33,14 +33,24 @@ func NewRateLimiter(max int, window time.Duration) *RateLimiter {
 func (rl *RateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
 	for range ticker.C {
-		rl.mu.Lock()
 		now := time.Now()
+		// Fase 1: identificar claves expiradas con RLock (sin bloquear peticiones)
+		rl.mu.RLock()
+		var expired []string
 		for ip, b := range rl.buckets {
 			if now.After(b.resetAt) {
-				delete(rl.buckets, ip)
+				expired = append(expired, ip)
 			}
 		}
-		rl.mu.Unlock()
+		rl.mu.RUnlock()
+		// Fase 2: eliminar solo las claves expiradas con Lock exclusivo
+		if len(expired) > 0 {
+			rl.mu.Lock()
+			for _, ip := range expired {
+				delete(rl.buckets, ip)
+			}
+			rl.mu.Unlock()
+		}
 	}
 }
 

@@ -66,6 +66,13 @@ func main() {
 	r := gin.Default()
 	r.MaxMultipartMemory = 8 << 20 // 8 MB en memoria; el resto va a disco temporal
 
+	// Railway usa un proxy interno — confiar solo en él para X-Forwarded-For.
+	// nil = no confiar en ningún proxy (usar IP directa); ajustar si Railway
+	// proporciona IPs de proxy específicas.
+	if err := r.SetTrustedProxies(nil); err != nil {
+		slog.Warn("SetTrustedProxies falló", "error", err)
+	}
+
 	// ALLOWED_ORIGIN acepta lista separada por comas: "https://a.com,https://b.com"
 	allowedOriginsRaw := os.Getenv("ALLOWED_ORIGIN")
 	if allowedOriginsRaw == "" {

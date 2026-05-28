@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,7 +54,7 @@ func CreateCapacitacion(c *gin.Context) {
 	content := sanitize.HTML(c.PostForm("content"))
 	welcomeMsg := sanitize.HTML(c.PostForm("welcome_message"))
 	isPublicStr := c.PostForm("is_public")
-	isPublic := isPublicStr == "true"
+	isPublic, _ := strconv.ParseBool(isPublicStr)
 	color := c.PostForm("color")
 	if color == "" {
 		color = "#f97316"
@@ -126,7 +127,7 @@ func UpdateCapacitacion(c *gin.Context) {
 	description := sanitize.HTML(c.PostForm("description"))
 	welcomeMsg := sanitize.HTML(c.PostForm("welcome_message"))
 	isPublicStr := c.PostForm("is_public")
-	isPublic := isPublicStr == "true"
+	isPublic, _ := strconv.ParseBool(isPublicStr)
 	color := c.PostForm("color")
 	if color == "" {
 		color = "#f97316"
