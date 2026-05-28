@@ -101,6 +101,7 @@ func main() {
 			auth.PUT("/perfil", handlers.UpdatePerfil)
 			auth.POST("/perfil/avatar", handlers.UploadAvatar)
 			auth.POST("/perfil/cover", handlers.UploadCover)
+			auth.POST("/perfil/become-instructor", handlers.BecomeInstructor)
 			auth.GET("/usuarios/:id/perfil", handlers.GetPublicPerfil)
 
 			auth.GET("/presign", handlers.PresignUpload)

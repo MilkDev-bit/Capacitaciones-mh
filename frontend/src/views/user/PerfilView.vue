@@ -10,11 +10,13 @@ const perfil = ref<any>(null)
 const stats = ref<any>({})
 const loading = ref(false)
 const loadingSave = ref(false)
+const becomingInstructor = ref(false)
+const instructorForm = ref({ bio: '', specialty: '' })
 
 const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
 const showPass = ref(false)
-const activeTab = ref<'info' | 'security'>('info')
+const activeTab = ref<'info' | 'security' | 'instructor'>('info')
 
 const avatarInput = ref<HTMLInputElement | null>(null)
 const coverInput = ref<HTMLInputElement | null>(null)
@@ -102,6 +104,34 @@ async function guardar() {
 
 function initials(name: string) {
   return name ? name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() : '?'
+}
+
+async function becomeInstructor() {
+  if (!instructorForm.value.specialty.trim()) {
+    toast.error('La especialidad es requerida')
+    return
+  }
+  if (!instructorForm.value.bio.trim()) {
+    toast.error('La biografía es requerida')
+    return
+  }
+  becomingInstructor.value = true
+  try {
+    const res = await api.post('/perfil/become-instructor', {
+      bio: instructorForm.value.bio,
+      specialty: instructorForm.value.specialty,
+    })
+    if (auth.user) {
+      auth.user = { ...auth.user, role: res.data.role }
+      localStorage.setItem('user', JSON.stringify(auth.user))
+    }
+    toast.success('¡Ahora eres instructor! Recarga la página para acceder al panel.')
+    await load()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al procesar la solicitud')
+  } finally {
+    becomingInstructor.value = false
+  }
 }
 
 async function uploadAvatar(e: Event) {
@@ -240,6 +270,10 @@ async function uploadCover(e: Event) {
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           Seguridad
         </button>
+        <button v-if="perfil?.role === 'user'" :class="['fp-tab', activeTab === 'instructor' ? 'fp-tab-active' : '']" @click="activeTab = 'instructor'">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Ser Instructor
+        </button>
       </div>
 
       <!-- Contenido de tabs -->
@@ -297,6 +331,41 @@ async function uploadCover(e: Event) {
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                 Las contraseñas coinciden
               </div>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Tab: Ser Instructor -->
+        <Transition name="fade" mode="out-in">
+          <div v-if="activeTab === 'instructor'" key="instructor" class="fp-card">
+            <div class="fp-card-head">
+              <h2>Conviértete en Instructor</h2>
+              <p>Crea y comparte cursos con tus estudiantes. Completa tu perfil de instructor para continuar.</p>
+            </div>
+            <div class="fp-instructor-banner">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/></svg>
+              <div>
+                <strong>Acceso al Panel de Instructor</strong>
+                <span>Podrás crear capacitaciones, lecciones, exámenes y gestionar tus estudiantes.</span>
+              </div>
+            </div>
+            <div class="fp-form">
+              <label class="fp-field fp-field-full">
+                <span>Especialidad / Área <em>*</em></span>
+                <input v-model="instructorForm.specialty" class="field-input" placeholder="Ej: Recursos Humanos, Ventas, Programación..." />
+              </label>
+              <label class="fp-field fp-field-full">
+                <span>Biografía profesional <em>*</em></span>
+                <textarea v-model="instructorForm.bio" rows="4" class="field-input fp-textarea"
+                  placeholder="Describe tu experiencia, logros y por qué quieres enseñar..." />
+              </label>
+            </div>
+            <div class="fp-instructor-actions">
+              <button class="btn btn-primary" :disabled="becomingInstructor" @click="becomeInstructor">
+                <span v-if="becomingInstructor" class="spinner" style="width:14px;height:14px;border-width:2px"></span>
+                <svg v-else width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                {{ becomingInstructor ? 'Procesando...' : 'Convertirme en Instructor' }}
+              </button>
             </div>
           </div>
         </Transition>
@@ -466,6 +535,20 @@ async function uploadCover(e: Event) {
 /* Password feedback */
 .fp-pass-mismatch { grid-column: 1/-1; font-size: 0.83rem; color: #dc2626; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .fp-pass-match { grid-column: 1/-1; font-size: 0.83rem; color: #16a34a; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+/* ─── Instructor upgrade ─────────────────────────────────── */
+.fp-instructor-banner {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; border-radius: var(--r-md);
+  background: linear-gradient(135deg, #fff7ed, #fffbf5);
+  border: 1px solid #fed7aa;
+  margin-bottom: 20px;
+}
+.fp-instructor-banner svg { flex-shrink: 0; color: #ea580c; margin-top: 2px; }
+.fp-instructor-banner div { display: flex; flex-direction: column; gap: 3px; }
+.fp-instructor-banner strong { font-size: 0.9rem; color: #9a3412; }
+.fp-instructor-banner span { font-size: 0.82rem; color: #c2410c; }
+.fp-instructor-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
 
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 680px) {

@@ -175,3 +175,55 @@ func UploadCover(c *gin.Context) {
 	db.DB.Exec(`UPDATE users SET cover_url=$1 WHERE id=$2`, url, userID)
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }
+
+// BecomeInstructor promotes a "user" role account to "instructor".
+// Only users with role="user" can call this endpoint.
+// Optionally accepts bio and specialty to complete the instructor profile.
+func BecomeInstructor(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+
+	if role != "user" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "solo los estudiantes pueden convertirse en instructores"})
+		return
+	}
+
+	var req struct {
+		Bio       string `json:"bio"`
+		Specialty string `json:"specialty"`
+	}
+	// Fields are optional — ignore binding errors
+	_ = c.ShouldBindJSON(&req)
+
+	tx, err := db.DB.Begin()
+	if err != nil {
+		log.Printf("[ERROR] BecomeInstructor tx: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+		return
+	}
+	defer tx.Rollback()
+
+	if req.Bio != "" || req.Specialty != "" {
+		_, err = tx.Exec(`UPDATE users SET bio=$1, specialty=$2 WHERE id=$3`, req.Bio, req.Specialty, userID)
+		if err != nil {
+			log.Printf("[ERROR] BecomeInstructor update profile: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+			return
+		}
+	}
+
+	_, err = tx.Exec(`UPDATE users SET role='instructor' WHERE id=$1 AND role='user'`, userID)
+	if err != nil {
+		log.Printf("[ERROR] BecomeInstructor update role: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[ERROR] BecomeInstructor commit: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"role": "instructor"})
+}

@@ -164,7 +164,25 @@ func GetExamen(c *gin.Context) {
 
 	if role == "user" {
 		uid, _ := c.Get("user_id")
-		yaRespondido, puntaje, puntajeMax, porcentaje := getExamenResultadoUsuario(id, uid.(string))
+		userID := uid.(string)
+
+		// Verifica que el usuario tenga acceso: asignación directa O inscripción al curso vinculado.
+		var access int
+		db.DB.QueryRow(`
+			SELECT COUNT(*) FROM (
+				SELECT 1 FROM asignaciones WHERE user_id=$1 AND examen_id=$2
+				UNION ALL
+				SELECT 1 FROM inscripciones i
+				INNER JOIN examenes e ON e.capacitacion_id = i.capacitacion_id
+				WHERE i.user_id=$1 AND e.id=$2
+			) t
+		`, userID, id).Scan(&access)
+		if access == 0 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "no tienes acceso a este examen"})
+			return
+		}
+
+		yaRespondido, puntaje, puntajeMax, porcentaje := getExamenResultadoUsuario(id, userID)
 		c.JSON(http.StatusOK, gin.H{
 			"id": examen.ID, "title": examen.Title, "description": examen.Description,
 			"created_at": examen.CreatedAt, "capacitacion_id": examen.CapacitacionID,
