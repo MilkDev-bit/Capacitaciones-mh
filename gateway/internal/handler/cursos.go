@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 
 	"Prueba-Go/gateway/internal/clients"
@@ -279,6 +280,7 @@ func grpcToHTTP(ctx *gin.Context, err error) {
 	case codes.InvalidArgument:
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": st.Message()})
 	default:
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
+		slog.Error("grpc error", "code", st.Code(), "msg", st.Message(), "path", ctx.FullPath())
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": st.Message()})
 	}
 }
