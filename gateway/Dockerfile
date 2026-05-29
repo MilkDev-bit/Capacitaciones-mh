@@ -19,20 +19,19 @@ FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
-COPY go.work go.work
-COPY go.work.sum* ./
 COPY gen/go.mod gen/go.mod
+COPY gen/go.sum* gen/
 COPY gateway/go.mod gateway/go.sum* ./gateway/
 
 WORKDIR /app/gateway
-RUN go mod download
+RUN GOWORK=off go mod download
 
 WORKDIR /app
 COPY gen/     gen/
 COPY gateway/ gateway/
 
 WORKDIR /app/gateway
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /gateway ./cmd/server
+RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /gateway ./cmd/server
 
 # ── Stage 3: Imagen final mínima ─────────────────────────────────────────────
 FROM gcr.io/distroless/static-debian12
