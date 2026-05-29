@@ -1,17 +1,10 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-# Pasar VITE_RECAPTCHA_SITE_KEY como build arg para que Vite la inyecte en el bundle
-buildArgs = { VITE_RECAPTCHA_SITE_KEY = "${{VITE_RECAPTCHA_SITE_KEY}}" }
+builder        = "dockerfile"
+dockerfilePath = "gateway/Dockerfile"
+buildArgs      = { VITE_RECAPTCHA_SITE_KEY = "${{VITE_RECAPTCHA_SITE_KEY}}" }
 
 [deploy]
-restartPolicyType = "on_failure"
+restartPolicyType       = "on_failure"
 restartPolicyMaxRetries = 3
-healthcheckPath = "/api/health"
-healthcheckTimeout = 30
-
-# Volumen persistente: Railway monta este path entre deploys.
-# Crear el volumen en el dashboard de Railway y asignarlo a este servicio
-# con mountPath = "/app/uploads"
-[[volumes]]
-mountPath = "/app/uploads"
+healthcheckPath         = "/api/health"
+healthcheckTimeout      = 30

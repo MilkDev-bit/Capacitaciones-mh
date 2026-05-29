@@ -1,0 +1,7 @@
+[build]
+builder        = "dockerfile"
+dockerfilePath = "services/examenes/Dockerfile"
+
+[deploy]
+restartPolicyType       = "on_failure"
+restartPolicyMaxRetries = 3
