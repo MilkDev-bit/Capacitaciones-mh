@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "Prueba-Go/gen/auth;authpb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AuthService: registro, login, validación de JWT y gestión de sesiones.
+// Consumido principalmente por el API Gateway.
+// ─────────────────────────────────────────────────────────────────────────────
+service AuthService {
+  // Crea un usuario nuevo y devuelve el JWT + perfil.
+  rpc Register(RegisterRequest) returns (AuthResponse);
+
+  // Verifica credenciales y devuelve JWT + perfil.
+  rpc Login(LoginRequest) returns (AuthResponse);
+
+  // Valida el JWT y comprueba token_version contra la BD.
+  // El Gateway llama a este RPC en cada petición autenticada.
+  rpc ValidateToken(ValidateTokenRequest) returns (UserClaims);
+
+  // Incrementa token_version del usuario, invalidando todos sus JWT activos.
+  rpc Logout(LogoutRequest) returns (EmptyResponse);
+
+  // Genera token de reset y envía email al usuario.
+  rpc ForgotPassword(ForgotPasswordRequest) returns (EmptyResponse);
+
+  // Verifica token de reset y actualiza la contraseña.
+  rpc ResetPassword(ResetPasswordRequest) returns (EmptyResponse);
+
+  // Invalida todas las sesiones de un usuario (solo admin).
+  rpc RevokeUserSessions(RevokeRequest) returns (EmptyResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message RegisterRequest {
+  string name            = 1;
+  string email           = 2;
+  string password        = 3;
+  string role            = 4; // "user" por defecto
+  string recaptcha_token = 5;
+}
+
+message LoginRequest {
+  string email           = 1;
+  string password        = 2;
+  string recaptcha_token = 3;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ResetPasswordRequest {
+  string reset_token   = 1;
+  string new_password  = 2;
+}
+
+message RevokeRequest {
+  string user_id = 1;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message AuthResponse {
+  string      token = 1;
+  UserProfile user  = 2;
+}
+
+// UserClaims: lo que el Gateway extrae del JWT validado.
+message UserClaims {
+  string user_id       = 1;
+  string email         = 2;
+  string role          = 3;
+  int32  token_version = 4;
+}
+
+message UserProfile {
+  string id         = 1;
+  string name       = 2;
+  string email      = 3;
+  string role       = 4;
+  string bio        = 5;
+  string avatar_url = 6;
+  string cover_url  = 7;
+  string phone      = 8;
+  string specialty  = 9;
+  string created_at = 10;
+}
+
+message EmptyResponse {}

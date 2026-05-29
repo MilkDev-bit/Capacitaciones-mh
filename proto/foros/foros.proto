@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package foros;
+
+option go_package = "Prueba-Go/gen/foros;forospb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ForosService: posts, comentarios y likes del foro de cada lección.
+// ─────────────────────────────────────────────────────────────────────────────
+service ForosService {
+  // ── Usuario autenticado ───────────────────────────────────────────────────
+  rpc ListForoPosts(LeccionRequest) returns (ListPostsResponse);
+  rpc CreateForoPost(CreatePostRequest) returns (PostResponse);
+  rpc DeleteForoPost(PostUserRequest) returns (EmptyResponse);
+
+  rpc ListForoComentarios(PostRequest) returns (ListComentariosResponse);
+  rpc CreateForoComentario(CreateComentarioRequest) returns (ComentarioResponse);
+
+  rpc ToggleForoPostLike(PostUserRequest) returns (LikeResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message LeccionRequest  { string leccion_id = 1; string user_id = 2; }
+message PostRequest     { string post_id = 1; }
+message PostUserRequest { string post_id = 1; string user_id = 2; }
+
+message CreatePostRequest {
+  string leccion_id  = 1;
+  string user_id     = 2;
+  string titulo      = 3;
+  string contenido   = 4;
+  string media_url   = 5;
+  string media_type  = 6;
+}
+
+message CreateComentarioRequest {
+  string post_id   = 1;
+  string user_id   = 2;
+  string contenido = 3;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message PostResponse {
+  string id         = 1;
+  string leccion_id = 2;
+  string user_id    = 3;
+  string user_name  = 4;
+  string titulo     = 5;
+  string contenido  = 6;
+  string media_url  = 7;
+  string media_type = 8;
+  int32  like_count = 9;
+  bool   user_liked = 10;
+  string created_at = 11;
+}
+
+message ListPostsResponse {
+  repeated PostResponse posts = 1;
+}
+
+message ComentarioResponse {
+  string id         = 1;
+  string post_id    = 2;
+  string user_id    = 3;
+  string user_name  = 4;
+  string contenido  = 5;
+  string created_at = 6;
+}
+
+message ListComentariosResponse {
+  repeated ComentarioResponse comentarios = 1;
+}
+
+message LikeResponse {
+  int32 like_count = 1;
+  bool  user_liked = 2;
+}
+
+message EmptyResponse {}

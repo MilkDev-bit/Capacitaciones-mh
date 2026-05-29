@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package lecciones;
+
+option go_package = "Prueba-Go/gen/lecciones;leccionespb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LeccionesService: gestión de lecciones, progreso y preguntas intermedias.
+// ─────────────────────────────────────────────────────────────────────────────
+service LeccionesService {
+  // ── Usuario autenticado ───────────────────────────────────────────────────
+  rpc GetLeccionesConProgreso(CursoUserRequest) returns (ListLeccionesResponse);
+  rpc MarcarLeccionCompleta(MarcarRequest) returns (EmptyResponse);
+
+  rpc GetPreguntasIntermedias(CursoUserRequest) returns (ListIntermediasResponse);
+  rpc SubmitPreguntasIntermedias(SubmitIntermediasRequest) returns (SubmitIntermediasResponse);
+
+  // ── Instructor ────────────────────────────────────────────────────────────
+  rpc InstructorListLecciones(CursoRequest) returns (ListLeccionesResponse);
+  rpc InstructorCreateLeccion(CreateLeccionRequest) returns (LeccionResponse);
+  rpc InstructorUpdateLeccion(UpdateLeccionRequest) returns (LeccionResponse);
+  rpc InstructorDeleteLeccion(LeccionRequest) returns (EmptyResponse);
+  rpc InstructorReorderLecciones(ReorderRequest) returns (EmptyResponse);
+
+  rpc InstructorListPreguntasIntermedias(CursoRequest) returns (ListIntermediasResponse);
+  rpc InstructorCreatePreguntaIntermedia(CreateIntermediaRequest) returns (IntermediaResponse);
+  rpc InstructorDeletePreguntaIntermedia(IntermediaIDRequest) returns (EmptyResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message CursoRequest      { string curso_id = 1; }
+message CursoUserRequest  { string curso_id = 1; string user_id = 2; }
+message LeccionRequest    { string curso_id = 1; string leccion_id = 2; }
+message IntermediaIDRequest { string pregunta_id = 1; string curso_id = 2; }
+
+message MarcarRequest {
+  string leccion_id = 1;
+  string user_id    = 2;
+}
+
+message CreateLeccionRequest {
+  string curso_id     = 1;
+  string title        = 2;
+  string description  = 3;
+  string type         = 4;
+  string file_path    = 5;
+  string content      = 6;
+  int32  orden        = 7;
+  int32  duracion_min = 8;
+}
+
+message UpdateLeccionRequest {
+  string leccion_id   = 1;
+  string curso_id     = 2;
+  string title        = 3;
+  string description  = 4;
+  string type         = 5;
+  string file_path    = 6;
+  string content      = 7;
+  int32  orden        = 8;
+  int32  duracion_min = 9;
+}
+
+message ReorderRequest {
+  string         curso_id   = 1;
+  repeated string leccion_ids = 2; // orden nuevo (slice de IDs)
+}
+
+message CreateIntermediaRequest {
+  string                 curso_id             = 1;
+  string                 despues_de_leccion_id = 2;
+  string                 texto                = 3;
+  string                 tipo                 = 4;
+  int32                  orden                = 5;
+  repeated OpcionInput   opciones             = 6;
+}
+
+message SubmitIntermediasRequest {
+  string              curso_id   = 1;
+  string              user_id    = 2;
+  repeated Respuesta  respuestas = 3;
+}
+
+message Respuesta {
+  string pregunta_id      = 1;
+  string opcion_id        = 2;
+  string respuesta_texto  = 3;
+}
+
+message OpcionInput {
+  string texto       = 1;
+  bool   es_correcta = 2;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message LeccionResponse {
+  string id           = 1;
+  string curso_id     = 2;
+  string title        = 3;
+  string description  = 4;
+  string type         = 5;
+  string file_path    = 6;
+  string content      = 7;
+  int32  orden        = 8;
+  int32  duracion_min = 9;
+  bool   completada   = 10;
+  string created_at   = 11;
+}
+
+message ListLeccionesResponse {
+  repeated LeccionResponse lecciones = 1;
+}
+
+message IntermediaResponse {
+  string id                    = 1;
+  string curso_id              = 2;
+  string despues_de_leccion_id = 3;
+  string texto                 = 4;
+  string tipo                  = 5;
+  int32  orden                 = 6;
+  repeated OpcionInfo opciones = 7;
+}
+
+message OpcionInfo {
+  string id         = 1;
+  string texto      = 2;
+  bool   es_correcta = 3;
+}
+
+message ListIntermediasResponse {
+  repeated IntermediaResponse preguntas = 1;
+}
+
+message SubmitIntermediasResponse {
+  int32 correctas = 1;
+  int32 total     = 2;
+}
+
+message EmptyResponse {}

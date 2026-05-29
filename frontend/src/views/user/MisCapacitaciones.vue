@@ -161,7 +161,7 @@ function openCourse(id: string) {
 async function inscribirse(id: string) {
   inscribiendose.value = id
   try {
-    await api.post(`/inscribirse/${id}`)
+    await api.post(`/cursos/${id}/inscripciones`)
     await Promise.all([loadMis(), loadPublicos()])
     activeTab.value = 'mis'
   } finally {
@@ -181,7 +181,7 @@ async function unirseConCodigo() {
   codigoLoading.value = true
 
   try {
-    const res = await api.post('/unirse-con-codigo', { codigo: code })
+    const res = await api.post('/inscripciones', { codigo: code })
     codigoSuccess.value = `Te uniste a "${res.data.title}"`
     codigoInput.value = ''
     await loadMis()

@@ -1,0 +1,180 @@
+# docker-compose.yml — Levanta todo el sistema de microservicios localmente.
+# Uso: make up  (o docker compose up --build -d)
+#
+# Servicios:
+#   postgres      → Base de datos compartida (mientras migras a BD-por-servicio)
+#   auth-service  → gRPC :50051
+#   usuarios-svc  → gRPC :50052
+#   cursos-svc    → gRPC :50053
+#   lecciones-svc → gRPC :50054
+#   examenes-svc  → gRPC :50055
+#   foros-svc     → gRPC :50056
+#   gateway       → HTTP :8080  ← único punto de entrada público
+
+services:
+
+  # ── Infraestructura ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-capacitaciones}
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432" # solo para acceso local en desarrollo
+
+  # ── Auth service ─────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:         postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:            "50051"
+      JWT_SECRET:           ${JWT_SECRET}
+      JWT_EXPIRY_HOURS:     ${JWT_EXPIRY_HOURS:-720}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+      SMTP_HOST:            ${SMTP_HOST:-}
+      SMTP_PORT:            ${SMTP_PORT:-587}
+      SMTP_USER:            ${SMTP_USER:-}
+      SMTP_PASS:            ${SMTP_PASS:-}
+      SMTP_FROM:            ${SMTP_FROM:-}
+      APP_URL:              ${APP_URL:-http://localhost:8080}
+      APP_NAME:             ${APP_NAME:-Capacitaciones}
+      LOG_LEVEL:            ${LOG_LEVEL:-info}
+    expose:
+      - "50051"
+
+  # ── Usuarios service ──────────────────────────────────────────────────────────
+  usuarios-service:
+    build:
+      context: .
+      dockerfile: services/usuarios/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50052"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50052"
+
+  # ── Cursos service ────────────────────────────────────────────────────────────
+  cursos-service:
+    build:
+      context: .
+      dockerfile: services/cursos/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50053"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50053"
+
+  # ── Lecciones service ─────────────────────────────────────────────────────────
+  lecciones-service:
+    build:
+      context: .
+      dockerfile: services/lecciones/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50054"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50054"
+
+  # ── Examenes service ──────────────────────────────────────────────────────────
+  examenes-service:
+    build:
+      context: .
+      dockerfile: services/examenes/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50055"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50055"
+
+  # ── Foros service ─────────────────────────────────────────────────────────────
+  foros-service:
+    build:
+      context: .
+      dockerfile: services/foros/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50056"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50056"
+
+  # ── API Gateway ───────────────────────────────────────────────────────────────
+  # Único contenedor expuesto al exterior. Recibe HTTP y hace fan-out a gRPC.
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - usuarios-service
+      - cursos-service
+      - lecciones-service
+      - examenes-service
+      - foros-service
+    environment:
+      PORT:           "8080"
+      JWT_SECRET:     ${JWT_SECRET}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:5173}
+
+      # Direcciones internas de los microservicios (resolución DNS de Docker)
+      AUTH_ADDR:      auth-service:50051
+      USUARIOS_ADDR:  usuarios-service:50052
+      CURSOS_ADDR:    cursos-service:50053
+      LECCIONES_ADDR: lecciones-service:50054
+      EXAMENES_ADDR:  examenes-service:50055
+      FOROS_ADDR:     foros-service:50056
+
+      # Cloudflare R2
+      R2_BUCKET:      ${R2_BUCKET:-}
+      R2_ENDPOINT:    ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY:  ${R2_ACCESS_KEY:-}
+      R2_SECRET_KEY:  ${R2_SECRET_KEY:-}
+      R2_PUBLIC_URL:  ${R2_PUBLIC_URL:-}
+
+      GIN_MODE:       ${GIN_MODE:-release}
+      LOG_LEVEL:      ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080" # único puerto expuesto al host
+
+volumes:
+  postgres_data:

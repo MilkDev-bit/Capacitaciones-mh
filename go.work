@@ -1,0 +1,15 @@
+go 1.26.2
+
+// El go.work une todos los módulos del workspace para desarrollo local.
+// En producción, cada servicio se compila y despliega de forma independiente.
+use (
+	.
+	./gen
+	./services/auth
+	./services/usuarios
+	./services/cursos
+	./services/lecciones
+	./services/examenes
+	./services/foros
+	./gateway
+)

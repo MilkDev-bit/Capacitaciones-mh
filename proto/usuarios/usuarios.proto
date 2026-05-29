@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package usuarios;
+
+option go_package = "Prueba-Go/gen/usuarios;usuariospb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UsuariosService: gestión de perfiles y administración de usuarios.
+// ─────────────────────────────────────────────────────────────────────────────
+service UsuariosService {
+  // Devuelve el perfil del usuario autenticado.
+  rpc GetPerfil(GetPerfilRequest) returns (PerfilResponse);
+
+  // Actualiza bio, teléfono, especialidad, nombre.
+  rpc UpdatePerfil(UpdatePerfilRequest) returns (PerfilResponse);
+
+  // Guarda la URL de avatar (la subida a R2 la hace el Gateway).
+  rpc UpdateAvatarURL(UpdateMediaURLRequest) returns (PerfilResponse);
+
+  // Guarda la URL de portada (la subida a R2 la hace el Gateway).
+  rpc UpdateCoverURL(UpdateMediaURLRequest) returns (PerfilResponse);
+
+  // Cambia el rol del usuario a "instructor".
+  rpc BecomeInstructor(UserIDRequest) returns (PerfilResponse);
+
+  // Perfil público de cualquier usuario (acceso autenticado).
+  rpc GetPublicPerfil(UserIDRequest) returns (PerfilResponse);
+
+  // Lista todos los usuarios (solo admin).
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // Desactiva/elimina un usuario (solo admin).
+  rpc DeleteUser(UserIDRequest) returns (EmptyResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message GetPerfilRequest {
+  string user_id = 1;
+}
+
+message UpdatePerfilRequest {
+  string user_id   = 1;
+  string name      = 2;
+  string bio       = 3;
+  string phone     = 4;
+  string specialty = 5;
+}
+
+message UpdateMediaURLRequest {
+  string user_id = 1;
+  string url     = 2;
+}
+
+message UserIDRequest {
+  string user_id = 1;
+}
+
+message ListUsersRequest {
+  string role   = 1; // filtro opcional: "user", "instructor", "admin"
+  int32  page   = 2;
+  int32  limit  = 3;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message PerfilResponse {
+  string id         = 1;
+  string name       = 2;
+  string email      = 3;
+  string role       = 4;
+  string bio        = 5;
+  string avatar_url = 6;
+  string cover_url  = 7;
+  string phone      = 8;
+  string specialty  = 9;
+  string created_at = 10;
+}
+
+message ListUsersResponse {
+  repeated UserSummary users = 1;
+  int32                total = 2;
+}
+
+message UserSummary {
+  string id         = 1;
+  string name       = 2;
+  string email      = 3;
+  string role       = 4;
+  string created_at = 5;
+}
+
+message EmptyResponse {}

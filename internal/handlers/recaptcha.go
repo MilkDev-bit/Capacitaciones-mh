@@ -5,7 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
+
+	"Prueba-Go/internal/config"
 )
 
 type recaptchaResponse struct {
@@ -16,7 +17,7 @@ type recaptchaResponse struct {
 }
 
 func verifyRecaptcha(token string) bool {
-	secret := os.Getenv("RECAPTCHA_SECRET_KEY")
+	secret := config.C.RecaptchaSecretKey
 	if secret == "" {
 		return true
 	}

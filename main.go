@@ -11,9 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"Prueba-Go/internal/config"
 	"Prueba-Go/internal/db"
 	"Prueba-Go/internal/handlers"
 	"Prueba-Go/internal/middleware"
+	"Prueba-Go/internal/repository"
+	"Prueba-Go/internal/service"
 	"Prueba-Go/internal/storage"
 
 	sentry "github.com/getsentry/sentry-go"
@@ -23,35 +26,46 @@ import (
 )
 
 func main() {
-	// Logs estructurados en JSON — legibles por Railway, Datadog, CloudWatch, etc.
+	// ── 1. Configuración centralizada (Fail Fast) ─────────────────────────────
+	// config.Load() lee todas las variables de entorno y llama a os.Exit(1)
+	// si falta alguna variable crítica (JWT_SECRET, etc.).
+	config.Load()
+
+	// ── 2. Logging estructurado ───────────────────────────────────────────────
 	logLevel := slog.LevelInfo
-	if os.Getenv("LOG_LEVEL") == "debug" {
+	if config.C.LogLevel == "debug" {
 		logLevel = slog.LevelDebug
 	}
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	slog.SetDefault(slog.New(slog.NewJSONHandler(log.Writer(), &slog.HandlerOptions{
 		Level: logLevel,
 	})))
 
-	if os.Getenv("GIN_MODE") != "" {
-		gin.SetMode(os.Getenv("GIN_MODE"))
-	} else if os.Getenv("RAILWAY_ENVIRONMENT") != "" {
+	// ── 3. Modo Gin ───────────────────────────────────────────────────────────
+	if config.C.GinMode != "" {
+		gin.SetMode(config.C.GinMode)
+	} else if config.C.RailwayEnvironment != "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if os.Getenv("JWT_SECRET") == "" {
-		slog.Error("JWT_SECRET no definido — configura esta variable antes de arrancar")
-		os.Exit(1)
-	}
-	middleware.SetSecret([]byte(os.Getenv("JWT_SECRET")))
+	// ── 4. Middleware JWT — secret viene del config ───────────────────────────
+	middleware.SetSecret(config.C.JWTSecret)
 
-	// Sentry — solo si se proporciona el DSN
-	if dsn := os.Getenv("SENTRY_DSN"); dsn != "" {
-		env := os.Getenv("RAILWAY_ENVIRONMENT")
+	// ── 5. Base de datos + migraciones ────────────────────────────────────────
+	db.Connect()
+	defer db.DB.Close()
+	db.Migrate()
+
+	// ── 6. Almacenamiento (R2) ────────────────────────────────────────────────
+	storage.Init()
+
+	// ── 5. Sentry ─────────────────────────────────────────────────────────────
+	if config.C.SentryDSN != "" {
+		env := config.C.RailwayEnvironment
 		if env == "" {
 			env = "development"
 		}
 		if err := sentry.Init(sentry.ClientOptions{
-			Dsn:              dsn,
+			Dsn:              config.C.SentryDSN,
 			Environment:      env,
 			EnableTracing:    true,
 			TracesSampleRate: 0.1,
@@ -73,18 +87,9 @@ func main() {
 		slog.Warn("SetTrustedProxies falló", "error", err)
 	}
 
-	// ALLOWED_ORIGIN acepta lista separada por comas: "https://a.com,https://b.com"
-	allowedOriginsRaw := os.Getenv("ALLOWED_ORIGIN")
-	if allowedOriginsRaw == "" {
-		allowedOriginsRaw = "http://localhost:5173"
-	}
-	allowedOrigins := strings.Split(allowedOriginsRaw, ",")
-	for i, o := range allowedOrigins {
-		allowedOrigins[i] = strings.TrimSpace(o)
-	}
-
+	// ALLOWED_ORIGIN ya fue procesado en config.Load()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     allowedOrigins,
+		AllowOrigins:     config.C.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type"},
 		AllowCredentials: true, // necesario para cookies HttpOnly
@@ -92,7 +97,7 @@ func main() {
 	}))
 
 	// Captura panics y errores con Sentry (no-op si Sentry no está configurado)
-	if os.Getenv("SENTRY_DSN") != "" {
+	if config.C.SentryDSN != "" {
 		r.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	}
 
@@ -125,12 +130,18 @@ func main() {
 	{
 		api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 
+		// ── Inyección de dependencias: Repositorio → Servicio → Handler ──────
+		// db.DB ya fue conectado arriba — siempre tiene valor aquí.
+		userRepo := repository.NewUserRepository(db.DB)
+		authSvc := service.NewAuthService(userRepo)
+		authHandler := handlers.NewAuthHandler(authSvc)
+
 		loginLimiter := middleware.NewRateLimiter(10, 15*time.Minute)
 		registerLimiter := middleware.NewRateLimiter(5, time.Hour)
 		forgotLimiter := middleware.NewRateLimiter(5, 15*time.Minute)
 		resetLimiter := middleware.NewRateLimiter(10, 15*time.Minute)
-		api.POST("/register", registerLimiter.Middleware(), handlers.Register)
-		api.POST("/login", loginLimiter.Middleware(), handlers.Login)
+		api.POST("/register", registerLimiter.Middleware(), authHandler.Register)
+		api.POST("/login", loginLimiter.Middleware(), authHandler.Login)
 		api.POST("/logout", handlers.Logout)
 		api.POST("/forgot-password", forgotLimiter.Middleware(), handlers.ForgotPassword)
 		api.POST("/reset-password", resetLimiter.Middleware(), handlers.ResetPassword)
@@ -168,8 +179,11 @@ func main() {
 			auth.GET("/presign", handlers.PresignUpload)
 
 			auth.GET("/cursos-publicos", handlers.ListCursosPublicos)
-			auth.POST("/inscribirse/:id", handlers.Inscribirse)
-			auth.POST("/unirse-con-codigo", handlers.UnirseConCodigo)
+			// RESTful: sustantivos + método HTTP indican la acción
+			// Antes: POST /inscribirse/:id  →  Ahora: POST /cursos/:id/inscripciones
+			// Antes: POST /unirse-con-codigo →  Ahora: POST /inscripciones  (código en body)
+			auth.POST("/cursos/:id/inscripciones", handlers.Inscribirse)
+			auth.POST("/inscripciones", handlers.UnirseConCodigo)
 
 			instructor := auth.Group("/instructor")
 			instructor.Use(middleware.InstructorRequired())
@@ -226,23 +240,13 @@ func main() {
 		}
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	db.Connect()
-	defer db.DB.Close()
-	db.Migrate()
-	storage.Init()
-
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + config.C.Port,
 		Handler: r,
 	}
 
 	go func() {
-		log.Printf("Servidor iniciado en http://localhost:%s", port)
+		log.Printf("Servidor iniciado en http://localhost:%s", config.C.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Error iniciando servidor: %v", err)
 		}

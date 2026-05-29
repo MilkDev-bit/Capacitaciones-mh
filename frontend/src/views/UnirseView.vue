@@ -35,7 +35,7 @@ async function unirse() {
   }
   joining.value = true
   try {
-    await api.post('/unirse-con-codigo', { codigo: codigo.toUpperCase() })
+    await api.post('/inscripciones', { codigo: codigo.toUpperCase() })
     joined.value = true
     setTimeout(() => router.push('/usuario/capacitaciones'), 1500)
   } catch (e: any) {

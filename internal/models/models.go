@@ -3,18 +3,18 @@ package models
 import "time"
 
 type User struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	Role         string    `json:"role"`
-	TokenVersion int       `json:"-"`
-	Bio          string    `json:"bio,omitempty"`
-	AvatarURL    string    `json:"avatar_url,omitempty"`
-	CoverURL     string    `json:"cover_url,omitempty"`
-	Phone        string    `json:"phone,omitempty"`
-	Specialty    string    `json:"specialty,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID           string    `json:"id"                   db:"id"`
+	Name         string    `json:"name"                 db:"name"`
+	Email        string    `json:"email"                db:"email"`
+	PasswordHash string    `json:"-"                    db:"password_hash"`
+	Role         string    `json:"role"                 db:"role"`
+	TokenVersion int       `json:"-"                    db:"token_version"`
+	Bio          string    `json:"bio,omitempty"        db:"bio"`
+	AvatarURL    string    `json:"avatar_url,omitempty" db:"avatar_url"`
+	CoverURL     string    `json:"cover_url,omitempty"  db:"cover_url"`
+	Phone        string    `json:"phone,omitempty"      db:"phone"`
+	Specialty    string    `json:"specialty,omitempty"  db:"specialty"`
+	CreatedAt    time.Time `json:"created_at"           db:"created_at"`
 }
 
 type Capacitacion struct {

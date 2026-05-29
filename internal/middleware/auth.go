@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"Prueba-Go/internal/db"
@@ -98,8 +97,4 @@ func InstructorRequired() gin.HandlerFunc {
 		}
 		c.Next()
 	}
-}
-
-func getSecret() string {
-	return os.Getenv("JWT_SECRET")
 }

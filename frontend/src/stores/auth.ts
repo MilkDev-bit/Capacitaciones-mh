@@ -72,5 +72,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // ── Sincronización multi-pestaña ─────────────────────────────────────────
+  // Si el usuario cierra sesión en otra pestaña, localStorage cambia y el
+  // evento 'storage' lo detecta aquí, forzando la redirección al login
+  // sin esperar a que una petición devuelva 401.
+  // El listener se registra al inicializar el store (singleton de la app).
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (event: StorageEvent) => {
+      if (event.key === 'user' && event.newValue === null && user.value !== null) {
+        user.value = null
+        toast.warning('Tu sesión fue cerrada en otra pestaña.', 'Sesión cerrada')
+        router.push('/login')
+      }
+    })
+  }
+
   return { user, isLoggedIn, isAdmin, isInstructor, login, logout, handleSessionExpired }
 })

@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
+	"Prueba-Go/internal/config"
 	"Prueba-Go/internal/db"
-	"Prueba-Go/internal/models"
+	"Prueba-Go/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,7 +29,19 @@ type registerRequest struct {
 	RecaptchaToken string `json:"recaptcha_token"`
 }
 
-func Register(c *gin.Context) {
+// AuthHandler agrupa los endpoints de autenticación.
+// Recibe el servicio como dependencia inyectada — nunca accede a la BD directamente.
+type AuthHandler struct {
+	authSvc *service.AuthService
+}
+
+// NewAuthHandler construye el handler con el servicio de autenticación inyectado.
+func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
+	return &AuthHandler{authSvc: authSvc}
+}
+
+// Register POST /register
+func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		bindError(c, err)
@@ -40,35 +51,27 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "verificación de seguridad fallida"})
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
-		return
-	}
 
-	role := "user"
-	if req.Role == "instructor" {
-		role = "instructor"
-	}
-	var id string
-	err = db.DB.QueryRowContext(
-		c.Request.Context(),
-		`INSERT INTO users(name,email,password_hash,role) VALUES($1,$2,$3,$4) RETURNING id`,
-		req.Name, req.Email, string(hash), role,
-	).Scan(&id)
+	id, err := h.authSvc.Register(c.Request.Context(), service.RegisterInput{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     req.Role,
+	})
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		if errors.Is(err, service.ErrEmailTaken) {
 			c.JSON(http.StatusConflict, gin.H{"error": "el email ya está registrado"})
-		} else {
-			slog.Error("Register: error al insertar usuario", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
+			return
 		}
+		slog.Error("Register: error interno", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
-func Login(c *gin.Context) {
+// Login POST /login
+func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		bindError(c, err)
@@ -78,63 +81,42 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "verificación de seguridad fallida"})
 		return
 	}
-	// dummyHash: hash bcrypt estático usado para normalizar el tiempo de respuesta
-	// cuando el usuario no existe, previniendo enumeración por timing.
-	const dummyHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK/6xVHMa"
 
-	var user models.User
-	err := db.DB.QueryRowContext(
-		c.Request.Context(),
-		`SELECT id, name, email, password_hash, role, token_version FROM users WHERE email=$1`, req.Email,
-	).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role, &user.TokenVersion)
+	result, err := h.authSvc.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		// Ejecutar bcrypt sobre hash dummy para equiparar tiempo con un login fallido por contraseña
-		bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(req.Password)) //nolint:errcheck
-		slog.Warn("login fallido: usuario no encontrado", "ip", c.ClientIP())
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			slog.Warn("login fallido", "ip", c.ClientIP())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
+			return
+		}
+		slog.Error("Login: error interno", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		slog.Warn("login fallido: contraseña incorrecta", "ip", c.ClientIP())
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales incorrectas"})
-		return
-	}
-	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":  user.ID,
-		"role": user.Role,
-		"ver":  user.TokenVersion,
-		"iat":  now.Unix(),
-		"exp":  now.Add(24 * time.Hour).Unix(),
-	})
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		slog.Error("JWT_SECRET no configurado")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de configuración del servidor"})
-		return
-	}
-	signed, err := token.SignedString([]byte(secret))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error generando token"})
-		return
-	}
-	// Determinar si estamos en producción (Railway) para usar Secure cookie
-	secure := os.Getenv("RAILWAY_ENVIRONMENT") != ""
+
+	// La cookie viaja como HttpOnly — el JWT no es accesible desde JS.
+	secure := config.C.RailwayEnvironment != ""
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("auth_token", signed, 24*60*60, "/", "", secure, true)
+	c.SetCookie("auth_token", result.Token, int(config.C.JWTExpiry.Seconds()), "/", "", secure, true)
 	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{"id": user.ID, "name": user.Name, "email": user.Email, "role": user.Role},
+		"user": gin.H{
+			"id":    result.User.ID,
+			"name":  result.User.Name,
+			"email": result.User.Email,
+			"role":  result.User.Role,
+		},
 	})
 }
 
+// Logout POST /logout
 func Logout(c *gin.Context) {
-	secure := os.Getenv("RAILWAY_ENVIRONMENT") != ""
-	// MaxAge=-1 hace que el navegador elimine la cookie inmediatamente
+	secure := config.C.RailwayEnvironment != ""
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("auth_token", "", -1, "/", "", secure, true)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
+// ForgotPassword POST /forgot-password
 func ForgotPassword(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -147,6 +129,7 @@ func ForgotPassword(c *gin.Context) {
 	var userID string
 	err := db.DB.QueryRowContext(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
 	if err != nil {
+		// Respuesta genérica — no revelar si el email existe o no
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}
@@ -179,6 +162,7 @@ func ForgotPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
+// ResetPassword POST /reset-password
 func ResetPassword(c *gin.Context) {
 	var req struct {
 		Email       string `json:"email" binding:"required,email"`
@@ -219,7 +203,7 @@ func ResetPassword(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno"})
 		return
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	if _, err = tx.Exec(`UPDATE users SET password_hash=$1, token_version=token_version+1 WHERE email=$2`, string(hash), req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la contraseña"})

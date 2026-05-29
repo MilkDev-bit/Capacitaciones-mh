@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package cursos;
+
+option go_package = "Prueba-Go/gen/cursos;cursospb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CursosService: gestión de capacitaciones, inscripciones y asignaciones.
+// ─────────────────────────────────────────────────────────────────────────────
+service CursosService {
+  // ── Público ──────────────────────────────────────────────────────────────
+  rpc PreviewCurso(CodigoRequest) returns (CursoResponse);
+  rpc ListCursosPublicos(EmptyRequest) returns (ListCursosResponse);
+
+  // ── Usuario autenticado ───────────────────────────────────────────────────
+  rpc ListMisCapacitaciones(UserRequest) returns (ListCursosResponse);
+  rpc GetCurso(CursoIDRequest) returns (CursoResponse);
+  rpc Inscribirse(InscribirseRequest) returns (EmptyResponse);
+  rpc UnirseConCodigo(UnirseRequest) returns (EmptyResponse);
+
+  // ── Instructor ────────────────────────────────────────────────────────────
+  rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
+  rpc InstructorCreateCapacitacion(CreateCursoRequest) returns (CursoResponse);
+  rpc InstructorUpdateCapacitacion(UpdateCursoRequest) returns (CursoResponse);
+  rpc InstructorDeleteCapacitacion(CursoIDRequest) returns (EmptyResponse);
+  rpc InstructorTogglePublic(CursoIDRequest) returns (CursoResponse);
+  rpc InstructorResetCodigo(CursoIDRequest) returns (CursoResponse);
+  rpc InstructorListEstudiantes(UserRequest) returns (ListEstudiantesResponse);
+  rpc InstructorAsignar(AsignarRequest) returns (EmptyResponse);
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  rpc AdminListCapacitaciones(EmptyRequest) returns (ListCursosResponse);
+  rpc AdminCreateCapacitacion(CreateCursoRequest) returns (CursoResponse);
+  rpc AdminUpdateCapacitacion(UpdateCursoRequest) returns (CursoResponse);
+  rpc AdminDeleteCapacitacion(CursoIDRequest) returns (EmptyResponse);
+  rpc AdminListAsignaciones(EmptyRequest) returns (ListAsignacionesResponse);
+  rpc AdminAsignar(AsignarRequest) returns (EmptyResponse);
+  rpc AdminDesAsignar(AsignacionIDRequest) returns (EmptyResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message EmptyRequest  {}
+message UserRequest   { string user_id = 1; }
+message CursoIDRequest { string curso_id = 1; string user_id = 2; }
+message CodigoRequest { string codigo = 1; }
+message AsignacionIDRequest { string asignacion_id = 1; }
+
+message CreateCursoRequest {
+  string user_id         = 1; // instructor o admin que lo crea
+  string title           = 2;
+  string description     = 3;
+  string type            = 4;
+  string content         = 5;
+  string file_path       = 6;
+  bool   is_public       = 7;
+  string welcome_message = 8;
+  string thumbnail_url   = 9;
+  string color           = 10;
+}
+
+message UpdateCursoRequest {
+  string curso_id        = 1;
+  string user_id         = 2;
+  string title           = 3;
+  string description     = 4;
+  string type            = 5;
+  string content         = 6;
+  string file_path       = 7;
+  bool   is_public       = 8;
+  string welcome_message = 9;
+  string thumbnail_url   = 10;
+  string color           = 11;
+}
+
+message InscribirseRequest {
+  string user_id  = 1;
+  string curso_id = 2;
+}
+
+message UnirseRequest {
+  string user_id = 1;
+  string codigo  = 2;
+}
+
+message AsignarRequest {
+  string requester_id     = 1; // quien asigna (instructor o admin)
+  string target_user_id   = 2;
+  string capacitacion_id  = 3;
+  string examen_id        = 4;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message CursoResponse {
+  string id              = 1;
+  string title           = 2;
+  string description     = 3;
+  string type            = 4;
+  string file_path       = 5;
+  string content         = 6;
+  string instructor_id   = 7;
+  bool   is_public       = 8;
+  string codigo_acceso   = 9;
+  string welcome_message = 10;
+  string thumbnail_url   = 11;
+  string color           = 12;
+  string created_at      = 13;
+}
+
+message ListCursosResponse {
+  repeated CursoResponse cursos = 1;
+}
+
+message EstudianteInfo {
+  string user_id    = 1;
+  string name       = 2;
+  string email      = 3;
+  string assigned_at = 4;
+}
+
+message ListEstudiantesResponse {
+  repeated EstudianteInfo estudiantes = 1;
+}
+
+message AsignacionInfo {
+  string id              = 1;
+  string user_id         = 2;
+  string user_name       = 3;
+  string capacitacion_id = 4;
+  string examen_id       = 5;
+  string assigned_at     = 6;
+}
+
+message ListAsignacionesResponse {
+  repeated AsignacionInfo asignaciones = 1;
+}
+
+message EmptyResponse {}

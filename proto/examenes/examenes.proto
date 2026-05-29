@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package examenes;
+
+option go_package = "Prueba-Go/gen/examenes;examenespb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ExamenesService: gestión de exámenes, envío de respuestas y resultados.
+// ─────────────────────────────────────────────────────────────────────────────
+service ExamenesService {
+  // ── Usuario autenticado ───────────────────────────────────────────────────
+  rpc ListMisExamenes(UserRequest) returns (ListExamenesResponse);
+  rpc GetExamen(ExamenUserRequest) returns (ExamenResponse);
+  rpc SubmitExamen(SubmitRequest) returns (ResultadoResponse);
+
+  // ── Instructor ────────────────────────────────────────────────────────────
+  rpc InstructorListExamenes(UserRequest) returns (ListExamenesResponse);
+  rpc InstructorCreateExamen(CreateExamenRequest) returns (ExamenResponse);
+  rpc InstructorDeleteExamen(ExamenRequest) returns (EmptyResponse);
+  rpc InstructorGetResultados(ExamenRequest) returns (ListResultadosResponse);
+  rpc InstructorGetRespuestasUsuario(RespuestasUsuarioRequest) returns (RespuestasResponse);
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  rpc AdminListExamenes(EmptyRequest) returns (ListExamenesResponse);
+  rpc AdminCreateExamen(CreateExamenRequest) returns (ExamenResponse);
+  rpc AdminDeleteExamen(ExamenRequest) returns (EmptyResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message EmptyRequest   {}
+message UserRequest    { string user_id  = 1; }
+message ExamenRequest  { string examen_id = 1; }
+
+message ExamenUserRequest {
+  string examen_id = 1;
+  string user_id   = 2;
+}
+
+message CreateExamenRequest {
+  string          user_id         = 1; // instructor/admin
+  string          title           = 2;
+  string          description     = 3;
+  string          capacitacion_id = 4;
+  repeated PreguntaInput preguntas = 5;
+}
+
+message PreguntaInput {
+  string texto  = 1;
+  string tipo   = 2; // "opcion_multiple" | "verdadero_falso" | "abierta"
+  double valor  = 3;
+  int32  orden  = 4;
+  repeated OpcionInput opciones = 5;
+}
+
+message OpcionInput {
+  string texto       = 1;
+  bool   es_correcta = 2;
+}
+
+message SubmitRequest {
+  string examen_id              = 1;
+  string user_id                = 2;
+  repeated RespuestaInput respuestas = 3;
+}
+
+message RespuestaInput {
+  string pregunta_id      = 1;
+  string opcion_id        = 2;
+  string respuesta_texto  = 3;
+}
+
+message RespuestasUsuarioRequest {
+  string examen_id = 1;
+  string user_id   = 2;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message ExamenResponse {
+  string            id              = 1;
+  string            title           = 2;
+  string            description     = 3;
+  string            instructor_id   = 4;
+  string            capacitacion_id = 5;
+  string            created_at      = 6;
+  repeated Pregunta preguntas       = 7;
+}
+
+message Pregunta {
+  string          id       = 1;
+  string          texto    = 2;
+  string          tipo     = 3;
+  double          valor    = 4;
+  int32           orden    = 5;
+  repeated Opcion opciones = 6;
+}
+
+message Opcion {
+  string id          = 1;
+  string texto       = 2;
+  bool   es_correcta = 3; // solo visible para instructor/admin
+}
+
+message ListExamenesResponse {
+  repeated ExamenResponse examenes = 1;
+}
+
+message ResultadoResponse {
+  string examen_id   = 1;
+  string titulo      = 2;
+  double puntaje     = 3;
+  double puntaje_max = 4;
+  double porcentaje  = 5;
+}
+
+message ResultadoUsuario {
+  string user_id    = 1;
+  string user_name  = 2;
+  double puntaje    = 3;
+  double porcentaje = 4;
+  string submitted_at = 5;
+}
+
+message ListResultadosResponse {
+  repeated ResultadoUsuario resultados = 1;
+}
+
+message RespuestaDetalle {
+  string pregunta_id      = 1;
+  string pregunta_texto   = 2;
+  string opcion_id        = 3;
+  string respuesta_texto  = 4;
+  bool   es_correcta      = 5;
+}
+
+message RespuestasResponse {
+  repeated RespuestaDetalle respuestas = 1;
+  double puntaje     = 2;
+  double porcentaje  = 3;
+}
+
+message EmptyResponse {}

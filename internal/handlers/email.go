@@ -3,28 +3,23 @@ package handlers
 import (
 	"fmt"
 	"net/smtp"
-	"os"
+
+	"Prueba-Go/internal/config"
 )
 
 func sendPasswordResetEmail(to, code string) error {
-	host := os.Getenv("SMTP_HOST")
+	host := config.C.SMTPHost
 	if host == "" {
 		return fmt.Errorf("SMTP_HOST no configurado")
 	}
-	port := os.Getenv("SMTP_PORT")
-	if port == "" {
-		port = "587"
-	}
-	user := os.Getenv("SMTP_USER")
-	pass := os.Getenv("SMTP_PASS")
-	from := os.Getenv("SMTP_FROM")
+
+	user := config.C.SMTPUser
+	pass := config.C.SMTPPass
+	from := config.C.SMTPFrom
 	if from == "" {
 		from = user
 	}
-	appName := os.Getenv("APP_NAME")
-	if appName == "" {
-		appName = "Capacitaciones MH"
-	}
+	appName := config.C.AppName
 
 	subject := fmt.Sprintf("Código de recuperación — %s", appName)
 	body := buildResetEmailHTML(appName, code)
@@ -37,7 +32,7 @@ func sendPasswordResetEmail(to, code string) error {
 		"\r\n" + body
 
 	auth := smtp.PlainAuth("", user, pass, host)
-	return smtp.SendMail(host+":"+port, auth, from, []string{to}, []byte(msg))
+	return smtp.SendMail(host+":"+config.C.SMTPPort, auth, from, []string{to}, []byte(msg))
 }
 
 func buildResetEmailHTML(appName, code string) string {
