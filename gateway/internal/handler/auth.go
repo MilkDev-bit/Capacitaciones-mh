@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -153,6 +154,7 @@ func (h *AuthHandler) handleGRPCError(ctx *gin.Context, err error) {
 	case codes.NotFound:
 		ctx.JSON(http.StatusNotFound, gin.H{"error": st.Message()})
 	default:
+		slog.Error("gRPC error", "code", st.Code(), "message", st.Message(), "path", ctx.FullPath())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 	}
 }

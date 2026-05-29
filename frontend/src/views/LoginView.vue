@@ -72,7 +72,7 @@ async function submit() {
   loading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('login')
-    const res = await api.post('/login', { email: email.value, password: password.value, recaptcha_token })
+    const res = await api.post('/login', { email: email.value, password: password.value, recaptchaToken: recaptcha_token })
     // El token JWT viene en cookie HttpOnly — solo guardamos el perfil
     auth.user = res.data.user
     localStorage.setItem('user', JSON.stringify(res.data.user))
@@ -106,7 +106,7 @@ async function register() {
   regLoading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('register')
-    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, recaptcha_token })
+    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, recaptchaToken: recaptcha_token })
     toast.success('¡Cuenta creada! Redirigiendo...')
     setTimeout(() => { 
       tab.value = 'login'
