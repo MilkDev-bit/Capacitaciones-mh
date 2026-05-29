@@ -105,15 +105,23 @@ func loggingInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 	return resp, err
 }
 
-// runMigrations aplica columnas y tablas necesarias que pueden faltar en la BD existente.
+// runMigrations crea las tablas y columnas necesarias de forma idempotente.
 func runMigrations(db *sqlx.DB) error {
 	migrations := []string{
-		// token_version para revocación de sesiones
+		// Tabla principal de usuarios
+		`CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			name VARCHAR(120) NOT NULL,
+			email VARCHAR(200) UNIQUE NOT NULL,
+			password_hash TEXT NOT NULL,
+			role VARCHAR(10) NOT NULL DEFAULT 'user',
+			token_version INT NOT NULL DEFAULT 1,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		// Columnas opcionales que pueden no existir en BDs antiguas
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1`,
-		// columnas para reset de contraseña
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMPTZ`,
-		// columnas de perfil de usuario
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) DEFAULT ''`,
@@ -122,9 +130,18 @@ func runMigrations(db *sqlx.DB) error {
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
-			return fmt.Errorf("migración fallida (%s): %w", m[:40], err)
+			// Loguear el error completo para diagnóstico
+			slog.Error("Migración fallida", "sql", m[:min(60, len(m))], "error", err)
+			return fmt.Errorf("migración fallida: %w", err)
 		}
 	}
 	slog.Info("Migraciones aplicadas correctamente")
 	return nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
