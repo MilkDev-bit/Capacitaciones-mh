@@ -38,6 +38,14 @@ func main() {
 	}
 
 	// ── 4. Conexiones gRPC a los microservicios ───────────────────────────────
+	slog.Info("Direcciones gRPC configuradas",
+		"auth", cfg.AuthAddr,
+		"usuarios", cfg.UsuariosAddr,
+		"cursos", cfg.CursosAddr,
+		"lecciones", cfg.LeccionesAddr,
+		"examenes", cfg.ExamenesAddr,
+		"foros", cfg.ForosAddr,
+	)
 	svc, err := clients.Dial(cfg)
 	if err != nil {
 		slog.Error("Error conectando a microservicios", "error", err)
