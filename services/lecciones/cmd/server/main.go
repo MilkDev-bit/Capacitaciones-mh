@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -24,6 +25,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	if err := runMigrations(db); err != nil {
+		slog.Error("Migraciones fallidas", "error", err)
+		os.Exit(1)
+	}
 
 	repo := repository.NewLeccionesRepository(db)
 	svc := service.NewLeccionesService(repo)
@@ -55,4 +61,59 @@ func getEnvOr(k, fb string) string {
 		return v
 	}
 	return fb
+}
+
+func runMigrations(db *sqlx.DB) error {
+	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS lecciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL,
+			title VARCHAR(200) NOT NULL,
+			description TEXT DEFAULT '',
+			type VARCHAR(20) NOT NULL DEFAULT 'video',
+			file_path TEXT DEFAULT '',
+			content TEXT DEFAULT '',
+			orden INT NOT NULL DEFAULT 0,
+			duracion_min INT DEFAULT 0,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS progreso_lecciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			completado_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, leccion_id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS preguntas_intermedias (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL,
+			despues_de_leccion_id UUID REFERENCES lecciones(id) ON DELETE SET NULL,
+			texto TEXT NOT NULL,
+			tipo VARCHAR(30) NOT NULL DEFAULT 'multiple_choice',
+			orden INT NOT NULL DEFAULT 0,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS opciones_intermedias (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			pregunta_id UUID NOT NULL REFERENCES preguntas_intermedias(id) ON DELETE CASCADE,
+			texto TEXT NOT NULL,
+			es_correcta BOOLEAN NOT NULL DEFAULT false
+		)`,
+		`CREATE TABLE IF NOT EXISTS respuestas_intermedias (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			capacitacion_id UUID NOT NULL,
+			pregunta_id UUID NOT NULL REFERENCES preguntas_intermedias(id) ON DELETE CASCADE,
+			opcion_id UUID REFERENCES opciones_intermedias(id) ON DELETE SET NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, pregunta_id)
+		)`,
+	}
+	for _, s := range stmts {
+		if _, err := db.Exec(s); err != nil {
+			return fmt.Errorf("migración fallida: %w", err)
+		}
+	}
+	slog.Info("lecciones: migraciones aplicadas")
+	return nil
 }

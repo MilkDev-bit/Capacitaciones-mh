@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -24,6 +25,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	if err := runMigrations(db); err != nil {
+		slog.Error("Migraciones fallidas", "error", err)
+		os.Exit(1)
+	}
 
 	repo := repository.NewForosRepository(db)
 	svc := service.NewForosService(repo)
@@ -55,4 +61,46 @@ func getEnvOr(k, fb string) string {
 		return v
 	}
 	return fb
+}
+
+func runMigrations(db *sqlx.DB) error {
+	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS foro_posts (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			leccion_id UUID NOT NULL,
+			user_id UUID NOT NULL,
+			user_name TEXT NOT NULL DEFAULT '',
+			titulo TEXT NOT NULL,
+			contenido TEXT NOT NULL,
+			media_url TEXT DEFAULT '',
+			media_type TEXT DEFAULT '',
+			deleted_at TIMESTAMPTZ,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS foro_likes (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL,
+			UNIQUE(post_id, user_id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS foro_comentarios (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL,
+			user_name TEXT NOT NULL DEFAULT '',
+			contenido TEXT NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		// Columnas que pueden faltar en BDs existentes
+		`ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS user_name TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS user_name TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+	}
+	for _, s := range stmts {
+		if _, err := db.Exec(s); err != nil {
+			return fmt.Errorf("migración fallida: %w", err)
+		}
+	}
+	slog.Info("foros: migraciones aplicadas")
+	return nil
 }

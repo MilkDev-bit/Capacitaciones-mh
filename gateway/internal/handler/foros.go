@@ -8,6 +8,7 @@ import (
 	forospb "Prueba-Go/gen/foros"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/metadata"
 )
 
 type ForosHandler struct{ c *clients.Clients }
@@ -39,7 +40,9 @@ func (h *ForosHandler) CreateForoPost(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.c.Foros.CreateForoPost(ctx.Request.Context(), &forospb.CreatePostRequest{
+	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	resp, err := h.c.Foros.CreateForoPost(grpcCtx, &forospb.CreatePostRequest{
 		LeccionId: ctx.Param("leccion_id"),
 		UserId:    ctx.GetString(middleware.CtxUserID),
 		Titulo:    body.Titulo,
@@ -88,7 +91,9 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.c.Foros.CreateForoComentario(ctx.Request.Context(), &forospb.CreateComentarioRequest{
+	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	resp, err := h.c.Foros.CreateForoComentario(grpcCtx, &forospb.CreateComentarioRequest{
 		PostId:    ctx.Param("post_id"),
 		UserId:    ctx.GetString(middleware.CtxUserID),
 		Contenido: body.Contenido,

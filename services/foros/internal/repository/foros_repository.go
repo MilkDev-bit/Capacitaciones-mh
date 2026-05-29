@@ -7,6 +7,7 @@ import (
 	forospb "Prueba-Go/gen/foros"
 
 	"github.com/jmoiron/sqlx"
+	"google.golang.org/grpc/metadata"
 )
 
 type ForoPost struct {
@@ -64,9 +65,20 @@ func NewForosRepository(db *sqlx.DB) ForosRepository {
 	return &postgresForosRepository{db: db}
 }
 
+// metaVal extrae un valor del gRPC incoming metadata.
+func metaVal(ctx context.Context, key string) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(key); len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return ""
+}
+
 func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, userID string) ([]*ForoPost, error) {
 	query := `
-		SELECT fp.id, fp.leccion_id, fp.user_id, u.name user_name,
+		SELECT fp.id, fp.leccion_id, fp.user_id,
+		       COALESCE(fp.user_name,'') user_name,
 		       fp.titulo, fp.contenido,
 		       COALESCE(fp.media_url,'') media_url,
 		       COALESCE(fp.media_type,'') media_type,
@@ -74,35 +86,34 @@ func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, user
 		       BOOL_OR(fl.user_id = $2) user_liked,
 		       fp.created_at
 		  FROM foro_posts fp
-		  JOIN users u ON u.id = fp.user_id
 		  LEFT JOIN foro_likes fl ON fl.post_id = fp.id
 		 WHERE fp.leccion_id = $1 AND fp.deleted_at IS NULL
-		 GROUP BY fp.id, u.name
+		 GROUP BY fp.id
 		 ORDER BY fp.created_at DESC`
 	var posts []*ForoPost
 	return posts, r.db.SelectContext(ctx, &posts, query, leccionID, userID)
 }
 
 func (r *postgresForosRepository) CreatePost(ctx context.Context, req *forospb.CreatePostRequest) (*ForoPost, error) {
+	userName := metaVal(ctx, "x-user-name")
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO foro_posts(leccion_id,user_id,titulo,contenido,media_url,media_type)
-		 VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-		req.LeccionId, req.UserId, req.Titulo, req.Contenido, req.MediaUrl, req.MediaType,
+		`INSERT INTO foro_posts(leccion_id,user_id,user_name,titulo,contenido,media_url,media_type)
+		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		req.LeccionId, req.UserId, userName, req.Titulo, req.Contenido, req.MediaUrl, req.MediaType,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
-	// Recuperar el post creado con user_name.
 	var p ForoPost
 	return &p, r.db.GetContext(ctx, &p,
-		`SELECT fp.id, fp.leccion_id, fp.user_id, u.name user_name,
-		        fp.titulo, fp.contenido,
-		        COALESCE(fp.media_url,'') media_url,
-		        COALESCE(fp.media_type,'') media_type,
-		        0::int like_count, false user_liked, fp.created_at
-		   FROM foro_posts fp JOIN users u ON u.id = fp.user_id
-		  WHERE fp.id=$1`, id)
+		`SELECT id, leccion_id, user_id,
+		        COALESCE(user_name,'') user_name,
+		        titulo, contenido,
+		        COALESCE(media_url,'') media_url,
+		        COALESCE(media_type,'') media_type,
+		        0::int like_count, false user_liked, created_at
+		   FROM foro_posts WHERE id=$1`, id)
 }
 
 func (r *postgresForosRepository) DeletePost(ctx context.Context, postID, userID string, isAdmin bool) error {
@@ -120,25 +131,29 @@ func (r *postgresForosRepository) DeletePost(ctx context.Context, postID, userID
 func (r *postgresForosRepository) ListComentarios(ctx context.Context, postID string) ([]*ForoComentario, error) {
 	var cs []*ForoComentario
 	return cs, r.db.SelectContext(ctx, &cs,
-		`SELECT fc.id, fc.post_id, fc.user_id, u.name user_name, fc.contenido, fc.created_at
-		   FROM foro_comentarios fc JOIN users u ON u.id = fc.user_id
-		  WHERE fc.post_id=$1 ORDER BY fc.created_at ASC`, postID)
+		`SELECT id, post_id, user_id,
+		        COALESCE(user_name,'') user_name,
+		        contenido, created_at
+		   FROM foro_comentarios
+		  WHERE post_id=$1 ORDER BY created_at ASC`, postID)
 }
 
 func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *forospb.CreateComentarioRequest) (*ForoComentario, error) {
+	userName := metaVal(ctx, "x-user-name")
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO foro_comentarios(post_id,user_id,contenido) VALUES($1,$2,$3) RETURNING id`,
-		req.PostId, req.UserId, req.Contenido,
+		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido) VALUES($1,$2,$3,$4) RETURNING id`,
+		req.PostId, req.UserId, userName, req.Contenido,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 	var c ForoComentario
 	return &c, r.db.GetContext(ctx, &c,
-		`SELECT fc.id, fc.post_id, fc.user_id, u.name user_name, fc.contenido, fc.created_at
-		   FROM foro_comentarios fc JOIN users u ON u.id = fc.user_id
-		  WHERE fc.id=$1`, id)
+		`SELECT id, post_id, user_id,
+		        COALESCE(user_name,'') user_name,
+		        contenido, created_at
+		   FROM foro_comentarios WHERE id=$1`, id)
 }
 
 func (r *postgresForosRepository) ToggleLike(ctx context.Context, postID, userID string) (*forospb.LikeResponse, error) {

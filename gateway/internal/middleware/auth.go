@@ -4,6 +4,8 @@
 package middleware
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -17,6 +19,7 @@ import (
 
 const (
 	CtxUserID       = "userID"
+	CtxUserName     = "userName"
 	CtxUserEmail    = "userEmail"
 	CtxUserRole     = "userRole"
 	CtxTokenVersion = "tokenVersion"
@@ -40,6 +43,7 @@ func AuthRequired(c *clients.Clients) gin.HandlerFunc {
 		}
 
 		ctx.Set(CtxUserID, claims.UserId)
+		ctx.Set(CtxUserName, extractNameFromJWT(token))
 		ctx.Set(CtxUserEmail, claims.Email)
 		ctx.Set(CtxUserRole, claims.Role)
 		ctx.Set(CtxTokenVersion, claims.TokenVersion)
@@ -88,6 +92,26 @@ func extractToken(ctx *gin.Context) (string, error) {
 		return strings.TrimPrefix(h, "Bearer "), nil
 	}
 	return "", http.ErrNoCookie
+}
+
+// extractNameFromJWT decodifica el payload del JWT (sin re-verificar la firma)
+// para obtener el claim "name". El token ya fue validado por el auth service.
+func extractNameFromJWT(token string) string {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return ""
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return ""
+	}
+	var p struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return ""
+	}
+	return p.Name
 }
 
 func grpcErrToHTTP(err error) int {

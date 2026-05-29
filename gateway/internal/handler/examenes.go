@@ -8,6 +8,7 @@ import (
 	examenespb "Prueba-Go/gen/examenes"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/metadata"
 )
 
 type ExamenesHandler struct{ c *clients.Clients }
@@ -60,7 +61,9 @@ func (h *ExamenesHandler) SubmitExamen(ctx *gin.Context) {
 			RespuestaTexto: r.RespuestaTexto,
 		})
 	}
-	resp, err := h.c.Examenes.SubmitExamen(ctx.Request.Context(), &examenespb.SubmitRequest{
+	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	resp, err := h.c.Examenes.SubmitExamen(grpcCtx, &examenespb.SubmitRequest{
 		ExamenId:   ctx.Param("id"),
 		UserId:     ctx.GetString(middleware.CtxUserID),
 		Respuestas: respuestas,

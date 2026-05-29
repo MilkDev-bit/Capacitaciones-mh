@@ -7,6 +7,7 @@ import (
 	examenespb "Prueba-Go/gen/examenes"
 
 	"github.com/jmoiron/sqlx"
+	"google.golang.org/grpc/metadata"
 )
 
 type Examen struct {
@@ -62,6 +63,16 @@ func NewExamenesRepository(db *sqlx.DB) ExamenesRepository {
 	return &postgresExamenesRepository{db: db}
 }
 
+// metaVal extrae un valor del gRPC incoming metadata.
+func metaVal(ctx context.Context, key string) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(key); len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return ""
+}
+
 func (r *postgresExamenesRepository) List(ctx context.Context) ([]*Examen, error) {
 	var e []*Examen
 	return e, r.db.SelectContext(ctx, &e,
@@ -83,7 +94,7 @@ func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID stri
 		`SELECT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
 		        ex.capacitacion_id, ex.created_at
 		   FROM examenes ex
-		   JOIN asignaciones a ON a.examen_id = ex.id AND a.user_id = $1
+		   JOIN asignaciones_examen ae ON ae.examen_id = ex.id AND ae.user_id = $1
 		  WHERE ex.deleted_at IS NULL ORDER BY ex.created_at DESC`, userID)
 }
 
@@ -166,6 +177,8 @@ func (r *postgresExamenesRepository) Delete(ctx context.Context, examenID string
 }
 
 func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, examenID, userID string, respuestas []*examenespb.RespuestaInput) (*examenespb.ResultadoResponse, error) {
+	userName := metaVal(ctx, "x-user-name")
+
 	// Obtener preguntas del examen para calcular puntaje.
 	preguntas, err := r.GetPreguntas(ctx, examenID)
 	if err != nil {
@@ -194,13 +207,19 @@ func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, exame
 		if esCorrecta {
 			puntaje += pq.Valor
 		}
-		// Guardar respuesta.
+		// Guardar respuesta con user_name denormalizado.
 		r.db.ExecContext(ctx,
-			`INSERT INTO respuestas_examen(examen_id,user_id,pregunta_id,opcion_id,respuesta_texto)
-			 VALUES($1,$2,$3,$4,$5) ON CONFLICT(user_id,pregunta_id) DO UPDATE
-			 SET opcion_id=EXCLUDED.opcion_id, respuesta_texto=EXCLUDED.respuesta_texto`,
-			examenID, userID, resp.PreguntaId, resp.OpcionId, resp.RespuestaTexto)
+			`INSERT INTO respuestas_examen(examen_id,user_id,user_name,pregunta_id,opcion_id,respuesta_texto)
+			 VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,pregunta_id) DO UPDATE
+			 SET opcion_id=EXCLUDED.opcion_id, respuesta_texto=EXCLUDED.respuesta_texto,
+			     user_name=EXCLUDED.user_name`,
+			examenID, userID, userName, resp.PreguntaId, resp.OpcionId, resp.RespuestaTexto)
 	}
+
+	// Registrar en asignaciones_examen para que ListByUser funcione.
+	r.db.ExecContext(ctx,
+		`INSERT INTO asignaciones_examen(examen_id,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+		examenID, userID)
 
 	porcentaje := 0.0
 	if puntajeMax > 0 {
@@ -217,17 +236,17 @@ func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, exame
 func (r *postgresExamenesRepository) GetResultados(ctx context.Context, examenID string) ([]*ResultadoRow, error) {
 	var rows []*ResultadoRow
 	return rows, r.db.SelectContext(ctx, &rows,
-		`SELECT u.id user_id, u.name user_name,
+		`SELECT re.user_id,
+		        COALESCE(re.user_name,'') user_name,
 		        COALESCE(SUM(CASE WHEN o.es_correcta THEN p.valor ELSE 0 END),0) puntaje,
 		        CASE WHEN SUM(p.valor)>0
 		             THEN SUM(CASE WHEN o.es_correcta THEN p.valor ELSE 0 END)/SUM(p.valor)*100
 		             ELSE 0 END porcentaje
 		   FROM respuestas_examen re
-		   JOIN users u ON u.id = re.user_id
 		   JOIN preguntas p ON p.id = re.pregunta_id
 		   LEFT JOIN opciones o ON o.id = re.opcion_id
 		  WHERE re.examen_id = $1
-		  GROUP BY u.id, u.name ORDER BY porcentaje DESC`, examenID)
+		  GROUP BY re.user_id, re.user_name ORDER BY porcentaje DESC`, examenID)
 }
 
 func (r *postgresExamenesRepository) GetRespuestasUsuario(ctx context.Context, examenID, userID string) (*examenespb.RespuestasResponse, error) {

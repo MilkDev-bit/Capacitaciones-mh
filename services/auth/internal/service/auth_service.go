@@ -51,6 +51,7 @@ type LoginResult struct {
 // Claims son los datos que el auth service extrae de un JWT válido.
 type Claims struct {
 	UserID       string
+	Name         string
 	Email        string
 	Role         string
 	TokenVersion int
@@ -166,6 +167,7 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenStr string) (*Clai
 
 	return &Claims{
 		UserID:       claims.UserID,
+		Name:         claims.Name,
 		Email:        claims.Email,
 		Role:         claims.Role,
 		TokenVersion: claims.TokenVersion,
@@ -236,6 +238,7 @@ func (s *AuthService) RevokeUserSessions(ctx context.Context, userID string) err
 
 type jwtClaims struct {
 	UserID       string `json:"uid"`
+	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Role         string `json:"role"`
 	TokenVersion int    `json:"tv"`
@@ -246,6 +249,7 @@ func (s *AuthService) generateToken(u *model.User) (string, error) {
 	expiry := time.Duration(s.cfg.JWTExpiryHours) * time.Hour
 	claims := jwtClaims{
 		UserID:       u.ID,
+		Name:         u.Name,
 		Email:        u.Email,
 		Role:         u.Role,
 		TokenVersion: u.TokenVersion,

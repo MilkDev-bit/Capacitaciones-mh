@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -70,7 +71,12 @@ func (h *CursosHandler) GetCurso(ctx *gin.Context) {
 
 // POST /api/cursos/:id/inscripciones
 func (h *CursosHandler) Inscribirse(ctx *gin.Context) {
-	_, err := h.c.Cursos.Inscribirse(ctx.Request.Context(), &cursospb.InscribirseRequest{
+	md := metadata.Pairs(
+		"x-user-name", ctx.GetString(middleware.CtxUserName),
+		"x-user-email", ctx.GetString(middleware.CtxUserEmail),
+	)
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	_, err := h.c.Cursos.Inscribirse(grpcCtx, &cursospb.InscribirseRequest{
 		UserId:  ctx.GetString(middleware.CtxUserID),
 		CursoId: ctx.Param("id"),
 	})
@@ -90,7 +96,12 @@ func (h *CursosHandler) UnirseConCodigo(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_, err := h.c.Cursos.UnirseConCodigo(ctx.Request.Context(), &cursospb.UnirseRequest{
+	md := metadata.Pairs(
+		"x-user-name", ctx.GetString(middleware.CtxUserName),
+		"x-user-email", ctx.GetString(middleware.CtxUserEmail),
+	)
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	_, err := h.c.Cursos.UnirseConCodigo(grpcCtx, &cursospb.UnirseRequest{
 		UserId: ctx.GetString(middleware.CtxUserID),
 		Codigo: body.Codigo,
 	})
@@ -213,6 +224,8 @@ func (h *CursosHandler) AdminListCapacitaciones(ctx *gin.Context) {
 func (h *CursosHandler) AdminAsignar(ctx *gin.Context) {
 	var body struct {
 		UserID         string `json:"user_id"         binding:"required"`
+		UserName       string `json:"user_name"`
+		UserEmail      string `json:"user_email"`
 		CapacitacionID string `json:"capacitacion_id"`
 		ExamenID       string `json:"examen_id"`
 	}
@@ -220,7 +233,12 @@ func (h *CursosHandler) AdminAsignar(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_, err := h.c.Cursos.AdminAsignar(ctx.Request.Context(), &cursospb.AsignarRequest{
+	md := metadata.Pairs(
+		"x-user-name", body.UserName,
+		"x-user-email", body.UserEmail,
+	)
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	_, err := h.c.Cursos.AdminAsignar(grpcCtx, &cursospb.AsignarRequest{
 		RequesterId:    ctx.GetString(middleware.CtxUserID),
 		TargetUserId:   body.UserID,
 		CapacitacionId: body.CapacitacionID,

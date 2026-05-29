@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"google.golang.org/grpc/metadata"
 )
 
 // Curso es el modelo interno del servicio de cursos.
@@ -45,6 +46,8 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 type Asignacion struct {
 	ID             string    `db:"id"`
 	UserID         string    `db:"user_id"`
+	UserName       string    `db:"user_name"`
+	UserEmail      string    `db:"user_email"`
 	CapacitacionID *string   `db:"capacitacion_id"`
 	AssignedAt     time.Time `db:"assigned_at"`
 }
@@ -66,6 +69,16 @@ type EstudianteRow struct {
 	Name       string    `db:"name"`
 	Email      string    `db:"email"`
 	AssignedAt time.Time `db:"assigned_at"`
+}
+
+// metaVal extrae un valor del gRPC incoming metadata.
+func metaVal(ctx context.Context, key string) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(key); len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return ""
 }
 
 // CursosRepository define el contrato de acceso a datos.
@@ -216,9 +229,13 @@ func (r *postgresCursosRepository) IsEnrolled(ctx context.Context, userID, curso
 }
 
 func (r *postgresCursosRepository) Inscribirse(ctx context.Context, userID, cursoID string) error {
+	userName := metaVal(ctx, "x-user-name")
+	userEmail := metaVal(ctx, "x-user-email")
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO asignaciones(user_id,capacitacion_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
-		userID, cursoID)
+		`INSERT INTO asignaciones(user_id,user_name,user_email,capacitacion_id)
+		 VALUES($1,$2,$3,$4) ON CONFLICT (user_id, capacitacion_id) DO UPDATE
+		 SET user_name=EXCLUDED.user_name, user_email=EXCLUDED.user_email`,
+		userID, userName, userEmail, cursoID)
 	return err
 }
 
@@ -236,11 +253,14 @@ func (r *postgresCursosRepository) UnirseConCodigo(ctx context.Context, userID, 
 func (r *postgresCursosRepository) ListEstudiantes(ctx context.Context, instructorID, cursoID string) ([]*EstudianteRow, error) {
 	var rows []*EstudianteRow
 	return rows, r.db.SelectContext(ctx, &rows,
-		`SELECT u.id, u.name, u.email, a.assigned_at
-		   FROM asignaciones a JOIN users u ON u.id=a.user_id
-		  WHERE a.capacitacion_id=$1
+		`SELECT user_id id,
+		        COALESCE(user_name,'') name,
+		        COALESCE(user_email,'') email,
+		        assigned_at
+		   FROM asignaciones
+		  WHERE capacitacion_id=$1
 		    AND EXISTS(SELECT 1 FROM capacitaciones c WHERE c.id=$1 AND c.instructor_id=$2)
-		  ORDER BY a.assigned_at DESC`, cursoID, instructorID)
+		  ORDER BY assigned_at DESC`, cursoID, instructorID)
 }
 
 func (r *postgresCursosRepository) InstructorAsignar(ctx context.Context, instructorID, userID, cursoID string) error {
@@ -256,7 +276,11 @@ func (r *postgresCursosRepository) InstructorAsignar(ctx context.Context, instru
 func (r *postgresCursosRepository) ListAsignaciones(ctx context.Context) ([]*Asignacion, error) {
 	var asigs []*Asignacion
 	return asigs, r.db.SelectContext(ctx, &asigs,
-		`SELECT id, user_id, capacitacion_id, assigned_at FROM asignaciones
+		`SELECT id, user_id,
+		        COALESCE(user_name,'') user_name,
+		        COALESCE(user_email,'') user_email,
+		        capacitacion_id, assigned_at
+		   FROM asignaciones
 		  WHERE capacitacion_id IS NOT NULL ORDER BY assigned_at DESC`)
 }
 
