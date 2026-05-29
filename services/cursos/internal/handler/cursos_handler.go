@@ -134,7 +134,7 @@ func (h *CursosHandler) InstructorListEstudiantes(ctx context.Context, req *curs
 }
 
 func (h *CursosHandler) InstructorAsignar(ctx context.Context, req *cursospb.AsignarRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.InstructorAsignar(ctx, req.InstructorId, req.UserId, req.CursoId); err != nil {
+	if err := h.svc.InstructorAsignar(ctx, req.RequesterId, req.TargetUserId, req.CapacitacionId); err != nil {
 		return nil, mapErr(err)
 	}
 	return &cursospb.EmptyResponse{}, nil
@@ -182,7 +182,7 @@ func (h *CursosHandler) AdminListAsignaciones(ctx context.Context, _ *cursospb.E
 }
 
 func (h *CursosHandler) AdminAsignar(ctx context.Context, req *cursospb.AsignarRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.AdminAsignar(ctx, req.UserId, req.CursoId); err != nil {
+	if err := h.svc.AdminAsignar(ctx, req.TargetUserId, req.CapacitacionId); err != nil {
 		return nil, mapErr(err)
 	}
 	return &cursospb.EmptyResponse{}, nil

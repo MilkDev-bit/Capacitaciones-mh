@@ -49,8 +49,8 @@ type Asignacion struct {
 	AssignedAt     time.Time `db:"assigned_at"`
 }
 
-func (a *Asignacion) ToProto() *cursospb.AsignacionResponse {
-	r := &cursospb.AsignacionResponse{
+func (a *Asignacion) ToProto() *cursospb.AsignacionInfo {
+	r := &cursospb.AsignacionInfo{
 		Id: a.ID, UserId: a.UserID,
 		AssignedAt: a.AssignedAt.Format("2006-01-02T15:04:05Z"),
 	}

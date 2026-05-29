@@ -152,15 +152,15 @@ func (s *CursosService) InstructorResetCodigo(ctx context.Context, cursoID, user
 	return c.ToProto(), nil
 }
 
-func (s *CursosService) InstructorListEstudiantes(ctx context.Context, instructorID, cursoID string) ([]*cursospb.EstudianteResponse, error) {
+func (s *CursosService) InstructorListEstudiantes(ctx context.Context, instructorID, cursoID string) ([]*cursospb.EstudianteInfo, error) {
 	rows, err := s.repo.ListEstudiantes(ctx, instructorID, cursoID)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*cursospb.EstudianteResponse, 0, len(rows))
+	result := make([]*cursospb.EstudianteInfo, 0, len(rows))
 	for _, r := range rows {
-		result = append(result, &cursospb.EstudianteResponse{
-			Id: r.ID, Name: r.Name, Email: r.Email,
+		result = append(result, &cursospb.EstudianteInfo{
+			UserId: r.ID, Name: r.Name, Email: r.Email,
 			AssignedAt: r.AssignedAt.Format("2006-01-02T15:04:05Z"),
 		})
 	}
@@ -201,12 +201,12 @@ func (s *CursosService) AdminDelete(ctx context.Context, cursoID string) error {
 	return s.repo.Delete(ctx, cursoID)
 }
 
-func (s *CursosService) AdminListAsignaciones(ctx context.Context) ([]*cursospb.AsignacionResponse, error) {
+func (s *CursosService) AdminListAsignaciones(ctx context.Context) ([]*cursospb.AsignacionInfo, error) {
 	asigs, err := s.repo.ListAsignaciones(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*cursospb.AsignacionResponse, 0, len(asigs))
+	result := make([]*cursospb.AsignacionInfo, 0, len(asigs))
 	for _, a := range asigs {
 		result = append(result, a.ToProto())
 	}
