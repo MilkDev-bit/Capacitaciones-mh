@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -44,7 +45,13 @@ func main() {
 	db.SetMaxIdleConns(5)
 	slog.Info("Database conectada")
 
-	// ── 4. Inyección de dependencias: Repo → Service → Handler ───────────────
+	// ── 4. Migraciones automáticas ────────────────────────────────────────────
+	if err := runMigrations(db); err != nil {
+		slog.Error("Migraciones fallidas", "error", err)
+		os.Exit(1)
+	}
+
+	// ── 5. Inyección de dependencias: Repo → Service → Handler ───────────────
 	userRepo := repository.NewUserRepository(db)
 	authSvc := service.NewAuthService(userRepo, cfg)
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -96,4 +103,28 @@ func loggingInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 	resp, err := handler(ctx, req)
 	slog.Info("gRPC", "method", info.FullMethod, "duration_ms", time.Since(start).Milliseconds(), "error", err)
 	return resp, err
+}
+
+// runMigrations aplica columnas y tablas necesarias que pueden faltar en la BD existente.
+func runMigrations(db *sqlx.DB) error {
+	migrations := []string{
+		// token_version para revocación de sesiones
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1`,
+		// columnas para reset de contraseña
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMPTZ`,
+		// columnas de perfil de usuario
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) DEFAULT ''`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty TEXT DEFAULT ''`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT ''`,
+	}
+	for _, m := range migrations {
+		if _, err := db.Exec(m); err != nil {
+			return fmt.Errorf("migración fallida (%s): %w", m[:40], err)
+		}
+	}
+	slog.Info("Migraciones aplicadas correctamente")
+	return nil
 }
