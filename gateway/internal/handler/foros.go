@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -10,6 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/metadata"
 )
+
+func foroASCII(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= 0x20 && r <= 0x7E {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
 
 type ForosHandler struct{ c *clients.Clients }
 
@@ -40,7 +51,7 @@ func (h *ForosHandler) CreateForoPost(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	md := metadata.Pairs("x-user-name", foroASCII(ctx.GetString(middleware.CtxUserName)))
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
 	resp, err := h.c.Foros.CreateForoPost(grpcCtx, &forospb.CreatePostRequest{
 		LeccionId: ctx.Param("leccion_id"),
@@ -91,7 +102,7 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	md := metadata.Pairs("x-user-name", foroASCII(ctx.GetString(middleware.CtxUserName)))
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
 	resp, err := h.c.Foros.CreateForoComentario(grpcCtx, &forospb.CreateComentarioRequest{
 		PostId:    ctx.Param("post_id"),

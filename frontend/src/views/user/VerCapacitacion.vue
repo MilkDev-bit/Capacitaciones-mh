@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { toast } from '../../utils/toast'
+import { uploadToR2 } from '../../utils/upload'
 import VideoPlayer from '../../components/VideoPlayer.vue'
 
 const videoProgressKey = (lecId: string) => `vp_${cursoId}_${lecId}`
@@ -231,15 +232,19 @@ async function crearPost() {
   if (!nuevoPost.value.titulo || !nuevoPost.value.contenido) return
   postLoading.value = true
   foroError.value = ''
-  const loadingToast = postFile.value && postFileIsVideo.value
-    ? toast.loading('Subiendo video al foro...')
-    : null
+  const hasMedia = !!postFile.value
+  const loadingToast = hasMedia ? toast.loading('Subiendo archivo...') : null
   try {
-    const fd = new FormData()
-    fd.append('titulo', nuevoPost.value.titulo)
-    fd.append('contenido', nuevoPost.value.contenido)
-    if (postFile.value) fd.append('media', postFile.value)
-    await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, fd)
+    const payload: Record<string, any> = {
+      titulo: nuevoPost.value.titulo,
+      contenido: nuevoPost.value.contenido,
+    }
+    if (postFile.value) {
+      const prefix = postFileIsVideo.value ? 'videos' : 'documents'
+      payload.media_url = await uploadToR2(postFile.value, prefix)
+      payload.media_type = postFileIsVideo.value ? 'video' : 'image'
+    }
+    await api.post(`/lecciones/${selectedLeccion.value.id}/foro`, payload)
     nuevoPost.value = { titulo: '', contenido: '' }
     removePostFile()
     showNuevoPost.value = false
