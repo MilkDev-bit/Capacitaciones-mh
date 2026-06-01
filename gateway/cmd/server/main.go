@@ -57,6 +57,7 @@ func main() {
 	leccionesH := handler.NewLeccionesHandler(svc)
 	examenesH := handler.NewExamenesHandler(svc)
 	forosH := handler.NewForosHandler(svc)
+	presignH := handler.NewPresignHandler(cfg)
 
 	// ── 6. Middlewares de autenticación ───────────────────────────────────────
 	authMW := middleware.AuthRequired(svc)
@@ -148,6 +149,9 @@ func main() {
 			auth.GET("/examenes/:id", examenesH.GetExamen)
 			auth.POST("/examenes/:id/submit", examenesH.SubmitExamen)
 
+			// Presign (subida directa a R2)
+			auth.GET("/presign", presignH.PresignUpload)
+
 			// Foros
 			auth.GET("/lecciones/:leccion_id/foro", forosH.ListForoPosts)
 			auth.POST("/lecciones/:leccion_id/foro", forosH.CreateForoPost)
@@ -171,9 +175,20 @@ func main() {
 				inst.DELETE("/capacitaciones/:id/lecciones/:leccion_id", leccionesH.InstructorDeleteLeccion)
 				inst.PUT("/capacitaciones/:id/lecciones/reorder", leccionesH.InstructorReorderLecciones)
 
+				inst.PATCH("/capacitaciones/:id/toggle-public", cursosH.InstructorTogglePublic)
+				inst.POST("/capacitaciones/:id/reset-codigo", cursosH.InstructorResetCodigo)
+				inst.GET("/estudiantes", cursosH.InstructorListEstudiantes)
+				inst.POST("/asignar", cursosH.InstructorAsignar)
+
+				inst.GET("/capacitaciones/:id/intermedias", leccionesH.InstructorListPreguntasIntermedias)
+				inst.POST("/capacitaciones/:id/intermedias", leccionesH.InstructorCreatePreguntaIntermedia)
+				inst.DELETE("/capacitaciones/:id/intermedias/:pregunta_id", leccionesH.InstructorDeletePreguntaIntermedia)
+
 				inst.GET("/examenes", examenesH.InstructorListExamenes)
+				inst.POST("/examenes", examenesH.InstructorCreateExamen)
 				inst.DELETE("/examenes/:id", examenesH.InstructorDeleteExamen)
 				inst.GET("/examenes/:id/resultados", examenesH.InstructorGetResultados)
+				inst.GET("/examenes/:id/resultados/:user_id", examenesH.InstructorGetRespuestasUsuario)
 			}
 
 			// ── Admin ─────────────────────────────────────────────────────────
@@ -187,7 +202,13 @@ func main() {
 				adm.POST("/asignar", cursosH.AdminAsignar)
 				adm.DELETE("/asignar/:id", cursosH.AdminDesAsignar)
 
+				adm.POST("/capacitaciones", cursosH.AdminCreateCapacitacion)
+				adm.PUT("/capacitaciones/:id", cursosH.AdminUpdateCapacitacion)
+				adm.DELETE("/capacitaciones/:id", cursosH.AdminDeleteCapacitacion)
+				adm.GET("/asignaciones", cursosH.AdminListAsignaciones)
+
 				adm.GET("/examenes", examenesH.AdminListExamenes)
+				adm.POST("/examenes", examenesH.AdminCreateExamen)
 				adm.DELETE("/examenes/:id", examenesH.AdminDeleteExamen)
 			}
 		}

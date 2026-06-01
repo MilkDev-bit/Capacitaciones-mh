@@ -209,6 +209,75 @@ func (h *CursosHandler) InstructorDeleteCapacitacion(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// PATCH /api/instructor/capacitaciones/:id/toggle-public
+func (h *CursosHandler) InstructorTogglePublic(ctx *gin.Context) {
+	resp, err := h.c.Cursos.InstructorTogglePublic(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+		UserId:  ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"is_public": resp.IsPublic})
+}
+
+// POST /api/instructor/capacitaciones/:id/reset-codigo
+func (h *CursosHandler) InstructorResetCodigo(ctx *gin.Context) {
+	resp, err := h.c.Cursos.InstructorResetCodigo(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+		UserId:  ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"codigo_acceso": resp.CodigoAcceso})
+}
+
+// GET /api/instructor/estudiantes
+func (h *CursosHandler) InstructorListEstudiantes(ctx *gin.Context) {
+	resp, err := h.c.Cursos.InstructorListEstudiantes(ctx.Request.Context(), &cursospb.UserRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Estudiantes)
+}
+
+// POST /api/instructor/asignar
+func (h *CursosHandler) InstructorAsignar(ctx *gin.Context) {
+	var body struct {
+		UserID         string `json:"user_id"         binding:"required"`
+		UserName       string `json:"user_name"`
+		UserEmail      string `json:"user_email"`
+		CapacitacionID string `json:"capacitacion_id"`
+		ExamenID       string `json:"examen_id"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	md := metadata.Pairs(
+		"x-user-name", body.UserName,
+		"x-user-email", body.UserEmail,
+	)
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	_, err := h.c.Cursos.InstructorAsignar(grpcCtx, &cursospb.AsignarRequest{
+		RequesterId:    ctx.GetString(middleware.CtxUserID),
+		TargetUserId:   body.UserID,
+		CapacitacionId: body.CapacitacionID,
+		ExamenId:       body.ExamenID,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, gin.H{"message": "asignado"})
+}
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 // GET /api/admin/capacitaciones
@@ -219,6 +288,97 @@ func (h *CursosHandler) AdminListCapacitaciones(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, resp.Cursos)
+}
+
+// POST /api/admin/capacitaciones
+func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
+	var body struct {
+		Title          string `json:"title"           binding:"required"`
+		Description    string `json:"description"`
+		Type           string `json:"type"`
+		Content        string `json:"content"`
+		IsPublic       bool   `json:"is_public"`
+		WelcomeMessage string `json:"welcome_message"`
+		ThumbnailURL   string `json:"thumbnail_url"`
+		Color          string `json:"color"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Cursos.AdminCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		Title:          body.Title,
+		Description:    body.Description,
+		Type:           body.Type,
+		Content:        body.Content,
+		IsPublic:       body.IsPublic,
+		WelcomeMessage: body.WelcomeMessage,
+		ThumbnailUrl:   body.ThumbnailURL,
+		Color:          body.Color,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, resp)
+}
+
+// PUT /api/admin/capacitaciones/:id
+func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
+	var body struct {
+		Title          string `json:"title"`
+		Description    string `json:"description"`
+		Type           string `json:"type"`
+		Content        string `json:"content"`
+		IsPublic       bool   `json:"is_public"`
+		WelcomeMessage string `json:"welcome_message"`
+		ThumbnailURL   string `json:"thumbnail_url"`
+		Color          string `json:"color"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Cursos.AdminUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
+		CursoId:        ctx.Param("id"),
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		Title:          body.Title,
+		Description:    body.Description,
+		Type:           body.Type,
+		Content:        body.Content,
+		IsPublic:       body.IsPublic,
+		WelcomeMessage: body.WelcomeMessage,
+		ThumbnailUrl:   body.ThumbnailURL,
+		Color:          body.Color,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// DELETE /api/admin/capacitaciones/:id
+func (h *CursosHandler) AdminDeleteCapacitacion(ctx *gin.Context) {
+	_, err := h.c.Cursos.AdminDeleteCapacitacion(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+// GET /api/admin/asignaciones
+func (h *CursosHandler) AdminListAsignaciones(ctx *gin.Context) {
+	resp, err := h.c.Cursos.AdminListAsignaciones(ctx.Request.Context(), &cursospb.EmptyRequest{})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Asignaciones)
 }
 
 // POST /api/admin/asignar

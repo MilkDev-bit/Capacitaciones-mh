@@ -197,3 +197,63 @@ func (h *LeccionesHandler) InstructorReorderLecciones(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "orden actualizado"})
 }
+
+// GET /api/instructor/capacitaciones/:id/intermedias
+func (h *LeccionesHandler) InstructorListPreguntasIntermedias(ctx *gin.Context) {
+	resp, err := h.c.Lecciones.InstructorListPreguntasIntermedias(ctx.Request.Context(), &leccionespb.CursoRequest{
+		CursoId: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Preguntas)
+}
+
+// POST /api/instructor/capacitaciones/:id/intermedias
+func (h *LeccionesHandler) InstructorCreatePreguntaIntermedia(ctx *gin.Context) {
+	var body struct {
+		DespuesDeLeccionID string `json:"despues_de_leccion_id"`
+		Texto              string `json:"texto"  binding:"required"`
+		Tipo               string `json:"tipo"   binding:"required"`
+		Orden              int32  `json:"orden"`
+		Opciones           []struct {
+			Texto      string `json:"texto"`
+			EsCorrecta bool   `json:"es_correcta"`
+		} `json:"opciones"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var opciones []*leccionespb.OpcionInput
+	for _, o := range body.Opciones {
+		opciones = append(opciones, &leccionespb.OpcionInput{Texto: o.Texto, EsCorrecta: o.EsCorrecta})
+	}
+	resp, err := h.c.Lecciones.InstructorCreatePreguntaIntermedia(ctx.Request.Context(), &leccionespb.CreateIntermediaRequest{
+		CursoId:            ctx.Param("id"),
+		DespuesDeLeccionId: body.DespuesDeLeccionID,
+		Texto:              body.Texto,
+		Tipo:               body.Tipo,
+		Orden:              body.Orden,
+		Opciones:           opciones,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, resp)
+}
+
+// DELETE /api/instructor/capacitaciones/:id/intermedias/:pregunta_id
+func (h *LeccionesHandler) InstructorDeletePreguntaIntermedia(ctx *gin.Context) {
+	_, err := h.c.Lecciones.InstructorDeletePreguntaIntermedia(ctx.Request.Context(), &leccionespb.IntermediaIDRequest{
+		PreguntaId: ctx.Param("pregunta_id"),
+		CursoId:    ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}

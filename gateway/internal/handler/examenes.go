@@ -113,6 +113,64 @@ func (h *ExamenesHandler) InstructorGetResultados(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp.Resultados)
 }
 
+// GET /api/instructor/examenes/:id/resultados/:user_id
+func (h *ExamenesHandler) InstructorGetRespuestasUsuario(ctx *gin.Context) {
+	resp, err := h.c.Examenes.InstructorGetRespuestasUsuario(ctx.Request.Context(), &examenespb.RespuestasUsuarioRequest{
+		ExamenId: ctx.Param("id"),
+		UserId:   ctx.Param("user_id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Respuestas)
+}
+
+// POST /api/instructor/examenes
+func (h *ExamenesHandler) InstructorCreateExamen(ctx *gin.Context) {
+	var body struct {
+		Title          string `json:"title"    binding:"required"`
+		Description    string `json:"description"`
+		CapacitacionID string `json:"capacitacion_id"`
+		Preguntas      []struct {
+			Texto    string  `json:"texto"`
+			Tipo     string  `json:"tipo"`
+			Valor    float64 `json:"valor"`
+			Orden    int32   `json:"orden"`
+			Opciones []struct {
+				Texto      string `json:"texto"`
+				EsCorrecta bool   `json:"es_correcta"`
+			} `json:"opciones"`
+		} `json:"preguntas"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var preguntas []*examenespb.PreguntaInput
+	for _, p := range body.Preguntas {
+		var opciones []*examenespb.OpcionInput
+		for _, o := range p.Opciones {
+			opciones = append(opciones, &examenespb.OpcionInput{Texto: o.Texto, EsCorrecta: o.EsCorrecta})
+		}
+		preguntas = append(preguntas, &examenespb.PreguntaInput{
+			Texto: p.Texto, Tipo: p.Tipo, Valor: p.Valor, Orden: p.Orden, Opciones: opciones,
+		})
+	}
+	resp, err := h.c.Examenes.InstructorCreateExamen(ctx.Request.Context(), &examenespb.CreateExamenRequest{
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		Title:          body.Title,
+		Description:    body.Description,
+		CapacitacionId: body.CapacitacionID,
+		Preguntas:      preguntas,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, resp)
+}
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 // GET /api/admin/examenes
@@ -135,4 +193,49 @@ func (h *ExamenesHandler) AdminDeleteExamen(ctx *gin.Context) {
 		return
 	}
 	ctx.Status(http.StatusNoContent)
+}
+
+// POST /api/admin/examenes
+func (h *ExamenesHandler) AdminCreateExamen(ctx *gin.Context) {
+	var body struct {
+		Title          string `json:"title"    binding:"required"`
+		Description    string `json:"description"`
+		CapacitacionID string `json:"capacitacion_id"`
+		Preguntas      []struct {
+			Texto    string  `json:"texto"`
+			Tipo     string  `json:"tipo"`
+			Valor    float64 `json:"valor"`
+			Orden    int32   `json:"orden"`
+			Opciones []struct {
+				Texto      string `json:"texto"`
+				EsCorrecta bool   `json:"es_correcta"`
+			} `json:"opciones"`
+		} `json:"preguntas"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var preguntas []*examenespb.PreguntaInput
+	for _, p := range body.Preguntas {
+		var opciones []*examenespb.OpcionInput
+		for _, o := range p.Opciones {
+			opciones = append(opciones, &examenespb.OpcionInput{Texto: o.Texto, EsCorrecta: o.EsCorrecta})
+		}
+		preguntas = append(preguntas, &examenespb.PreguntaInput{
+			Texto: p.Texto, Tipo: p.Tipo, Valor: p.Valor, Orden: p.Orden, Opciones: opciones,
+		})
+	}
+	resp, err := h.c.Examenes.AdminCreateExamen(ctx.Request.Context(), &examenespb.CreateExamenRequest{
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		Title:          body.Title,
+		Description:    body.Description,
+		CapacitacionId: body.CapacitacionID,
+		Preguntas:      preguntas,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, resp)
 }
