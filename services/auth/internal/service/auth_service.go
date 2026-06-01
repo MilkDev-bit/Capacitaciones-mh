@@ -300,21 +300,86 @@ func (s *AuthService) sendResetEmail(email, name, token string) {
 
 	link := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.AppURL, token)
 	subject := fmt.Sprintf("Restablecer contraseña — %s", s.cfg.AppName)
-	body := fmt.Sprintf(
-		"Hola %s,\n\nHaz clic en el siguiente enlace para restablecer tu contraseña:\n%s\n\nEste enlace expira en 1 hora.\n\nSi no solicitaste este cambio, ignora este mensaje.",
-		name, link,
-	)
+	body := buildResetEmailHTML(s.cfg.AppURL, s.cfg.AppName, name, link)
 
 	msg := strings.Join([]string{
 		"From: " + s.cfg.SMTPFrom,
 		"To: " + email,
 		"Subject: " + subject,
+		"MIME-Version: 1.0",
+		"Content-Type: text/html; charset=UTF-8",
 		"",
 		body,
 	}, "\r\n")
 
 	addr := fmt.Sprintf("%s:%s", s.cfg.SMTPHost, s.cfg.SMTPPort)
-	// net/smtp.SendMail usa TLS/STARTTLS automáticamente.
-	// Para SendGrid/Resend/Mailgun, considera una librería dedicada.
 	_ = sendSMTP(addr, s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPFrom, []string{email}, []byte(msg))
+}
+
+func buildResetEmailHTML(appURL, appName, name, link string) string {
+	logoURL := appURL + "/logo-capacitaciones.png"
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:48px 0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%">
+
+        <!-- Header -->
+        <tr><td style="background:#1c1d1f;border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
+          <img src="%s" width="60" height="60" alt="%s" style="display:block;margin:0 auto 14px;border-radius:12px" />
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.4px">%s</h1>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="background:#ffffff;padding:40px 40px 32px">
+          <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#111827">
+            Restablecer contraseña
+          </h2>
+          <p style="margin:0 0 6px;color:#6b7280;font-size:15px">
+            Hola, <strong style="color:#111827">%s</strong>
+          </p>
+          <p style="margin:0 0 28px;color:#6b7280;font-size:15px;line-height:1.65">
+            Recibimos una solicitud para restablecer la contraseña de tu cuenta.
+            Haz clic en el botón de abajo para continuar.
+            <strong style="color:#374151">El enlace expira en 1 hora.</strong>
+          </p>
+
+          <!-- CTA Button -->
+          <table width="100%%" cellpadding="0" cellspacing="0">
+            <tr><td align="center" style="padding:4px 0 28px">
+              <a href="%s"
+                style="display:inline-block;background:#f97316;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:15px 40px;border-radius:12px;letter-spacing:-0.1px">
+                Restablecer mi contraseña →
+              </a>
+            </td></tr>
+          </table>
+
+          <!-- Alt link -->
+          <p style="margin:0 0 24px;font-size:13px;color:#9ca3af;line-height:1.6">
+            Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+            <a href="%s" style="color:#f97316;word-break:break-all;font-size:12px">%s</a>
+          </p>
+
+          <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 24px">
+
+          <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6">
+            Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.
+            Tu contraseña permanecerá sin cambios.
+          </p>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="background:#f9fafb;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;border-top:1px solid #f3f4f6">
+          <p style="margin:0;font-size:12px;color:#9ca3af">
+            © %s &nbsp;·&nbsp; Este correo fue generado automáticamente, no respondas a este mensaje.
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`, logoURL, appName, appName, name, link, link, link, appName)
 }

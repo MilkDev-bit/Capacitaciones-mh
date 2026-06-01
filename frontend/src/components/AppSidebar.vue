@@ -72,11 +72,7 @@ function close() {
 
     <div class="sidebar-content">
     <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-      <div class="w-9 h-9 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
-        <svg width="18" height="18" viewBox="0 0 44 44" fill="none">
-          <path d="M10 34L22 12L34 34H10Z" fill="white"/>
-        </svg>
-      </div>
+      <img src="/logo-capacitaciones.png" alt="MH" class="w-9 h-9 object-contain flex-shrink-0" />
       <span class="font-extrabold text-white text-base tracking-tight">{{ brandLabel }}</span>
     </div>
 

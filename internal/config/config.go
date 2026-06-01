@@ -47,6 +47,9 @@ type Config struct {
 	// reCAPTCHA v3
 	RecaptchaSecretKey string
 
+	// URL pública de la app (para logos e hipervínculos en emails)
+	AppURL string
+
 	// SMTP (correo)
 	SMTPHost string
 	SMTPPort string
@@ -120,6 +123,9 @@ func Load() {
 
 		// reCAPTCHA
 		RecaptchaSecretKey: os.Getenv("RECAPTCHA_SECRET_KEY"),
+
+		// URL pública
+		AppURL: getEnv("APP_URL", ""),
 
 		// SMTP
 		SMTPHost: os.Getenv("SMTP_HOST"),

@@ -184,10 +184,7 @@ async function resetPassword() {
       </div>
       <div class="hero-content">
         <div class="hero-logo">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-            <rect width="44" height="44" rx="12" fill="rgba(255,255,255,0.15)"/>
-            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
-          </svg>
+          <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="hero-logo-img" />
         </div>
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
         <p class="hero-subtitle">Cursos, lecciones, examenes y seguimiento en una sola experiencia de aprendizaje.</p>
@@ -211,10 +208,7 @@ async function resetPassword() {
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
         <div class="mobile-logo">
-          <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
-            <rect width="44" height="44" rx="12" fill="var(--brand)"/>
-            <path d="M12 32L22 14L32 32H12Z" fill="white"/>
-          </svg>
+          <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
           <span>Capacitaciones MH</span>
         </div>
 
@@ -316,7 +310,7 @@ async function resetPassword() {
             <div class="forgot-header">
               <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
               <h2>Recuperar contraseña</h2>
-              <p>Ingresa tu correo y te enviaremos un código para restablecer tu contraseña.</p>
+              <p>Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
             </div>
             
             <div class="form-group">
@@ -326,51 +320,36 @@ async function resetPassword() {
 
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading">
               <span v-if="forgotLoading" class="btn-spinner"></span>
-              {{ forgotLoading ? 'Enviando...' : 'Enviar código' }}
+              {{ forgotLoading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
             </button>
             <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="tab = 'login'" :disabled="forgotLoading">
               Volver al inicio de sesión
             </button>
           </form>
 
-          <form v-else-if="tab === 'forgot' && forgotStep === 2" @submit.prevent="resetPassword" class="auth-form forgot-form">
+          <div v-else-if="tab === 'forgot' && forgotStep === 2" class="auth-form forgot-form">
             <div class="forgot-header">
-              <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3-8.57A2 2 0 012.02 3h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 10.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
-              <h2>Ingresa el código</h2>
-              <p>Revisa tu correo <strong>{{ forgotEmail }}</strong> e ingresa el código recibido.</p>
-            </div>
-
-            <div class="form-group">
-              <label>Código de verificación</label>
-              <input class="field-input" v-model="resetCode" type="text" placeholder="XXX-XXX" autocomplete="one-time-code" required />
-            </div>
-
-            <div class="form-group">
-              <label>Nueva contraseña</label>
-              <div class="pass-wrap">
-                <input class="field-input" v-model="newPassword" :type="showNewPass ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
-                <button type="button" class="pass-toggle" @click="showNewPass = !showNewPass">
-                  {{ showNewPass ? 'Ocultar' : 'Ver' }}
-                </button>
+              <div class="forgot-icon success-icon-wrap">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                </svg>
               </div>
+              <h2>Revisa tu correo</h2>
+              <p>
+                Si la cuenta <strong>{{ forgotEmail }}</strong> existe, recibirás un enlace
+                para restablecer tu contraseña en los próximos minutos.
+                <br><br>
+                El enlace expirará en <strong>1 hora</strong>.
+              </p>
             </div>
-
-            <div class="form-group">
-              <label>Confirmar contraseña</label>
-              <input class="field-input" v-model="newPasswordConfirm" :type="showNewPass ? 'text' : 'password'" placeholder="Repite tu nueva contraseña" autocomplete="new-password" required minlength="8" />
-              <div v-if="newPasswordConfirm && newPassword !== newPasswordConfirm" class="form-hint error-hint">
-                Las contraseñas no coinciden
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading || (!!newPasswordConfirm && newPassword !== newPasswordConfirm)">
-              <span v-if="forgotLoading" class="btn-spinner"></span>
-              {{ forgotLoading ? 'Actualizando...' : 'Restablecer contraseña' }}
+            <p class="forgot-spam-hint">¿No lo encuentras? Revisa tu carpeta de spam o correo no deseado.</p>
+            <button type="button" class="btn btn-primary btn-lg submit-btn" @click="tab = 'login'">
+              Volver al inicio de sesión
             </button>
-            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="forgotStep = 1" :disabled="forgotLoading">
-              Volver atrás
+            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="forgotStep = 1">
+              Intentar con otro correo
             </button>
-          </form>
+          </div>
         </Transition>
       </div>
     </div>
@@ -389,6 +368,7 @@ async function resetPassword() {
 }
 .hero-content { position: relative; z-index: 1; max-width: 520px; }
 .hero-logo { margin-bottom: 20px; }
+.hero-logo-img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 20px rgba(249,115,22,.4)); }
 .hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
 .hero-title span { color: var(--brand); }
 .hero-subtitle { color: rgba(255,255,255,.72); font-size: 0.96rem; line-height: 1.6; max-width: 430px; }
@@ -441,6 +421,7 @@ async function resetPassword() {
 .auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); overflow-y: auto; }
 .auth-form-wrap { width: 100%; max-width: 440px; }
 .mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
+.mobile-logo-img { width: 36px; height: 36px; object-fit: contain; }
 .form-tabs { display: flex; background: var(--border-light); border-radius: var(--r); padding: 4px; gap: 4px; margin-bottom: 28px; }
 .form-tab { flex: 1; padding: 9px; border: none; border-radius: var(--r-sm); background: transparent; font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: all 0.18s; cursor: pointer; }
 .form-tab.active { background: var(--surface); color: var(--dark); box-shadow: var(--shadow-sm); }
@@ -485,9 +466,11 @@ async function resetPassword() {
 
 /* Forgot Password Styles */
 .forgot-header { text-align: center; margin-bottom: 24px; }
-.forgot-icon { font-size: 3rem; margin-bottom: 12px; }
+.forgot-icon { font-size: 3rem; margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(249,115,22,.12); color: var(--brand); }
+.success-icon-wrap { background: rgba(16,185,129,.12) !important; color: #10b981 !important; }
 .forgot-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
 .forgot-header p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+.forgot-spam-hint { text-align:center; font-size:0.8rem; color:var(--muted); margin:-8px 0 4px; }
 
 /* Transitions */
 .fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.25s ease; }
