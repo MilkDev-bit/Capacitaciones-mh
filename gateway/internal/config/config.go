@@ -18,6 +18,7 @@ type Config struct {
 	LeccionesAddr string
 	ExamenesAddr  string
 	ForosAddr     string
+	MensajesAddr  string
 
 	// JWT (validación local de tokens en el Gateway)
 	JWTSecret string
@@ -31,9 +32,6 @@ type Config struct {
 	R2AccessKey string
 	R2SecretKey string
 	R2PublicURL string
-
-	// Base de datos compartida (para mensajes directos)
-	DatabaseURL string
 
 	// Entorno
 	GinMode            string
@@ -52,6 +50,7 @@ func Load() *Config {
 		LeccionesAddr: getEnvOr("LECCIONES_ADDR", "lecciones-service:50054"),
 		ExamenesAddr:  getEnvOr("EXAMENES_ADDR", "examenes-service:50055"),
 		ForosAddr:     getEnvOr("FOROS_ADDR", "foros-service:50056"),
+		MensajesAddr:  getEnvOr("MENSAJES_ADDR", "mensajes-service:50057"),
 
 		JWTSecret: requireEnv("JWT_SECRET"),
 
@@ -62,8 +61,6 @@ func Load() *Config {
 		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
 		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
 		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
-
-		DatabaseURL: os.Getenv("DATABASE_URL"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),

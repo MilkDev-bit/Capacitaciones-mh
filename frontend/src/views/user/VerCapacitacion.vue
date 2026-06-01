@@ -407,7 +407,7 @@ function iniciarConversacion() {
   foroProfileCard.value = null
   if (!id) return
   // Ruta según el rol del usuario actual
-  const base = auth.isInstructor ? '/instructor' : '/usuario'
+  const base = authStore.isInstructor ? '/instructor' : '/usuario'
   router.push({ path: `${base}/mensajes/${id}`, state: { peerName: name } })
 }
 

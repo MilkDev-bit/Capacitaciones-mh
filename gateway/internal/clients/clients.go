@@ -9,6 +9,7 @@ import (
 	examenespb "Prueba-Go/gen/examenes"
 	forospb "Prueba-Go/gen/foros"
 	leccionespb "Prueba-Go/gen/lecciones"
+	mensajespb "Prueba-Go/gen/mensajes"
 	usuariospb "Prueba-Go/gen/usuarios"
 
 	"google.golang.org/grpc"
@@ -23,6 +24,7 @@ type Clients struct {
 	Lecciones leccionespb.LeccionesServiceClient
 	Examenes  examenespb.ExamenesServiceClient
 	Foros     forospb.ForosServiceClient
+	Mensajes  mensajespb.MensajesServiceClient
 
 	// conns para cerrarlas en shutdown
 	conns []*grpc.ClientConn
@@ -42,6 +44,7 @@ func Dial(cfg *config.Config) (*Clients, error) {
 		{cfg.LeccionesAddr, func(cc *grpc.ClientConn) { c.Lecciones = leccionespb.NewLeccionesServiceClient(cc) }},
 		{cfg.ExamenesAddr, func(cc *grpc.ClientConn) { c.Examenes = examenespb.NewExamenesServiceClient(cc) }},
 		{cfg.ForosAddr, func(cc *grpc.ClientConn) { c.Foros = forospb.NewForosServiceClient(cc) }},
+		{cfg.MensajesAddr, func(cc *grpc.ClientConn) { c.Mensajes = mensajespb.NewMensajesServiceClient(cc) }},
 	}
 
 	for _, d := range dials {

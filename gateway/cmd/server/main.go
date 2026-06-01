@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/config"
-	"Prueba-Go/gateway/internal/db"
 	"Prueba-Go/gateway/internal/handler"
 	"Prueba-Go/gateway/internal/middleware"
 	"Prueba-Go/gateway/internal/router"
@@ -41,8 +39,8 @@ func main() {
 	}
 
 	// ── 4. Conexiones gRPC a los microservicios ───────────────────────────────
-	slog.Info(fmt.Sprintf("gRPC addrs: auth=%s usuarios=%s cursos=%s lecciones=%s examenes=%s foros=%s",
-		cfg.AuthAddr, cfg.UsuariosAddr, cfg.CursosAddr, cfg.LeccionesAddr, cfg.ExamenesAddr, cfg.ForosAddr,
+	slog.Info(fmt.Sprintf("gRPC addrs: auth=%s usuarios=%s cursos=%s lecciones=%s examenes=%s foros=%s mensajes=%s",
+		cfg.AuthAddr, cfg.UsuariosAddr, cfg.CursosAddr, cfg.LeccionesAddr, cfg.ExamenesAddr, cfg.ForosAddr, cfg.MensajesAddr,
 	))
 	svc, err := clients.Dial(cfg)
 	if err != nil {
@@ -55,19 +53,6 @@ func main() {
 	// ── 4b. Storage R2 ────────────────────────────────────────────────────────
 	storage.Init(cfg)
 
-	// ── 4c. BD directa para mensajes (opcional — se omite si DATABASE_URL no está) ──
-	var mensajesDB *sql.DB
-	if cfg.DatabaseURL != "" {
-		var dbErr error
-		mensajesDB, dbErr = db.OpenMensajes(cfg.DatabaseURL)
-		if dbErr != nil {
-			slog.Warn("No se pudo inicializar BD de mensajes", "error", dbErr)
-		} else {
-			defer mensajesDB.Close()
-			slog.Info("BD de mensajes inicializada")
-		}
-	}
-
 	// ── 5. Inyección de dependencias ──────────────────────────────────────────
 	r := router.New(router.Deps{
 		Cfg:          cfg,
@@ -77,7 +62,7 @@ func main() {
 		LeccionesH:   handler.NewLeccionesHandler(svc),
 		ExamenesH:    handler.NewExamenesHandler(svc),
 		ForosH:       handler.NewForosHandler(svc),
-		MensajesH:    handler.NewMensajesHandler(mensajesDB),
+		MensajesH:    handler.NewMensajesHandler(svc),
 		PresignH:     handler.NewPresignHandler(),
 		AuthMW:       middleware.AuthRequired(svc),
 		InstructorMW: middleware.InstructorRequired(svc),

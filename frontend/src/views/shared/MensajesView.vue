@@ -249,14 +249,14 @@ onUnmounted(() => clearInterval(pollTimer))
             <template v-for="(msg, idx) in msgs" :key="msg.id">
               <!-- Separador de fecha -->
               <div
-                v-if="idx === 0 || !isSameDay(msgs[idx - 1].created_at, msg.created_at)"
+                v-if="idx === 0 || !isSameDay(msgs[idx - 1]!.created_at, msg.created_at)"
                 class="date-sep"
               >
                 <span>{{ formatDateSep(msg.created_at) }}</span>
               </div>
 
               <!-- Burbuja -->
-              <div :class="['bubble-wrap', msg.emisor_id === auth.user?.id ? 'mine' : 'theirs']">
+              <div :class="['bubble-wrap', msg.emisor_id === auth.user!.id ? 'mine' : 'theirs']">
                 <div class="bubble">
                   <p>{{ msg.contenido }}</p>
                   <span class="bubble-time">{{ formatTime(msg.created_at) }}</span>

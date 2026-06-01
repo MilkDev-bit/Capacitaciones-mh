@@ -11,5 +11,6 @@ use (
 	./services/lecciones
 	./services/examenes
 	./services/foros
+	./services/mensajes
 	./gateway
 )

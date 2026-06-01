@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package mensajes;
+
+option go_package = "Prueba-Go/gen/mensajes;mensajespb";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MensajesService: mensajería directa entre usuarios.
+// ─────────────────────────────────────────────────────────────────────────────
+service MensajesService {
+  rpc SendMensaje          (SendMensajeRequest)         returns (MensajeResponse);
+  rpc GetMensajes          (GetMensajesRequest)         returns (GetMensajesResponse);
+  rpc ListConversaciones   (ListConversacionesRequest)  returns (ListConversacionesResponse);
+  rpc NoLeidos             (NoLeidosRequest)            returns (NoLeidosResponse);
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+message SendMensajeRequest {
+  string emisor_id     = 1;
+  string emisor_name   = 2;
+  string receptor_id   = 3;
+  string receptor_name = 4;
+  string contenido     = 5;
+}
+
+message GetMensajesRequest {
+  string user_id  = 1;
+  string peer_id  = 2;
+}
+
+message ListConversacionesRequest {
+  string user_id = 1;
+}
+
+message NoLeidosRequest {
+  string user_id = 1;
+}
+
+// ── Responses ────────────────────────────────────────────────────────────────
+
+message MensajeResponse {
+  string id            = 1;
+  string emisor_id     = 2;
+  string emisor_name   = 3;
+  string receptor_id   = 4;
+  string receptor_name = 5;
+  string contenido     = 6;
+  bool   leido         = 7;
+  string created_at    = 8;
+}
+
+message GetMensajesResponse {
+  repeated MensajeResponse mensajes = 1;
+}
+
+message ConversacionResponse {
+  string peer_id      = 1;
+  string peer_name    = 2;
+  string last_message = 3;
+  string last_time    = 4;
+  int32  unread_count = 5;
+}
+
+message ListConversacionesResponse {
+  repeated ConversacionResponse conversaciones = 1;
+}
+
+message NoLeidosResponse {
+  int32 count = 1;
+}
