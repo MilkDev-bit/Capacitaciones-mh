@@ -88,6 +88,9 @@ func New(bucket, endpoint, accessKey, secretKey, publicURL string) *StorageServi
 
 // GeneratePresignedURL returns a time-limited PUT URL for direct client-to-R2 uploads.
 func (s *StorageService) GeneratePresignedURL(ctx context.Context, prefix, ext, contentType string, ttl time.Duration) (uploadURL, finalURL string, err error) {
+	if s.client == nil {
+		return "", "", fmt.Errorf("R2 no configurado")
+	}
 	year := time.Now().Format("2006")
 	key := fmt.Sprintf("%s/%s/%s%s", prefix, year, uuid.NewString(), ext)
 	pc := s3.NewPresignClient(s.client)
