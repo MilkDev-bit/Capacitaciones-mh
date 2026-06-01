@@ -32,6 +32,9 @@ type Config struct {
 	R2SecretKey string
 	R2PublicURL string
 
+	// Base de datos compartida (para mensajes directos)
+	DatabaseURL string
+
 	// Entorno
 	GinMode            string
 	RailwayEnvironment string
@@ -59,6 +62,8 @@ func Load() *Config {
 		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
 		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
 		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
+
+		DatabaseURL: os.Getenv("DATABASE_URL"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),

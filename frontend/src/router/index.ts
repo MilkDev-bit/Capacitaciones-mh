@@ -33,6 +33,8 @@ const router = createRouter({
         { path: 'estudiantes', component: () => import('../views/instructor/EstudiantesView.vue') },
         { path: 'perfil', component: () => import('../views/instructor/InstructorPerfilView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
+        { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
+        { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
       ],
     },
     {
@@ -48,6 +50,8 @@ const router = createRouter({
         { path: 'capacitaciones/:id', component: () => import('../views/user/VerCapacitacion.vue') },
         { path: 'perfil', component: () => import('../views/user/PerfilView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
+        { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
+        { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
       ],
     },
   ],

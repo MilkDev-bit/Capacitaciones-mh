@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config centraliza todas las variables de entorno del auth service.
@@ -53,11 +55,25 @@ func Load() *Config {
 		SMTPUser:           os.Getenv("SMTP_USER"),
 		SMTPPass:           os.Getenv("SMTP_PASS"),
 		SMTPFrom:           os.Getenv("SMTP_FROM"),
-		AppURL:             getEnvOr("APP_URL", "http://localhost:5173"),
+		AppURL:             normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
 		AppName:            getEnvOr("APP_NAME", "Capacitaciones"),
 		LogLevel:           getEnvOr("LOG_LEVEL", "info"),
 	}
 	return &C
+}
+
+// normalizeOrigin devuelve solo scheme://host del URL, descartando path, query y fragment.
+// Esto garantiza que APP_URL siempre sea la raíz del dominio aunque venga con path extra.
+func normalizeOrigin(raw string) string {
+	raw = strings.TrimRight(raw, "/")
+	if raw == "" {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return raw
+	}
+	return u.Scheme + "://" + u.Host
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

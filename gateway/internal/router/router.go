@@ -23,6 +23,7 @@ type Deps struct {
 	LeccionesH   *handler.LeccionesHandler
 	ExamenesH    *handler.ExamenesHandler
 	ForosH       *handler.ForosHandler
+	MensajesH    *handler.MensajesHandler
 	PresignH     *handler.PresignHandler
 	AuthMW       gin.HandlerFunc
 	InstructorMW gin.HandlerFunc
@@ -123,6 +124,12 @@ func New(d Deps) *gin.Engine {
 			auth.GET("/foro/posts/:post_id/comentarios", d.ForosH.ListForoComentarios)
 			auth.POST("/foro/posts/:post_id/comentarios", d.ForosH.CreateForoComentario)
 			auth.POST("/foro/posts/:post_id/like", d.ForosH.ToggleForoPostLike)
+
+			// Mensajes directos
+			auth.GET("/mensajes/no-leidos", d.MensajesH.NoLeidos)
+			auth.GET("/mensajes/conversaciones", d.MensajesH.ListConversaciones)
+			auth.GET("/mensajes/:peer_id", d.MensajesH.GetMensajes)
+			auth.POST("/mensajes/:peer_id", d.MensajesH.SendMensaje)
 
 			// ── Instructor ────────────────────────────────────────────────────
 			inst := auth.Group("/instructor")

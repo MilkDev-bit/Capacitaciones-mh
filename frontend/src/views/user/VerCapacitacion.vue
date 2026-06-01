@@ -402,8 +402,13 @@ function verPerfil() {
 }
 
 function iniciarConversacion() {
+  const id = foroProfileCard.value?.id
+  const name = foroProfileCard.value?.name ?? ''
   foroProfileCard.value = null
-  toast.info('La mensajería directa estará disponible próximamente.')
+  if (!id) return
+  // Ruta según el rol del usuario actual
+  const base = auth.isInstructor ? '/instructor' : '/usuario'
+  router.push({ path: `${base}/mensajes/${id}`, state: { peerName: name } })
 }
 
 function goBack() {
