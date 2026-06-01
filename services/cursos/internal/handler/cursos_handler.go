@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	cursospb "Prueba-Go/gen/cursos"
 	"Prueba-Go/services/cursos/internal/service"
@@ -206,6 +207,7 @@ func mapErr(err error) error {
 	case errors.Is(err, service.ErrConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
 	default:
+		slog.Error("cursos: error interno", "error", err)
 		return status.Error(codes.Internal, "error interno del servidor")
 	}
 }
