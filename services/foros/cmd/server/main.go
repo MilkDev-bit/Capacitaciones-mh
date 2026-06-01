@@ -12,14 +12,14 @@ import (
 	"Prueba-Go/services/foros/internal/repository"
 	"Prueba-Go/services/foros/internal/service"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	db, err := sqlx.Connect("postgres", requireEnv("DATABASE_URL"))
+	db, err := sqlx.Connect("pgx", requireEnv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("DB", "error", err)
 		os.Exit(1)

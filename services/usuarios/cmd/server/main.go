@@ -10,8 +10,8 @@ import (
 	"Prueba-Go/services/usuarios/internal/repository"
 	"Prueba-Go/services/usuarios/internal/service"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -20,7 +20,7 @@ func main() {
 	dbURL := requireEnv("DATABASE_URL")
 	grpcPort := getEnvOr("GRPC_PORT", "50052")
 
-	db, err := sqlx.Connect("postgres", dbURL)
+	db, err := sqlx.Connect("pgx", dbURL)
 	if err != nil {
 		slog.Error("DB connection failed", "error", err)
 		os.Exit(1)

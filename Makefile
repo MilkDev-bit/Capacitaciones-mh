@@ -2,27 +2,30 @@
 # Makefile — Gestión del workspace de microservicios
 # ─────────────────────────────────────────────────────────────
 # Requisitos para `make generate`:
-#   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-#   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-#   sudo apt install -y protobuf-compiler  (Linux/WSL)
-#   brew install protobuf                  (macOS)
-#   choco install protoc                   (Windows)
+#   go install github.com/bufbuild/buf/cmd/buf@latest
+#
+# buf gestiona la generación de código protobuf de forma
+# estandarizada sin depender de una instalación global de protoc.
+# Los plugins se descargan automáticamente desde buf.build.
 # ─────────────────────────────────────────────────────────────
 
-PROTO_FILES := $(shell find proto -name '*.proto')
-SERVICES    := auth usuarios cursos lecciones examenes foros
+SERVICES := auth usuarios cursos lecciones examenes foros
 
-.PHONY: generate tidy build up down logs clean test
+.PHONY: generate lint-proto breaking tidy build up down logs clean test
 
-## generate: compila los .proto → gen/**/*.pb.go y gen/**/*_grpc.pb.go
+## generate: genera código Go desde los .proto usando buf
 generate:
-	@echo "==> Generando código protobuf..."
-	@protoc \
-		--go_out=gen     --go_opt=module=Prueba-Go/gen \
-		--go-grpc_out=gen --go-grpc_opt=module=Prueba-Go/gen \
-		-I proto \
-		$(PROTO_FILES)
+	@echo "==> Generando código protobuf con buf..."
+	buf generate
 	@echo "==> Hecho. Ejecuta 'make tidy' para sincronizar dependencias."
+
+## lint-proto: verifica estilo y convenciones de los .proto
+lint-proto:
+	buf lint
+
+## breaking: detecta cambios incompatibles contra el origen remoto
+breaking:
+	buf breaking --against '.git#branch=main'
 
 ## tidy: ejecuta 'go mod tidy' en todos los módulos del workspace
 tidy:

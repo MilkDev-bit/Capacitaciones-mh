@@ -9,7 +9,14 @@
 #   lecciones-svc → gRPC :50054
 #   examenes-svc  → gRPC :50055
 #   foros-svc     → gRPC :50056
-#   gateway       → HTTP :8080  ← único punto de entrada público
+#   gateway       → HTTP :8080  ← API (JSON/gRPC fan-out)
+#   frontend      → HTTP :80    ← SPA servida por Nginx
+#
+# Puerto de Postgres expuesto al host solo en el perfil "dev":
+#   docker compose --profile dev up
+#
+# Producción (sin exponer Postgres):
+#   docker compose up --build -d
 
 services:
 
@@ -28,8 +35,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Servicio auxiliar que expone el puerto de Postgres al host.
+  # Actívalo solo con: docker compose --profile dev up
+  postgres-dev-proxy:
+    image: postgres:16-alpine
+    profiles: [dev]
+    network_mode: "service:postgres"
+    command: ["sh", "-c", "echo 'postgres port exposed on host:5432 (dev profile)' && tail -f /dev/null"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
-      - "5432:5432" # solo para acceso local en desarrollo
+      - "5432:5432"
 
   # ── Auth service ─────────────────────────────────────────────────────────────
   auth-service:
@@ -174,7 +192,23 @@ services:
       GIN_MODE:       ${GIN_MODE:-release}
       LOG_LEVEL:      ${LOG_LEVEL:-info}
     ports:
-      - "8080:8080" # único puerto expuesto al host
+      - "8080:8080"
+
+  # ── Frontend (Nginx SPA) ──────────────────────────────────────────────────────
+  # Contenedor independiente que sirve los assets estáticos de Vue.
+  # En producción puede reemplazarse por Cloudflare Pages / Vercel sin
+  # tocar el gateway.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
 
 volumes:
   postgres_data:

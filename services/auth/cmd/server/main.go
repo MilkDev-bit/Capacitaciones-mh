@@ -16,8 +16,8 @@ import (
 	"Prueba-Go/services/auth/internal/repository"
 	"Prueba-Go/services/auth/internal/service"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -35,7 +35,7 @@ func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})))
 
 	// ── 3. Base de datos ──────────────────────────────────────────────────────
-	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
+	db, err := sqlx.Connect("pgx", cfg.DatabaseURL)
 	if err != nil {
 		slog.Error("DB connection failed", "error", err)
 		os.Exit(1)
