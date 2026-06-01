@@ -595,19 +595,19 @@ onUnmounted(() => {
 .bubble-meta { display: flex; align-items: center; justify-content: flex-end; gap: .3rem; }
 .bubble-time { font-size: .68rem; color: rgba(255,255,255,.65); }
 .status-icon { font-size: .7rem; }
-.status-icon .read { color: #93c5fd; }
+.status-icon .read { color: #fed7aa; }
 
 .bubble-wrap.mine .bubble {
-  background: var(--primary, #3b82f6); color: #fff;
+  background: #f97316; color: #fff;
   border-bottom-right-radius: .3rem;
 }
 .bubble-wrap.mine.continued .bubble { border-top-right-radius: .4rem; }
 .bubble-wrap.theirs .bubble {
-  background: var(--surface-soft); color: var(--text);
+  background: #e5e7eb; color: #1f2937;
   border-bottom-left-radius: .3rem;
 }
 .bubble-wrap.theirs.continued .bubble { border-top-left-radius: .4rem; }
-.bubble-wrap.theirs .bubble-time, .bubble-wrap.theirs .status-icon { color: var(--text-muted); }
+.bubble-wrap.theirs .bubble-time, .bubble-wrap.theirs .status-icon { color: #6b7280; }
 
 .bubble-wrap.has-error .bubble { opacity: .7; }
 .retry-btn {
