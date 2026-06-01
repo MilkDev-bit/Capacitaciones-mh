@@ -252,6 +252,18 @@ func (r *postgresCursosRepository) UnirseConCodigo(ctx context.Context, userID, 
 
 func (r *postgresCursosRepository) ListEstudiantes(ctx context.Context, instructorID, cursoID string) ([]*EstudianteRow, error) {
 	var rows []*EstudianteRow
+	if cursoID == "" {
+		// Sin filtro de curso: todos los estudiantes de todos los cursos del instructor.
+		return rows, r.db.SelectContext(ctx, &rows,
+			`SELECT DISTINCT a.user_id id,
+			        COALESCE(a.user_name,'') name,
+			        COALESCE(a.user_email,'') email,
+			        a.assigned_at
+			   FROM asignaciones a
+			   JOIN capacitaciones c ON c.id = a.capacitacion_id
+			  WHERE c.instructor_id = $1
+			  ORDER BY a.assigned_at DESC`, instructorID)
+	}
 	return rows, r.db.SelectContext(ctx, &rows,
 		`SELECT user_id id,
 		        COALESCE(user_name,'') name,
