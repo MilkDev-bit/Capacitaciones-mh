@@ -112,7 +112,7 @@ func (h *UsuariosHandler) GetPublicPerfil(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"user": resp})
 }
 
 // GET /api/admin/users

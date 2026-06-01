@@ -395,6 +395,12 @@ function openForoProfile(id: string, name: string) {
   foroProfileCard.value = { id, name }
 }
 
+function verPerfil() {
+  const id = foroProfileCard.value?.id
+  foroProfileCard.value = null
+  if (id) router.push(`/usuario/perfil/${id}`)
+}
+
 function iniciarConversacion() {
   foroProfileCard.value = null
   toast.info('La mensajería directa estará disponible próximamente.')
@@ -944,10 +950,10 @@ function goBack() {
           <div class="fpc-name">{{ foroProfileCard.name }}</div>
           <div class="fpc-role">Participante del foro</div>
           <div class="fpc-actions">
-            <RouterLink :to="`/usuario/perfil/${foroProfileCard.id}`" class="fpc-btn fpc-btn-primary" @click="foroProfileCard = null">
+            <button class="fpc-btn fpc-btn-primary" @click="verPerfil">
               <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
               Ver perfil
-            </RouterLink>
+            </button>
             <button class="fpc-btn fpc-btn-secondary" @click="iniciarConversacion">
               <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Iniciar conversación
@@ -1447,7 +1453,8 @@ function goBack() {
 .fb-remove-file:hover { background: rgba(0,0,0,.8); }
 .fb-post-media { margin-top: 10px; border-radius: var(--r); overflow: hidden; }
 .fb-post-media-img {
-  width: 100%; max-height: 400px; object-fit: cover; display: block; cursor: pointer;
+  width: 100%; max-height: 360px; object-fit: contain; display: block; cursor: pointer;
+  background: var(--surface-soft);
   transition: opacity .15s;
 }
 .fb-post-media-img:hover { opacity: .9; }
