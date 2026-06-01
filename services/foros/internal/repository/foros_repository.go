@@ -83,7 +83,7 @@ func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, user
 		       COALESCE(fp.media_url,'') media_url,
 		       COALESCE(fp.media_type,'') media_type,
 		       COUNT(fl.id)::int like_count,
-		       BOOL_OR(fl.user_id = $2) user_liked,
+		       COALESCE(BOOL_OR(fl.user_id = NULLIF($2,'')::uuid), false) user_liked,
 		       fp.created_at
 		  FROM foro_posts fp
 		  LEFT JOIN foro_likes fl ON fl.post_id = fp.id
