@@ -15,6 +15,7 @@ import (
 	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/handler"
 	"Prueba-Go/gateway/internal/middleware"
+	"Prueba-Go/gateway/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,9 @@ func main() {
 	defer svc.Close()
 	slog.Info("Conexiones gRPC establecidas")
 
+	// ── 4b. Storage R2 ────────────────────────────────────────────────────────
+	storage.Init(cfg)
+
 	// ── 5. Handlers HTTP (DI: clients → handler) ──────────────────────────────
 	authH := handler.NewAuthHandler(svc, cfg)
 	usuariosH := handler.NewUsuariosHandler(svc)
@@ -57,7 +61,7 @@ func main() {
 	leccionesH := handler.NewLeccionesHandler(svc)
 	examenesH := handler.NewExamenesHandler(svc)
 	forosH := handler.NewForosHandler(svc)
-	presignH := handler.NewPresignHandler(cfg)
+	presignH := handler.NewPresignHandler()
 
 	// ── 6. Middlewares de autenticación ───────────────────────────────────────
 	authMW := middleware.AuthRequired(svc)

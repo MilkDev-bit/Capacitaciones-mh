@@ -56,8 +56,8 @@ func Load() *Config {
 
 		R2Bucket:    os.Getenv("R2_BUCKET"),
 		R2Endpoint:  os.Getenv("R2_ENDPOINT"),
-		R2AccessKey: os.Getenv("R2_ACCESS_KEY"),
-		R2SecretKey: os.Getenv("R2_SECRET_KEY"),
+		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
+		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
 		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
@@ -81,6 +81,16 @@ func getEnvOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// getEnvAny returns the value of the first non-empty env var among the provided keys.
+func getEnvAny(keys ...string) string {
+	for _, k := range keys {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func parseOrigins(raw string) []string {

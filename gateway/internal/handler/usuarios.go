@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
+	"Prueba-Go/gateway/internal/storage"
 	authpb "Prueba-Go/gen/auth"
 	usuariospb "Prueba-Go/gen/usuarios"
 
@@ -137,11 +139,11 @@ func (h *UsuariosHandler) RevokeUserSessions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "sesiones revocadas"})
 }
 
-// uploadFileToR2 es un placeholder — implementación real en storage/r2.go del gateway.
+// uploadFileToR2 lee el multipart del contexto y lo sube a R2.
 func uploadFileToR2(ctx *gin.Context, folder string) (string, error) {
-	// TODO: leer multipart file, subir a R2 con el SDK de AWS S3 compatible,
-	// devolver la URL pública. Ver internal/storage/r2.go del monolito original.
-	_ = folder
-	ctx.JSON(http.StatusNotImplemented, gin.H{"error": "upload to R2 pendiente de implementar en gateway"})
-	return "", nil
+	fh, err := ctx.FormFile("file")
+	if err != nil {
+		return "", fmt.Errorf("archivo requerido")
+	}
+	return storage.UploadMultipart(ctx.Request.Context(), fh, folder)
 }

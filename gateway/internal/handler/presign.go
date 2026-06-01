@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -21,14 +20,9 @@ var allowedPrefixes = map[string]bool{
 }
 
 // PresignHandler genera URLs pre-firmadas para subidas directas al bucket R2.
-type PresignHandler struct {
-	svc *storage.StorageService
-}
+type PresignHandler struct{}
 
-func NewPresignHandler(cfg *config.Config) *PresignHandler {
-	svc := storage.New(cfg.R2Bucket, cfg.R2Endpoint, cfg.R2AccessKey, cfg.R2SecretKey, cfg.R2PublicURL)
-	return &PresignHandler{svc: svc}
-}
+func NewPresignHandler() *PresignHandler { return &PresignHandler{} }
 
 // PresignUpload godoc
 // GET /api/presign?prefix=videos&ext=mp4
@@ -50,7 +44,13 @@ func (h *PresignHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 
-	uploadURL, finalURL, err := h.svc.GeneratePresignedURL(c.Request.Context(), prefix, ext, contentType, 15*time.Minute)
+	svc := storage.Default()
+	if svc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "almacenamiento no configurado"})
+		return
+	}
+
+	uploadURL, finalURL, err := svc.GeneratePresignedURL(c.Request.Context(), prefix, ext, contentType, 15*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo generar la URL"})
 		return
