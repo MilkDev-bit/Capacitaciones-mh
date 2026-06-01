@@ -233,8 +233,8 @@ func (r *postgresCursosRepository) Inscribirse(ctx context.Context, userID, curs
 	userEmail := metaVal(ctx, "x-user-email")
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO asignaciones(user_id,user_name,user_email,capacitacion_id)
-		 VALUES($1,$2,$3,$4) ON CONFLICT (user_id, capacitacion_id) DO UPDATE
-		 SET user_name=EXCLUDED.user_name, user_email=EXCLUDED.user_email`,
+		 VALUES($1,$2,$3,$4)
+		 ON CONFLICT DO NOTHING`,
 		userID, userName, userEmail, cursoID)
 	return err
 }

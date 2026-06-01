@@ -101,6 +101,16 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_email TEXT DEFAULT ''`,
 		// Ampliar color de VARCHAR(20) a TEXT para soportar valores de gradiente CSS
 		`ALTER TABLE capacitaciones ALTER COLUMN color TYPE TEXT`,
+		// Garantizar unicidad en asignaciones para que ON CONFLICT funcione
+		`DO $$ BEGIN
+		   IF NOT EXISTS (
+		     SELECT 1 FROM pg_constraint
+		     WHERE conrelid='asignaciones'::regclass AND contype='u'
+		   ) THEN
+		     ALTER TABLE asignaciones ADD CONSTRAINT asignaciones_user_curso_unique
+		       UNIQUE (user_id, capacitacion_id);
+		   END IF;
+		 END $$`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
