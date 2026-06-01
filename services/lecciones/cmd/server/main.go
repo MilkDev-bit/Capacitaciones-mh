@@ -75,6 +75,7 @@ func runMigrations(db *sqlx.DB) error {
 			content TEXT DEFAULT '',
 			orden INT NOT NULL DEFAULT 0,
 			duracion_min INT DEFAULT 0,
+			deleted_at TIMESTAMPTZ,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS progreso_lecciones (
@@ -112,6 +113,15 @@ func runMigrations(db *sqlx.DB) error {
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
 			return fmt.Errorf("migración fallida: %w", err)
+		}
+	}
+	// Columnas que pueden faltar en BDs existentes
+	alters := []string{
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+	}
+	for _, s := range alters {
+		if _, err := db.Exec(s); err != nil {
+			return fmt.Errorf("migración alter fallida: %w", err)
 		}
 	}
 	slog.Info("lecciones: migraciones aplicadas")
