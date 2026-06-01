@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -13,6 +14,18 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+// toASCII elimina caracteres no-ASCII para que sean válidos como valores de
+// cabecera gRPC (solo se permiten caracteres ASCII imprimibles).
+func toASCII(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= 0x20 && r <= 0x7E {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
 
 // CursosHandler traduce peticiones HTTP ↔ RPC del cursos service.
 type CursosHandler struct {
@@ -73,8 +86,8 @@ func (h *CursosHandler) GetCurso(ctx *gin.Context) {
 // POST /api/cursos/:id/inscripciones
 func (h *CursosHandler) Inscribirse(ctx *gin.Context) {
 	md := metadata.Pairs(
-		"x-user-name", ctx.GetString(middleware.CtxUserName),
-		"x-user-email", ctx.GetString(middleware.CtxUserEmail),
+		"x-user-name", toASCII(ctx.GetString(middleware.CtxUserName)),
+		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
 	)
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
 	_, err := h.c.Cursos.Inscribirse(grpcCtx, &cursospb.InscribirseRequest{
@@ -98,8 +111,8 @@ func (h *CursosHandler) UnirseConCodigo(ctx *gin.Context) {
 		return
 	}
 	md := metadata.Pairs(
-		"x-user-name", ctx.GetString(middleware.CtxUserName),
-		"x-user-email", ctx.GetString(middleware.CtxUserEmail),
+		"x-user-name", toASCII(ctx.GetString(middleware.CtxUserName)),
+		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
 	)
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
 	_, err := h.c.Cursos.UnirseConCodigo(grpcCtx, &cursospb.UnirseRequest{
