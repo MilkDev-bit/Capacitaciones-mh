@@ -23,20 +23,18 @@ const (
 	MensajesService_GetMensajes_FullMethodName        = "/mensajes.MensajesService/GetMensajes"
 	MensajesService_ListConversaciones_FullMethodName = "/mensajes.MensajesService/ListConversaciones"
 	MensajesService_NoLeidos_FullMethodName           = "/mensajes.MensajesService/NoLeidos"
+	MensajesService_MarcarLeido_FullMethodName        = "/mensajes.MensajesService/MarcarLeido"
 )
 
 // MensajesServiceClient is the client API for MensajesService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-// MensajesService: mensajería directa entre usuarios.
-// ─────────────────────────────────────────────────────────────────────────────
 type MensajesServiceClient interface {
 	SendMensaje(ctx context.Context, in *SendMensajeRequest, opts ...grpc.CallOption) (*MensajeResponse, error)
 	GetMensajes(ctx context.Context, in *GetMensajesRequest, opts ...grpc.CallOption) (*GetMensajesResponse, error)
 	ListConversaciones(ctx context.Context, in *ListConversacionesRequest, opts ...grpc.CallOption) (*ListConversacionesResponse, error)
 	NoLeidos(ctx context.Context, in *NoLeidosRequest, opts ...grpc.CallOption) (*NoLeidosResponse, error)
+	MarcarLeido(ctx context.Context, in *MarcarLeidoRequest, opts ...grpc.CallOption) (*MarcarLeidoResponse, error)
 }
 
 type mensajesServiceClient struct {
@@ -87,18 +85,25 @@ func (c *mensajesServiceClient) NoLeidos(ctx context.Context, in *NoLeidosReques
 	return out, nil
 }
 
+func (c *mensajesServiceClient) MarcarLeido(ctx context.Context, in *MarcarLeidoRequest, opts ...grpc.CallOption) (*MarcarLeidoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MarcarLeidoResponse)
+	err := c.cc.Invoke(ctx, MensajesService_MarcarLeido_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MensajesServiceServer is the server API for MensajesService service.
 // All implementations must embed UnimplementedMensajesServiceServer
 // for forward compatibility.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-// MensajesService: mensajería directa entre usuarios.
-// ─────────────────────────────────────────────────────────────────────────────
 type MensajesServiceServer interface {
 	SendMensaje(context.Context, *SendMensajeRequest) (*MensajeResponse, error)
 	GetMensajes(context.Context, *GetMensajesRequest) (*GetMensajesResponse, error)
 	ListConversaciones(context.Context, *ListConversacionesRequest) (*ListConversacionesResponse, error)
 	NoLeidos(context.Context, *NoLeidosRequest) (*NoLeidosResponse, error)
+	MarcarLeido(context.Context, *MarcarLeidoRequest) (*MarcarLeidoResponse, error)
 	mustEmbedUnimplementedMensajesServiceServer()
 }
 
@@ -120,6 +125,9 @@ func (UnimplementedMensajesServiceServer) ListConversaciones(context.Context, *L
 }
 func (UnimplementedMensajesServiceServer) NoLeidos(context.Context, *NoLeidosRequest) (*NoLeidosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method NoLeidos not implemented")
+}
+func (UnimplementedMensajesServiceServer) MarcarLeido(context.Context, *MarcarLeidoRequest) (*MarcarLeidoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarcarLeido not implemented")
 }
 func (UnimplementedMensajesServiceServer) mustEmbedUnimplementedMensajesServiceServer() {}
 func (UnimplementedMensajesServiceServer) testEmbeddedByValue()                         {}
@@ -214,6 +222,24 @@ func _MensajesService_NoLeidos_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MensajesService_MarcarLeido_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarcarLeidoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).MarcarLeido(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_MarcarLeido_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).MarcarLeido(ctx, req.(*MarcarLeidoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MensajesService_ServiceDesc is the grpc.ServiceDesc for MensajesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -236,6 +262,10 @@ var MensajesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NoLeidos",
 			Handler:    _MensajesService_NoLeidos_Handler,
+		},
+		{
+			MethodName: "MarcarLeido",
+			Handler:    _MensajesService_MarcarLeido_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

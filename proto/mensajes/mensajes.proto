@@ -1,20 +1,16 @@
-syntax = "proto3";
+﻿syntax = "proto3";
 
 package mensajes;
 
 option go_package = "Prueba-Go/gen/mensajes;mensajespb";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MensajesService: mensajería directa entre usuarios.
-// ─────────────────────────────────────────────────────────────────────────────
 service MensajesService {
-  rpc SendMensaje          (SendMensajeRequest)         returns (MensajeResponse);
-  rpc GetMensajes          (GetMensajesRequest)         returns (GetMensajesResponse);
-  rpc ListConversaciones   (ListConversacionesRequest)  returns (ListConversacionesResponse);
-  rpc NoLeidos             (NoLeidosRequest)            returns (NoLeidosResponse);
+  rpc SendMensaje          (SendMensajeRequest)        returns (MensajeResponse);
+  rpc GetMensajes          (GetMensajesRequest)        returns (GetMensajesResponse);
+  rpc ListConversaciones   (ListConversacionesRequest) returns (ListConversacionesResponse);
+  rpc NoLeidos             (NoLeidosRequest)           returns (NoLeidosResponse);
+  rpc MarcarLeido          (MarcarLeidoRequest)        returns (MarcarLeidoResponse);
 }
-
-// ── Requests ─────────────────────────────────────────────────────────────────
 
 message SendMensajeRequest {
   string emisor_id     = 1;
@@ -25,8 +21,10 @@ message SendMensajeRequest {
 }
 
 message GetMensajesRequest {
-  string user_id  = 1;
-  string peer_id  = 2;
+  string user_id   = 1;
+  string peer_id   = 2;
+  int32  limit     = 3;
+  string before_id = 4;
 }
 
 message ListConversacionesRequest {
@@ -37,7 +35,10 @@ message NoLeidosRequest {
   string user_id = 1;
 }
 
-// ── Responses ────────────────────────────────────────────────────────────────
+message MarcarLeidoRequest {
+  string msg_id  = 1;
+  string user_id = 2;
+}
 
 message MensajeResponse {
   string id            = 1;
@@ -52,6 +53,7 @@ message MensajeResponse {
 
 message GetMensajesResponse {
   repeated MensajeResponse mensajes = 1;
+  bool has_more = 2;
 }
 
 message ConversacionResponse {
@@ -68,4 +70,9 @@ message ListConversacionesResponse {
 
 message NoLeidosResponse {
   int32 count = 1;
+}
+
+message MarcarLeidoResponse {
+  bool   ok        = 1;
+  string emisor_id = 2;
 }

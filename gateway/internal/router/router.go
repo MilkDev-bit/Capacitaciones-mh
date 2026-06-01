@@ -24,6 +24,7 @@ type Deps struct {
 	ExamenesH    *handler.ExamenesHandler
 	ForosH       *handler.ForosHandler
 	MensajesH    *handler.MensajesHandler
+	WsH          *handler.WsHandler
 	PresignH     *handler.PresignHandler
 	AuthMW       gin.HandlerFunc
 	InstructorMW gin.HandlerFunc
@@ -125,9 +126,13 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/foro/posts/:post_id/comentarios", d.ForosH.CreateForoComentario)
 			auth.POST("/foro/posts/:post_id/like", d.ForosH.ToggleForoPostLike)
 
+			// WebSocket tiempo real
+			auth.GET("/ws", d.WsH.Handle)
+
 			// Mensajes directos
 			auth.GET("/mensajes/no-leidos", d.MensajesH.NoLeidos)
 			auth.GET("/mensajes/conversaciones", d.MensajesH.ListConversaciones)
+			auth.POST("/mensajes/leido/:msg_id", d.MensajesH.MarcarLeido)
 			auth.GET("/mensajes/:peer_id", d.MensajesH.GetMensajes)
 			auth.POST("/mensajes/:peer_id", d.MensajesH.SendMensaje)
 

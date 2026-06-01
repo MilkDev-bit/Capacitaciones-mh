@@ -101,6 +101,8 @@ type GetMensajesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	PeerId        string                 `protobuf:"bytes,2,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	BeforeId      string                 `protobuf:"bytes,4,opt,name=before_id,json=beforeId,proto3" json:"before_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +147,20 @@ func (x *GetMensajesRequest) GetUserId() string {
 func (x *GetMensajesRequest) GetPeerId() string {
 	if x != nil {
 		return x.PeerId
+	}
+	return ""
+}
+
+func (x *GetMensajesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetMensajesRequest) GetBeforeId() string {
+	if x != nil {
+		return x.BeforeId
 	}
 	return ""
 }
@@ -237,6 +253,58 @@ func (x *NoLeidosRequest) GetUserId() string {
 	return ""
 }
 
+type MarcarLeidoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MsgId         string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarcarLeidoRequest) Reset() {
+	*x = MarcarLeidoRequest{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarcarLeidoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarcarLeidoRequest) ProtoMessage() {}
+
+func (x *MarcarLeidoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarcarLeidoRequest.ProtoReflect.Descriptor instead.
+func (*MarcarLeidoRequest) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MarcarLeidoRequest) GetMsgId() string {
+	if x != nil {
+		return x.MsgId
+	}
+	return ""
+}
+
+func (x *MarcarLeidoRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 type MensajeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -253,7 +321,7 @@ type MensajeResponse struct {
 
 func (x *MensajeResponse) Reset() {
 	*x = MensajeResponse{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[4]
+	mi := &file_mensajes_mensajes_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -265,7 +333,7 @@ func (x *MensajeResponse) String() string {
 func (*MensajeResponse) ProtoMessage() {}
 
 func (x *MensajeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[4]
+	mi := &file_mensajes_mensajes_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -278,7 +346,7 @@ func (x *MensajeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MensajeResponse.ProtoReflect.Descriptor instead.
 func (*MensajeResponse) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{4}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MensajeResponse) GetId() string {
@@ -340,13 +408,14 @@ func (x *MensajeResponse) GetCreatedAt() string {
 type GetMensajesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mensajes      []*MensajeResponse     `protobuf:"bytes,1,rep,name=mensajes,proto3" json:"mensajes,omitempty"`
+	HasMore       bool                   `protobuf:"varint,2,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetMensajesResponse) Reset() {
 	*x = GetMensajesResponse{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[5]
+	mi := &file_mensajes_mensajes_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +427,7 @@ func (x *GetMensajesResponse) String() string {
 func (*GetMensajesResponse) ProtoMessage() {}
 
 func (x *GetMensajesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[5]
+	mi := &file_mensajes_mensajes_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +440,7 @@ func (x *GetMensajesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMensajesResponse.ProtoReflect.Descriptor instead.
 func (*GetMensajesResponse) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{5}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetMensajesResponse) GetMensajes() []*MensajeResponse {
@@ -379,6 +448,13 @@ func (x *GetMensajesResponse) GetMensajes() []*MensajeResponse {
 		return x.Mensajes
 	}
 	return nil
+}
+
+func (x *GetMensajesResponse) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
 }
 
 type ConversacionResponse struct {
@@ -394,7 +470,7 @@ type ConversacionResponse struct {
 
 func (x *ConversacionResponse) Reset() {
 	*x = ConversacionResponse{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[6]
+	mi := &file_mensajes_mensajes_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -406,7 +482,7 @@ func (x *ConversacionResponse) String() string {
 func (*ConversacionResponse) ProtoMessage() {}
 
 func (x *ConversacionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[6]
+	mi := &file_mensajes_mensajes_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +495,7 @@ func (x *ConversacionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConversacionResponse.ProtoReflect.Descriptor instead.
 func (*ConversacionResponse) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{6}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ConversacionResponse) GetPeerId() string {
@@ -466,7 +542,7 @@ type ListConversacionesResponse struct {
 
 func (x *ListConversacionesResponse) Reset() {
 	*x = ListConversacionesResponse{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[7]
+	mi := &file_mensajes_mensajes_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -478,7 +554,7 @@ func (x *ListConversacionesResponse) String() string {
 func (*ListConversacionesResponse) ProtoMessage() {}
 
 func (x *ListConversacionesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[7]
+	mi := &file_mensajes_mensajes_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,7 +567,7 @@ func (x *ListConversacionesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListConversacionesResponse.ProtoReflect.Descriptor instead.
 func (*ListConversacionesResponse) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{7}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListConversacionesResponse) GetConversaciones() []*ConversacionResponse {
@@ -510,7 +586,7 @@ type NoLeidosResponse struct {
 
 func (x *NoLeidosResponse) Reset() {
 	*x = NoLeidosResponse{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[8]
+	mi := &file_mensajes_mensajes_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -522,7 +598,7 @@ func (x *NoLeidosResponse) String() string {
 func (*NoLeidosResponse) ProtoMessage() {}
 
 func (x *NoLeidosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[8]
+	mi := &file_mensajes_mensajes_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -535,7 +611,7 @@ func (x *NoLeidosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NoLeidosResponse.ProtoReflect.Descriptor instead.
 func (*NoLeidosResponse) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{8}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NoLeidosResponse) GetCount() int32 {
@@ -543,6 +619,58 @@ func (x *NoLeidosResponse) GetCount() int32 {
 		return x.Count
 	}
 	return 0
+}
+
+type MarcarLeidoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	EmisorId      string                 `protobuf:"bytes,2,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarcarLeidoResponse) Reset() {
+	*x = MarcarLeidoResponse{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarcarLeidoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarcarLeidoResponse) ProtoMessage() {}
+
+func (x *MarcarLeidoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarcarLeidoResponse.ProtoReflect.Descriptor instead.
+func (*MarcarLeidoResponse) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MarcarLeidoResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *MarcarLeidoResponse) GetEmisorId() string {
+	if x != nil {
+		return x.EmisorId
+	}
+	return ""
 }
 
 var File_mensajes_mensajes_proto protoreflect.FileDescriptor
@@ -557,14 +685,19 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\vreceptor_id\x18\x03 \x01(\tR\n" +
 	"receptorId\x12#\n" +
 	"\rreceptor_name\x18\x04 \x01(\tR\freceptorName\x12\x1c\n" +
-	"\tcontenido\x18\x05 \x01(\tR\tcontenido\"F\n" +
+	"\tcontenido\x18\x05 \x01(\tR\tcontenido\"y\n" +
 	"\x12GetMensajesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
-	"\apeer_id\x18\x02 \x01(\tR\x06peerId\"4\n" +
+	"\apeer_id\x18\x02 \x01(\tR\x06peerId\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x1b\n" +
+	"\tbefore_id\x18\x04 \x01(\tR\bbeforeId\"4\n" +
 	"\x19ListConversacionesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"*\n" +
 	"\x0fNoLeidosRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xf8\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"D\n" +
+	"\x12MarcarLeidoRequest\x12\x15\n" +
+	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xf8\x01\n" +
 	"\x0fMensajeResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\temisor_id\x18\x02 \x01(\tR\bemisorId\x12\x1f\n" +
@@ -576,9 +709,10 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\tcontenido\x18\x06 \x01(\tR\tcontenido\x12\x14\n" +
 	"\x05leido\x18\a \x01(\bR\x05leido\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt\"L\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\"g\n" +
 	"\x13GetMensajesResponse\x125\n" +
-	"\bmensajes\x18\x01 \x03(\v2\x19.mensajes.MensajeResponseR\bmensajes\"\xaf\x01\n" +
+	"\bmensajes\x18\x01 \x03(\v2\x19.mensajes.MensajeResponseR\bmensajes\x12\x19\n" +
+	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"\xaf\x01\n" +
 	"\x14ConversacionResponse\x12\x17\n" +
 	"\apeer_id\x18\x01 \x01(\tR\x06peerId\x12\x1b\n" +
 	"\tpeer_name\x18\x02 \x01(\tR\bpeerName\x12!\n" +
@@ -588,12 +722,16 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\x1aListConversacionesResponse\x12F\n" +
 	"\x0econversaciones\x18\x01 \x03(\v2\x1e.mensajes.ConversacionResponseR\x0econversaciones\"(\n" +
 	"\x10NoLeidosResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count2\xc9\x02\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"B\n" +
+	"\x13MarcarLeidoResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1b\n" +
+	"\temisor_id\x18\x02 \x01(\tR\bemisorId2\x95\x03\n" +
 	"\x0fMensajesService\x12F\n" +
 	"\vSendMensaje\x12\x1c.mensajes.SendMensajeRequest\x1a\x19.mensajes.MensajeResponse\x12J\n" +
 	"\vGetMensajes\x12\x1c.mensajes.GetMensajesRequest\x1a\x1d.mensajes.GetMensajesResponse\x12_\n" +
 	"\x12ListConversaciones\x12#.mensajes.ListConversacionesRequest\x1a$.mensajes.ListConversacionesResponse\x12A\n" +
-	"\bNoLeidos\x12\x19.mensajes.NoLeidosRequest\x1a\x1a.mensajes.NoLeidosResponseB#Z!Prueba-Go/gen/mensajes;mensajespbb\x06proto3"
+	"\bNoLeidos\x12\x19.mensajes.NoLeidosRequest\x1a\x1a.mensajes.NoLeidosResponse\x12J\n" +
+	"\vMarcarLeido\x12\x1c.mensajes.MarcarLeidoRequest\x1a\x1d.mensajes.MarcarLeidoResponseB#Z!Prueba-Go/gen/mensajes;mensajespbb\x06proto3"
 
 var (
 	file_mensajes_mensajes_proto_rawDescOnce sync.Once
@@ -607,34 +745,38 @@ func file_mensajes_mensajes_proto_rawDescGZIP() []byte {
 	return file_mensajes_mensajes_proto_rawDescData
 }
 
-var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_mensajes_mensajes_proto_goTypes = []any{
 	(*SendMensajeRequest)(nil),         // 0: mensajes.SendMensajeRequest
 	(*GetMensajesRequest)(nil),         // 1: mensajes.GetMensajesRequest
 	(*ListConversacionesRequest)(nil),  // 2: mensajes.ListConversacionesRequest
 	(*NoLeidosRequest)(nil),            // 3: mensajes.NoLeidosRequest
-	(*MensajeResponse)(nil),            // 4: mensajes.MensajeResponse
-	(*GetMensajesResponse)(nil),        // 5: mensajes.GetMensajesResponse
-	(*ConversacionResponse)(nil),       // 6: mensajes.ConversacionResponse
-	(*ListConversacionesResponse)(nil), // 7: mensajes.ListConversacionesResponse
-	(*NoLeidosResponse)(nil),           // 8: mensajes.NoLeidosResponse
+	(*MarcarLeidoRequest)(nil),         // 4: mensajes.MarcarLeidoRequest
+	(*MensajeResponse)(nil),            // 5: mensajes.MensajeResponse
+	(*GetMensajesResponse)(nil),        // 6: mensajes.GetMensajesResponse
+	(*ConversacionResponse)(nil),       // 7: mensajes.ConversacionResponse
+	(*ListConversacionesResponse)(nil), // 8: mensajes.ListConversacionesResponse
+	(*NoLeidosResponse)(nil),           // 9: mensajes.NoLeidosResponse
+	(*MarcarLeidoResponse)(nil),        // 10: mensajes.MarcarLeidoResponse
 }
 var file_mensajes_mensajes_proto_depIdxs = []int32{
-	4, // 0: mensajes.GetMensajesResponse.mensajes:type_name -> mensajes.MensajeResponse
-	6, // 1: mensajes.ListConversacionesResponse.conversaciones:type_name -> mensajes.ConversacionResponse
-	0, // 2: mensajes.MensajesService.SendMensaje:input_type -> mensajes.SendMensajeRequest
-	1, // 3: mensajes.MensajesService.GetMensajes:input_type -> mensajes.GetMensajesRequest
-	2, // 4: mensajes.MensajesService.ListConversaciones:input_type -> mensajes.ListConversacionesRequest
-	3, // 5: mensajes.MensajesService.NoLeidos:input_type -> mensajes.NoLeidosRequest
-	4, // 6: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
-	5, // 7: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
-	7, // 8: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
-	8, // 9: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5,  // 0: mensajes.GetMensajesResponse.mensajes:type_name -> mensajes.MensajeResponse
+	7,  // 1: mensajes.ListConversacionesResponse.conversaciones:type_name -> mensajes.ConversacionResponse
+	0,  // 2: mensajes.MensajesService.SendMensaje:input_type -> mensajes.SendMensajeRequest
+	1,  // 3: mensajes.MensajesService.GetMensajes:input_type -> mensajes.GetMensajesRequest
+	2,  // 4: mensajes.MensajesService.ListConversaciones:input_type -> mensajes.ListConversacionesRequest
+	3,  // 5: mensajes.MensajesService.NoLeidos:input_type -> mensajes.NoLeidosRequest
+	4,  // 6: mensajes.MensajesService.MarcarLeido:input_type -> mensajes.MarcarLeidoRequest
+	5,  // 7: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
+	6,  // 8: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
+	8,  // 9: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
+	9,  // 10: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
+	10, // 11: mensajes.MensajesService.MarcarLeido:output_type -> mensajes.MarcarLeidoResponse
+	7,  // [7:12] is the sub-list for method output_type
+	2,  // [2:7] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_mensajes_mensajes_proto_init() }
@@ -648,7 +790,7 @@ func file_mensajes_mensajes_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mensajes_mensajes_proto_rawDesc), len(file_mensajes_mensajes_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

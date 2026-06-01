@@ -2,9 +2,11 @@
 
 import (
 "net/http"
+"strconv"
 "time"
 
 "Prueba-Go/gateway/internal/clients"
+"Prueba-Go/gateway/internal/hub"
 mw "Prueba-Go/gateway/internal/middleware"
 mensajespb "Prueba-Go/gen/mensajes"
 
@@ -14,10 +16,11 @@ mensajespb "Prueba-Go/gen/mensajes"
 // MensajesHandler delega al microservicio mensajes via gRPC.
 type MensajesHandler struct {
 client mensajespb.MensajesServiceClient
+hub    *hub.Hub
 }
 
-func NewMensajesHandler(svc *clients.Clients) *MensajesHandler {
-return &MensajesHandler{client: svc.Mensajes}
+func NewMensajesHandler(svc *clients.Clients, h *hub.Hub) *MensajesHandler {
+return &MensajesHandler{client: svc.Mensajes, hub: h}
 }
 
 // NoLeidos devuelve el total de mensajes no leidos del usuario autenticado.
@@ -40,7 +43,7 @@ c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando conversaci
 return
 }
 
-type conversacion struct {
+type conversacionDTO struct {
 PeerID      string    `json:"peer_id"`
 PeerName    string    `json:"peer_name"`
 LastMessage string    `json:"last_message"`
@@ -48,10 +51,10 @@ LastTime    time.Time `json:"last_time"`
 UnreadCount int32     `json:"unread_count"`
 }
 
-convs := make([]conversacion, 0, len(resp.Conversaciones))
+convs := make([]conversacionDTO, 0, len(resp.Conversaciones))
 for _, cv := range resp.Conversaciones {
-t, _ := time.Parse(time.RFC3339, cv.LastTime)
-convs = append(convs, conversacion{
+t, _ := time.Parse("2006-01-02T15:04:05Z", cv.LastTime)
+convs = append(convs, conversacionDTO{
 PeerID:      cv.PeerId,
 PeerName:    cv.PeerName,
 LastMessage: cv.LastMessage,
@@ -63,17 +66,35 @@ c.JSON(http.StatusOK, convs)
 }
 
 // GetMensajes devuelve la conversacion entre el usuario autenticado y un peer.
+// Soporta paginacion con ?limit=N&before_id=UUID
 func (h *MensajesHandler) GetMensajes(c *gin.Context) {
 userID := c.GetString(mw.CtxUserID)
 peerID := c.Param("peer_id")
 
+limitStr := c.DefaultQuery("limit", "50")
+limit, err := strconv.Atoi(limitStr)
+if err != nil || limit <= 0 || limit > 200 {
+limit = 50
+}
+beforeID := c.Query("before_id")
+
 resp, err := h.client.GetMensajes(c.Request.Context(), &mensajespb.GetMensajesRequest{
-UserId: userID,
-PeerId: peerID,
+UserId:   userID,
+PeerId:   peerID,
+Limit:    int32(limit),
+BeforeId: beforeID,
 })
 if err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando mensajes"})
 return
+}
+
+// En la carga inicial (sin cursor) notificar al peer via WS que sus mensajes fueron leidos
+if beforeID == "" {
+h.hub.Broadcast(peerID, hub.Event{
+Type:   "message_read",
+PeerID: userID,
+})
 }
 
 type mensajeDTO struct {
@@ -89,7 +110,7 @@ CreatedAt    time.Time `json:"created_at"`
 
 msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
 for _, m := range resp.Mensajes {
-t, _ := time.Parse(time.RFC3339, m.CreatedAt)
+t, _ := time.Parse("2006-01-02T15:04:05Z", m.CreatedAt)
 msgs = append(msgs, mensajeDTO{
 ID:           m.Id,
 EmisorID:     m.EmisorId,
@@ -101,7 +122,7 @@ Leido:        m.Leido,
 CreatedAt:    t,
 })
 }
-c.JSON(http.StatusOK, msgs)
+c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})
 }
 
 // SendMensaje envia un mensaje al peer indicado.
@@ -131,7 +152,23 @@ c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 return
 }
 
-t, _ := time.Parse(time.RFC3339, resp.CreatedAt)
+t, _ := time.Parse("2006-01-02T15:04:05Z", resp.CreatedAt)
+
+// Notificar al receptor en tiempo real via WebSocket
+h.hub.Broadcast(resp.ReceptorId, hub.Event{
+Type: "new_message",
+Msg: &hub.MsgPayload{
+ID:           resp.Id,
+EmisorID:     resp.EmisorId,
+EmisorName:   resp.EmisorName,
+ReceptorID:   resp.ReceptorId,
+ReceptorName: resp.ReceptorName,
+Contenido:    resp.Contenido,
+CreatedAt:    t.Format(time.RFC3339),
+Leido:        resp.Leido,
+},
+})
+
 c.JSON(http.StatusCreated, gin.H{
 "id":            resp.Id,
 "emisor_id":     resp.EmisorId,
@@ -142,4 +179,28 @@ c.JSON(http.StatusCreated, gin.H{
 "leido":         resp.Leido,
 "created_at":    t,
 })
+}
+
+// MarcarLeido marca un mensaje individual como leido y notifica al emisor.
+func (h *MensajesHandler) MarcarLeido(c *gin.Context) {
+userID := c.GetString(mw.CtxUserID)
+msgID := c.Param("msg_id")
+
+resp, err := h.client.MarcarLeido(c.Request.Context(), &mensajespb.MarcarLeidoRequest{
+MsgId:  msgID,
+UserId: userID,
+})
+if err != nil {
+c.JSON(http.StatusInternalServerError, gin.H{"error": "error marcando mensaje"})
+return
+}
+
+if resp.EmisorId != "" {
+h.hub.Broadcast(resp.EmisorId, hub.Event{
+Type:   "message_read",
+PeerID: userID,
+})
+}
+
+c.JSON(http.StatusOK, gin.H{"ok": resp.Ok})
 }

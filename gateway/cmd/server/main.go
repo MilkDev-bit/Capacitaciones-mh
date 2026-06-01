@@ -13,6 +13,7 @@ import (
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/handler"
+	"Prueba-Go/gateway/internal/hub"
 	"Prueba-Go/gateway/internal/middleware"
 	"Prueba-Go/gateway/internal/router"
 	"Prueba-Go/gateway/internal/storage"
@@ -50,7 +51,10 @@ func main() {
 	defer svc.Close()
 	slog.Info("Conexiones gRPC establecidas")
 
-	// ── 4b. Storage R2 ────────────────────────────────────────────────────────
+	// ── 4b. Hub WebSocket ─────────────────────────────────────────────────────
+	h := hub.New()
+
+	// ── 4c. Storage R2 ───────────────────────────────────────────────────────
 	storage.Init(cfg)
 
 	// ── 5. Inyección de dependencias ──────────────────────────────────────────
@@ -62,7 +66,8 @@ func main() {
 		LeccionesH:   handler.NewLeccionesHandler(svc),
 		ExamenesH:    handler.NewExamenesHandler(svc),
 		ForosH:       handler.NewForosHandler(svc),
-		MensajesH:    handler.NewMensajesHandler(svc),
+		MensajesH:    handler.NewMensajesHandler(svc, h),
+		WsH:          handler.NewWsHandler(h),
 		PresignH:     handler.NewPresignHandler(),
 		AuthMW:       middleware.AuthRequired(svc),
 		InstructorMW: middleware.InstructorRequired(svc),
