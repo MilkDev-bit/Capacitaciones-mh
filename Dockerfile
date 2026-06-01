@@ -1,17 +1,18 @@
+# syntax=docker/dockerfile:1
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
-
-ARG VITE_RECAPTCHA_SITE_KEY
-ENV VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY
-
-ARG VITE_SENTRY_DSN
-ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
 COPY frontend/package*.json ./
 RUN npm ci --prefer-offline
 
 COPY frontend/ ./
-RUN npm run build-only
+# Las variables VITE_* se inyectan como secrets de BuildKit en tiempo de build.
+# Los valores NUNCA quedan almacenados en capas de imagen.
+RUN --mount=type=secret,id=VITE_RECAPTCHA_SITE_KEY \
+    --mount=type=secret,id=VITE_SENTRY_DSN \
+    VITE_RECAPTCHA_SITE_KEY="$(cat /run/secrets/VITE_RECAPTCHA_SITE_KEY 2>/dev/null || true)" \
+    VITE_SENTRY_DSN="$(cat /run/secrets/VITE_SENTRY_DSN 2>/dev/null || true)" \
+    npm run build-only
 
 FROM golang:1.26-alpine AS backend
 WORKDIR /app
