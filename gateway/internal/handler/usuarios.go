@@ -24,7 +24,7 @@ func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"user": resp})
 }
 
 // PUT /api/perfil
@@ -50,12 +50,10 @@ func (h *UsuariosHandler) UpdatePerfil(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"user": resp})
 }
 
-// POST /api/perfil/avatar  (multipart — el Gateway sube a R2 y pasa la URL al service)
-// La lógica de subida a R2 va aquí o en un helper de storage; el service
-// solo recibe la URL resultante.
+// POST /api/perfil/avatar
 func (h *UsuariosHandler) UploadAvatar(ctx *gin.Context) {
 	url, err := uploadFileToR2(ctx, "avatars")
 	if err != nil {
@@ -70,7 +68,7 @@ func (h *UsuariosHandler) UploadAvatar(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"url": resp.AvatarUrl})
 }
 
 // POST /api/perfil/cover
@@ -88,7 +86,7 @@ func (h *UsuariosHandler) UploadCover(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"url": resp.CoverUrl})
 }
 
 // POST /api/perfil/become-instructor
@@ -100,7 +98,7 @@ func (h *UsuariosHandler) BecomeInstructor(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, gin.H{"role": resp.Role})
 }
 
 // GET /api/usuarios/:id/perfil
