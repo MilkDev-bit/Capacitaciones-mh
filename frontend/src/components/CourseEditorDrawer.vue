@@ -37,21 +37,21 @@ async function saveInfo() {
   if (!form.value.title) return toast.error('Título requerido')
   loading.value = true
   try {
-    const fd = new FormData()
-    fd.append('title', form.value.title)
-    fd.append('description', form.value.description || '')
-    fd.append('type', form.value.type)
-    fd.append('content', form.value.content || '')
-    fd.append('is_public', String(form.value.is_public))
-    fd.append('welcome_message', form.value.welcome_message || '')
-    fd.append('color', form.value.color || '#f97316')
+    const payload: Record<string, any> = {
+      title: form.value.title,
+      description: form.value.description || '',
+      type: form.value.type,
+      content: form.value.content || '',
+      is_public: form.value.is_public,
+      welcome_message: form.value.welcome_message || '',
+      color: form.value.color || '#f97316',
+      thumbnail_url: form.value.thumbnail_url || '',
+    }
 
-    let newThumbUrl = ''
     if (thumbnailFile.value) {
       const uploadingToast = toast.loading('Subiendo portada...')
       try {
-        newThumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
-        fd.append('thumbnail_url', newThumbUrl)
+        payload.thumbnail_url = await uploadToR2(thumbnailFile.value, 'thumbnails')
       } finally {
         uploadingToast.close()
       }
@@ -60,19 +60,18 @@ async function saveInfo() {
       const uploadingToast = toast.loading('Subiendo archivo...')
       try {
         const prefix = form.value.type === 'video' ? 'videos' : 'documents'
-        const fileUrl = await uploadToR2(file.value, prefix)
-        fd.append('file_url', fileUrl)
+        payload.content = await uploadToR2(file.value, prefix)
       } finally {
         uploadingToast.close()
       }
     }
 
-    await api.put(`/instructor/capacitaciones/${form.value.id}`, fd)
-    if (newThumbUrl) form.value.thumbnail_url = newThumbUrl
+    await api.put(`/instructor/capacitaciones/${form.value.id}`, payload)
+    if (payload.thumbnail_url) form.value.thumbnail_url = payload.thumbnail_url
     toast.success('Curso actualizado')
     emit('updated')
   } catch(e:any) {
-    toast.error(e?.message || 'Error al actualizar curso')
+    toast.error(e?.response?.data?.error || e?.message || 'Error al actualizar curso')
   } finally {
     loading.value = false
   }

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
 import { toast } from '../../utils/toast'
+import { uploadToR2 } from '../../utils/upload'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(false)
@@ -104,22 +105,29 @@ async function guardar() {
   }
   saving.value = true
   try {
-    const fd = new FormData()
-    fd.append('title', form.value.title.trim())
-    fd.append('description', form.value.description)
-    fd.append('type', form.value.type)
-    fd.append('content', form.value.content)
-    fd.append('welcome_message', form.value.welcome_message)
-    fd.append('is_public', String(form.value.is_public))
-    fd.append('color', form.value.color)
-    if (file.value) fd.append('file', file.value)
-    if (thumbnailFile.value) fd.append('thumbnail', thumbnailFile.value)
+    const payload: Record<string, any> = {
+      title: form.value.title.trim(),
+      description: form.value.description,
+      type: form.value.type,
+      content: form.value.content,
+      welcome_message: form.value.welcome_message,
+      is_public: form.value.is_public,
+      color: form.value.color,
+      thumbnail_url: form.value.thumbnail_preview || '',
+    }
+    if (file.value) {
+      const prefix = form.value.type === 'video' ? 'videos' : 'documents'
+      payload.content = await uploadToR2(file.value, prefix)
+    }
+    if (thumbnailFile.value) {
+      payload.thumbnail_url = await uploadToR2(thumbnailFile.value, 'thumbnails')
+    }
 
     if (isEditing.value) {
-      await api.put(`/admin/capacitaciones/${editingId.value}`, fd)
+      await api.put(`/admin/capacitaciones/${editingId.value}`, payload)
       toast.success('Capacitacion actualizada')
     } else {
-      await api.post('/admin/capacitaciones', fd)
+      await api.post('/admin/capacitaciones', payload)
       toast.success('Capacitacion creada')
     }
     closeDrawer()

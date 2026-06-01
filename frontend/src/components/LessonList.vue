@@ -68,12 +68,14 @@ async function saveEdit() {
   if (editForm.value.type === "link" && !isValidUrl(editForm.value.content || "")) {
     return toast.error("Debes ingresar una URL válida (http/https)");
   }
-  const fd = new FormData();
-  fd.append("title", editForm.value.title);
-  fd.append("description", editForm.value.description);
-  fd.append("type", editForm.value.type);
-  fd.append("content", editForm.value.content);
-  fd.append("duracion_min", String(editForm.value.duracion_min || 0));
+  const payload: Record<string, any> = {
+    title: editForm.value.title,
+    description: editForm.value.description,
+    type: editForm.value.type,
+    content: editForm.value.content,
+    duracion_min: Number(editForm.value.duracion_min || 0),
+    file_path: editForm.value.file_path || '',
+  };
 
   if (editFile.value) {
     const isMedia = editForm.value.type === "video" || editForm.value.type === "document";
@@ -81,18 +83,15 @@ async function saveEdit() {
       const uploadingToast = toast.loading("Subiendo archivo...");
       try {
         const prefix = editForm.value.type === "video" ? "videos" : "documents";
-        const fileUrl = await uploadToR2(editFile.value, prefix);
-        fd.append("file_url", fileUrl);
+        payload.file_path = await uploadToR2(editFile.value, prefix);
       } finally {
         uploadingToast.close();
       }
-    } else {
-      fd.append("file", editFile.value);
     }
   }
 
   try {
-    await api.put(`/instructor/capacitaciones/${props.capId}/lecciones/${editForm.value.id}`, fd);
+    await api.put(`/instructor/capacitaciones/${props.capId}/lecciones/${editForm.value.id}`, payload);
     toast.success("Lección actualizada");
     editMode.value = null;
     fetchLessons();
@@ -109,13 +108,15 @@ async function createLesson() {
   if (createForm.value.type === "link" && !isValidUrl(createForm.value.content || "")) {
     return toast.error("Debes ingresar una URL válida (http/https)");
   }
-  const fd = new FormData();
-  fd.append("title", createForm.value.title);
-  fd.append("description", createForm.value.description);
-  fd.append("type", createForm.value.type);
-  fd.append("content", createForm.value.content);
-  fd.append("duracion_min", String(createForm.value.duracion_min || 0));
-  fd.append("orden", String(lessons.value.length));
+  const payload: Record<string, any> = {
+    title: createForm.value.title,
+    description: createForm.value.description,
+    type: createForm.value.type,
+    content: createForm.value.content,
+    duracion_min: Number(createForm.value.duracion_min || 0),
+    orden: lessons.value.length,
+    file_path: '',
+  };
 
   if (createFile.value) {
     const isMedia = createForm.value.type === "video" || createForm.value.type === "document";
@@ -123,19 +124,16 @@ async function createLesson() {
       const uploadingToast = toast.loading("Subiendo archivo...");
       try {
         const prefix = createForm.value.type === "video" ? "videos" : "documents";
-        const fileUrl = await uploadToR2(createFile.value, prefix);
-        fd.append("file_url", fileUrl);
+        payload.file_path = await uploadToR2(createFile.value, prefix);
       } finally {
         uploadingToast.close();
       }
-    } else {
-      fd.append("file", createFile.value);
     }
   }
 
   const loadingToast = toast.loading("Creando lección...");
   try {
-    await api.post(`/instructor/capacitaciones/${props.capId}/lecciones`, fd);
+    await api.post(`/instructor/capacitaciones/${props.capId}/lecciones`, payload);
     loadingToast.close();
     toast.success("Lección creada");
     showCreate.value = false;

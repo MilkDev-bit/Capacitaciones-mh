@@ -48,26 +48,25 @@ async function guardar() {
     ? toast.loading('Subiendo archivos...')
     : null
   try {
-    const fd = new FormData()
-    fd.append('title', form.value.title)
-    fd.append('description', form.value.description)
-    fd.append('type', form.value.type)
-    fd.append('content', form.value.content)
-    fd.append('is_public', String(form.value.is_public))
-    fd.append('welcome_message', form.value.welcome_message)
-    fd.append('color', form.value.color)
+    const payload: Record<string, any> = {
+      title: form.value.title,
+      description: form.value.description,
+      type: form.value.type,
+      content: form.value.content,
+      is_public: form.value.is_public,
+      welcome_message: form.value.welcome_message,
+      color: form.value.color,
+    }
 
     if (file.value && hasMedia) {
       const prefix = form.value.type === 'video' ? 'videos' : 'documents'
-      const fileUrl = await uploadToR2(file.value, prefix)
-      fd.append('file_url', fileUrl)
+      payload.content = await uploadToR2(file.value, prefix)
     }
     if (thumbnailFile.value) {
-      const thumbUrl = await uploadToR2(thumbnailFile.value, 'thumbnails')
-      fd.append('thumbnail_url', thumbUrl)
+      payload.thumbnail_url = await uploadToR2(thumbnailFile.value, 'thumbnails')
     }
 
-    const res = await api.post('/instructor/capacitaciones', fd)
+    const res = await api.post('/instructor/capacitaciones', payload)
     toast.success('Curso creado')
     emit('created', res.data.id)
   } catch (e: any) {
