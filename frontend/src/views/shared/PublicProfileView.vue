@@ -240,6 +240,7 @@ onMounted(async () => {
   background: var(--surface);
   border: 1px solid var(--border-light); border-top: none;
   box-shadow: var(--shadow-sm);
+  position: relative; z-index: 1;
 }
 .pp-identity-left { display: flex; align-items: flex-end; gap: 18px; }
 .pp-avatar {
