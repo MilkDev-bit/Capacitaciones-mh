@@ -1,68 +1,102 @@
 package handler
 
 import (
-"net/http"
-"strconv"
-"time"
+	"net/http"
+	"strconv"
+	"time"
 
-"Prueba-Go/gateway/internal/clients"
-"Prueba-Go/gateway/internal/hub"
-mw "Prueba-Go/gateway/internal/middleware"
-mensajespb "Prueba-Go/gen/mensajes"
+	"Prueba-Go/gateway/internal/clients"
+	"Prueba-Go/gateway/internal/hub"
+	mw "Prueba-Go/gateway/internal/middleware"
+	mensajespb "Prueba-Go/gen/mensajes"
+	usuariospb "Prueba-Go/gen/usuarios"
 
-"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
 // MensajesHandler delega al microservicio mensajes via gRPC.
 type MensajesHandler struct {
-client mensajespb.MensajesServiceClient
-hub    *hub.Hub
+	client         mensajespb.MensajesServiceClient
+	usuariosClient usuariospb.UsuariosServiceClient
+	hub            *hub.Hub
 }
 
 func NewMensajesHandler(svc *clients.Clients, h *hub.Hub) *MensajesHandler {
-return &MensajesHandler{client: svc.Mensajes, hub: h}
+	return &MensajesHandler{
+		client:         svc.Mensajes,
+		usuariosClient: svc.Usuarios,
+		hub:            h,
+	}
 }
 
 // NoLeidos devuelve el total de mensajes no leidos del usuario autenticado.
 func (h *MensajesHandler) NoLeidos(c *gin.Context) {
-userID := c.GetString(mw.CtxUserID)
-resp, err := h.client.NoLeidos(c.Request.Context(), &mensajespb.NoLeidosRequest{UserId: userID})
-if err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "error contando mensajes"})
-return
-}
-c.JSON(http.StatusOK, gin.H{"count": resp.Count})
+	userID := c.GetString(mw.CtxUserID)
+	resp, err := h.client.NoLeidos(c.Request.Context(), &mensajespb.NoLeidosRequest{UserId: userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error contando mensajes"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"count": resp.Count})
 }
 
 // ListConversaciones devuelve las conversaciones activas del usuario autenticado.
 func (h *MensajesHandler) ListConversaciones(c *gin.Context) {
-userID := c.GetString(mw.CtxUserID)
-resp, err := h.client.ListConversaciones(c.Request.Context(), &mensajespb.ListConversacionesRequest{UserId: userID})
-if err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando conversaciones"})
-return
-}
+	userID := c.GetString(mw.CtxUserID)
+	resp, err := h.client.ListConversaciones(c.Request.Context(), &mensajespb.ListConversacionesRequest{UserId: userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando conversaciones"})
+		return
+	}
 
-type conversacionDTO struct {
-PeerID      string    `json:"peer_id"`
-PeerName    string    `json:"peer_name"`
-LastMessage string    `json:"last_message"`
-LastTime    time.Time `json:"last_time"`
-UnreadCount int32     `json:"unread_count"`
-}
+	type conversacionDTO struct {
+		PeerID      string    `json:"peer_id"`
+		PeerName    string    `json:"peer_name"`
+		LastMessage string    `json:"last_message"`
+		LastTime    time.Time `json:"last_time"`
+		UnreadCount int32     `json:"unread_count"`
+		AvatarURL   string    `json:"avatar_url"`
+	}
 
-convs := make([]conversacionDTO, 0, len(resp.Conversaciones))
-for _, cv := range resp.Conversaciones {
-t, _ := time.Parse("2006-01-02T15:04:05Z", cv.LastTime)
-convs = append(convs, conversacionDTO{
-PeerID:      cv.PeerId,
-PeerName:    cv.PeerName,
-LastMessage: cv.LastMessage,
-LastTime:    t,
-UnreadCount: cv.UnreadCount,
-})
-}
-c.JSON(http.StatusOK, convs)
+	// Fetch avatars concurrently to minimize latency
+	type avatarResult struct {
+		peerID    string
+		avatarURL string
+	}
+
+	n := len(resp.Conversaciones)
+	ch := make(chan avatarResult, n)
+
+	for _, cv := range resp.Conversaciones {
+		go func(peerId string) {
+			var avatarURL string
+			peerProfile, err := h.usuariosClient.GetPublicPerfil(c.Request.Context(), &usuariospb.UserIDRequest{UserId: peerId})
+			if err == nil && peerProfile != nil {
+				avatarURL = peerProfile.AvatarUrl
+			}
+			ch <- avatarResult{peerID: peerId, avatarURL: avatarURL}
+		}(cv.PeerId)
+	}
+
+	avatars := make(map[string]string)
+	for i := 0; i < n; i++ {
+		res := <-ch
+		avatars[res.peerID] = res.avatarURL
+	}
+
+	convs := make([]conversacionDTO, 0, n)
+	for _, cv := range resp.Conversaciones {
+		t, _ := time.Parse("2006-01-02T15:04:05Z", cv.LastTime)
+		convs = append(convs, conversacionDTO{
+			PeerID:      cv.PeerId,
+			PeerName:    cv.PeerName,
+			LastMessage: cv.LastMessage,
+			LastTime:    t,
+			UnreadCount: cv.UnreadCount,
+			AvatarURL:   avatars[cv.PeerId],
+		})
+	}
+	c.JSON(http.StatusOK, convs)
 }
 
 // GetMensajes devuelve la conversacion entre el usuario autenticado y un peer.

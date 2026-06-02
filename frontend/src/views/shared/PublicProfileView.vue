@@ -85,7 +85,10 @@ onMounted(async () => {
 
       <div class="pp-identity">
         <div class="pp-identity-left">
-          <div :class="['pp-avatar', roleClass]">{{ initials(user.name) }}</div>
+          <div :class="['pp-avatar', roleClass]">
+            <img v-if="user.avatar_url" :src="user.avatar_url" class="pp-avatar-img" :alt="user.name" />
+            <span v-else>{{ initials(user.name) }}</span>
+          </div>
           <div class="pp-id-info">
             <h1 class="pp-name">{{ user.name }}</h1>
             <div class="pp-id-meta">
@@ -247,6 +250,12 @@ onMounted(async () => {
   border: 4px solid var(--surface);
   margin-top: -46px; flex-shrink: 0;
   box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.pp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .pp-avatar.role-instructor { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 .pp-avatar.role-admin       { background: linear-gradient(135deg, #a855f7, #7c3aed); }

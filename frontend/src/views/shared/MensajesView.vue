@@ -11,6 +11,7 @@ interface Conversacion {
   last_message: string
   last_time: string
   unread_count: number
+  avatar_url?: string
 }
 
 interface Mensaje {
@@ -36,6 +37,7 @@ const auth   = useAuthStore()
 const convs          = ref<Conversacion[]>([])
 const msgs           = ref<Mensaje[]>([])
 const peerName       = ref('')
+const peerAvatar     = ref('')
 const newMsg         = ref('')
 const loadingConvs   = ref(false)
 const loadingMsgs    = ref(false)
@@ -216,7 +218,24 @@ function refreshConvEntry(msg: Mensaje) {
     conv.unread_count += unread
     convs.value = [conv, ...convs.value.filter(c => c.peer_id !== peerId)]
   } else {
-    convs.value.unshift({ peer_id: peerId, peer_name: peerN, last_message: preview, last_time: msg.created_at, unread_count: unread })
+    const newConv: Conversacion = {
+      peer_id: peerId,
+      peer_name: peerN,
+      last_message: preview,
+      last_time: msg.created_at,
+      unread_count: unread,
+      avatar_url: ''
+    }
+    convs.value.unshift(newConv)
+    api.get(`/usuarios/${peerId}/perfil`).then(res => {
+      const idx = convs.value.findIndex(c => c.peer_id === peerId)
+      if (idx !== -1) {
+        const existing = convs.value[idx]
+        if (existing && res.data?.user?.avatar_url) {
+          existing.avatar_url = res.data.user.avatar_url
+        }
+      }
+    }).catch(() => {})
   }
 }
 
@@ -263,20 +282,25 @@ async function loadMensajes(peerId: string) {
   msgs.value = []
   hasMore.value = false
   peerName.value = ''
+  peerAvatar.value = ''
   try {
     if ((history.state as { peerName?: string })?.peerName) {
       peerName.value = (history.state as { peerName: string }).peerName
     }
-    if (!peerName.value) {
-      try {
-        const perfil = await api.get(`/usuarios/${peerId}/perfil`)
-        peerName.value = perfil.data?.user?.name ?? ''
-      } catch { /* ignorar */ }
+    const conv = convs.value.find(c => c.peer_id === peerId)
+    if (conv) {
+      peerName.value = conv.peer_name
+      peerAvatar.value = conv.avatar_url ?? ''
     }
+    try {
+      const perfil = await api.get(`/usuarios/${peerId}/perfil`)
+      peerName.value = perfil.data?.user?.name ?? ''
+      peerAvatar.value = perfil.data?.user?.avatar_url ?? ''
+    } catch { /* ignorar */ }
+
     const res = await api.get(`/mensajes/${peerId}`, { params: { limit: 50 } })
     msgs.value = (res.data?.mensajes ?? []).map((m: Mensaje) => ({ ...m, _status: 'sent' as const }))
     hasMore.value = res.data?.has_more ?? false
-    const conv = convs.value.find(c => c.peer_id === peerId)
     if (conv) conv.unread_count = 0
     await scrollToBottom()
   } catch { /* silencioso */ } finally {
@@ -398,6 +422,11 @@ function openConversacion(conv: Conversacion) {
   router.push(`${base}/mensajes/${conv.peer_id}`)
 }
 
+function verPerfilId(id: string) {
+  const base = auth.isInstructor ? '/instructor' : '/usuario'
+  router.push(`${base}/perfil/${id}`)
+}
+
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMensaje() }
 }
@@ -462,7 +491,10 @@ onUnmounted(() => {
           :class="['conv-item', conv.peer_id === activePeerId ? 'active' : '']"
           @click="openConversacion(conv)"
         >
-          <div class="conv-avatar">{{ initials(conv.peer_name) }}</div>
+          <div class="conv-avatar clickable-avatar" @click.stop="verPerfilId(conv.peer_id)" title="Ver perfil">
+            <img v-if="conv.avatar_url" :src="conv.avatar_url" :alt="conv.peer_name" />
+            <span v-else>{{ initials(conv.peer_name) }}</span>
+          </div>
           <div class="conv-info">
             <div class="conv-row">
               <span class="conv-name">{{ conv.peer_name }}</span>
@@ -493,8 +525,11 @@ onUnmounted(() => {
           <button class="back-btn" @click="router.back()">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <div class="thread-avatar">{{ initials(peerName) }}</div>
-          <span class="thread-peername">{{ peerName || '...' }}</span>
+          <div class="thread-avatar clickable-avatar" @click="verPerfilId(activePeerId!)" title="Ver perfil">
+            <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
+            <span v-else>{{ initials(peerName) }}</span>
+          </div>
+          <span class="thread-peername clickable-name" @click="verPerfilId(activePeerId!)" title="Ver perfil">{{ peerName || '...' }}</span>
         </div>
 
         <!-- Toast de error -->
@@ -530,6 +565,13 @@ onUnmounted(() => {
                 isLastInGroup(idx) ? 'last-in-group' : '',
                 msg._status === 'error' ? 'has-error' : '',
               ]">
+                <!-- Foto de perfil del otro usuario (solo si es "theirs" y es el primer mensaje de la tanda) -->
+                <div v-if="msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="msg-avatar clickable-avatar" @click="verPerfilId(msg.emisor_id)" title="Ver perfil">
+                  <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
+                  <span v-else>{{ initials(peerName) }}</span>
+                </div>
+                <div v-else-if="msg.emisor_id !== auth.user?.id" class="msg-avatar-placeholder"></div>
+
                 <div class="bubble">
                   <!-- Adjunto: imagen -->
                   <div v-if="msg.attachment_url && msg.attachment_type?.startsWith('image/')" class="attachment attachment-image">
@@ -911,4 +953,55 @@ onUnmounted(() => {
 }
 .attach-btn:hover { color: var(--primary, #3b82f6); border-color: var(--primary, #3b82f6); }
 .attach-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Estilos de Foto de Perfil clickable y Msg avatars ── */
+.clickable-avatar {
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.clickable-avatar:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+.clickable-avatar img, .thread-avatar img, .conv-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.clickable-name {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.clickable-name:hover {
+  color: var(--primary, #3b82f6);
+  text-decoration: underline;
+}
+
+.msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .7rem;
+  flex-shrink: 0;
+  margin-right: 8px;
+  margin-top: 2px;
+}
+.msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.msg-avatar-placeholder {
+  width: 32px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
 </style>
