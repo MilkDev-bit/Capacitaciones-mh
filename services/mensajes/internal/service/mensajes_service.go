@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 "context"
@@ -25,20 +25,27 @@ if req.EmisorId == req.ReceptorId {
 return nil, status.Error(codes.InvalidArgument, "no puedes enviarte mensajes a ti mismo")
 }
 contenido := strings.TrimSpace(req.Contenido)
-if n := utf8.RuneCountInString(contenido); n < 1 || n > 5000 {
-return nil, status.Error(codes.InvalidArgument, "el mensaje debe tener entre 1 y 5000 caracteres")
-}
-m, err := s.repo.Send(ctx, &repository.Mensaje{
-EmisorID:     req.EmisorId,
-EmisorName:   req.EmisorName,
-ReceptorID:   req.ReceptorId,
-ReceptorName: req.ReceptorName,
-Contenido:    contenido,
-})
-if err != nil {
-return nil, status.Error(codes.Internal, "error enviando mensaje")
-}
-return m.ToProto(), nil
+	// Si hay adjunto, el texto puede estar vacío; si no hay adjunto, debe tener texto
+	if req.AttachmentUrl == "" {
+		if n := utf8.RuneCountInString(contenido); n < 1 || n > 5000 {
+			return nil, status.Error(codes.InvalidArgument, "el mensaje debe tener entre 1 y 5000 caracteres")
+		}
+	} else if n := utf8.RuneCountInString(contenido); n > 5000 {
+		return nil, status.Error(codes.InvalidArgument, "el texto del mensaje es demasiado largo")
+	}
+	m, err := s.repo.Send(ctx, &repository.Mensaje{
+		EmisorID:       req.EmisorId,
+		EmisorName:     req.EmisorName,
+		ReceptorID:     req.ReceptorId,
+		ReceptorName:   req.ReceptorName,
+		Contenido:      contenido,
+		AttachmentUrl:  req.AttachmentUrl,
+		AttachmentType: req.AttachmentType,
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error guardando mensaje")
+	}
+	return m.ToProto(), nil
 }
 
 func (s *MensajesService) GetMensajes(ctx context.Context, req *mensajespb.GetMensajesRequest) (*mensajespb.GetMensajesResponse, error) {

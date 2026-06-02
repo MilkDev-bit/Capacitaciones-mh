@@ -22,14 +22,16 @@ const (
 )
 
 type SendMensajeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EmisorId      string                 `protobuf:"bytes,1,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
-	EmisorName    string                 `protobuf:"bytes,2,opt,name=emisor_name,json=emisorName,proto3" json:"emisor_name,omitempty"`
-	ReceptorId    string                 `protobuf:"bytes,3,opt,name=receptor_id,json=receptorId,proto3" json:"receptor_id,omitempty"`
-	ReceptorName  string                 `protobuf:"bytes,4,opt,name=receptor_name,json=receptorName,proto3" json:"receptor_name,omitempty"`
-	Contenido     string                 `protobuf:"bytes,5,opt,name=contenido,proto3" json:"contenido,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	EmisorId       string                 `protobuf:"bytes,1,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
+	EmisorName     string                 `protobuf:"bytes,2,opt,name=emisor_name,json=emisorName,proto3" json:"emisor_name,omitempty"`
+	ReceptorId     string                 `protobuf:"bytes,3,opt,name=receptor_id,json=receptorId,proto3" json:"receptor_id,omitempty"`
+	ReceptorName   string                 `protobuf:"bytes,4,opt,name=receptor_name,json=receptorName,proto3" json:"receptor_name,omitempty"`
+	Contenido      string                 `protobuf:"bytes,5,opt,name=contenido,proto3" json:"contenido,omitempty"`
+	AttachmentUrl  string                 `protobuf:"bytes,6,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
+	AttachmentType string                 `protobuf:"bytes,7,opt,name=attachment_type,json=attachmentType,proto3" json:"attachment_type,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SendMensajeRequest) Reset() {
@@ -93,6 +95,20 @@ func (x *SendMensajeRequest) GetReceptorName() string {
 func (x *SendMensajeRequest) GetContenido() string {
 	if x != nil {
 		return x.Contenido
+	}
+	return ""
+}
+
+func (x *SendMensajeRequest) GetAttachmentUrl() string {
+	if x != nil {
+		return x.AttachmentUrl
+	}
+	return ""
+}
+
+func (x *SendMensajeRequest) GetAttachmentType() string {
+	if x != nil {
+		return x.AttachmentType
 	}
 	return ""
 }
@@ -306,17 +322,19 @@ func (x *MarcarLeidoRequest) GetUserId() string {
 }
 
 type MensajeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	EmisorId      string                 `protobuf:"bytes,2,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
-	EmisorName    string                 `protobuf:"bytes,3,opt,name=emisor_name,json=emisorName,proto3" json:"emisor_name,omitempty"`
-	ReceptorId    string                 `protobuf:"bytes,4,opt,name=receptor_id,json=receptorId,proto3" json:"receptor_id,omitempty"`
-	ReceptorName  string                 `protobuf:"bytes,5,opt,name=receptor_name,json=receptorName,proto3" json:"receptor_name,omitempty"`
-	Contenido     string                 `protobuf:"bytes,6,opt,name=contenido,proto3" json:"contenido,omitempty"`
-	Leido         bool                   `protobuf:"varint,7,opt,name=leido,proto3" json:"leido,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	EmisorId       string                 `protobuf:"bytes,2,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
+	EmisorName     string                 `protobuf:"bytes,3,opt,name=emisor_name,json=emisorName,proto3" json:"emisor_name,omitempty"`
+	ReceptorId     string                 `protobuf:"bytes,4,opt,name=receptor_id,json=receptorId,proto3" json:"receptor_id,omitempty"`
+	ReceptorName   string                 `protobuf:"bytes,5,opt,name=receptor_name,json=receptorName,proto3" json:"receptor_name,omitempty"`
+	Contenido      string                 `protobuf:"bytes,6,opt,name=contenido,proto3" json:"contenido,omitempty"`
+	Leido          bool                   `protobuf:"varint,7,opt,name=leido,proto3" json:"leido,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	AttachmentUrl  string                 `protobuf:"bytes,9,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
+	AttachmentType string                 `protobuf:"bytes,10,opt,name=attachment_type,json=attachmentType,proto3" json:"attachment_type,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MensajeResponse) Reset() {
@@ -401,6 +419,20 @@ func (x *MensajeResponse) GetLeido() bool {
 func (x *MensajeResponse) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *MensajeResponse) GetAttachmentUrl() string {
+	if x != nil {
+		return x.AttachmentUrl
+	}
+	return ""
+}
+
+func (x *MensajeResponse) GetAttachmentType() string {
+	if x != nil {
+		return x.AttachmentType
 	}
 	return ""
 }
@@ -677,7 +709,7 @@ var File_mensajes_mensajes_proto protoreflect.FileDescriptor
 
 const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\n" +
-	"\x17mensajes/mensajes.proto\x12\bmensajes\"\xb6\x01\n" +
+	"\x17mensajes/mensajes.proto\x12\bmensajes\"\x86\x02\n" +
 	"\x12SendMensajeRequest\x12\x1b\n" +
 	"\temisor_id\x18\x01 \x01(\tR\bemisorId\x12\x1f\n" +
 	"\vemisor_name\x18\x02 \x01(\tR\n" +
@@ -685,7 +717,9 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\vreceptor_id\x18\x03 \x01(\tR\n" +
 	"receptorId\x12#\n" +
 	"\rreceptor_name\x18\x04 \x01(\tR\freceptorName\x12\x1c\n" +
-	"\tcontenido\x18\x05 \x01(\tR\tcontenido\"y\n" +
+	"\tcontenido\x18\x05 \x01(\tR\tcontenido\x12%\n" +
+	"\x0eattachment_url\x18\x06 \x01(\tR\rattachmentUrl\x12'\n" +
+	"\x0fattachment_type\x18\a \x01(\tR\x0eattachmentType\"y\n" +
 	"\x12GetMensajesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\apeer_id\x18\x02 \x01(\tR\x06peerId\x12\x14\n" +
@@ -697,7 +731,7 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"D\n" +
 	"\x12MarcarLeidoRequest\x12\x15\n" +
 	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xf8\x01\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xc8\x02\n" +
 	"\x0fMensajeResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\temisor_id\x18\x02 \x01(\tR\bemisorId\x12\x1f\n" +
@@ -709,7 +743,10 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\tcontenido\x18\x06 \x01(\tR\tcontenido\x12\x14\n" +
 	"\x05leido\x18\a \x01(\bR\x05leido\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt\"g\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\x12%\n" +
+	"\x0eattachment_url\x18\t \x01(\tR\rattachmentUrl\x12'\n" +
+	"\x0fattachment_type\x18\n" +
+	" \x01(\tR\x0eattachmentType\"g\n" +
 	"\x13GetMensajesResponse\x125\n" +
 	"\bmensajes\x18\x01 \x03(\v2\x19.mensajes.MensajeResponseR\bmensajes\x12\x19\n" +
 	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"\xaf\x01\n" +

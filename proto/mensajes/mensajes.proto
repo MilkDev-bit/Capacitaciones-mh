@@ -13,11 +13,13 @@ service MensajesService {
 }
 
 message SendMensajeRequest {
-  string emisor_id     = 1;
-  string emisor_name   = 2;
-  string receptor_id   = 3;
-  string receptor_name = 4;
-  string contenido     = 5;
+  string emisor_id       = 1;
+  string emisor_name     = 2;
+  string receptor_id     = 3;
+  string receptor_name   = 4;
+  string contenido       = 5;
+  string attachment_url  = 6;
+  string attachment_type = 7;
 }
 
 message GetMensajesRequest {
@@ -41,14 +43,16 @@ message MarcarLeidoRequest {
 }
 
 message MensajeResponse {
-  string id            = 1;
-  string emisor_id     = 2;
-  string emisor_name   = 3;
-  string receptor_id   = 4;
-  string receptor_name = 5;
-  string contenido     = 6;
-  bool   leido         = 7;
-  string created_at    = 8;
+  string id              = 1;
+  string emisor_id       = 2;
+  string emisor_name     = 3;
+  string receptor_id     = 4;
+  string receptor_name   = 5;
+  string contenido       = 6;
+  bool   leido           = 7;
+  string created_at      = 8;
+  string attachment_url  = 9;
+  string attachment_type = 10;
 }
 
 message GetMensajesResponse {

@@ -17,6 +17,7 @@ var allowedPrefixes = map[string]bool{
 	"avatars":    true,
 	"covers":     true,
 	"foro":       true,
+	"mensajes":   true,
 }
 
 // PresignHandler genera URLs pre-firmadas para subidas directas al bucket R2.

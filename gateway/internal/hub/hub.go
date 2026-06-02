@@ -9,14 +9,16 @@ import (
 
 // MsgPayload es el payload de un evento new_message.
 type MsgPayload struct {
-	ID           string `json:"id"`
-	EmisorID     string `json:"emisor_id"`
-	EmisorName   string `json:"emisor_name"`
-	ReceptorID   string `json:"receptor_id"`
-	ReceptorName string `json:"receptor_name"`
-	Contenido    string `json:"contenido"`
-	CreatedAt    string `json:"created_at"`
-	Leido        bool   `json:"leido"`
+	ID             string `json:"id"`
+	EmisorID       string `json:"emisor_id"`
+	EmisorName     string `json:"emisor_name"`
+	ReceptorID     string `json:"receptor_id"`
+	ReceptorName   string `json:"receptor_name"`
+	Contenido      string `json:"contenido"`
+	CreatedAt      string `json:"created_at"`
+	Leido          bool   `json:"leido"`
+	AttachmentUrl  string `json:"attachment_url,omitempty"`
+	AttachmentType string `json:"attachment_type,omitempty"`
 }
 
 // Event es el mensaje JSON que el servidor envía al cliente WebSocket.

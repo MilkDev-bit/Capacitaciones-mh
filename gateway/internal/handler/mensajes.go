@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 "net/http"
@@ -98,28 +98,32 @@ PeerID: userID,
 }
 
 type mensajeDTO struct {
-ID           string    `json:"id"`
-EmisorID     string    `json:"emisor_id"`
-EmisorName   string    `json:"emisor_name"`
-ReceptorID   string    `json:"receptor_id"`
-ReceptorName string    `json:"receptor_name"`
-Contenido    string    `json:"contenido"`
-Leido        bool      `json:"leido"`
-CreatedAt    time.Time `json:"created_at"`
+ID             string    `json:"id"`
+EmisorID       string    `json:"emisor_id"`
+EmisorName     string    `json:"emisor_name"`
+ReceptorID     string    `json:"receptor_id"`
+ReceptorName   string    `json:"receptor_name"`
+Contenido      string    `json:"contenido"`
+Leido          bool      `json:"leido"`
+CreatedAt      time.Time `json:"created_at"`
+AttachmentUrl  string    `json:"attachment_url,omitempty"`
+AttachmentType string    `json:"attachment_type,omitempty"`
 }
 
 msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
 for _, m := range resp.Mensajes {
 t, _ := time.Parse("2006-01-02T15:04:05Z", m.CreatedAt)
 msgs = append(msgs, mensajeDTO{
-ID:           m.Id,
-EmisorID:     m.EmisorId,
-EmisorName:   m.EmisorName,
-ReceptorID:   m.ReceptorId,
-ReceptorName: m.ReceptorName,
-Contenido:    m.Contenido,
-Leido:        m.Leido,
-CreatedAt:    t,
+ID:             m.Id,
+EmisorID:       m.EmisorId,
+EmisorName:     m.EmisorName,
+ReceptorID:     m.ReceptorId,
+ReceptorName:   m.ReceptorName,
+Contenido:      m.Contenido,
+Leido:          m.Leido,
+CreatedAt:      t,
+AttachmentUrl:  m.AttachmentUrl,
+AttachmentType: m.AttachmentType,
 })
 }
 c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})
@@ -132,8 +136,10 @@ userName := c.GetString(mw.CtxUserName)
 peerID := c.Param("peer_id")
 
 var body struct {
-Contenido string `json:"contenido"`
-PeerName  string `json:"peer_name"`
+Contenido      string `json:"contenido"`
+PeerName       string `json:"peer_name"`
+AttachmentUrl  string `json:"attachment_url"`
+AttachmentType string `json:"attachment_type"`
 }
 if err := c.ShouldBindJSON(&body); err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
@@ -141,11 +147,13 @@ return
 }
 
 resp, err := h.client.SendMensaje(c.Request.Context(), &mensajespb.SendMensajeRequest{
-EmisorId:     userID,
-EmisorName:   userName,
-ReceptorId:   peerID,
-ReceptorName: body.PeerName,
-Contenido:    body.Contenido,
+EmisorId:       userID,
+EmisorName:     userName,
+ReceptorId:     peerID,
+ReceptorName:   body.PeerName,
+Contenido:      body.Contenido,
+AttachmentUrl:  body.AttachmentUrl,
+AttachmentType: body.AttachmentType,
 })
 if err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -158,26 +166,30 @@ t, _ := time.Parse("2006-01-02T15:04:05Z", resp.CreatedAt)
 h.hub.Broadcast(resp.ReceptorId, hub.Event{
 Type: "new_message",
 Msg: &hub.MsgPayload{
-ID:           resp.Id,
-EmisorID:     resp.EmisorId,
-EmisorName:   resp.EmisorName,
-ReceptorID:   resp.ReceptorId,
-ReceptorName: resp.ReceptorName,
-Contenido:    resp.Contenido,
-CreatedAt:    t.Format(time.RFC3339),
-Leido:        resp.Leido,
+ID:             resp.Id,
+EmisorID:       resp.EmisorId,
+EmisorName:     resp.EmisorName,
+ReceptorID:     resp.ReceptorId,
+ReceptorName:   resp.ReceptorName,
+Contenido:      resp.Contenido,
+CreatedAt:      t.Format(time.RFC3339),
+Leido:          resp.Leido,
+AttachmentUrl:  resp.AttachmentUrl,
+AttachmentType: resp.AttachmentType,
 },
 })
 
 c.JSON(http.StatusCreated, gin.H{
-"id":            resp.Id,
-"emisor_id":     resp.EmisorId,
-"emisor_name":   resp.EmisorName,
-"receptor_id":   resp.ReceptorId,
-"receptor_name": resp.ReceptorName,
-"contenido":     resp.Contenido,
-"leido":         resp.Leido,
-"created_at":    t,
+"id":              resp.Id,
+"emisor_id":       resp.EmisorId,
+"emisor_name":     resp.EmisorName,
+"receptor_id":     resp.ReceptorId,
+"receptor_name":   resp.ReceptorName,
+"contenido":       resp.Contenido,
+"leido":           resp.Leido,
+"created_at":      t,
+"attachment_url":  resp.AttachmentUrl,
+"attachment_type": resp.AttachmentType,
 })
 }
 

@@ -55,15 +55,21 @@ func main() {
 func runMigrations(db *sqlx.DB) error {
 	migrations := []string{
 		`CREATE TABLE IF NOT EXISTS mensajes (
-			id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-			emisor_id     UUID        NOT NULL,
-			emisor_name   TEXT        NOT NULL DEFAULT '',
-			receptor_id   UUID        NOT NULL,
-			receptor_name TEXT        NOT NULL DEFAULT '',
-			contenido     TEXT        NOT NULL,
-			leido         BOOLEAN     NOT NULL DEFAULT FALSE,
-			created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+			id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+			emisor_id       UUID        NOT NULL,
+			emisor_name     TEXT        NOT NULL DEFAULT '',
+			receptor_id     UUID        NOT NULL,
+			receptor_name   TEXT        NOT NULL DEFAULT '',
+			contenido       TEXT        NOT NULL DEFAULT '',
+			leido           BOOLEAN     NOT NULL DEFAULT FALSE,
+			created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			attachment_url  TEXT        NOT NULL DEFAULT '',
+			attachment_type TEXT        NOT NULL DEFAULT ''
 		)`,
+		// Migraciones incrementales para tablas existentes
+		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS attachment_url  TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE mensajes ALTER COLUMN contenido SET DEFAULT ''`,
 		`CREATE INDEX IF NOT EXISTS idx_mensajes_emisor
 			ON mensajes(emisor_id, created_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_mensajes_receptor
