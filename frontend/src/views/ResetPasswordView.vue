@@ -52,7 +52,7 @@ async function submit() {
         <span></span><span></span><span></span><span></span>
       </div>
       <div class="hero-inner">
-        <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="hero-logo" />
+        <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="hero-logo" />
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
         <p class="hero-sub">Plataforma de aprendizaje empresarial</p>
       </div>
@@ -64,7 +64,7 @@ async function submit() {
 
         <!-- Logo móvil -->
         <div class="mobile-brand">
-          <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
+          <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
           <span>Capacitaciones MH</span>
         </div>
 

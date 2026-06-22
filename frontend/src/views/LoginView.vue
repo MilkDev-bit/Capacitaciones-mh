@@ -184,7 +184,7 @@ async function resetPassword() {
       </div>
       <div class="hero-content">
         <div class="hero-logo">
-          <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="hero-logo-img" />
+          <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="hero-logo-img" />
         </div>
         <h1 class="hero-title">Capacitaciones<br><span>MH</span></h1>
         <p class="hero-subtitle">Cursos, lecciones, examenes y seguimiento en una sola experiencia de aprendizaje.</p>
@@ -208,7 +208,7 @@ async function resetPassword() {
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
         <div class="mobile-logo">
-          <img src="/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
+          <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
           <span>Capacitaciones MH</span>
         </div>
 

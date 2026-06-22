@@ -20,7 +20,7 @@ function initials(name: string) {
     <aside :class="['sidebar-nav', sidebarOpen ? 'open' : '']">
       <div class="sn-brand">
         <div class="sn-brand-icon" style="background: transparent;">
-          <img src="/logo-capacitaciones.png" alt="Logo" style="width: 24px; height: 24px; object-fit: contain;" />
+          <img src="../../assets/logo-capacitaciones.png" alt="Logo" style="width: 24px; height: 24px; object-fit: contain;" />
         </div>
         <span>MH Admin</span>
       </div>
