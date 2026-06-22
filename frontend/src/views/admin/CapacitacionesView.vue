@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
@@ -57,8 +57,8 @@ async function load() {
   loading.value = true
   try {
     const res = await api.get('/admin/capacitaciones', { params: { page: page.value, limit } })
-    capacitaciones.value = res.data.data || []
-    totalPages.value = Math.ceil((res.data.total || 0) / limit) || 1
+    capacitaciones.value = res.data || []
+    totalPages.value = 1
   } finally {
     loading.value = false
   }

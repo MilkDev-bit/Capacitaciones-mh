@@ -58,8 +58,8 @@ async function load() {
   loading.value = true
   try {
     const res = await api.get('/admin/examenes', { params: { page: page.value, limit } })
-    examenes.value = res.data.data || []
-    totalPages.value = Math.ceil((res.data.total || 0) / limit) || 1
+    examenes.value = res.data || []
+    totalPages.value = 1
   } finally {
     loading.value = false
   }

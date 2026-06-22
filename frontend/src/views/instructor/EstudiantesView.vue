@@ -53,7 +53,7 @@ async function load() {
     estudiantes.value = estRes.data || []
     capacitaciones.value = capRes.data || []
     examenes.value = exRes.data || []
-    users.value = (usrRes.data.data || []).filter((u: any) => u.role === 'user')
+    users.value = (usrRes.data || []).filter((u: any) => u.role === 'user')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al cargar datos')
   }

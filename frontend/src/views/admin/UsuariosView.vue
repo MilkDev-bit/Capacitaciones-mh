@@ -47,9 +47,9 @@ async function load() {
       api.get('/admin/examenes', { params: { limit: 500 } }),
       api.get('/admin/asignaciones'),
     ])
-    users.value = u.data.data || []
-    capacitaciones.value = c.data.data || []
-    examenes.value = e.data.data || []
+    users.value = u.data || []
+    capacitaciones.value = c.data || []
+    examenes.value = e.data || []
     asignaciones.value = a.data || []
   } finally {
     loading.value = false
