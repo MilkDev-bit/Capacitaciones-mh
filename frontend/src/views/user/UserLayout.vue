@@ -19,10 +19,8 @@ function initials(name: string) {
 
     <aside :class="['sidebar-nav', sidebarOpen ? 'open' : '']">
       <div class="sn-brand">
-        <div class="sn-brand-icon">
-          <svg width="18" height="18" viewBox="0 0 44 44" fill="none">
-            <path d="M10 34L22 12L34 34H10Z" fill="white"/>
-          </svg>
+        <div class="sn-brand-icon" style="background: transparent;">
+          <img src="/logo-capacitaciones.png" alt="Logo" style="width: 24px; height: 24px; object-fit: contain;" />
         </div>
         <span>MH Aprende</span>
       </div>
