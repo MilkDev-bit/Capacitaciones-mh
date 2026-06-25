@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
+import DashboardCharts from '../../components/DashboardCharts.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -91,6 +92,8 @@ const statCards = computed(() => [
         <div style="flex:1"><div class="skeleton skel-title"></div><div class="skeleton skel-text-sm" style="margin-top:6px"></div></div>
       </div>
     </section>
+
+    <DashboardCharts v-if="!loading" style="margin-top: 28px; margin-bottom: 28px;" />
 
     <section v-if="!loading" class="ad-section">
       <h2 class="ad-section-title">Acciones rápidas</h2>

@@ -147,7 +147,7 @@ async function createLesson() {
 }
 
 async function deleteLesson(id: string) {
-  if (!confirm("¿Eliminar lección?")) return;
+  if (!await toast.confirm("¿Eliminar lección?")) return;
   try {
     await api.delete(`/instructor/capacitaciones/${props.capId}/lecciones/${id}`);
     toast.success("Lección eliminada");

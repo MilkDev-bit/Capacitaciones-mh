@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 
@@ -7,6 +7,24 @@ const auth = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
 const profileOpen = ref(false)
+
+const breadcrumbs = computed(() => {
+  return router.currentRoute.value.path
+    .split('/')
+    .filter(Boolean)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+})
+
+const toggleTheme = () => {
+  const isDark = document.documentElement.classList.toggle('dark-theme')
+  localStorage.setItem('theme', isDark ? 'dark' : 'light')
+}
+
+onMounted(() => {
+  if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.classList.add('dark-theme')
+  }
+})
 
 function initials(name: string) {
   return (name || 'I').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -59,8 +77,24 @@ function initials(name: string) {
         <button class="topbar-hamburger" @click="sidebarOpen = true" aria-label="Abrir menú">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <span class="topbar-title">Panel Instructor</span>
+        <div class="topbar-title">
+          <template v-for="(crumb, idx) in breadcrumbs" :key="idx">
+            <span v-if="idx > 0" style="color:var(--muted); margin: 0 6px;">/</span>
+            <span>{{ crumb }}</span>
+          </template>
+        </div>
         <div class="topbar-right">
+          <!-- Theme Toggle -->
+          <button class="icon-btn" @click="toggleTheme" style="border:none; background:transparent; width: 36px; height: 36px" data-tooltip="Cambiar tema">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          </button>
+          
+          <!-- Notification Bell -->
+          <button class="icon-btn" style="border:none; background:transparent; position:relative; width: 36px; height: 36px" data-tooltip="Notificaciones">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            <span style="position:absolute; top:6px; right:8px; width:8px; height:8px; background:var(--danger); border-radius:50%; border:2px solid var(--surface)"></span>
+          </button>
+
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">
             <div class="topbar-avatar">

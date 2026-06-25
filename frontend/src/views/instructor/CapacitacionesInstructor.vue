@@ -4,6 +4,7 @@ import api from '../../api'
 import { toast } from '../../utils/toast'
 import CourseWizardModal from '../../components/CourseWizardModal.vue'
 import CourseEditorDrawer from '../../components/CourseEditorDrawer.vue'
+import EmptyState from '../../components/EmptyState.vue'
 
 const courses = ref<any[]>([])
 const loading = ref(false)
@@ -37,7 +38,7 @@ async function togglePublic(course: any) {
 }
 
 async function deleteCourse(id: string) {
-  if (!confirm('¿Estás seguro de eliminar este curso? Se perderán todas sus lecciones.')) return
+  if (!await toast.confirm('¿Estás seguro de eliminar este curso? Se perderán todas sus lecciones.')) return
   try {
     await api.delete(`/instructor/capacitaciones/${id}`)
     toast.success('Curso eliminado')
@@ -48,7 +49,7 @@ async function deleteCourse(id: string) {
 }
 
 async function resetCode(id: string) {
-  if (!confirm('¿Generar nuevo código de acceso? El anterior dejará de funcionar.')) return
+  if (!await toast.confirm('¿Generar nuevo código de acceso? El anterior dejará de funcionar.')) return
   try {
     const res = await api.post(`/instructor/capacitaciones/${id}/reset-codigo`)
     toast.success('Código actualizado: ' + res.data.codigo_acceso)
@@ -88,14 +89,14 @@ function copyCode(code: string) {
       <p>Cargando cursos...</p>
     </div>
     
-    <div v-else-if="courses.length === 0" class="empty-state slide-down-enter-active">
-      <div class="empty-icon">
-        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      </div>
-      <h3>Aún no has creado cursos</h3>
-      <p>Comienza creando tu primera capacitación para tus estudiantes.</p>
-      <button class="btn btn-primary" @click="showWizard = true">Crear Curso</button>
-    </div>
+    <EmptyState v-else-if="courses.length === 0" class="slide-down-enter-active"
+      title="Aún no has creado cursos"
+      description="Comienza creando tu primera capacitación para tus estudiantes."
+    >
+      <template #action>
+        <button class="btn btn-primary" @click="showWizard = true">Crear Curso</button>
+      </template>
+    </EmptyState>
 
     <div v-else class="courses-grid">
       <div v-for="c in courses" :key="c.id" class="course-card slide-down-enter-active">

@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
+import EmptyState from '../../components/EmptyState.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -339,14 +340,14 @@ async function unirseConCodigo() {
         </article>
       </div>
 
-      <div v-else class="empty-state learning-empty">
-        <div class="empty-icon">Cursos</div>
-        <h3>{{ search ? 'No encontramos cursos con ese filtro' : 'Aun no tienes cursos activos' }}</h3>
-        <p>
-          {{ search ? 'Prueba con otro termino o cambia el estado del filtro.' : 'Explora el catalogo o usa un codigo de acceso de tu instructor.' }}
-        </p>
-        <button class="btn btn-primary" @click="activeTab = 'explorar'">Explorar cursos</button>
-      </div>
+      <EmptyState v-else class="learning-empty"
+        :title="search ? 'No encontramos cursos con ese filtro' : 'Aun no tienes cursos activos'"
+        :description="search ? 'Prueba con otro termino o cambia el estado del filtro.' : 'Explora el catalogo o usa un codigo de acceso de tu instructor.'"
+      >
+        <template #action>
+          <button class="btn btn-primary" @click="activeTab = 'explorar'">Explorar cursos</button>
+        </template>
+      </EmptyState>
     </div>
 
     <div v-if="activeTab === 'explorar'" class="learning-section">
@@ -447,11 +448,10 @@ async function unirseConCodigo() {
         </article>
       </div>
 
-      <div v-else class="empty-state learning-empty">
-        <div class="empty-icon">Buscar</div>
-        <h3>{{ search ? 'No encontramos cursos con ese término' : 'No hay cursos públicos disponibles' }}</h3>
-        <p>{{ search ? 'Prueba con otro término de búsqueda.' : 'Pide a tu instructor que comparta un código de acceso.' }}</p>
-      </div>
+      <EmptyState v-else class="learning-empty"
+        :title="search ? 'No encontramos cursos con ese término' : 'No hay cursos públicos disponibles'"
+        :description="search ? 'Prueba con otro término de búsqueda.' : 'Pide a tu instructor que comparta un código de acceso.'"
+      />
 
       <!-- Paginación -->
       <div v-if="!loadingPublicos && totalExplorePages > 1" class="explore-pagination" aria-label="Paginación">

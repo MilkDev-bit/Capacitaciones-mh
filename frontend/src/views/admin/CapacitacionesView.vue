@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
+import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
 import { uploadToR2 } from '../../utils/upload'
 
@@ -221,14 +222,14 @@ function cardColor(c: any) {
       </div>
     </div>
 
-    <div v-else class="empty-state">
-      <div class="empty-icon">
-        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      </div>
-      <h3>{{ search ? 'Sin resultados' : 'No hay capacitaciones' }}</h3>
-      <p>{{ search ? 'Prueba con otro termino de busqueda.' : 'Crea la primera capacitacion para empezar.' }}</p>
-      <button v-if="!search" class="btn btn-primary" @click="openCreate">Crear primera capacitacion</button>
-    </div>
+    <EmptyState v-else
+      :title="search ? 'Sin resultados' : 'No hay capacitaciones'"
+      :description="search ? 'Prueba con otro termino de busqueda.' : 'Crea la primera capacitacion para empezar.'"
+    >
+      <template #action>
+        <button v-if="!search" class="btn btn-primary" @click="openCreate">Crear primera capacitacion</button>
+      </template>
+    </EmptyState>
 
     <div v-if="totalPages > 1" class="pagination-controls" style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
       <button class="btn btn-secondary" :disabled="page <= 1" @click="page--; load()">← Anterior</button>
