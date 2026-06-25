@@ -115,6 +115,37 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_email TEXT DEFAULT ''`,
 		// Ampliar color de VARCHAR(20) a TEXT para soportar valores de gradiente CSS
 		`ALTER TABLE capacitaciones ALTER COLUMN color TYPE TEXT`,
+		`CREATE TABLE IF NOT EXISTS curso_licencias (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			nombre VARCHAR(100) NOT NULL,
+			precio NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+			capacidad_maxima INT NOT NULL DEFAULT 0,
+			usadas INT NOT NULL DEFAULT 0,
+			codigo_acceso VARCHAR(50) UNIQUE,
+			stripe_product_id VARCHAR(100),
+			stripe_price_id VARCHAR(100),
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS inscripciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			licencia_id UUID REFERENCES curso_licencias(id) ON DELETE SET NULL,
+			inscrito_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, capacitacion_id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS notificaciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			tipo VARCHAR(50) NOT NULL,
+			titulo VARCHAR(200) NOT NULL,
+			mensaje TEXT NOT NULL,
+			leida BOOLEAN NOT NULL DEFAULT false,
+			enlace TEXT,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
 		// Garantizar unicidad en asignaciones para que ON CONFLICT funcione
 		`DO $$ BEGIN
 		   IF NOT EXISTS (
