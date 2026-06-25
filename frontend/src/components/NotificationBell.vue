@@ -16,10 +16,22 @@ interface Notificacion {
 
 const router = useRouter()
 const notificaciones = ref<Notificacion[]>([])
-const unreadCount = computed(() => notificaciones.value.filter(n => !n.leida).length)
+const unreadCount = computed(() => displayNotificaciones.value.length)
 const isOpen = ref(false)
 
 let pollInterval: ReturnType<typeof setInterval>
+
+const displayNotificaciones = computed(() => {
+  const unread = notificaciones.value.filter(n => !n.leida)
+  const seen = new Set()
+  return unread.filter(n => {
+    // deduplicate by title and message
+    const key = n.titulo + '|' + n.mensaje + '|' + n.enlace
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+})
 
 async function fetchNotificaciones() {
   try {
@@ -30,15 +42,22 @@ async function fetchNotificaciones() {
   }
 }
 
-async function markAsRead(n: Notificacion) {
-  if (!n.leida) {
+async function markAsReadWithoutNavigating(n: Notificacion) {
+  const duplicates = notificaciones.value.filter(x => !x.leida && x.titulo === n.titulo && x.mensaje === n.mensaje)
+  const ids = duplicates.map(x => x.id)
+
+  if (ids.length > 0) {
     try {
-      await api.post('/notificaciones/marcar-leidas', { ids: [n.id] })
-      n.leida = true
+      await api.post('/notificaciones/marcar-leidas', { ids })
+      duplicates.forEach(x => x.leida = true)
     } catch (err) {
       console.error('Error marking as read', err)
     }
   }
+}
+
+async function markAsRead(n: Notificacion) {
+  await markAsReadWithoutNavigating(n)
   isOpen.value = false
   if (n.enlace) {
     router.push(n.enlace)
@@ -69,7 +88,14 @@ function closeDropdown(e: MouseEvent) {
 }
 
 function timeAgo(dateString: string) {
-  const date = new Date(dateString)
+  if (!dateString) return ''
+  let date = new Date(dateString)
+  if (isNaN(date.getTime())) {
+    date = new Date(dateString.replace(' ', 'T'))
+  }
+  if (isNaN(date.getTime())) {
+    return ''
+  }
   const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
@@ -114,21 +140,24 @@ onUnmounted(() => {
           </button>
         </div>
         <div class="dropdown-body">
-          <div v-if="notificaciones.length === 0" class="empty-state">
+          <div v-if="displayNotificaciones.length === 0" class="empty-state">
             No tienes notificaciones
           </div>
           <div v-else 
-               v-for="n in notificaciones" 
+               v-for="n in displayNotificaciones" 
                :key="n.id" 
-               class="notification-item" 
-               :class="{ unread: !n.leida }"
+               class="notification-item unread"
                @click="markAsRead(n)">
             <div class="notif-content">
-              <strong>{{ n.titulo }}</strong>
-              <p>{{ n.mensaje }}</p>
+              <strong>{{ n.titulo || 'Notificación' }}</strong>
+              <p v-if="n.mensaje">{{ n.mensaje }}</p>
               <span class="time">{{ timeAgo(n.created_at) }}</span>
             </div>
-            <div v-if="!n.leida" class="unread-dot"></div>
+            <button class="mark-btn" @click.stop="markAsReadWithoutNavigating(n)" title="Marcar como leída">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -270,13 +299,24 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-.unread-dot {
-  width: 8px;
-  height: 8px;
+.mark-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px;
   border-radius: 50%;
-  background-color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
   flex-shrink: 0;
   margin-left: 12px;
+}
+
+.mark-btn:hover {
+  background: var(--surface);
+  color: var(--brand);
 }
 
 /* Animations */
