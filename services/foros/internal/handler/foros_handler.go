@@ -44,8 +44,8 @@ func (h *ForosHandler) DeleteForoPost(ctx context.Context, req *forospb.PostUser
 	return &forospb.EmptyResponse{}, nil
 }
 
-func (h *ForosHandler) ListForoComentarios(ctx context.Context, req *forospb.PostRequest) (*forospb.ListComentariosResponse, error) {
-	list, err := h.svc.ListForoComentarios(ctx, req.PostId)
+func (h *ForosHandler) ListForoComentarios(ctx context.Context, req *forospb.PostUserRequest) (*forospb.ListComentariosResponse, error) {
+	list, err := h.svc.ListForoComentarios(ctx, req.PostId, req.UserId)
 	if err != nil {
 		return nil, toGRPC(err)
 	}
@@ -60,8 +60,16 @@ func (h *ForosHandler) CreateForoComentario(ctx context.Context, req *forospb.Cr
 	return c, nil
 }
 
-func (h *ForosHandler) ToggleForoPostLike(ctx context.Context, req *forospb.PostUserRequest) (*forospb.LikeResponse, error) {
-	r, err := h.svc.ToggleForoPostLike(ctx, req.PostId, req.UserId)
+func (h *ForosHandler) ToggleForoPostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error) {
+	r, err := h.svc.ToggleForoPostReaction(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return r, nil
+}
+
+func (h *ForosHandler) ToggleForoComentarioReaction(ctx context.Context, req *forospb.ComentarioReactionRequest) (*forospb.ReactionResponse, error) {
+	r, err := h.svc.ToggleForoComentarioReaction(ctx, req)
 	if err != nil {
 		return nil, toGRPC(err)
 	}

@@ -124,7 +124,8 @@ func New(d Deps) *gin.Engine {
 			auth.DELETE("/foro/posts/:post_id", d.ForosH.DeleteForoPost)
 			auth.GET("/foro/posts/:post_id/comentarios", d.ForosH.ListForoComentarios)
 			auth.POST("/foro/posts/:post_id/comentarios", d.ForosH.CreateForoComentario)
-			auth.POST("/foro/posts/:post_id/like", d.ForosH.ToggleForoPostLike)
+			auth.POST("/foro/posts/:post_id/reactions", d.ForosH.ToggleForoPostReaction)
+			auth.POST("/foro/comentarios/:comentario_id/reactions", d.ForosH.ToggleForoComentarioReaction)
 
 			// WebSocket tiempo real
 			auth.GET("/ws", d.WsH.Handle)

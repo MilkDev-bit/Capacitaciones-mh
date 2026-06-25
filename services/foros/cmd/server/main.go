@@ -95,6 +95,23 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS user_name TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS user_name TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES foro_comentarios(id) ON DELETE CASCADE`,
+		`CREATE TABLE IF NOT EXISTS foro_post_reactions (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			emoji VARCHAR(20) NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(post_id, user_id, emoji)
+		)`,
+		`CREATE TABLE IF NOT EXISTS foro_comentario_reactions (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			comentario_id UUID NOT NULL REFERENCES foro_comentarios(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			emoji VARCHAR(20) NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(comentario_id, user_id, emoji)
+		)`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

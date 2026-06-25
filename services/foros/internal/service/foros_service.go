@@ -39,8 +39,8 @@ func (s *ForosService) DeleteForoPost(ctx context.Context, postID, userID string
 	return s.repo.DeletePost(ctx, postID, userID, isAdmin)
 }
 
-func (s *ForosService) ListForoComentarios(ctx context.Context, postID string) ([]*forospb.ComentarioResponse, error) {
-	cs, err := s.repo.ListComentarios(ctx, postID)
+func (s *ForosService) ListForoComentarios(ctx context.Context, postID, userID string) ([]*forospb.ComentarioResponse, error) {
+	cs, err := s.repo.ListComentarios(ctx, postID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +59,10 @@ func (s *ForosService) CreateForoComentario(ctx context.Context, req *forospb.Cr
 	return c.ToProto(), nil
 }
 
-func (s *ForosService) ToggleForoPostLike(ctx context.Context, postID, userID string) (*forospb.LikeResponse, error) {
-	return s.repo.ToggleLike(ctx, postID, userID)
+func (s *ForosService) ToggleForoPostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error) {
+	return s.repo.TogglePostReaction(ctx, req)
+}
+
+func (s *ForosService) ToggleForoComentarioReaction(ctx context.Context, req *forospb.ComentarioReactionRequest) (*forospb.ReactionResponse, error) {
+	return s.repo.ToggleComentarioReaction(ctx, req)
 }

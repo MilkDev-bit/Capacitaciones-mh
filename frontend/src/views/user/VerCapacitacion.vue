@@ -51,6 +51,9 @@ const postFileIsVideo = ref(false)
 const expandedPost = ref<string | null>(null)
 const comentariosMap = ref<Record<string, any[]>>({})
 const nuevoComentario = ref<Record<string, string>>({})
+const replyingTo = ref<string | null>(null)
+const activeReactionPicker = ref<string | null>(null)
+const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 const foroLoading = ref(false)
 const foroError = ref('')
 const postLoading = ref(false)
@@ -298,6 +301,25 @@ async function togglePost(postId: string) {
   comentariosMap.value[postId] = res.data || []
 }
 
+function getMainComments(postId: string) {
+  return (comentariosMap.value[postId] || []).filter((c: any) => !c.parent_id)
+}
+
+function getReplies(postId: string, parentId: string) {
+  return (comentariosMap.value[postId] || []).filter((c: any) => c.parent_id === parentId)
+}
+
+async function togglePostReaction(postId: string, emoji: string) {
+  try {
+    const res = await api.post(`/foro/posts/${postId}/reactions`, { emoji })
+    const post = foroPosts.value.find(p => p.id === postId)
+    if (post) post.reactions = res.data.reactions || []
+    activeReactionPicker.value = null
+  } catch {
+    toast.error('Error al reaccionar')
+  }
+}
+
 async function toggleLike(postId: string) {
   const post = foroPosts.value.find(p => p.id === postId)
   if (!post) return
@@ -314,13 +336,31 @@ async function toggleLike(postId: string) {
   }
 }
 
-async function crearComentario(postId: string) {
-  const texto = nuevoComentario.value[postId]
+async function toggleComentarioReaction(postId: string, comId: string, emoji: string) {
+  try {
+    const res = await api.post(`/foro/comentarios/${comId}/reactions`, { emoji })
+    const coms = comentariosMap.value[postId] || []
+    const com = coms.find(c => c.id === comId)
+    if (com) com.reactions = res.data.reactions || []
+    activeReactionPicker.value = null
+  } catch {
+    toast.error('Error al reaccionar')
+  }
+}
+
+async function crearComentario(postId: string, parentId?: string) {
+  const mapKey = parentId || postId
+  const texto = nuevoComentario.value[mapKey]
   if (!texto?.trim()) return
-  await api.post(`/foro/posts/${postId}/comentarios`, { contenido: texto })
-  nuevoComentario.value[postId] = ''
-  const res = await api.get(`/foro/posts/${postId}/comentarios`)
-  comentariosMap.value[postId] = res.data || []
+  try {
+    await api.post(`/foro/posts/${postId}/comentarios`, { contenido: texto, parent_id: parentId || '' })
+    nuevoComentario.value[mapKey] = ''
+    replyingTo.value = null
+    const res = await api.get(`/foro/posts/${postId}/comentarios`)
+    comentariosMap.value[postId] = res.data || []
+  } catch {
+    toast.error('Error al publicar comentario')
+  }
 }
 
 function foroInitials(name: string) {
@@ -406,9 +446,12 @@ function iniciarConversacion() {
   const name = foroProfileCard.value?.name ?? ''
   foroProfileCard.value = null
   if (!id) return
-  // Ruta según el rol del usuario actual
+  iniciarConversacionPrivada(id, name)
+}
+
+function iniciarConversacionPrivada(userId: string, userName: string) {
   const base = authStore.isInstructor ? '/instructor' : '/usuario'
-  router.push({ path: `${base}/mensajes/${id}`, state: { peerName: name } })
+  router.push({ path: `${base}/mensajes/${userId}`, state: { peerName: userName } })
 }
 
 function goBack() {
@@ -799,52 +842,36 @@ function goBack() {
                 <span>Cargando...</span>
               </div>
 
-              <!-- Caja "¿Qué estás pensando?" al estilo Facebook -->
-              <div v-if="!foroLoading" class="fb-create-box">
-                <div class="fb-create-avatar">{{ meInitials() }}</div>
-                <button class="fb-create-trigger" @click="showNuevoPost = true">
-                  ¿Qué quieres preguntar sobre esta lección?
-                </button>
-              </div>
-
-              <Transition name="slide-down">
-                <div v-if="showNuevoPost" class="fb-post-form-card">
-                  <div class="fb-post-form-header">
-                    <h4>Crear publicación</h4>
-                    <button class="fb-close-btn" @click="showNuevoPost = false">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <!-- Caja de publicación estilo mensajería -->
+              <div v-if="!foroLoading" class="msg-create-box">
+                <div class="msg-create-avatar">{{ meInitials() }}</div>
+                <div class="msg-create-input-wrap">
+                  <div class="msg-inputs">
+                    <input v-model="nuevoPost.titulo" placeholder="Título (opcional)..." class="msg-create-title-input" />
+                    <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="1" class="msg-create-input" />
+                  </div>
+                  <div class="msg-create-actions">
+                    <button type="button" class="msg-attach-btn" @click="postFileInput?.click()" title="Adjuntar imagen o video">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button @click="crearPost" class="msg-send-btn" :disabled="postLoading || !nuevoPost.contenido" title="Publicar">
+                      <span v-if="postLoading" class="btn-spinner" style="width:14px;height:14px;border-width:2px;margin:0"></span>
+                      <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                   </div>
-                  <div class="fb-post-form-author">
-                    <div class="fb-create-avatar">{{ meInitials() }}</div>
-                    <span class="fb-post-form-name">{{ currentUser?.name }}</span>
-                  </div>
-                  <input v-model="nuevoPost.titulo" placeholder="Título de tu publicación..." class="field-input" style="margin-bottom:10px" />
-                  <textarea v-model="nuevoPost.contenido" placeholder="¿Qué quieres compartir con el grupo?" rows="4" class="field-input" style="resize:vertical;margin-bottom:12px" />
-                  <!-- Previsualización de adjunto -->
-                  <div v-if="postFilePreview" class="fb-file-preview">
-                    <video v-if="postFileIsVideo" :src="postFilePreview" class="fb-preview-media" controls muted />
-                    <img v-else :src="postFilePreview" class="fb-preview-media" />
-                    <button class="fb-remove-file" @click="removePostFile" type="button" title="Quitar adjunto">
-                      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                  </div>
-                  <div class="fb-post-form-footer">
-                    <div class="fb-attach-area">
-                      <button type="button" class="fb-attach-btn" @click="postFileInput?.click()" title="Adjuntar imagen o video">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                        Adjuntar
-                      </button>
-                      <input ref="postFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onPostFile" />
-                    </div>
-                    <button @click="showNuevoPost = false" class="btn btn-secondary btn-sm">Cancelar</button>
-                    <button @click="crearPost" class="btn btn-primary btn-sm" :disabled="postLoading || !nuevoPost.titulo || !nuevoPost.contenido">
-                      <span v-if="postLoading" class="btn-spinner"></span>
-                      {{ postLoading ? 'Publicando...' : 'Publicar' }}
-                    </button>
-                  </div>
+                  <input ref="postFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onPostFile" />
                 </div>
-              </Transition>
+              </div>
+              <!-- Previsualización de adjunto -->
+              <div v-if="postFilePreview" class="msg-file-preview">
+                <div class="msg-preview-inner">
+                  <video v-if="postFileIsVideo" :src="postFilePreview" class="msg-preview-media" controls muted />
+                  <img v-else :src="postFilePreview" class="msg-preview-media" />
+                  <button class="msg-remove-file" @click="removePostFile" type="button" title="Quitar adjunto">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
 
               <div v-if="!foroLoading && foroPosts.length === 0" class="fb-empty-foro">
                 <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -882,27 +909,37 @@ function goBack() {
                   </div>
 
                   <!-- Contador de likes y comentarios -->
-                  <div v-if="post.like_count > 0 || (comentariosMap[post.id] || []).length > 0" class="fb-post-stats">
-                    <span v-if="post.like_count > 0" class="fb-stat-likes">
-                      <span class="fb-like-bubble">
-                        <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zm6-10A1.5 1.5 0 006.5 2v1.5a.5.5 0 01-.5.5H4a2 2 0 00-2 2v1a2 2 0 002 2h.5v1a.5.5 0 01-.5.5H3a1 1 0 000 2h.5a.5.5 0 01.5.5V17a1 1 0 001 1h8a1 1 0 001-1v-2.5a.5.5 0 01.5-.5H16a2 2 0 002-2V8a2 2 0 00-2-2h-2a.5.5 0 01-.5-.5V4a2 2 0 00-2-2h-1.5A1.5 1.5 0 008 3v-.5z"/></svg>
+                  <div v-if="(post.reactions && post.reactions.length > 0) || post.like_count > 0 || (comentariosMap[post.id] || []).length > 0" class="fb-post-stats">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <span v-if="post.like_count > 0" class="fb-stat-likes">
+                        <span class="fb-like-bubble">
+                          <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zm6-10A1.5 1.5 0 006.5 2v1.5a.5.5 0 01-.5.5H4a2 2 0 00-2 2v1a2 2 0 002 2h.5v1a.5.5 0 01-.5.5H3a1 1 0 000 2h.5a.5.5 0 01.5.5V17a1 1 0 001 1h8a1 1 0 001-1v-2.5a.5.5 0 01.5-.5H16a2 2 0 002-2V8a2 2 0 00-2-2h-2a.5.5 0 01-.5-.5V4a2 2 0 00-2-2h-1.5A1.5 1.5 0 008 3v-.5z"/></svg>
+                        </span>
+                        {{ post.like_count }}
                       </span>
-                      {{ post.like_count }}
-                    </span>
-                    <span v-if="(comentariosMap[post.id] || []).length > 0" class="fb-stat-comments">
+                      <span v-for="r in post.reactions" :key="r.emoji" class="fb-reaction-pill-stat">{{ r.emoji }} {{ r.count }}</span>
+                    </div>
+                    <span v-if="(comentariosMap[post.id] || []).length > 0" class="fb-stat-comments" @click="togglePost(post.id)">
                       {{ (comentariosMap[post.id] || []).length }} {{ (comentariosMap[post.id] || []).length === 1 ? 'comentario' : 'comentarios' }}
                     </span>
                   </div>
 
                   <!-- Botones de acción: Me gusta y Comentar -->
                   <div class="fb-post-actions">
-                    <button @click="toggleLike(post.id)" :class="['fb-action-btn', post.user_liked ? 'fb-action-liked' : '']">
-                      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      {{ post.user_liked ? 'Me gusta' : 'Me gusta' }}
-                    </button>
+                    <div class="fb-reaction-wrap-post" @mouseenter="activeReactionPicker = 'post_' + post.id" @mouseleave="activeReactionPicker = null">
+                      <button @click="toggleLike(post.id)" :class="['fb-action-btn', post.user_liked ? 'fb-action-liked' : '']">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        {{ post.user_liked ? 'Me gusta' : 'Me gusta' }}
+                      </button>
+                      <Transition name="fade">
+                        <div v-if="activeReactionPicker === 'post_' + post.id" class="fb-reaction-picker-post">
+                          <button v-for="emoji in EMOJIS" :key="emoji" @click="togglePostReaction(post.id, emoji)">{{ emoji }}</button>
+                        </div>
+                      </Transition>
+                    </div>
                     <button @click="togglePost(post.id)" :class="['fb-action-btn', expandedPost === post.id ? 'fb-action-active' : '']">
                       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       Comentar
@@ -912,16 +949,78 @@ function goBack() {
                   <!-- Sección de comentarios -->
                   <Transition name="slide-down">
                     <div v-if="expandedPost === post.id" class="fb-comments-section">
-                      <div v-for="com in (comentariosMap[post.id] || [])" :key="com.id" class="fb-comment">
-                        <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(com.user_name) }}</div>
-                        <div class="fb-comment-bubble">
-                          <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
-                          <p class="fb-comment-text">{{ com.contenido }}</p>
+                      <div v-for="com in getMainComments(post.id)" :key="com.id" class="fb-comment-thread">
+                        <div class="fb-comment">
+                          <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(com.user_name) }}</div>
+                          <div class="fb-comment-content">
+                            <div class="fb-comment-bubble">
+                              <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
+                              <p class="fb-comment-text">{{ com.contenido }}</p>
+                            </div>
+                            <div class="fb-comment-actions">
+                              <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + com.id" @mouseleave="activeReactionPicker = null">
+                                <span class="fb-c-action">Reaccionar</span>
+                                <Transition name="fade">
+                                  <div v-if="activeReactionPicker === 'com_' + com.id" class="fb-reaction-picker">
+                                    <button v-for="emoji in EMOJIS" :key="emoji" @click="toggleComentarioReaction(post.id, com.id, emoji)">{{ emoji }}</button>
+                                  </div>
+                                </Transition>
+                              </div>
+                              <span class="fb-c-action" @click="replyingTo = com.id">Responder</span>
+                              <span class="fb-c-action" @click="iniciarConversacionPrivada(com.user_id, com.user_name)">Responder en privado</span>
+                              <div v-if="com.reactions && com.reactions.length" class="fb-reaction-pills">
+                                <span v-for="r in com.reactions" :key="r.emoji" class="fb-reaction-pill">{{ r.emoji }} {{ r.count }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Respuestas -->
+                        <div v-if="getReplies(post.id, com.id).length" class="fb-comment-replies">
+                          <div v-for="reply in getReplies(post.id, com.id)" :key="reply.id" class="fb-comment">
+                            <div class="fb-comment-avatar" @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(reply.user_name) }}</div>
+                            <div class="fb-comment-content">
+                              <div class="fb-comment-bubble">
+                                <router-link :to="`/usuario/perfil/${reply.user_id}`" class="fb-comment-author">{{ reply.user_name }}</router-link>
+                                <p class="fb-comment-text">{{ reply.contenido }}</p>
+                              </div>
+                              <div class="fb-comment-actions">
+                                <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + reply.id" @mouseleave="activeReactionPicker = null">
+                                  <span class="fb-c-action">Reaccionar</span>
+                                  <Transition name="fade">
+                                    <div v-if="activeReactionPicker === 'com_' + reply.id" class="fb-reaction-picker">
+                                      <button v-for="emoji in EMOJIS" :key="emoji" @click="toggleComentarioReaction(post.id, reply.id, emoji)">{{ emoji }}</button>
+                                    </div>
+                                  </Transition>
+                                </div>
+                                <span class="fb-c-action" @click="iniciarConversacionPrivada(reply.user_id, reply.user_name)">Responder en privado</span>
+                                <div v-if="reply.reactions && reply.reactions.length" class="fb-reaction-pills">
+                                  <span v-for="r in reply.reactions" :key="r.emoji" class="fb-reaction-pill">{{ r.emoji }} {{ r.count }}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Input responder -->
+                        <div v-if="replyingTo === com.id" class="fb-new-comment-row reply-row">
+                          <div class="fb-comment-avatar me">{{ meInitials() }}</div>
+                          <div class="fb-comment-input-wrap">
+                            <input v-model="nuevoComentario[com.id]"
+                              @keydown.enter="crearComentario(post.id, com.id)"
+                              placeholder="Escribe una respuesta..."
+                              class="fb-comment-input" />
+                            <button @click="crearComentario(post.id, com.id)" class="fb-comment-send" :disabled="!nuevoComentario[com.id]?.trim()" title="Enviar">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <p v-if="!(comentariosMap[post.id] || []).length" class="fb-no-comments">Sin comentarios aún.</p>
-                      <!-- Input nuevo comentario -->
-                      <div class="fb-new-comment-row">
+
+                      <p v-if="!getMainComments(post.id).length" class="fb-no-comments">Sin comentarios aún.</p>
+                      
+                      <!-- Input nuevo comentario principal -->
+                      <div class="fb-new-comment-row" style="margin-top: 10px;">
                         <div class="fb-comment-avatar me">{{ meInitials() }}</div>
                         <div class="fb-comment-input-wrap">
                           <input v-model="nuevoComentario[post.id]"
@@ -1396,66 +1495,63 @@ function goBack() {
 .ver-foro-head { margin-bottom: 2px; }
 .ver-foro-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
-/* Facebook: caja crear publicación */
-.fb-create-box {
-  display: flex; align-items: center; gap: 12px;
+/* Facebook: caja crear publicación (Ahora Msg Style) */
+.msg-create-box {
+  display: flex; align-items: flex-start; gap: 12px;
   background: var(--surface); border: 1px solid var(--border-light);
   border-radius: var(--r-lg); padding: 12px 16px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm); margin-bottom: 14px;
 }
-.fb-create-avatar {
+.msg-create-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--brand), #ef4444);
-  color: #fff; font-size: 0.85rem; font-weight: 800;
+  color: #fff; font-size: 0.85rem; font-weight: 800; margin-top: 4px;
 }
-.fb-create-trigger {
-  flex: 1; background: var(--bg); border: 1px solid var(--border-light);
-  border-radius: 999px; padding: 9px 16px; text-align: left;
-  color: var(--muted); font-size: 0.88rem; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+.msg-create-input-wrap {
+  flex: 1; display: flex; align-items: flex-end; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border-light);
+  border-radius: 24px; padding: 6px 12px 6px 18px;
+  transition: border-color 0.15s;
 }
-.fb-create-trigger:hover { background: rgba(249,115,22,.06); border-color: var(--brand); }
-
-/* Facebook: formulario publicación */
-.fb-post-form-card {
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-md);
-  display: flex; flex-direction: column; gap: 12px;
+.msg-create-input-wrap:focus-within { border-color: var(--brand); }
+.msg-inputs { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.msg-create-title-input {
+  background: none; border: none; outline: none; font-size: 0.9rem; font-weight: 600; color: var(--dark);
 }
-.fb-post-form-header { display: flex; align-items: center; justify-content: space-between; }
-.fb-post-form-header h4 { font-size: 1rem; font-weight: 800; color: var(--dark); }
-.fb-close-btn {
+.msg-create-input {
+  background: none; border: none; outline: none; font-size: 0.9rem; color: var(--text);
+  resize: vertical; min-height: 24px; max-height: 120px;
+}
+.msg-create-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-bottom: 2px; }
+.msg-attach-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px;
+  border-radius: 50%; transition: color 0.15s, background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.msg-attach-btn:hover { color: var(--brand); background: var(--surface-soft); }
+.msg-send-btn {
   width: 32px; height: 32px; border-radius: 50%; border: none;
-  background: var(--bg); color: var(--muted); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s;
 }
-.fb-close-btn:hover { background: #fef2f2; color: #dc2626; }
-.fb-post-form-author { display: flex; align-items: center; gap: 10px; }
-.fb-post-form-name { font-weight: 600; font-size: 0.9rem; color: var(--dark); }
-.fb-post-form-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.fb-attach-area { display: flex; align-items: center; gap: 6px; }
-.fb-attach-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--border);
-  background: transparent; color: var(--muted); cursor: pointer;
-  font-size: 0.8rem; font-weight: 500; transition: background .15s, color .15s;
+.msg-send-btn:disabled { background: var(--border); cursor: default; }
+.msg-send-btn:not(:disabled):hover { background: var(--brand-dark); }
+
+/* File Preview Msg Style */
+.msg-file-preview { margin-bottom: 14px; display: flex; padding-left: 52px; }
+.msg-preview-inner {
+  position: relative; border-radius: var(--r-lg); overflow: hidden;
+  max-width: 300px; border: 1px solid var(--border-light);
 }
-.fb-attach-btn:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
-.fb-file-preview {
-  position: relative; margin-bottom: 12px; border-radius: var(--r);
-  overflow: hidden; max-height: 220px; background: #000;
+.msg-preview-media { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+.msg-remove-file {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,.6); border: none; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
 }
-.fb-preview-media {
-  width: 100%; max-height: 220px; object-fit: contain; display: block;
-}
-.fb-remove-file {
-  position: absolute; top: 6px; right: 6px;
-  width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(0,0,0,.55); border: none; color: #fff;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
-.fb-remove-file:hover { background: rgba(0,0,0,.8); }
+.msg-remove-file:hover { background: rgba(0,0,0,.8); }
 .fb-post-media { margin-top: 10px; border-radius: var(--r); overflow: hidden; }
 .fb-post-media-img {
   width: 100%; max-height: 360px; object-fit: contain; display: block; cursor: pointer;
@@ -1792,4 +1888,49 @@ function goBack() {
 .ver-examen-final-btn { flex-shrink: 0; font-size: 0.85rem !important; padding: 8px 16px !important; }
 .slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(.16,1,.3,1); }
 .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateX(-50%) translateY(24px); }
+
+/* Reacciones y Comentarios Anidados */
+.fb-comment-thread { margin-bottom: 12px; }
+.fb-comment-content { flex: 1; min-width: 0; }
+.fb-comment-actions {
+  display: flex; align-items: center; gap: 12px; padding-left: 4px; margin-top: 4px;
+  font-size: 0.75rem; font-weight: 600; color: var(--muted);
+}
+.fb-c-action { cursor: pointer; transition: color 0.15s; }
+.fb-c-action:hover { color: var(--brand); text-decoration: underline; }
+
+.fb-reaction-wrap, .fb-reaction-wrap-post { position: relative; display: inline-flex; }
+.fb-reaction-picker, .fb-reaction-picker-post {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 4px; display: flex; gap: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15); z-index: 10;
+}
+.fb-reaction-picker-post { left: 50%; transform: translateX(-50%); margin-bottom: 8px; }
+.fb-reaction-picker button, .fb-reaction-picker-post button {
+  background: none; border: none; font-size: 1.2rem; cursor: pointer;
+  padding: 4px 6px; border-radius: 50%; transition: transform 0.15s, background 0.15s;
+}
+.fb-reaction-picker button:hover, .fb-reaction-picker-post button:hover {
+  transform: scale(1.2); background: rgba(0,0,0,.05);
+}
+
+.fb-reaction-pills { display: flex; gap: 4px; }
+.fb-reaction-pill {
+  background: var(--surface-soft); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 2px 6px; font-size: 0.7rem; font-weight: 700;
+  color: var(--dark); display: inline-flex; align-items: center; gap: 3px;
+}
+.fb-reaction-pill-stat {
+  background: var(--bg); border: 1px solid var(--border-light);
+  border-radius: 999px; padding: 3px 8px; font-size: 0.75rem; font-weight: 700;
+  color: var(--dark); display: inline-flex; align-items: center; gap: 4px;
+}
+
+.fb-comment-replies {
+  margin-top: 10px; margin-left: 36px; display: flex; flex-direction: column; gap: 10px;
+  border-left: 2px solid var(--border-light); padding-left: 12px;
+}
+.reply-row { margin-left: 36px; margin-top: 10px; }
+
 </style>

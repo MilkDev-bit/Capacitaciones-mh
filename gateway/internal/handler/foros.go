@@ -83,8 +83,9 @@ func (h *ForosHandler) DeleteForoPost(ctx *gin.Context) {
 
 // GET /api/foro/posts/:post_id/comentarios
 func (h *ForosHandler) ListForoComentarios(ctx *gin.Context) {
-	resp, err := h.c.Foros.ListForoComentarios(ctx.Request.Context(), &forospb.PostRequest{
+	resp, err := h.c.Foros.ListForoComentarios(ctx.Request.Context(), &forospb.PostUserRequest{
 		PostId: ctx.Param("post_id"),
+		UserId: ctx.GetString(middleware.CtxUserID),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -97,6 +98,7 @@ func (h *ForosHandler) ListForoComentarios(ctx *gin.Context) {
 func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 	var body struct {
 		Contenido string `json:"contenido" binding:"required"`
+		ParentID  string `json:"parent_id"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -108,6 +110,7 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 		PostId:    ctx.Param("post_id"),
 		UserId:    ctx.GetString(middleware.CtxUserID),
 		Contenido: body.Contenido,
+		ParentId:  body.ParentID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -116,15 +119,46 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
-// POST /api/foro/posts/:post_id/like
-func (h *ForosHandler) ToggleForoPostLike(ctx *gin.Context) {
-	resp, err := h.c.Foros.ToggleForoPostLike(ctx.Request.Context(), &forospb.PostUserRequest{
+// POST /api/foro/posts/:post_id/reactions
+func (h *ForosHandler) ToggleForoPostReaction(ctx *gin.Context) {
+	var body struct {
+		Emoji string `json:"emoji" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.c.Foros.ToggleForoPostReaction(ctx.Request.Context(), &forospb.PostReactionRequest{
 		PostId: ctx.Param("post_id"),
 		UserId: ctx.GetString(middleware.CtxUserID),
+		Emoji:  body.Emoji,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"like_count": resp.LikeCount, "user_liked": resp.UserLiked})
+	ctx.JSON(http.StatusOK, gin.H{"reactions": resp.Reactions})
+}
+
+// POST /api/foro/comentarios/:comentario_id/reactions
+func (h *ForosHandler) ToggleForoComentarioReaction(ctx *gin.Context) {
+	var body struct {
+		Emoji string `json:"emoji" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.c.Foros.ToggleForoComentarioReaction(ctx.Request.Context(), &forospb.ComentarioReactionRequest{
+		ComentarioId: ctx.Param("comentario_id"),
+		UserId:       ctx.GetString(middleware.CtxUserID),
+		Emoji:        body.Emoji,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"reactions": resp.Reactions})
 }

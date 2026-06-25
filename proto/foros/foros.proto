@@ -13,10 +13,11 @@ service ForosService {
   rpc CreateForoPost(CreatePostRequest) returns (PostResponse);
   rpc DeleteForoPost(PostUserRequest) returns (EmptyResponse);
 
-  rpc ListForoComentarios(PostRequest) returns (ListComentariosResponse);
+  rpc ListForoComentarios(PostUserRequest) returns (ListComentariosResponse);
   rpc CreateForoComentario(CreateComentarioRequest) returns (ComentarioResponse);
 
-  rpc ToggleForoPostLike(PostUserRequest) returns (LikeResponse);
+  rpc ToggleForoPostReaction(PostReactionRequest) returns (ReactionResponse);
+  rpc ToggleForoComentarioReaction(ComentarioReactionRequest) returns (ReactionResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -38,9 +39,28 @@ message CreateComentarioRequest {
   string post_id   = 1;
   string user_id   = 2;
   string contenido = 3;
+  string parent_id = 4;
+}
+
+message PostReactionRequest {
+  string post_id = 1;
+  string user_id = 2;
+  string emoji   = 3;
+}
+
+message ComentarioReactionRequest {
+  string comentario_id = 1;
+  string user_id       = 2;
+  string emoji         = 3;
 }
 
 // ── Responses ────────────────────────────────────────────────────────────────
+
+message Reaction {
+  string emoji        = 1;
+  int32  count        = 2;
+  bool   user_reacted = 3;
+}
 
 message PostResponse {
   string id         = 1;
@@ -51,8 +71,7 @@ message PostResponse {
   string contenido  = 6;
   string media_url  = 7;
   string media_type = 8;
-  int32  like_count = 9;
-  bool   user_liked = 10;
+  repeated Reaction reactions = 9;
   string created_at = 11;
 }
 
@@ -67,15 +86,16 @@ message ComentarioResponse {
   string user_name  = 4;
   string contenido  = 5;
   string created_at = 6;
+  string parent_id  = 7;
+  repeated Reaction reactions = 8;
 }
 
 message ListComentariosResponse {
   repeated ComentarioResponse comentarios = 1;
 }
 
-message LikeResponse {
-  int32 like_count = 1;
-  bool  user_liked = 2;
+message ReactionResponse {
+  repeated Reaction reactions = 1;
 }
 
 message EmptyResponse {}

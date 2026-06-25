@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	forospb "Prueba-Go/gen/foros"
@@ -19,8 +20,7 @@ type ForoPost struct {
 	Contenido string    `db:"contenido"`
 	MediaURL  string    `db:"media_url"`
 	MediaType string    `db:"media_type"`
-	LikeCount int32     `db:"like_count"`
-	UserLiked bool      `db:"user_liked"`
+	Reactions []byte    `db:"reactions"`
 	CreatedAt time.Time `db:"created_at"`
 }
 
@@ -28,7 +28,7 @@ func (p *ForoPost) ToProto() *forospb.PostResponse {
 	return &forospb.PostResponse{
 		Id: p.ID, LeccionId: p.LeccionID, UserId: p.UserID, UserName: p.UserName,
 		Titulo: p.Titulo, Contenido: p.Contenido, MediaUrl: p.MediaURL,
-		MediaType: p.MediaType, LikeCount: p.LikeCount, UserLiked: p.UserLiked,
+		MediaType: p.MediaType, Reactions: parseReactions(p.Reactions),
 		CreatedAt: p.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
@@ -36,16 +36,23 @@ func (p *ForoPost) ToProto() *forospb.PostResponse {
 type ForoComentario struct {
 	ID        string    `db:"id"`
 	PostID    string    `db:"post_id"`
+	ParentID  *string   `db:"parent_id"`
 	UserID    string    `db:"user_id"`
 	UserName  string    `db:"user_name"`
 	Contenido string    `db:"contenido"`
+	Reactions []byte    `db:"reactions"`
 	CreatedAt time.Time `db:"created_at"`
 }
 
 func (c *ForoComentario) ToProto() *forospb.ComentarioResponse {
+	pid := ""
+	if c.ParentID != nil {
+		pid = *c.ParentID
+	}
 	return &forospb.ComentarioResponse{
-		Id: c.ID, PostId: c.PostID, UserId: c.UserID, UserName: c.UserName,
-		Contenido: c.Contenido, CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		Id: c.ID, PostId: c.PostID, ParentId: pid, UserId: c.UserID, UserName: c.UserName,
+		Contenido: c.Contenido, Reactions: parseReactions(c.Reactions),
+		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
@@ -54,9 +61,10 @@ type ForosRepository interface {
 	ListPosts(ctx context.Context, leccionID, userID string) ([]*ForoPost, error)
 	CreatePost(ctx context.Context, req *forospb.CreatePostRequest) (*ForoPost, error)
 	DeletePost(ctx context.Context, postID, userID string, isAdmin bool) error
-	ListComentarios(ctx context.Context, postID string) ([]*ForoComentario, error)
+	ListComentarios(ctx context.Context, postID, userID string) ([]*ForoComentario, error)
 	CreateComentario(ctx context.Context, req *forospb.CreateComentarioRequest) (*ForoComentario, error)
-	ToggleLike(ctx context.Context, postID, userID string) (*forospb.LikeResponse, error)
+	TogglePostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error)
+	ToggleComentarioReaction(ctx context.Context, req *forospb.ComentarioReactionRequest) (*forospb.ReactionResponse, error)
 }
 
 type postgresForosRepository struct{ db *sqlx.DB }
@@ -82,13 +90,23 @@ func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, user
 		       fp.titulo, fp.contenido,
 		       COALESCE(fp.media_url,'') media_url,
 		       COALESCE(fp.media_type,'') media_type,
-		       COUNT(fl.id)::int like_count,
-		       COALESCE(BOOL_OR(fl.user_id = NULLIF($2,'')::uuid), false) user_liked,
-		       fp.created_at
+		       fp.created_at,
+		       COALESCE(
+		         (SELECT json_agg(json_build_object(
+		            'emoji', sub.emoji,
+		            'count', sub.cnt,
+		            'user_reacted', sub.user_reacted
+		          ))
+		          FROM (
+		            SELECT emoji, COUNT(*) as cnt,
+		                   BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
+		            FROM foro_post_reactions
+		            WHERE post_id = fp.id
+		            GROUP BY emoji
+		          ) sub), '[]'::json
+		       ) as reactions
 		  FROM foro_posts fp
-		  LEFT JOIN foro_likes fl ON fl.post_id = fp.id
 		 WHERE fp.leccion_id = $1 AND fp.deleted_at IS NULL
-		 GROUP BY fp.id
 		 ORDER BY fp.created_at DESC`
 	var posts []*ForoPost
 	return posts, r.db.SelectContext(ctx, &posts, query, leccionID, userID)
@@ -112,7 +130,7 @@ func (r *postgresForosRepository) CreatePost(ctx context.Context, req *forospb.C
 		        titulo, contenido,
 		        COALESCE(media_url,'') media_url,
 		        COALESCE(media_type,'') media_type,
-		        0::int like_count, false user_liked, created_at
+		        '[]'::json as reactions, created_at
 		   FROM foro_posts WHERE id=$1`, id)
 }
 
@@ -128,53 +146,129 @@ func (r *postgresForosRepository) DeletePost(ctx context.Context, postID, userID
 	return err
 }
 
-func (r *postgresForosRepository) ListComentarios(ctx context.Context, postID string) ([]*ForoComentario, error) {
+func (r *postgresForosRepository) ListComentarios(ctx context.Context, postID, userID string) ([]*ForoComentario, error) {
 	var cs []*ForoComentario
-	return cs, r.db.SelectContext(ctx, &cs,
-		`SELECT id, post_id, user_id,
-		        COALESCE(user_name,'') user_name,
-		        contenido, created_at
-		   FROM foro_comentarios
-		  WHERE post_id=$1 ORDER BY created_at ASC`, postID)
+	query := `SELECT c.id, c.post_id, c.parent_id, c.user_id,
+		        COALESCE(c.user_name,'') user_name,
+		        c.contenido, c.created_at,
+		        COALESCE(
+		         (SELECT json_agg(json_build_object(
+		            'emoji', sub.emoji,
+		            'count', sub.cnt,
+		            'user_reacted', sub.user_reacted
+		          ))
+		          FROM (
+		            SELECT emoji, COUNT(*) as cnt,
+		                   BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
+		            FROM foro_comentario_reactions
+		            WHERE comentario_id = c.id
+		            GROUP BY emoji
+		          ) sub), '[]'::json
+		       ) as reactions
+		   FROM foro_comentarios c
+		  WHERE c.post_id=$1 ORDER BY c.created_at ASC`
+	return cs, r.db.SelectContext(ctx, &cs, query, postID, userID)
 }
 
 func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *forospb.CreateComentarioRequest) (*ForoComentario, error) {
 	userName := metaVal(ctx, "x-user-name")
 	var id string
+	var parentID *string
+	if req.ParentId != "" {
+		parentID = &req.ParentId
+	}
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido) VALUES($1,$2,$3,$4) RETURNING id`,
-		req.PostId, req.UserId, userName, req.Contenido,
+		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido,parent_id) VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		req.PostId, req.UserId, userName, req.Contenido, parentID,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 	var c ForoComentario
 	return &c, r.db.GetContext(ctx, &c,
-		`SELECT id, post_id, user_id,
+		`SELECT id, post_id, parent_id, user_id,
 		        COALESCE(user_name,'') user_name,
-		        contenido, created_at
+		        contenido, '[]'::json as reactions, created_at
 		   FROM foro_comentarios WHERE id=$1`, id)
 }
 
-func (r *postgresForosRepository) ToggleLike(ctx context.Context, postID, userID string) (*forospb.LikeResponse, error) {
+func (r *postgresForosRepository) TogglePostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error) {
 	var exists bool
 	r.db.QueryRowContext(ctx,
-		`SELECT EXISTS(SELECT 1 FROM foro_likes WHERE post_id=$1 AND user_id=$2)`,
-		postID, userID,
+		`SELECT EXISTS(SELECT 1 FROM foro_post_reactions WHERE post_id=$1 AND user_id=$2 AND emoji=$3)`,
+		req.PostId, req.UserId, req.Emoji,
 	).Scan(&exists)
 
 	if exists {
-		r.db.ExecContext(ctx,
-			`DELETE FROM foro_likes WHERE post_id=$1 AND user_id=$2`, postID, userID)
+		r.db.ExecContext(ctx, `DELETE FROM foro_post_reactions WHERE post_id=$1 AND user_id=$2 AND emoji=$3`, req.PostId, req.UserId, req.Emoji)
 	} else {
-		r.db.ExecContext(ctx,
-			`INSERT INTO foro_likes(post_id,user_id) VALUES($1,$2)`, postID, userID)
+		r.db.ExecContext(ctx, `INSERT INTO foro_post_reactions(post_id,user_id,emoji) VALUES($1,$2,$3)`, req.PostId, req.UserId, req.Emoji)
 	}
+	return r.getPostReactions(ctx, req.PostId, req.UserId)
+}
 
-	var count int32
+func (r *postgresForosRepository) ToggleComentarioReaction(ctx context.Context, req *forospb.ComentarioReactionRequest) (*forospb.ReactionResponse, error) {
+	var exists bool
 	r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM foro_likes WHERE post_id=$1`, postID,
-	).Scan(&count)
+		`SELECT EXISTS(SELECT 1 FROM foro_comentario_reactions WHERE comentario_id=$1 AND user_id=$2 AND emoji=$3)`,
+		req.ComentarioId, req.UserId, req.Emoji,
+	).Scan(&exists)
 
-	return &forospb.LikeResponse{LikeCount: count, UserLiked: !exists}, nil
+	if exists {
+		r.db.ExecContext(ctx, `DELETE FROM foro_comentario_reactions WHERE comentario_id=$1 AND user_id=$2 AND emoji=$3`, req.ComentarioId, req.UserId, req.Emoji)
+	} else {
+		r.db.ExecContext(ctx, `INSERT INTO foro_comentario_reactions(comentario_id,user_id,emoji) VALUES($1,$2,$3)`, req.ComentarioId, req.UserId, req.Emoji)
+	}
+	return r.getComentarioReactions(ctx, req.ComentarioId, req.UserId)
+}
+
+func (r *postgresForosRepository) getPostReactions(ctx context.Context, postID, userID string) (*forospb.ReactionResponse, error) {
+	var data []byte
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(
+		  (SELECT json_agg(json_build_object('emoji', sub.emoji, 'count', sub.cnt, 'user_reacted', sub.user_reacted))
+		   FROM (
+		     SELECT emoji, COUNT(*) as cnt, BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
+		     FROM foro_post_reactions WHERE post_id = $1 GROUP BY emoji
+		   ) sub), '[]'::json)`, postID, userID).Scan(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &forospb.ReactionResponse{Reactions: parseReactions(data)}, nil
+}
+
+func (r *postgresForosRepository) getComentarioReactions(ctx context.Context, comentarioID, userID string) (*forospb.ReactionResponse, error) {
+	var data []byte
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(
+		  (SELECT json_agg(json_build_object('emoji', sub.emoji, 'count', sub.cnt, 'user_reacted', sub.user_reacted))
+		   FROM (
+		     SELECT emoji, COUNT(*) as cnt, BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
+		     FROM foro_comentario_reactions WHERE comentario_id = $1 GROUP BY emoji
+		   ) sub), '[]'::json)`, comentarioID, userID).Scan(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &forospb.ReactionResponse{Reactions: parseReactions(data)}, nil
+}
+
+func parseReactions(data []byte) []*forospb.Reaction {
+	if len(data) == 0 {
+		return nil
+	}
+	var raw []struct {
+		Emoji       string `json:"emoji"`
+		Count       int32  `json:"count"`
+		UserReacted bool   `json:"user_reacted"`
+	}
+	_ = json.Unmarshal(data, &raw)
+	res := make([]*forospb.Reaction, len(raw))
+	for i, r := range raw {
+		res[i] = &forospb.Reaction{
+			Emoji:       r.Emoji,
+			Count:       r.Count,
+			UserReacted: r.UserReacted,
+		}
+	}
+	return res
 }

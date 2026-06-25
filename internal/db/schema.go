@@ -132,9 +132,28 @@ CREATE TABLE IF NOT EXISTS foro_posts (
 CREATE TABLE IF NOT EXISTS foro_comentarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES foro_comentarios(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     contenido TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS foro_post_reactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    emoji VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(post_id, user_id, emoji)
+);
+
+CREATE TABLE IF NOT EXISTS foro_comentario_reactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    comentario_id UUID NOT NULL REFERENCES foro_comentarios(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    emoji VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(comentario_id, user_id, emoji)
 );
 
 -- Preguntas intermedias entre lecciones de un curso
@@ -222,6 +241,9 @@ CREATE INDEX IF NOT EXISTS idx_foro_comentarios_post_id ON foro_comentarios(post
 CREATE INDEX IF NOT EXISTS idx_preguntas_int_capacitacion_id ON preguntas_intermedias(capacitacion_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_int_user_id ON respuestas_intermedias(user_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_int_pregunta_id ON respuestas_intermedias(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_foro_post_reac_post_id ON foro_post_reactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_foro_coment_reac_com_id ON foro_comentario_reactions(comentario_id);
+CREATE INDEX IF NOT EXISTS idx_foro_comentarios_parent_id ON foro_comentarios(parent_id);
 
 -- Soft deletes: los recursos borrados se ocultan pero se preserva el historial de estudiantes
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
