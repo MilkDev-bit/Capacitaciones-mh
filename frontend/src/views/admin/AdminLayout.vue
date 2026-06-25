@@ -11,10 +11,11 @@ const sidebarOpen = ref(false)
 const profileOpen = ref(false)
 
 const breadcrumbs = computed(() => {
-  return router.currentRoute.value.path
-    .split('/')
-    .filter(Boolean)
-    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+  const parts = router.currentRoute.value.path.split('/').filter(Boolean)
+  return parts.map((p, idx) => ({
+    name: p.charAt(0).toUpperCase() + p.slice(1),
+    path: '/' + parts.slice(0, idx + 1).join('/')
+  }))
 })
 
 // Theme is managed by useTheme
@@ -66,10 +67,11 @@ function initials(name: string) {
         <button class="topbar-hamburger" @click="sidebarOpen = true">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <div class="topbar-title">
+        <div class="topbar-title" style="display:flex; align-items:center;">
           <template v-for="(crumb, idx) in breadcrumbs" :key="idx">
             <span v-if="idx > 0" style="color:var(--muted); margin: 0 6px;">/</span>
-            <span>{{ crumb }}</span>
+            <RouterLink v-if="idx < breadcrumbs.length - 1" :to="crumb.path" class="breadcrumb-link">{{ crumb.name }}</RouterLink>
+            <span v-else class="breadcrumb-current" style="color:var(--dark); font-weight:600;">{{ crumb.name }}</span>
           </template>
         </div>
         <div class="topbar-right">
@@ -127,4 +129,13 @@ function initials(name: string) {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.breadcrumb-link {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb-link:hover {
+  color: var(--brand);
+}
+</style>
