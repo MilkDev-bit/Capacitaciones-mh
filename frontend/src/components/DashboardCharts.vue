@@ -21,17 +21,16 @@ import {
   Title,
   Tooltip,
   Legend,
-  BarElement,
   CategoryScale,
   LinearScale,
-  ArcElement
+  ArcElement,
+  LineElement,
+  PointElement
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
 import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
-
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement)
 const { isDark } = useTheme()
 
 const textColor = computed(() => isDark.value ? '#aeaeb2' : '#86868b')
@@ -114,22 +113,18 @@ const barData = computed(() => ({
       data: [40, 55, 45, 70, 90, 85]
     },
     {
+      type: 'line',
       label: 'Certificados Emitidos',
-      backgroundColor: (context: any) => {
-        const chart = context.chart;
-        if (!chart) return '#3b82f6';
-        const ctx = chart.ctx;
-        if (!ctx) return '#3b82f6';
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, '#3b82f6');
-        gradient.addColorStop(1, isDark.value ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.05)');
-        return gradient;
-      },
-      hoverBackgroundColor: '#2563eb',
+      backgroundColor: '#3b82f6',
       borderColor: '#3b82f6',
-      borderWidth: 2,
-      borderRadius: 6,
-      barThickness: 24,
+      borderWidth: 3,
+      tension: 0.4,
+      pointBackgroundColor: '#ffffff',
+      pointBorderColor: '#3b82f6',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: false,
       data: [20, 30, 25, 45, 60, 50]
     }
   ]
