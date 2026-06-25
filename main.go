@@ -185,6 +185,9 @@ func main() {
 			auth.POST("/cursos/:id/inscripciones", handlers.Inscribirse)
 			auth.POST("/inscripciones", handlers.UnirseConCodigo)
 
+			auth.GET("/notificaciones", handlers.ListNotificaciones)
+			auth.POST("/notificaciones/marcar-leidas", handlers.MarcarNotificacionesLeidas)
+
 			instructor := auth.Group("/instructor")
 			instructor.Use(middleware.InstructorRequired())
 			{

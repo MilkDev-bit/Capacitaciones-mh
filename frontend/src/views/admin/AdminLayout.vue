@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useTheme } from '../../composables/useTheme'
+import NotificationBell from '../../components/NotificationBell.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -82,10 +83,7 @@ function initials(name: string) {
           </button>
           
           <!-- Notification Bell -->
-          <button class="icon-btn" style="border:none; background:transparent; position:relative; width: 36px; height: 36px" data-tooltip="Notificaciones">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-            <span style="position:absolute; top:6px; right:8px; width:8px; height:8px; background:var(--danger); border-radius:50%; border:2px solid var(--surface)"></span>
-          </button>
+          <NotificationBell />
 
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">

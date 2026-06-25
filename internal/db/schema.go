@@ -135,6 +135,9 @@ CREATE TABLE IF NOT EXISTS foro_comentarios (
     parent_id UUID REFERENCES foro_comentarios(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     contenido TEXT NOT NULL,
+    media_url TEXT DEFAULT '',
+    media_type VARCHAR(20) DEFAULT '',
+    is_private BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -228,6 +231,18 @@ CREATE INDEX IF NOT EXISTS idx_opciones_pregunta_id ON opciones(pregunta_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_user_id ON respuestas(user_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_examen_id ON respuestas(examen_id);
 CREATE INDEX IF NOT EXISTS idx_respuestas_pregunta_id ON respuestas(pregunta_id);
+
+CREATE TABLE IF NOT EXISTS notificaciones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL,
+    titulo VARCHAR(200) NOT NULL,
+    mensaje TEXT NOT NULL,
+    leida BOOLEAN NOT NULL DEFAULT false,
+    enlace TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id);
 CREATE INDEX IF NOT EXISTS idx_lecciones_capacitacion_id ON lecciones(capacitacion_id);
 CREATE INDEX IF NOT EXISTS idx_progreso_user_id ON progreso_lecciones(user_id);
 CREATE INDEX IF NOT EXISTS idx_progreso_leccion_id ON progreso_lecciones(leccion_id);
