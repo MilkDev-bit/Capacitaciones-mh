@@ -77,4 +77,16 @@ router.beforeEach((to, _from, next) => {
   next()
 })
 
+// Manejo automático de ChunkLoadErrors tras un despliegue
+router.onError((error, to) => {
+  if (error.message.includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError') {
+    // Evitar bucle infinito recargando
+    const reloadKey = `chunk_reload_${to.fullPath}`
+    if (!sessionStorage.getItem(reloadKey)) {
+      sessionStorage.setItem(reloadKey, 'true')
+      window.location.href = to.fullPath
+    }
+  }
+})
+
 export default router
