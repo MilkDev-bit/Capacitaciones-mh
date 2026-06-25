@@ -1,8 +1,9 @@
 import { ref, onMounted } from 'vue'
 
-export function useTheme() {
-  const isDark = ref(false)
+const isDark = ref(false)
+let initialized = false
 
+export function useTheme() {
   const updateState = () => {
     isDark.value = document.documentElement.classList.contains('dark-theme') || 
       (window.matchMedia('(prefers-color-scheme: dark)').matches && !document.documentElement.classList.contains('light-theme'))
@@ -10,7 +11,6 @@ export function useTheme() {
 
   const toggleTheme = () => {
     const html = document.documentElement
-    updateState()
     if (isDark.value) {
       html.classList.remove('dark-theme')
       html.classList.add('light-theme')
@@ -25,15 +25,18 @@ export function useTheme() {
   }
 
   onMounted(() => {
-    const saved = localStorage.getItem('theme')
-    if (saved === 'dark') {
-      document.documentElement.classList.add('dark-theme')
-      document.documentElement.classList.remove('light-theme')
-    } else if (saved === 'light') {
-      document.documentElement.classList.add('light-theme')
-      document.documentElement.classList.remove('dark-theme')
+    if (!initialized) {
+      const saved = localStorage.getItem('theme')
+      if (saved === 'dark') {
+        document.documentElement.classList.add('dark-theme')
+        document.documentElement.classList.remove('light-theme')
+      } else if (saved === 'light') {
+        document.documentElement.classList.add('light-theme')
+        document.documentElement.classList.remove('dark-theme')
+      }
+      updateState()
+      initialized = true
     }
-    updateState()
   })
 
   return { isDark, toggleTheme }

@@ -27,33 +27,16 @@ import {
   ArcElement
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
+import { computed } from 'vue'
+import { useTheme } from '@/composables/useTheme'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
-// To support dark mode nicely
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+const { isDark } = useTheme()
 
-const textColor = ref('#86868b')
-const gridColor = ref('rgba(0,0,0,0.05)')
-const surfaceColor = ref('#ffffff')
-
-const updateChartColors = () => {
-  const isDark = document.documentElement.classList.contains('dark-theme') || 
-                (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && !document.documentElement.classList.contains('light-theme'))
-  textColor.value = isDark ? '#aeaeb2' : '#86868b'
-  gridColor.value = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-  surfaceColor.value = isDark ? '#1d1d1f' : '#ffffff'
-}
-
-const observer = new MutationObserver(updateChartColors)
-
-onMounted(() => {
-  updateChartColors()
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-})
-onUnmounted(() => {
-  observer.disconnect()
-})
+const textColor = computed(() => isDark.value ? '#aeaeb2' : '#86868b')
+const gridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
+const surfaceColor = computed(() => isDark.value ? '#1d1d1f' : '#ffffff')
 
 const barOptions = computed(() => ({
   responsive: true,
@@ -61,12 +44,12 @@ const barOptions = computed(() => ({
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: surfaceColor.value === '#ffffff' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
-      titleColor: surfaceColor.value === '#ffffff' ? '#ffffff' : '#000000',
-      bodyColor: surfaceColor.value === '#ffffff' ? '#ffffff' : '#000000',
+      backgroundColor: isDark.value ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)',
+      titleColor: isDark.value ? '#000000' : '#ffffff',
+      bodyColor: isDark.value ? '#000000' : '#ffffff',
       padding: 12,
       cornerRadius: 8,
-      displayColors: false,
+      displayColors: true,
     }
   },
   scales: {
@@ -99,9 +82,9 @@ const doughnutOptions = computed(() => ({
       }
     },
     tooltip: {
-      backgroundColor: surfaceColor.value === '#ffffff' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
-      titleColor: surfaceColor.value === '#ffffff' ? '#ffffff' : '#000000',
-      bodyColor: surfaceColor.value === '#ffffff' ? '#ffffff' : '#000000',
+      backgroundColor: isDark.value ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)',
+      titleColor: isDark.value ? '#000000' : '#ffffff',
+      bodyColor: isDark.value ? '#000000' : '#ffffff',
       padding: 12,
       cornerRadius: 8
     }
@@ -112,12 +95,36 @@ const barData = computed(() => ({
   labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
   datasets: [
     {
-      label: 'Accesos',
-      backgroundColor: '#f97316',
+      label: 'Nuevos Accesos',
+      backgroundColor: (context: any) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, '#f97316');
+        gradient.addColorStop(1, isDark.value ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.05)');
+        return gradient;
+      },
       hoverBackgroundColor: '#ea580c',
+      borderColor: '#f97316',
+      borderWidth: 2,
       borderRadius: 6,
-      barThickness: 32,
+      barThickness: 24,
       data: [40, 55, 45, 70, 90, 85]
+    },
+    {
+      label: 'Certificados Emitidos',
+      backgroundColor: (context: any) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, isDark.value ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.05)');
+        return gradient;
+      },
+      hoverBackgroundColor: '#2563eb',
+      borderColor: '#3b82f6',
+      borderWidth: 2,
+      borderRadius: 6,
+      barThickness: 24,
+      data: [20, 30, 25, 45, 60, 50]
     }
   ]
 }))
@@ -128,7 +135,7 @@ const doughnutData = computed(() => ({
     {
       backgroundColor: ['#34c759', '#ff3b30', '#f59e0b'],
       hoverBackgroundColor: ['#28a745', '#dc3545', '#e0a800'],
-      borderWidth: 3,
+      borderWidth: 4,
       borderColor: surfaceColor.value,
       hoverBorderColor: surfaceColor.value,
       data: [65, 15, 20]
