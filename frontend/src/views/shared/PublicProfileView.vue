@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const userId = route.params.id as string
 
 const user = ref<any>(null)
@@ -105,7 +107,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="pp-actions">
+        <div class="pp-actions" v-if="auth.user?.id !== user.id">
           <button v-if="!contactVisible" class="btn btn-primary pp-action-btn" @click="contactVisible = true">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Contactar
@@ -153,7 +155,7 @@ onMounted(async () => {
 
         </div>
 
-        <div class="pp-col-right">
+        <div class="pp-col-right" v-if="auth.user?.id !== user.id">
           <div class="pp-card pp-contact-card">
             <h3 class="pp-card-title">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>

@@ -379,11 +379,11 @@ async function sendMensaje() {
     } else {
       convs.value.unshift({ peer_id: activePeerId.value!, peer_name: peerName.value, last_message: preview, last_time: res.data.created_at, unread_count: 0 })
     }
-  } catch {
+  } catch (e: any) {
     uploadingFile.value = false
     const idx = msgs.value.findIndex(m => m._tempId === tempId)
     if (idx !== -1) msgs.value[idx]!._status = 'error'
-    errorMsg.value = 'No se pudo enviar el mensaje'
+    errorMsg.value = e.response?.data?.error || 'No se pudo enviar el mensaje'
     setTimeout(() => { errorMsg.value = '' }, 4000)
   } finally {
     sending.value = false
