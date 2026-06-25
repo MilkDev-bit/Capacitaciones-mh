@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../utils/api'
+import api from '../api'
 
 interface Notificacion {
   id: string
@@ -23,7 +23,7 @@ let pollInterval: ReturnType<typeof setInterval>
 
 async function fetchNotificaciones() {
   try {
-    const res = await api.get('/api/notificaciones')
+    const res = await api.get('/notificaciones')
     notificaciones.value = res.data
   } catch (err) {
     console.error('Error fetching notificaciones', err)
@@ -33,7 +33,7 @@ async function fetchNotificaciones() {
 async function markAsRead(n: Notificacion) {
   if (!n.leida) {
     try {
-      await api.post('/api/notificaciones/marcar-leidas', { ids: [n.id] })
+      await api.post('/notificaciones/marcar-leidas', { ids: [n.id] })
       n.leida = true
     } catch (err) {
       console.error('Error marking as read', err)
@@ -50,7 +50,7 @@ async function markAllAsRead() {
   if (unreadIds.length === 0) return
 
   try {
-    await api.post('/api/notificaciones/marcar-leidas', { ids: unreadIds })
+    await api.post('/notificaciones/marcar-leidas', { ids: unreadIds })
     notificaciones.value.forEach(n => n.leida = true)
   } catch (err) {
     console.error('Error marking all as read', err)
