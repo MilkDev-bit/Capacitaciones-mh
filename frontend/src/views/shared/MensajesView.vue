@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
+import CameraCapture from '../../components/CameraCapture.vue'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -55,7 +56,7 @@ const activePeerId = computed(() => route.params.peer_id as string | undefined)
 
 // ─── Adjuntos ──────────────────────────────────────────────────────────────
 const fileInputRef   = ref<HTMLInputElement | null>(null)
-const cameraInputRef = ref<HTMLInputElement | null>(null)
+const showCamera     = ref(false)
 const pendingFile    = ref<File | null>(null)
 const pendingPreview = ref<string>('')
 const uploadingFile  = ref(false)
@@ -91,6 +92,19 @@ function onFileSelected(e: Event) {
     pendingPreview.value = URL.createObjectURL(file)
   } else {
     pendingPreview.value = ''
+  }
+}
+
+function onCameraCapture(file: File) {
+  pendingFile.value = file
+  pendingPreview.value = URL.createObjectURL(file)
+  showCamera.value = false
+}
+
+function onGalleryFromCamera() {
+  showCamera.value = false
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
   }
 }
 
@@ -640,20 +654,12 @@ onUnmounted(() => {
               :accept="ALLOWED_MIME.join(',')"
               @change="onFileSelected"
             />
-            <input
-              ref="cameraInputRef"
-              type="file"
-              hidden
-              accept="image/*"
-              capture="environment"
-              @change="onFileSelected"
-            />
             <button
               type="button"
               class="attach-btn"
               :disabled="sending || uploadingFile"
               aria-label="Tomar fotografía"
-              @click="cameraInputRef?.click()"
+              @click="showCamera = true"
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -690,6 +696,14 @@ onUnmounted(() => {
         </div>
       </template>
     </section>
+
+    <!-- Modal de Cámara -->
+    <CameraCapture
+      v-if="showCamera"
+      @capture="onCameraCapture"
+      @close="showCamera = false"
+      @gallery="onGalleryFromCamera"
+    />
   </div>
 </template>
 
