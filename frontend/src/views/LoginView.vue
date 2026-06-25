@@ -78,10 +78,17 @@ async function submit() {
     localStorage.setItem('user', JSON.stringify(res.data.user))
     toast.success(`¡Bienvenido/a, ${res.data.user.name}!`, 'Sesión iniciada')
     const redirect = route.query.redirect as string | undefined
-    if (redirect) router.push(redirect)
-    else if (res.data.user?.role === 'admin') router.push('/admin')
-    else if (res.data.user?.role === 'instructor') router.push('/instructor')
-    else router.push('/usuario')
+    const redirectPath = redirect || (res.data.user?.role === 'admin' ? '/admin' : res.data.user?.role === 'instructor' ? '/instructor' : '/usuario')
+    
+    router.push(redirectPath).then((failure) => {
+      if (failure) {
+        console.warn('Router push failed/aborted, forcing hard navigation:', failure)
+        window.location.href = redirectPath
+      }
+    }).catch((err) => {
+      console.error('Router exception:', err)
+      window.location.href = redirectPath
+    })
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Correo o contraseña incorrectos')
   } finally {
