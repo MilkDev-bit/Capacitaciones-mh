@@ -99,7 +99,7 @@ func runMigrations(db *sqlx.DB) error {
 		`CREATE TABLE IF NOT EXISTS foro_post_reactions (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,
-			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL,
 			emoji VARCHAR(20) NOT NULL,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(post_id, user_id, emoji)
@@ -107,7 +107,7 @@ func runMigrations(db *sqlx.DB) error {
 		`CREATE TABLE IF NOT EXISTS foro_comentario_reactions (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			comentario_id UUID NOT NULL REFERENCES foro_comentarios(id) ON DELETE CASCADE,
-			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL,
 			emoji VARCHAR(20) NOT NULL,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(comentario_id, user_id, emoji)
