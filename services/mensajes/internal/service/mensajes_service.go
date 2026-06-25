@@ -128,3 +128,30 @@ return nil, status.Error(codes.Internal, "error obteniendo miembros")
 }
 return &mensajespb.GetGroupMembersResponse{UserIds: members}, nil
 }
+
+func (s *MensajesService) CreateGroupForLicencia(ctx context.Context, req *mensajespb.CreateGroupForLicenciaRequest) (*mensajespb.CreateGroupResponse, error) {
+	// Idempotent: if a group already exists for this licencia, return it
+	existingID, err := s.repo.GetGroupIDByLicencia(ctx, req.LicenciaId)
+	if err == nil && existingID != "" {
+		return &mensajespb.CreateGroupResponse{GrupoId: existingID, Nombre: req.Nombre}, nil
+	}
+	grupoID, err := s.repo.CreateGroupForLicencia(ctx, req.Nombre, req.AdminId, req.LicenciaId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error creando grupo de cohorte")
+	}
+	// Auto-add admin as member
+	_ = s.repo.AddGroupMembers(ctx, grupoID, []string{req.AdminId})
+	return &mensajespb.CreateGroupResponse{GrupoId: grupoID, Nombre: req.Nombre}, nil
+}
+
+func (s *MensajesService) EnrollInLicenciaGroup(ctx context.Context, req *mensajespb.EnrollInLicenciaGroupRequest) (*mensajespb.Empty, error) {
+	grupoID, err := s.repo.GetGroupIDByLicencia(ctx, req.LicenciaId)
+	if err != nil || grupoID == "" {
+		// No group yet — silently skip (group created on license creation)
+		return &mensajespb.Empty{}, nil
+	}
+	if err := s.repo.AddGroupMembers(ctx, grupoID, []string{req.UserId}); err != nil {
+		return nil, status.Error(codes.Internal, "error añadiendo al grupo de cohorte")
+	}
+	return &mensajespb.Empty{}, nil
+}

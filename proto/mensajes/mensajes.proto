@@ -14,6 +14,9 @@ service MensajesService {
   rpc CreateGroup          (CreateGroupRequest)        returns (CreateGroupResponse);
   rpc AddGroupMembers      (AddGroupMembersRequest)    returns (Empty);
   rpc GetGroupMembers      (GetGroupMembersRequest)    returns (GetGroupMembersResponse);
+  // Licencia / cohorte group management (called by cursos-service)
+  rpc CreateGroupForLicencia (CreateGroupForLicenciaRequest) returns (CreateGroupResponse);
+  rpc EnrollInLicenciaGroup  (EnrollInLicenciaGroupRequest)  returns (Empty);
 }
 
 message SendMensajeRequest {
@@ -117,6 +120,18 @@ message GetGroupMembersRequest {
 
 message GetGroupMembersResponse {
   repeated string user_ids = 1;
+}
+
+message CreateGroupForLicenciaRequest {
+  string licencia_id = 1;
+  string nombre      = 2;
+  string admin_id    = 3;
+}
+
+message EnrollInLicenciaGroupRequest {
+  string licencia_id = 1;
+  string user_id     = 2;
+  string user_name   = 3;
 }
 
 message Empty {}

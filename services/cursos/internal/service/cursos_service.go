@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	cursospb "Prueba-Go/gen/cursos"
+	mensajespb "Prueba-Go/gen/mensajes"
 	"Prueba-Go/services/cursos/internal/repository"
 	"os"
 
@@ -21,11 +22,12 @@ var (
 
 // CursosService contiene la lógica de negocio del servicio de cursos.
 type CursosService struct {
-	repo repository.CursosRepository
+	repo     repository.CursosRepository
+	mensajes mensajespb.MensajesServiceClient // nil-safe: called if set
 }
 
-func NewCursosService(repo repository.CursosRepository) *CursosService {
-	return &CursosService{repo: repo}
+func NewCursosService(repo repository.CursosRepository, mensajes mensajespb.MensajesServiceClient) *CursosService {
+	return &CursosService{repo: repo, mensajes: mensajes}
 }
 
 func (s *CursosService) ListPublicos(ctx context.Context) ([]*cursospb.CursoResponse, error) {
@@ -242,6 +244,14 @@ func (s *CursosService) CreateLicencia(ctx context.Context, req *cursospb.Create
 	if err != nil {
 		return nil, err
 	}
+	// Auto-create cohort group in mensajes-service
+	if s.mensajes != nil {
+		_, _ = s.mensajes.CreateGroupForLicencia(ctx, &mensajespb.CreateGroupForLicenciaRequest{
+			LicenciaId: lic.ID,
+			Nombre:     lic.Nombre + " — Grupo de Cohorte",
+			AdminId:    req.InstructorId,
+		})
+	}
 	return lic.ToProto(), nil
 }
 
@@ -269,20 +279,24 @@ func (s *CursosService) ListLicencias(ctx context.Context, cursoID string) ([]*c
 	return res, nil
 }
 
-func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capacitacionID, codigo string) error {
-	lic, err := s.repo.FindLicenciaByCodigo(ctx, codigo)
+func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, codigoAcceso string) error {
+	lic, err := s.repo.FindLicenciaByCodigo(ctx, codigoAcceso)
 	if err != nil {
-		return err
+		return errors.New("código de acceso inválido")
 	}
-	if lic.CapacitacionID != capacitacionID {
-		return ErrNotFound
+	if lic.CapacitacionID != capID {
+		return errors.New("el código no corresponde a esta capacitación")
 	}
-	if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
-		return errors.New("licencia agotada")
-	}
-	err = s.repo.InscribirseConLicencia(ctx, userID, capacitacionID, lic.ID)
+	err = s.repo.InscribirseConLicencia(ctx, userID, capID, lic.ID)
 	if err == nil {
 		_ = s.repo.IncrementarUsoLicencia(ctx, lic.ID)
+		// Auto-enrol in cohort group
+		if s.mensajes != nil {
+			_, _ = s.mensajes.EnrollInLicenciaGroup(ctx, &mensajespb.EnrollInLicenciaGroupRequest{
+				LicenciaId: lic.ID,
+				UserId:     userID,
+			})
+		}
 	}
 	return err
 }

@@ -164,6 +164,7 @@ message CreateLicenciaRequest {
   string nombre = 2;
   double precio = 3;
   int32 capacidad_maxima = 4;
+  string instructor_id = 5; // used to auto-add as group admin
 }
 
 message UpdateLicenciaRequest {

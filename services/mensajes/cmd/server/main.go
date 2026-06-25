@@ -81,8 +81,10 @@ func runMigrations(db *sqlx.DB) error {
 			id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			nombre     TEXT NOT NULL,
 			admin_id   UUID NOT NULL,
+			licencia_id UUID DEFAULT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		`ALTER TABLE grupos ADD COLUMN IF NOT EXISTS licencia_id UUID DEFAULT NULL`,
 		`CREATE TABLE IF NOT EXISTS grupo_miembros (
 			grupo_id   UUID NOT NULL,
 			usuario_id UUID NOT NULL,

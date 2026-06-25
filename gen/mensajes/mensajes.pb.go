@@ -1049,6 +1049,126 @@ func (x *GetGroupMembersResponse) GetUserIds() []string {
 	return nil
 }
 
+type CreateGroupForLicenciaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LicenciaId    string                 `protobuf:"bytes,1,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	Nombre        string                 `protobuf:"bytes,2,opt,name=nombre,proto3" json:"nombre,omitempty"`
+	AdminId       string                 `protobuf:"bytes,3,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGroupForLicenciaRequest) Reset() {
+	*x = CreateGroupForLicenciaRequest{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGroupForLicenciaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGroupForLicenciaRequest) ProtoMessage() {}
+
+func (x *CreateGroupForLicenciaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGroupForLicenciaRequest.ProtoReflect.Descriptor instead.
+func (*CreateGroupForLicenciaRequest) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CreateGroupForLicenciaRequest) GetLicenciaId() string {
+	if x != nil {
+		return x.LicenciaId
+	}
+	return ""
+}
+
+func (x *CreateGroupForLicenciaRequest) GetNombre() string {
+	if x != nil {
+		return x.Nombre
+	}
+	return ""
+}
+
+func (x *CreateGroupForLicenciaRequest) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+type EnrollInLicenciaGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LicenciaId    string                 `protobuf:"bytes,1,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserName      string                 `protobuf:"bytes,3,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnrollInLicenciaGroupRequest) Reset() {
+	*x = EnrollInLicenciaGroupRequest{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnrollInLicenciaGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnrollInLicenciaGroupRequest) ProtoMessage() {}
+
+func (x *EnrollInLicenciaGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnrollInLicenciaGroupRequest.ProtoReflect.Descriptor instead.
+func (*EnrollInLicenciaGroupRequest) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *EnrollInLicenciaGroupRequest) GetLicenciaId() string {
+	if x != nil {
+		return x.LicenciaId
+	}
+	return ""
+}
+
+func (x *EnrollInLicenciaGroupRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *EnrollInLicenciaGroupRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1057,7 +1177,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[17]
+	mi := &file_mensajes_mensajes_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1069,7 +1189,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[17]
+	mi := &file_mensajes_mensajes_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1082,7 +1202,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{17}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{19}
 }
 
 var File_mensajes_mensajes_proto protoreflect.FileDescriptor
@@ -1164,8 +1284,18 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\x16GetGroupMembersRequest\x12\x19\n" +
 	"\bgrupo_id\x18\x01 \x01(\tR\agrupoId\"4\n" +
 	"\x17GetGroupMembersResponse\x12\x19\n" +
-	"\buser_ids\x18\x01 \x03(\tR\auserIds\"\a\n" +
-	"\x05Empty2\xbf\x05\n" +
+	"\buser_ids\x18\x01 \x03(\tR\auserIds\"s\n" +
+	"\x1dCreateGroupForLicenciaRequest\x12\x1f\n" +
+	"\vlicencia_id\x18\x01 \x01(\tR\n" +
+	"licenciaId\x12\x16\n" +
+	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12\x19\n" +
+	"\badmin_id\x18\x03 \x01(\tR\aadminId\"u\n" +
+	"\x1cEnrollInLicenciaGroupRequest\x12\x1f\n" +
+	"\vlicencia_id\x18\x01 \x01(\tR\n" +
+	"licenciaId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tuser_name\x18\x03 \x01(\tR\buserName\"\a\n" +
+	"\x05Empty2\xf3\x06\n" +
 	"\x0fMensajesService\x12F\n" +
 	"\vSendMensaje\x12\x1c.mensajes.SendMensajeRequest\x1a\x19.mensajes.MensajeResponse\x12J\n" +
 	"\vGetMensajes\x12\x1c.mensajes.GetMensajesRequest\x1a\x1d.mensajes.GetMensajesResponse\x12_\n" +
@@ -1175,7 +1305,9 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\fMarcarLeidos\x12\x1d.mensajes.MarcarLeidosRequest\x1a\x0f.mensajes.Empty\x12J\n" +
 	"\vCreateGroup\x12\x1c.mensajes.CreateGroupRequest\x1a\x1d.mensajes.CreateGroupResponse\x12D\n" +
 	"\x0fAddGroupMembers\x12 .mensajes.AddGroupMembersRequest\x1a\x0f.mensajes.Empty\x12V\n" +
-	"\x0fGetGroupMembers\x12 .mensajes.GetGroupMembersRequest\x1a!.mensajes.GetGroupMembersResponseB#Z!Prueba-Go/gen/mensajes;mensajespbb\x06proto3"
+	"\x0fGetGroupMembers\x12 .mensajes.GetGroupMembersRequest\x1a!.mensajes.GetGroupMembersResponse\x12`\n" +
+	"\x16CreateGroupForLicencia\x12'.mensajes.CreateGroupForLicenciaRequest\x1a\x1d.mensajes.CreateGroupResponse\x12P\n" +
+	"\x15EnrollInLicenciaGroup\x12&.mensajes.EnrollInLicenciaGroupRequest\x1a\x0f.mensajes.EmptyB#Z!Prueba-Go/gen/mensajes;mensajespbb\x06proto3"
 
 var (
 	file_mensajes_mensajes_proto_rawDescOnce sync.Once
@@ -1189,26 +1321,28 @@ func file_mensajes_mensajes_proto_rawDescGZIP() []byte {
 	return file_mensajes_mensajes_proto_rawDescData
 }
 
-var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_mensajes_mensajes_proto_goTypes = []any{
-	(*SendMensajeRequest)(nil),         // 0: mensajes.SendMensajeRequest
-	(*GetMensajesRequest)(nil),         // 1: mensajes.GetMensajesRequest
-	(*ListConversacionesRequest)(nil),  // 2: mensajes.ListConversacionesRequest
-	(*NoLeidosRequest)(nil),            // 3: mensajes.NoLeidosRequest
-	(*MarcarLeidoRequest)(nil),         // 4: mensajes.MarcarLeidoRequest
-	(*MarcarLeidosRequest)(nil),        // 5: mensajes.MarcarLeidosRequest
-	(*MensajeResponse)(nil),            // 6: mensajes.MensajeResponse
-	(*GetMensajesResponse)(nil),        // 7: mensajes.GetMensajesResponse
-	(*ConversacionResponse)(nil),       // 8: mensajes.ConversacionResponse
-	(*ListConversacionesResponse)(nil), // 9: mensajes.ListConversacionesResponse
-	(*NoLeidosResponse)(nil),           // 10: mensajes.NoLeidosResponse
-	(*MarcarLeidoResponse)(nil),        // 11: mensajes.MarcarLeidoResponse
-	(*CreateGroupRequest)(nil),         // 12: mensajes.CreateGroupRequest
-	(*CreateGroupResponse)(nil),        // 13: mensajes.CreateGroupResponse
-	(*AddGroupMembersRequest)(nil),     // 14: mensajes.AddGroupMembersRequest
-	(*GetGroupMembersRequest)(nil),     // 15: mensajes.GetGroupMembersRequest
-	(*GetGroupMembersResponse)(nil),    // 16: mensajes.GetGroupMembersResponse
-	(*Empty)(nil),                      // 17: mensajes.Empty
+	(*SendMensajeRequest)(nil),            // 0: mensajes.SendMensajeRequest
+	(*GetMensajesRequest)(nil),            // 1: mensajes.GetMensajesRequest
+	(*ListConversacionesRequest)(nil),     // 2: mensajes.ListConversacionesRequest
+	(*NoLeidosRequest)(nil),               // 3: mensajes.NoLeidosRequest
+	(*MarcarLeidoRequest)(nil),            // 4: mensajes.MarcarLeidoRequest
+	(*MarcarLeidosRequest)(nil),           // 5: mensajes.MarcarLeidosRequest
+	(*MensajeResponse)(nil),               // 6: mensajes.MensajeResponse
+	(*GetMensajesResponse)(nil),           // 7: mensajes.GetMensajesResponse
+	(*ConversacionResponse)(nil),          // 8: mensajes.ConversacionResponse
+	(*ListConversacionesResponse)(nil),    // 9: mensajes.ListConversacionesResponse
+	(*NoLeidosResponse)(nil),              // 10: mensajes.NoLeidosResponse
+	(*MarcarLeidoResponse)(nil),           // 11: mensajes.MarcarLeidoResponse
+	(*CreateGroupRequest)(nil),            // 12: mensajes.CreateGroupRequest
+	(*CreateGroupResponse)(nil),           // 13: mensajes.CreateGroupResponse
+	(*AddGroupMembersRequest)(nil),        // 14: mensajes.AddGroupMembersRequest
+	(*GetGroupMembersRequest)(nil),        // 15: mensajes.GetGroupMembersRequest
+	(*GetGroupMembersResponse)(nil),       // 16: mensajes.GetGroupMembersResponse
+	(*CreateGroupForLicenciaRequest)(nil), // 17: mensajes.CreateGroupForLicenciaRequest
+	(*EnrollInLicenciaGroupRequest)(nil),  // 18: mensajes.EnrollInLicenciaGroupRequest
+	(*Empty)(nil),                         // 19: mensajes.Empty
 }
 var file_mensajes_mensajes_proto_depIdxs = []int32{
 	6,  // 0: mensajes.GetMensajesResponse.mensajes:type_name -> mensajes.MensajeResponse
@@ -1222,17 +1356,21 @@ var file_mensajes_mensajes_proto_depIdxs = []int32{
 	12, // 8: mensajes.MensajesService.CreateGroup:input_type -> mensajes.CreateGroupRequest
 	14, // 9: mensajes.MensajesService.AddGroupMembers:input_type -> mensajes.AddGroupMembersRequest
 	15, // 10: mensajes.MensajesService.GetGroupMembers:input_type -> mensajes.GetGroupMembersRequest
-	6,  // 11: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
-	7,  // 12: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
-	9,  // 13: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
-	10, // 14: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
-	11, // 15: mensajes.MensajesService.MarcarLeido:output_type -> mensajes.MarcarLeidoResponse
-	17, // 16: mensajes.MensajesService.MarcarLeidos:output_type -> mensajes.Empty
-	13, // 17: mensajes.MensajesService.CreateGroup:output_type -> mensajes.CreateGroupResponse
-	17, // 18: mensajes.MensajesService.AddGroupMembers:output_type -> mensajes.Empty
-	16, // 19: mensajes.MensajesService.GetGroupMembers:output_type -> mensajes.GetGroupMembersResponse
-	11, // [11:20] is the sub-list for method output_type
-	2,  // [2:11] is the sub-list for method input_type
+	17, // 11: mensajes.MensajesService.CreateGroupForLicencia:input_type -> mensajes.CreateGroupForLicenciaRequest
+	18, // 12: mensajes.MensajesService.EnrollInLicenciaGroup:input_type -> mensajes.EnrollInLicenciaGroupRequest
+	6,  // 13: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
+	7,  // 14: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
+	9,  // 15: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
+	10, // 16: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
+	11, // 17: mensajes.MensajesService.MarcarLeido:output_type -> mensajes.MarcarLeidoResponse
+	19, // 18: mensajes.MensajesService.MarcarLeidos:output_type -> mensajes.Empty
+	13, // 19: mensajes.MensajesService.CreateGroup:output_type -> mensajes.CreateGroupResponse
+	19, // 20: mensajes.MensajesService.AddGroupMembers:output_type -> mensajes.Empty
+	16, // 21: mensajes.MensajesService.GetGroupMembers:output_type -> mensajes.GetGroupMembersResponse
+	13, // 22: mensajes.MensajesService.CreateGroupForLicencia:output_type -> mensajes.CreateGroupResponse
+	19, // 23: mensajes.MensajesService.EnrollInLicenciaGroup:output_type -> mensajes.Empty
+	13, // [13:24] is the sub-list for method output_type
+	2,  // [2:13] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
 	2,  // [2:2] is the sub-list for extension extendee
 	0,  // [0:2] is the sub-list for field type_name
@@ -1249,7 +1387,7 @@ func file_mensajes_mensajes_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mensajes_mensajes_proto_rawDesc), len(file_mensajes_mensajes_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

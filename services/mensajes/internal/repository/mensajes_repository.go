@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	mensajespb "Prueba-Go/gen/mensajes"
@@ -71,6 +72,9 @@ type MensajesRepository interface {
 	CreateGroup(ctx context.Context, nombre, adminID string) (string, error)
 	AddGroupMembers(ctx context.Context, grupoID string, userIDs []string) error
 	GetGroupMembers(ctx context.Context, grupoID string) ([]string, error)
+	// Licencia-linked groups
+	CreateGroupForLicencia(ctx context.Context, nombre, adminID, licenciaID string) (string, error)
+	GetGroupIDByLicencia(ctx context.Context, licenciaID string) (string, error)
 }
 
 type postgresMensajesRepository struct{ db *sqlx.DB }
@@ -248,4 +252,19 @@ func (r *postgresMensajesRepository) GetGroupMembers(ctx context.Context, grupoI
 	var userIDs []string
 	err := r.db.SelectContext(ctx, &userIDs, `SELECT usuario_id FROM grupo_miembros WHERE grupo_id = $1`, grupoID)
 	return userIDs, err
+}
+
+func (r *postgresMensajesRepository) CreateGroupForLicencia(ctx context.Context, nombre, adminID, licenciaID string) (string, error) {
+	var id string
+	err := r.db.QueryRowxContext(ctx,
+		`INSERT INTO grupos (nombre, admin_id, licencia_id) VALUES ($1, $2, $3) RETURNING id`,
+		nombre, adminID, licenciaID).Scan(&id)
+	return id, err
+}
+
+func (r *postgresMensajesRepository) GetGroupIDByLicencia(ctx context.Context, licenciaID string) (string, error) {
+	var id string
+	err := r.db.QueryRowxContext(ctx,
+		`SELECT id FROM grupos WHERE licencia_id = $1 LIMIT 1`, licenciaID).Scan(&id)
+	return id, err
 }

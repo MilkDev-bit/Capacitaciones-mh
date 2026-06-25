@@ -8,6 +8,7 @@ import (
 	"os"
 
 	cursospb "Prueba-Go/gen/cursos"
+	mensajespb "Prueba-Go/gen/mensajes"
 	"Prueba-Go/services/cursos/internal/handler"
 	"Prueba-Go/services/cursos/internal/repository"
 	"Prueba-Go/services/cursos/internal/service"
@@ -15,6 +16,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -33,7 +35,19 @@ func main() {
 
 	// DI
 	repo := repository.NewCursosRepository(db)
-	svc := service.NewCursosService(repo)
+
+	// Optional: connect to mensajes-service for cohort group management
+	var mensajesClient mensajespb.MensajesServiceClient
+	if addr := getEnvOr("MENSAJES_ADDR", ""); addr != "" {
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err == nil {
+			mensajesClient = mensajespb.NewMensajesServiceClient(conn)
+		} else {
+			slog.Warn("no se pudo conectar al mensajes-service", "error", err)
+		}
+	}
+
+	svc := service.NewCursosService(repo, mensajesClient)
 	h := handler.NewCursosHandler(svc)
 
 	lis, _ := net.Listen("tcp", ":"+getEnvOr("GRPC_PORT", "50053"))

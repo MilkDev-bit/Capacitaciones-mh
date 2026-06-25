@@ -106,6 +106,7 @@ services:
       LOG_LEVEL:    ${LOG_LEVEL:-info}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      MENSAJES_ADDR: mensajes-service:50057
     expose:
       - "50053"
 
@@ -157,6 +158,22 @@ services:
     expose:
       - "50056"
 
+  # ── Mensajes service ──────────────────────────────────────────────────────────
+  mensajes-service:
+    build:
+      context: .
+      dockerfile: services/mensajes/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
+      GRPC_PORT:    "50057"
+      LOG_LEVEL:    ${LOG_LEVEL:-info}
+    expose:
+      - "50057"
+
   # ── API Gateway ───────────────────────────────────────────────────────────────
   # Único contenedor expuesto al exterior. Recibe HTTP y hace fan-out a gRPC.
   gateway:
@@ -171,6 +188,7 @@ services:
       - lecciones-service
       - examenes-service
       - foros-service
+      - mensajes-service
     environment:
       PORT:           "8080"
       JWT_SECRET:     ${JWT_SECRET}
@@ -183,6 +201,7 @@ services:
       LECCIONES_ADDR: lecciones-service:50054
       EXAMENES_ADDR:  examenes-service:50055
       FOROS_ADDR:     foros-service:50056
+      MENSAJES_ADDR:  mensajes-service:50057
 
       # Cloudflare R2
       R2_BUCKET:      ${R2_BUCKET:-}

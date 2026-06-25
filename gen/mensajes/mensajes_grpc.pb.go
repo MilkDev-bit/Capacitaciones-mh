@@ -19,15 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MensajesService_SendMensaje_FullMethodName        = "/mensajes.MensajesService/SendMensaje"
-	MensajesService_GetMensajes_FullMethodName        = "/mensajes.MensajesService/GetMensajes"
-	MensajesService_ListConversaciones_FullMethodName = "/mensajes.MensajesService/ListConversaciones"
-	MensajesService_NoLeidos_FullMethodName           = "/mensajes.MensajesService/NoLeidos"
-	MensajesService_MarcarLeido_FullMethodName        = "/mensajes.MensajesService/MarcarLeido"
-	MensajesService_MarcarLeidos_FullMethodName       = "/mensajes.MensajesService/MarcarLeidos"
-	MensajesService_CreateGroup_FullMethodName        = "/mensajes.MensajesService/CreateGroup"
-	MensajesService_AddGroupMembers_FullMethodName    = "/mensajes.MensajesService/AddGroupMembers"
-	MensajesService_GetGroupMembers_FullMethodName    = "/mensajes.MensajesService/GetGroupMembers"
+	MensajesService_SendMensaje_FullMethodName            = "/mensajes.MensajesService/SendMensaje"
+	MensajesService_GetMensajes_FullMethodName            = "/mensajes.MensajesService/GetMensajes"
+	MensajesService_ListConversaciones_FullMethodName     = "/mensajes.MensajesService/ListConversaciones"
+	MensajesService_NoLeidos_FullMethodName               = "/mensajes.MensajesService/NoLeidos"
+	MensajesService_MarcarLeido_FullMethodName            = "/mensajes.MensajesService/MarcarLeido"
+	MensajesService_MarcarLeidos_FullMethodName           = "/mensajes.MensajesService/MarcarLeidos"
+	MensajesService_CreateGroup_FullMethodName            = "/mensajes.MensajesService/CreateGroup"
+	MensajesService_AddGroupMembers_FullMethodName        = "/mensajes.MensajesService/AddGroupMembers"
+	MensajesService_GetGroupMembers_FullMethodName        = "/mensajes.MensajesService/GetGroupMembers"
+	MensajesService_CreateGroupForLicencia_FullMethodName = "/mensajes.MensajesService/CreateGroupForLicencia"
+	MensajesService_EnrollInLicenciaGroup_FullMethodName  = "/mensajes.MensajesService/EnrollInLicenciaGroup"
 )
 
 // MensajesServiceClient is the client API for MensajesService service.
@@ -43,6 +45,9 @@ type MensajesServiceClient interface {
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
 	AddGroupMembers(ctx context.Context, in *AddGroupMembersRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error)
+	// Licencia / cohorte group management (called by cursos-service)
+	CreateGroupForLicencia(ctx context.Context, in *CreateGroupForLicenciaRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
+	EnrollInLicenciaGroup(ctx context.Context, in *EnrollInLicenciaGroupRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type mensajesServiceClient struct {
@@ -143,6 +148,26 @@ func (c *mensajesServiceClient) GetGroupMembers(ctx context.Context, in *GetGrou
 	return out, nil
 }
 
+func (c *mensajesServiceClient) CreateGroupForLicencia(ctx context.Context, in *CreateGroupForLicenciaRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateGroupResponse)
+	err := c.cc.Invoke(ctx, MensajesService_CreateGroupForLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mensajesServiceClient) EnrollInLicenciaGroup(ctx context.Context, in *EnrollInLicenciaGroupRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, MensajesService_EnrollInLicenciaGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MensajesServiceServer is the server API for MensajesService service.
 // All implementations must embed UnimplementedMensajesServiceServer
 // for forward compatibility.
@@ -156,6 +181,9 @@ type MensajesServiceServer interface {
 	CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
 	AddGroupMembers(context.Context, *AddGroupMembersRequest) (*Empty, error)
 	GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error)
+	// Licencia / cohorte group management (called by cursos-service)
+	CreateGroupForLicencia(context.Context, *CreateGroupForLicenciaRequest) (*CreateGroupResponse, error)
+	EnrollInLicenciaGroup(context.Context, *EnrollInLicenciaGroupRequest) (*Empty, error)
 	mustEmbedUnimplementedMensajesServiceServer()
 }
 
@@ -192,6 +220,12 @@ func (UnimplementedMensajesServiceServer) AddGroupMembers(context.Context, *AddG
 }
 func (UnimplementedMensajesServiceServer) GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupMembers not implemented")
+}
+func (UnimplementedMensajesServiceServer) CreateGroupForLicencia(context.Context, *CreateGroupForLicenciaRequest) (*CreateGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateGroupForLicencia not implemented")
+}
+func (UnimplementedMensajesServiceServer) EnrollInLicenciaGroup(context.Context, *EnrollInLicenciaGroupRequest) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnrollInLicenciaGroup not implemented")
 }
 func (UnimplementedMensajesServiceServer) mustEmbedUnimplementedMensajesServiceServer() {}
 func (UnimplementedMensajesServiceServer) testEmbeddedByValue()                         {}
@@ -376,6 +410,42 @@ func _MensajesService_GetGroupMembers_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MensajesService_CreateGroupForLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGroupForLicenciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).CreateGroupForLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_CreateGroupForLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).CreateGroupForLicencia(ctx, req.(*CreateGroupForLicenciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MensajesService_EnrollInLicenciaGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollInLicenciaGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).EnrollInLicenciaGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_EnrollInLicenciaGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).EnrollInLicenciaGroup(ctx, req.(*EnrollInLicenciaGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MensajesService_ServiceDesc is the grpc.ServiceDesc for MensajesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +488,14 @@ var MensajesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupMembers",
 			Handler:    _MensajesService_GetGroupMembers_Handler,
+		},
+		{
+			MethodName: "CreateGroupForLicencia",
+			Handler:    _MensajesService_CreateGroupForLicencia_Handler,
+		},
+		{
+			MethodName: "EnrollInLicenciaGroup",
+			Handler:    _MensajesService_EnrollInLicenciaGroup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

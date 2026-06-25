@@ -1235,6 +1235,7 @@ type CreateLicenciaRequest struct {
 	Nombre          string                 `protobuf:"bytes,2,opt,name=nombre,proto3" json:"nombre,omitempty"`
 	Precio          float64                `protobuf:"fixed64,3,opt,name=precio,proto3" json:"precio,omitempty"`
 	CapacidadMaxima int32                  `protobuf:"varint,4,opt,name=capacidad_maxima,json=capacidadMaxima,proto3" json:"capacidad_maxima,omitempty"`
+	InstructorId    string                 `protobuf:"bytes,5,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"` // used to auto-add as group admin
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1295,6 +1296,13 @@ func (x *CreateLicenciaRequest) GetCapacidadMaxima() int32 {
 		return x.CapacidadMaxima
 	}
 	return 0
+}
+
+func (x *CreateLicenciaRequest) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
+	}
+	return ""
 }
 
 type UpdateLicenciaRequest struct {
@@ -1829,12 +1837,13 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x0fstripe_price_id\x18\t \x01(\tR\rstripePriceId\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\tR\tcreatedAt\"\x9b\x01\n" +
+	" \x01(\tR\tcreatedAt\"\xc0\x01\n" +
 	"\x15CreateLicenciaRequest\x12'\n" +
 	"\x0fcapacitacion_id\x18\x01 \x01(\tR\x0ecapacitacionId\x12\x16\n" +
 	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12\x16\n" +
 	"\x06precio\x18\x03 \x01(\x01R\x06precio\x12)\n" +
-	"\x10capacidad_maxima\x18\x04 \x01(\x05R\x0fcapacidadMaxima\"\x82\x01\n" +
+	"\x10capacidad_maxima\x18\x04 \x01(\x05R\x0fcapacidadMaxima\x12#\n" +
+	"\rinstructor_id\x18\x05 \x01(\tR\finstructorId\"\x82\x01\n" +
 	"\x15UpdateLicenciaRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12\x16\n" +

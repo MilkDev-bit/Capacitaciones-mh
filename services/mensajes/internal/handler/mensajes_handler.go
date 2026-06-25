@@ -81,3 +81,17 @@ return nil, status.Error(codes.InvalidArgument, "grupo_id es requerido")
 }
 return h.svc.GetGroupMembers(ctx, req)
 }
+
+func (h *MensajesHandler) CreateGroupForLicencia(ctx context.Context, req *mensajespb.CreateGroupForLicenciaRequest) (*mensajespb.CreateGroupResponse, error) {
+	if req.LicenciaId == "" || req.Nombre == "" {
+		return nil, status.Error(codes.InvalidArgument, "licencia_id y nombre son requeridos")
+	}
+	return h.svc.CreateGroupForLicencia(ctx, req)
+}
+
+func (h *MensajesHandler) EnrollInLicenciaGroup(ctx context.Context, req *mensajespb.EnrollInLicenciaGroupRequest) (*mensajespb.Empty, error) {
+	if req.LicenciaId == "" || req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "licencia_id y user_id son requeridos")
+	}
+	return h.svc.EnrollInLicenciaGroup(ctx, req)
+}
