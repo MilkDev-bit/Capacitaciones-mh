@@ -69,6 +69,7 @@ func runMigrations(db *sqlx.DB) error {
 		// Migraciones incrementales para tablas existentes
 		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS attachment_url  TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS is_group        BOOLEAN NOT NULL DEFAULT FALSE`,
 		`ALTER TABLE mensajes ALTER COLUMN contenido SET DEFAULT ''`,
 		`CREATE INDEX IF NOT EXISTS idx_mensajes_emisor
 			ON mensajes(emisor_id, created_at DESC)`,
@@ -76,6 +77,18 @@ func runMigrations(db *sqlx.DB) error {
 			ON mensajes(receptor_id, created_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_mensajes_noleidos
 			ON mensajes(receptor_id) WHERE leido = FALSE`,
+		`CREATE TABLE IF NOT EXISTS grupos (
+			id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			nombre     TEXT NOT NULL,
+			admin_id   UUID NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS grupo_miembros (
+			grupo_id   UUID NOT NULL,
+			usuario_id UUID NOT NULL,
+			joined_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (grupo_id, usuario_id)
+		)`,
 	}
 	for _, q := range migrations {
 		if _, err := db.Exec(q); err != nil {

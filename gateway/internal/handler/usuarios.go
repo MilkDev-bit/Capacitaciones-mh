@@ -139,6 +139,24 @@ func (h *UsuariosHandler) RevokeUserSessions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "sesiones revocadas"})
 }
 
+// GET /api/usuarios/search
+func (h *UsuariosHandler) SearchUsers(ctx *gin.Context) {
+	q := ctx.Query("q")
+	if q == "" {
+		ctx.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+	resp, err := h.c.Usuarios.SearchUsers(ctx.Request.Context(), &usuariospb.SearchUsersRequest{
+		Query: q,
+		Limit: 10,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Users)
+}
+
 // uploadFileToR2 lee el multipart del contexto y lo sube a R2.
 func uploadFileToR2(ctx *gin.Context, folder string) (string, error) {
 	fh, err := ctx.FormFile("file")

@@ -70,3 +70,15 @@ func (s *UsuariosService) ListUsers(ctx context.Context, role string) (*usuarios
 func (s *UsuariosService) DeleteUser(ctx context.Context, userID string) error {
 	return s.repo.Delete(ctx, userID)
 }
+
+func (s *UsuariosService) SearchUsers(ctx context.Context, query string, limit int) (*usuariospb.SearchUsersResponse, error) {
+	users, err := s.repo.Search(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	var summaries []*usuariospb.UserSummary
+	for _, u := range users {
+		summaries = append(summaries, u.ToSummaryProto())
+	}
+	return &usuariospb.SearchUsersResponse{Users: summaries}, nil
+}

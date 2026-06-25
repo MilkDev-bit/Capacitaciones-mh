@@ -97,6 +97,7 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/perfil/cover", d.UsuariosH.UploadCover)
 			auth.POST("/perfil/become-instructor", d.UsuariosH.BecomeInstructor)
 			auth.GET("/usuarios/:id/perfil", d.UsuariosH.GetPublicPerfil)
+			auth.GET("/usuarios/search", d.UsuariosH.SearchUsers)
 
 			// Cursos
 			auth.GET("/mis-capacitaciones", d.CursosH.ListMisCapacitaciones)
@@ -130,10 +131,13 @@ func New(d Deps) *gin.Engine {
 			// WebSocket tiempo real
 			auth.GET("/ws", d.WsH.Handle)
 
-			// Mensajes directos
+			// Mensajes directos y grupos
 			auth.GET("/mensajes/no-leidos", d.MensajesH.NoLeidos)
 			auth.GET("/mensajes/conversaciones", d.MensajesH.ListConversaciones)
 			auth.POST("/mensajes/leido/:msg_id", d.MensajesH.MarcarLeido)
+			auth.POST("/mensajes/grupos", d.MensajesH.CreateGroup)
+			auth.POST("/mensajes/grupos/:grupo_id/members", d.MensajesH.AddGroupMembers)
+			auth.GET("/mensajes/grupos/:grupo_id/members", d.MensajesH.GetGroupMembers)
 			auth.GET("/mensajes/:peer_id", d.MensajesH.GetMensajes)
 			auth.POST("/mensajes/:peer_id", d.MensajesH.SendMensaje)
 

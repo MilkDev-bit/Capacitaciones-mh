@@ -24,6 +24,10 @@ const (
 	MensajesService_ListConversaciones_FullMethodName = "/mensajes.MensajesService/ListConversaciones"
 	MensajesService_NoLeidos_FullMethodName           = "/mensajes.MensajesService/NoLeidos"
 	MensajesService_MarcarLeido_FullMethodName        = "/mensajes.MensajesService/MarcarLeido"
+	MensajesService_MarcarLeidos_FullMethodName       = "/mensajes.MensajesService/MarcarLeidos"
+	MensajesService_CreateGroup_FullMethodName        = "/mensajes.MensajesService/CreateGroup"
+	MensajesService_AddGroupMembers_FullMethodName    = "/mensajes.MensajesService/AddGroupMembers"
+	MensajesService_GetGroupMembers_FullMethodName    = "/mensajes.MensajesService/GetGroupMembers"
 )
 
 // MensajesServiceClient is the client API for MensajesService service.
@@ -35,6 +39,10 @@ type MensajesServiceClient interface {
 	ListConversaciones(ctx context.Context, in *ListConversacionesRequest, opts ...grpc.CallOption) (*ListConversacionesResponse, error)
 	NoLeidos(ctx context.Context, in *NoLeidosRequest, opts ...grpc.CallOption) (*NoLeidosResponse, error)
 	MarcarLeido(ctx context.Context, in *MarcarLeidoRequest, opts ...grpc.CallOption) (*MarcarLeidoResponse, error)
+	MarcarLeidos(ctx context.Context, in *MarcarLeidosRequest, opts ...grpc.CallOption) (*Empty, error)
+	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
+	AddGroupMembers(ctx context.Context, in *AddGroupMembersRequest, opts ...grpc.CallOption) (*Empty, error)
+	GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error)
 }
 
 type mensajesServiceClient struct {
@@ -95,6 +103,46 @@ func (c *mensajesServiceClient) MarcarLeido(ctx context.Context, in *MarcarLeido
 	return out, nil
 }
 
+func (c *mensajesServiceClient) MarcarLeidos(ctx context.Context, in *MarcarLeidosRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, MensajesService_MarcarLeidos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mensajesServiceClient) CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateGroupResponse)
+	err := c.cc.Invoke(ctx, MensajesService_CreateGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mensajesServiceClient) AddGroupMembers(ctx context.Context, in *AddGroupMembersRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, MensajesService_AddGroupMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mensajesServiceClient) GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetGroupMembersResponse)
+	err := c.cc.Invoke(ctx, MensajesService_GetGroupMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MensajesServiceServer is the server API for MensajesService service.
 // All implementations must embed UnimplementedMensajesServiceServer
 // for forward compatibility.
@@ -104,6 +152,10 @@ type MensajesServiceServer interface {
 	ListConversaciones(context.Context, *ListConversacionesRequest) (*ListConversacionesResponse, error)
 	NoLeidos(context.Context, *NoLeidosRequest) (*NoLeidosResponse, error)
 	MarcarLeido(context.Context, *MarcarLeidoRequest) (*MarcarLeidoResponse, error)
+	MarcarLeidos(context.Context, *MarcarLeidosRequest) (*Empty, error)
+	CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
+	AddGroupMembers(context.Context, *AddGroupMembersRequest) (*Empty, error)
+	GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error)
 	mustEmbedUnimplementedMensajesServiceServer()
 }
 
@@ -128,6 +180,18 @@ func (UnimplementedMensajesServiceServer) NoLeidos(context.Context, *NoLeidosReq
 }
 func (UnimplementedMensajesServiceServer) MarcarLeido(context.Context, *MarcarLeidoRequest) (*MarcarLeidoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarcarLeido not implemented")
+}
+func (UnimplementedMensajesServiceServer) MarcarLeidos(context.Context, *MarcarLeidosRequest) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarcarLeidos not implemented")
+}
+func (UnimplementedMensajesServiceServer) CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateGroup not implemented")
+}
+func (UnimplementedMensajesServiceServer) AddGroupMembers(context.Context, *AddGroupMembersRequest) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddGroupMembers not implemented")
+}
+func (UnimplementedMensajesServiceServer) GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGroupMembers not implemented")
 }
 func (UnimplementedMensajesServiceServer) mustEmbedUnimplementedMensajesServiceServer() {}
 func (UnimplementedMensajesServiceServer) testEmbeddedByValue()                         {}
@@ -240,6 +304,78 @@ func _MensajesService_MarcarLeido_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MensajesService_MarcarLeidos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarcarLeidosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).MarcarLeidos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_MarcarLeidos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).MarcarLeidos(ctx, req.(*MarcarLeidosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MensajesService_CreateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).CreateGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_CreateGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).CreateGroup(ctx, req.(*CreateGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MensajesService_AddGroupMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddGroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).AddGroupMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_AddGroupMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).AddGroupMembers(ctx, req.(*AddGroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MensajesService_GetGroupMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).GetGroupMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_GetGroupMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).GetGroupMembers(ctx, req.(*GetGroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MensajesService_ServiceDesc is the grpc.ServiceDesc for MensajesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +402,22 @@ var MensajesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarcarLeido",
 			Handler:    _MensajesService_MarcarLeido_Handler,
+		},
+		{
+			MethodName: "MarcarLeidos",
+			Handler:    _MensajesService_MarcarLeidos_Handler,
+		},
+		{
+			MethodName: "CreateGroup",
+			Handler:    _MensajesService_CreateGroup_Handler,
+		},
+		{
+			MethodName: "AddGroupMembers",
+			Handler:    _MensajesService_AddGroupMembers_Handler,
+		},
+		{
+			MethodName: "GetGroupMembers",
+			Handler:    _MensajesService_GetGroupMembers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

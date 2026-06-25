@@ -5,6 +5,8 @@ import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
 import CameraCapture from '../../components/CameraCapture.vue'
 import VideoCallModal from '../../components/VideoCallModal.vue'
+import SearchUserModal from '../../components/SearchUserModal.vue'
+import CreateGroupModal from '../../components/CreateGroupModal.vue'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -14,6 +16,7 @@ interface Conversacion {
   last_time: string
   unread_count: number
   avatar_url?: string
+  is_group?: boolean
 }
 
 interface Mensaje {
@@ -27,6 +30,7 @@ interface Mensaje {
   created_at: string
   attachment_url?: string
   attachment_type?: string
+  is_group?: boolean
   _status?: 'sending' | 'sent' | 'error'
   _tempId?: string
 }
@@ -52,6 +56,9 @@ const threadRef      = ref<HTMLElement | null>(null)
 const sentinelRef    = ref<HTMLElement | null>(null)
 const textareaRef    = ref<HTMLTextAreaElement | null>(null)
 const errorMsg       = ref('')
+
+const showSearchUserModal = ref(false)
+const showCreateGroupModal = ref(false)
 
 // ─── Videollamada ──────────────────────────────────────────────────────────
 const showVideoCall  = ref(false)
@@ -261,18 +268,21 @@ function refreshConvEntry(msg: Mensaje) {
       last_message: preview,
       last_time: msg.created_at,
       unread_count: unread,
-      avatar_url: ''
+      avatar_url: '',
+      is_group: msg.is_group
     }
     convs.value.unshift(newConv)
-    api.get(`/usuarios/${peerId}/perfil`).then(res => {
-      const idx = convs.value.findIndex(c => c.peer_id === peerId)
-      if (idx !== -1) {
-        const existing = convs.value[idx]
-        if (existing && res.data?.user?.avatar_url) {
-          existing.avatar_url = res.data.user.avatar_url
+    if (!msg.is_group) {
+      api.get(`/usuarios/${peerId}/perfil`).then(res => {
+        const idx = convs.value.findIndex(c => c.peer_id === peerId)
+        if (idx !== -1) {
+          const existing = convs.value[idx]
+          if (existing && res.data?.user?.avatar_url) {
+            existing.avatar_url = res.data.user.avatar_url
+          }
         }
-      }
-    }).catch(() => {})
+      }).catch(() => {})
+    }
   }
 }
 
@@ -330,12 +340,14 @@ async function loadMensajes(peerId: string) {
       peerAvatar.value = conv.avatar_url ?? ''
     }
     try {
-      const perfil = await api.get(`/usuarios/${peerId}/perfil`)
-      peerName.value = perfil.data?.user?.name ?? ''
-      peerAvatar.value = perfil.data?.user?.avatar_url ?? ''
+      if (!conv?.is_group) {
+        const perfil = await api.get(`/usuarios/${peerId}/perfil`)
+        peerName.value = perfil.data?.user?.name ?? ''
+        peerAvatar.value = perfil.data?.user?.avatar_url ?? ''
+      }
     } catch { /* ignorar */ }
 
-    const res = await api.get(`/mensajes/${peerId}`, { params: { limit: 50 } })
+    const res = await api.get(`/mensajes/${peerId}`, { params: { limit: 50, is_group: !!conv?.is_group } })
     msgs.value = (res.data?.mensajes ?? []).map((m: Mensaje) => ({ ...m, _status: 'sent' as const }))
     hasMore.value = res.data?.has_more ?? false
     if (conv) conv.unread_count = 0
@@ -349,9 +361,10 @@ async function loadMoreMensajes() {
   if (!activePeerId.value || !hasMore.value || loadingMore.value || msgs.value.length === 0) return
   loadingMore.value = true
   const oldestId = msgs.value[0]?.id
+  const conv = convs.value.find(c => c.peer_id === activePeerId.value)
   const prevScrollHeight = threadRef.value?.scrollHeight ?? 0
   try {
-    const res = await api.get(`/mensajes/${activePeerId.value}`, { params: { limit: 50, before_id: oldestId } })
+    const res = await api.get(`/mensajes/${activePeerId.value}`, { params: { limit: 50, before_id: oldestId, is_group: !!conv?.is_group } })
     const older: Mensaje[] = (res.data?.mensajes ?? []).map((m: Mensaje) => ({ ...m, _status: 'sent' as const }))
     hasMore.value = res.data?.has_more ?? false
     msgs.value = [...older, ...msgs.value]
@@ -374,6 +387,9 @@ async function sendMensaje() {
   if (fileToSend) removePendingFile()
 
   const tempId = `tmp-${Date.now()}`
+  const conv = convs.value.find(c => c.peer_id === activePeerId.value)
+  const isGroup = !!conv?.is_group
+
   const tempMsg: Mensaje = {
     id: tempId, _tempId: tempId, _status: 'sending',
     emisor_id: auth.user?.id ?? '', emisor_name: auth.user?.name ?? '',
@@ -381,6 +397,7 @@ async function sendMensaje() {
     contenido: text, leido: false, created_at: new Date().toISOString(),
     attachment_url: fileToSend ? pendingPreview.value || '' : undefined,
     attachment_type: fileToSend?.type,
+    is_group: isGroup
   }
   msgs.value.push(tempMsg)
   await scrollToBottom()
@@ -404,17 +421,17 @@ async function sendMensaje() {
       peer_name: peerName.value,
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
+      is_group: isGroup
     })
     const idx = msgs.value.findIndex(m => m._tempId === tempId)
     if (idx !== -1) msgs.value.splice(idx, 1, { ...res.data, _status: 'sent' as const })
-    const conv = convs.value.find(c => c.peer_id === activePeerId.value)
     const preview = attachmentUrl ? (attachmentType?.startsWith('image/') ? '📷 Imagen' : attachmentType?.startsWith('video/') ? '🎥 Video' : '📎 Archivo') : text
     if (conv) {
       conv.last_message = preview
       conv.last_time    = res.data.created_at
       convs.value = [conv, ...convs.value.filter(c => c.peer_id !== activePeerId.value)]
     } else {
-      convs.value.unshift({ peer_id: activePeerId.value!, peer_name: peerName.value, last_message: preview, last_time: res.data.created_at, unread_count: 0 })
+      convs.value.unshift({ peer_id: activePeerId.value!, peer_name: peerName.value, last_message: preview, last_time: res.data.created_at, unread_count: 0, is_group: isGroup })
     }
   } catch (e: any) {
     uploadingFile.value = false
@@ -457,6 +474,34 @@ function openConversacion(conv: Conversacion) {
   peerName.value = conv.peer_name
   const base = auth.isInstructor ? '/instructor' : '/usuario'
   router.push(`${base}/mensajes/${conv.peer_id}`)
+}
+
+function handleUserSelected(user: { id: string; name: string; avatar_url: string }) {
+  const existingConv = convs.value.find(c => c.peer_id === user.id)
+  if (!existingConv) {
+    convs.value.unshift({
+      peer_id: user.id,
+      peer_name: user.name,
+      last_message: '',
+      last_time: new Date().toISOString(),
+      unread_count: 0,
+      avatar_url: user.avatar_url,
+      is_group: false
+    })
+  }
+  openConversacion(convs.value.find(c => c.peer_id === user.id)!)
+}
+
+function handleGroupCreated(group: { id: string; name: string }) {
+  convs.value.unshift({
+    peer_id: group.id,
+    peer_name: group.name,
+    last_message: '',
+    last_time: new Date().toISOString(),
+    unread_count: 0,
+    is_group: true
+  })
+  openConversacion(convs.value.find(c => c.peer_id === group.id)!)
 }
 
 function verPerfilId(id: string) {
@@ -511,7 +556,17 @@ onUnmounted(() => {
 
     <!-- ── Panel izquierdo ──────────────────────────────────────────────── -->
     <aside :class="['convs-panel', activePeerId ? 'hidden-mobile' : '']">
-      <div class="convs-header"><h2>Mensajes</h2></div>
+      <div class="convs-header">
+        <h2>Mensajes</h2>
+        <div class="convs-actions">
+          <button class="action-btn" title="Nuevo Mensaje" @click="showSearchUserModal = true">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="action-btn" title="Nuevo Grupo" @click="showCreateGroupModal = true">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </button>
+        </div>
+      </div>
 
       <div v-if="loadingConvs && convs.length === 0" class="convs-loading">
         <span class="spinner"></span>
@@ -528,9 +583,14 @@ onUnmounted(() => {
           :class="['conv-item', conv.peer_id === activePeerId ? 'active' : '']"
           @click="openConversacion(conv)"
         >
-          <div class="conv-avatar clickable-avatar" @click.stop="verPerfilId(conv.peer_id)" title="Ver perfil">
-            <img v-if="conv.avatar_url" :src="conv.avatar_url" :alt="conv.peer_name" />
-            <span v-else>{{ initials(conv.peer_name) }}</span>
+          <div class="conv-avatar clickable-avatar" @click.stop="!conv.is_group && verPerfilId(conv.peer_id)" :title="conv.is_group ? 'Grupo' : 'Ver perfil'">
+            <template v-if="conv.is_group">
+              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </template>
+            <template v-else>
+              <img v-if="conv.avatar_url" :src="conv.avatar_url" :alt="conv.peer_name" />
+              <span v-else>{{ initials(conv.peer_name) }}</span>
+            </template>
           </div>
           <div class="conv-info">
             <div class="conv-row">
@@ -562,11 +622,16 @@ onUnmounted(() => {
           <button class="back-btn" @click="router.back()">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <div class="thread-avatar clickable-avatar" @click="verPerfilId(activePeerId!)" title="Ver perfil">
-            <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
-            <span v-else>{{ initials(peerName) }}</span>
+          <div class="thread-avatar clickable-avatar" @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)" :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">
+            <template v-if="convs.find(c => c.peer_id === activePeerId)?.is_group">
+              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </template>
+            <template v-else>
+              <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
+              <span v-else>{{ initials(peerName) }}</span>
+            </template>
           </div>
-          <span class="thread-peername clickable-name" @click="verPerfilId(activePeerId!)" title="Ver perfil">{{ peerName || '...' }}</span>
+          <span class="thread-peername clickable-name" @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)" :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">{{ peerName || '...' }}</span>
           
           <div style="flex-grow: 1;"></div>
           
@@ -613,12 +678,18 @@ onUnmounted(() => {
               ]">
                 <!-- Foto de perfil del otro usuario (solo si es "theirs" y es el primer mensaje de la tanda) -->
                 <div v-if="msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="msg-avatar clickable-avatar" @click="verPerfilId(msg.emisor_id)" title="Ver perfil">
-                  <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
-                  <span v-else>{{ initials(peerName) }}</span>
+                  <span v-if="convs.find(c => c.peer_id === activePeerId)?.is_group" style="font-size: 0.75rem;">{{ initials(msg.emisor_name) }}</span>
+                  <template v-else>
+                    <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
+                    <span v-else>{{ initials(peerName) }}</span>
+                  </template>
                 </div>
                 <div v-else-if="msg.emisor_id !== auth.user?.id" class="msg-avatar-placeholder"></div>
 
                 <div class="bubble">
+                  <div v-if="convs.find(c => c.peer_id === activePeerId)?.is_group && msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="group-sender-name">
+                    {{ msg.emisor_name }}
+                  </div>
                   <!-- Adjunto: imagen -->
                   <div v-if="msg.attachment_url && msg.attachment_type?.startsWith('image/')" class="attachment attachment-image">
                     <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer">
@@ -643,7 +714,7 @@ onUnmounted(() => {
                     <template v-if="msg.contenido.includes('📞 Videollamada iniciada. [SALA:')">
                       <div class="videocall-invite">
                         <p>📞 <strong>Videollamada iniciada</strong></p>
-                        <button class="join-call-btn" @click.stop="joinVideoCall(msg.contenido.split('[SALA:')[1].split(']')[0])">
+                        <button class="join-call-btn" @click.stop="joinVideoCall(msg.contenido.split('[SALA:')[1]?.split(']')[0] || '')">
                           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M23 7l-7 5 7 5V7z" />
                             <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
@@ -764,6 +835,22 @@ onUnmounted(() => {
       :userName="auth.user?.name ?? 'Usuario'"
       @close="showVideoCall = false"
     />
+
+    <!-- Modal de Buscar Usuarios -->
+    <SearchUserModal
+      v-if="showSearchUserModal"
+      :show="showSearchUserModal"
+      @close="showSearchUserModal = false"
+      @select="handleUserSelected"
+    />
+
+    <!-- Modal de Crear Grupo -->
+    <CreateGroupModal
+      v-if="showCreateGroupModal"
+      :show="showCreateGroupModal"
+      @close="showCreateGroupModal = false"
+      @created="handleGroupCreated"
+    />
   </div>
 </template>
 
@@ -779,10 +866,19 @@ onUnmounted(() => {
   background: var(--surface); overflow: hidden;
 }
 .convs-header {
+  display: flex; justify-content: space-between; align-items: center;
   padding: 1.25rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
 }
 .convs-header h2 { font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text); }
+.convs-actions { display: flex; gap: 0.5rem; }
+.action-btn { 
+  background: none; border: none; color: var(--text-muted); 
+  cursor: pointer; border-radius: 8px; padding: 0.4rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.action-btn:hover { background: var(--surface-hover); color: var(--primary); }
 .convs-loading, .convs-empty {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -873,6 +969,16 @@ onUnmounted(() => {
 }
 
 .msgs-list { display: flex; flex-direction: column; gap: .15rem; }
+
+.bubble {
+  padding: .75rem 1rem; border-radius: 18px; max-width: 100%;
+  font-size: .95rem; line-height: 1.4; color: var(--text); position: relative;
+  display: flex; flex-direction: column; gap: 0.4rem;
+}
+.group-sender-name {
+  font-size: 0.8rem; font-weight: 600; color: var(--primary);
+  margin-bottom: -0.25rem;
+}
 
 /* Burbujas */
 .bubble-wrap { display: flex; margin-bottom: .05rem; }

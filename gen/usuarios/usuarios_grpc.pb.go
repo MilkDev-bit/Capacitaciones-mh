@@ -27,6 +27,7 @@ const (
 	UsuariosService_GetPublicPerfil_FullMethodName  = "/usuarios.UsuariosService/GetPublicPerfil"
 	UsuariosService_ListUsers_FullMethodName        = "/usuarios.UsuariosService/ListUsers"
 	UsuariosService_DeleteUser_FullMethodName       = "/usuarios.UsuariosService/DeleteUser"
+	UsuariosService_SearchUsers_FullMethodName      = "/usuarios.UsuariosService/SearchUsers"
 )
 
 // UsuariosServiceClient is the client API for UsuariosService service.
@@ -53,6 +54,8 @@ type UsuariosServiceClient interface {
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	// Desactiva/elimina un usuario (solo admin).
 	DeleteUser(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Busca usuarios por nombre o correo.
+	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 }
 
 type usuariosServiceClient struct {
@@ -143,6 +146,16 @@ func (c *usuariosServiceClient) DeleteUser(ctx context.Context, in *UserIDReques
 	return out, nil
 }
 
+func (c *usuariosServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchUsersResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_SearchUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsuariosServiceServer is the server API for UsuariosService service.
 // All implementations must embed UnimplementedUsuariosServiceServer
 // for forward compatibility.
@@ -167,6 +180,8 @@ type UsuariosServiceServer interface {
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	// Desactiva/elimina un usuario (solo admin).
 	DeleteUser(context.Context, *UserIDRequest) (*EmptyResponse, error)
+	// Busca usuarios por nombre o correo.
+	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	mustEmbedUnimplementedUsuariosServiceServer()
 }
 
@@ -200,6 +215,9 @@ func (UnimplementedUsuariosServiceServer) ListUsers(context.Context, *ListUsersR
 }
 func (UnimplementedUsuariosServiceServer) DeleteUser(context.Context, *UserIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedUsuariosServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
 }
 func (UnimplementedUsuariosServiceServer) mustEmbedUnimplementedUsuariosServiceServer() {}
 func (UnimplementedUsuariosServiceServer) testEmbeddedByValue()                         {}
@@ -366,6 +384,24 @@ func _UsuariosService_DeleteUser_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsuariosService_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).SearchUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_SearchUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).SearchUsers(ctx, req.(*SearchUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UsuariosService_ServiceDesc is the grpc.ServiceDesc for UsuariosService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -404,6 +440,10 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUser",
 			Handler:    _UsuariosService_DeleteUser_Handler,
+		},
+		{
+			MethodName: "SearchUsers",
+			Handler:    _UsuariosService_SearchUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

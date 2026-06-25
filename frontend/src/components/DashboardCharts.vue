@@ -128,7 +128,7 @@ const barData = computed(() => ({
       fill: false,
       data: [20, 30, 25, 45, 60, 50]
     }
-  ]
+  ] as any[]
 }))
 
 const doughnutData = computed(() => ({

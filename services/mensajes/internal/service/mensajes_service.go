@@ -41,6 +41,7 @@ contenido := strings.TrimSpace(req.Contenido)
 		Contenido:      contenido,
 		AttachmentUrl:  req.AttachmentUrl,
 		AttachmentType: req.AttachmentType,
+		IsGroup:        req.IsGroup,
 	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "error guardando mensaje")
@@ -51,10 +52,10 @@ contenido := strings.TrimSpace(req.Contenido)
 func (s *MensajesService) GetMensajes(ctx context.Context, req *mensajespb.GetMensajesRequest) (*mensajespb.GetMensajesResponse, error) {
 // Solo marcar como leidos en la carga inicial (sin cursor de paginacion)
 if req.BeforeId == "" {
-_ = s.repo.MarcarLeidos(ctx, req.UserId, req.PeerId)
+_ = s.repo.MarcarLeidos(ctx, req.UserId, req.PeerId, req.IsGroup)
 }
 
-msgs, hasMore, err := s.repo.GetConversacion(ctx, req.UserId, req.PeerId, int(req.Limit), req.BeforeId)
+msgs, hasMore, err := s.repo.GetConversacion(ctx, req.UserId, req.PeerId, int(req.Limit), req.BeforeId, req.IsGroup)
 if err != nil {
 return nil, status.Error(codes.Internal, "error cargando mensajes")
 }
@@ -91,4 +92,39 @@ if err != nil {
 return nil, status.Error(codes.Internal, "error marcando mensaje")
 }
 return &mensajespb.MarcarLeidoResponse{Ok: emisorID != "", EmisorId: emisorID}, nil
+}
+
+func (s *MensajesService) MarcarLeidos(ctx context.Context, req *mensajespb.MarcarLeidosRequest) (*mensajespb.Empty, error) {
+if err := s.repo.MarcarLeidos(ctx, req.UserId, req.PeerId, req.IsGroup); err != nil {
+return nil, status.Error(codes.Internal, "error marcando leidos")
+}
+return &mensajespb.Empty{}, nil
+}
+
+func (s *MensajesService) CreateGroup(ctx context.Context, req *mensajespb.CreateGroupRequest) (*mensajespb.CreateGroupResponse, error) {
+grupoID, err := s.repo.CreateGroup(ctx, req.Nombre, req.AdminId)
+if err != nil {
+return nil, status.Error(codes.Internal, "error creando grupo")
+}
+if len(req.Members) > 0 {
+if err := s.repo.AddGroupMembers(ctx, grupoID, req.Members); err != nil {
+return nil, status.Error(codes.Internal, "error añadiendo miembros")
+}
+}
+return &mensajespb.CreateGroupResponse{GrupoId: grupoID, Nombre: req.Nombre}, nil
+}
+
+func (s *MensajesService) AddGroupMembers(ctx context.Context, req *mensajespb.AddGroupMembersRequest) (*mensajespb.Empty, error) {
+if err := s.repo.AddGroupMembers(ctx, req.GrupoId, req.UserIds); err != nil {
+return nil, status.Error(codes.Internal, "error añadiendo miembros")
+}
+return &mensajespb.Empty{}, nil
+}
+
+func (s *MensajesService) GetGroupMembers(ctx context.Context, req *mensajespb.GetGroupMembersRequest) (*mensajespb.GetGroupMembersResponse, error) {
+members, err := s.repo.GetGroupMembers(ctx, req.GrupoId)
+if err != nil {
+return nil, status.Error(codes.Internal, "error obteniendo miembros")
+}
+return &mensajespb.GetGroupMembersResponse{UserIds: members}, nil
 }

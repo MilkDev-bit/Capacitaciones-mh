@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI: any
+  }
+}
+
 const props = defineProps<{
   roomName: string
   userName: string

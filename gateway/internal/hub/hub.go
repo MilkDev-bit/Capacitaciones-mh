@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// MsgPayload es el payload de un evento new_message.
+// MsgPayload define la estructura de un mensaje entrante via WebSocket.
 type MsgPayload struct {
 	ID             string `json:"id"`
 	EmisorID       string `json:"emisor_id"`
@@ -19,6 +19,7 @@ type MsgPayload struct {
 	Leido          bool   `json:"leido"`
 	AttachmentUrl  string `json:"attachment_url,omitempty"`
 	AttachmentType string `json:"attachment_type,omitempty"`
+	IsGroup        bool   `json:"is_group"`
 }
 
 // Event es el mensaje JSON que el servidor envía al cliente WebSocket.

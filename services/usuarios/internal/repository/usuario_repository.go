@@ -36,6 +36,7 @@ func (u *Usuario) ToSummaryProto() *usuariospb.UserSummary {
 	return &usuariospb.UserSummary{
 		Id: u.ID, Name: u.Name, Email: u.Email, Role: u.Role,
 		CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		AvatarUrl: u.AvatarURL,
 	}
 }
 
@@ -46,6 +47,7 @@ type UsuarioRepository interface {
 	UpdateField(ctx context.Context, userID, field, value string) error
 	List(ctx context.Context, role string) ([]*Usuario, error)
 	Delete(ctx context.Context, userID string) error
+	Search(ctx context.Context, query string, limit int) ([]*Usuario, error)
 }
 
 type postgresUsuarioRepository struct{ db *sqlx.DB }
@@ -97,4 +99,20 @@ func (r *postgresUsuarioRepository) List(ctx context.Context, role string) ([]*U
 func (r *postgresUsuarioRepository) Delete(ctx context.Context, userID string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, userID)
 	return err
+}
+
+func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, limit int) ([]*Usuario, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	q := `SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
+	             COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
+	             COALESCE(specialty,'') specialty, created_at
+	      FROM users
+	      WHERE name ILIKE $1 OR email ILIKE $1
+	      ORDER BY name ASC
+	      LIMIT $2`
+	args := []any{"%" + query + "%", limit}
+	var users []*Usuario
+	return users, r.db.SelectContext(ctx, &users, q, args...)
 }

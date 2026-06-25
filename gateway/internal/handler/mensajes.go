@@ -112,11 +112,14 @@ limit = 50
 }
 beforeID := c.Query("before_id")
 
+isGroup := c.Query("is_group") == "true"
+
 resp, err := h.client.GetMensajes(c.Request.Context(), &mensajespb.GetMensajesRequest{
 UserId:   userID,
 PeerId:   peerID,
 Limit:    int32(limit),
 BeforeId: beforeID,
+IsGroup:  isGroup,
 })
 if err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando mensajes"})
@@ -142,6 +145,7 @@ Leido          bool      `json:"leido"`
 CreatedAt      time.Time `json:"created_at"`
 AttachmentUrl  string    `json:"attachment_url,omitempty"`
 AttachmentType string    `json:"attachment_type,omitempty"`
+IsGroup        bool      `json:"is_group"`
 }
 
 msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
@@ -158,6 +162,7 @@ Leido:          m.Leido,
 CreatedAt:      t,
 AttachmentUrl:  m.AttachmentUrl,
 AttachmentType: m.AttachmentType,
+IsGroup:        m.IsGroup,
 })
 }
 c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})
@@ -174,6 +179,7 @@ Contenido      string `json:"contenido"`
 PeerName       string `json:"peer_name"`
 AttachmentUrl  string `json:"attachment_url"`
 AttachmentType string `json:"attachment_type"`
+IsGroup        bool   `json:"is_group"`
 }
 if err := c.ShouldBindJSON(&body); err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
@@ -188,43 +194,62 @@ ReceptorName:   body.PeerName,
 Contenido:      body.Contenido,
 AttachmentUrl:  body.AttachmentUrl,
 AttachmentType: body.AttachmentType,
+IsGroup:        body.IsGroup,
 })
 if err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 return
 }
 
-t, _ := time.Parse("2006-01-02T15:04:05Z", resp.CreatedAt)
+	t, _ := time.Parse("2006-01-02T15:04:05Z", resp.CreatedAt)
 
-// Notificar al receptor en tiempo real via WebSocket
-h.hub.Broadcast(resp.ReceptorId, hub.Event{
-Type: "new_message",
-Msg: &hub.MsgPayload{
-ID:             resp.Id,
-EmisorID:       resp.EmisorId,
-EmisorName:     resp.EmisorName,
-ReceptorID:     resp.ReceptorId,
-ReceptorName:   resp.ReceptorName,
-Contenido:      resp.Contenido,
-CreatedAt:      t.Format(time.RFC3339),
-Leido:          resp.Leido,
-AttachmentUrl:  resp.AttachmentUrl,
-AttachmentType: resp.AttachmentType,
-},
-})
+	event := hub.Event{
+		Type: "new_message",
+		Msg: &hub.MsgPayload{
+			ID:             resp.Id,
+			EmisorID:       resp.EmisorId,
+			EmisorName:     resp.EmisorName,
+			ReceptorID:     resp.ReceptorId,
+			ReceptorName:   resp.ReceptorName,
+			Contenido:      resp.Contenido,
+			CreatedAt:      t.Format(time.RFC3339),
+			Leido:          resp.Leido,
+			AttachmentUrl:  resp.AttachmentUrl,
+			AttachmentType: resp.AttachmentType,
+			IsGroup:        resp.IsGroup,
+		},
+	}
 
-c.JSON(http.StatusCreated, gin.H{
-"id":              resp.Id,
-"emisor_id":       resp.EmisorId,
-"emisor_name":     resp.EmisorName,
-"receptor_id":     resp.ReceptorId,
-"receptor_name":   resp.ReceptorName,
-"contenido":       resp.Contenido,
-"leido":           resp.Leido,
-"created_at":      t,
-"attachment_url":  resp.AttachmentUrl,
-"attachment_type": resp.AttachmentType,
-})
+	if resp.IsGroup {
+		// Enviar a todos los miembros del grupo excepto al emisor
+		membersResp, err := h.client.GetGroupMembers(c.Request.Context(), &mensajespb.GetGroupMembersRequest{
+			GrupoId: resp.ReceptorId,
+		})
+		if err == nil {
+			for _, mID := range membersResp.UserIds {
+				if mID != userID {
+					h.hub.Broadcast(mID, event)
+				}
+			}
+		}
+	} else {
+		// Notificar al receptor en tiempo real via WebSocket
+		h.hub.Broadcast(resp.ReceptorId, event)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":              resp.Id,
+		"emisor_id":       resp.EmisorId,
+		"emisor_name":     resp.EmisorName,
+		"receptor_id":     resp.ReceptorId,
+		"receptor_name":   resp.ReceptorName,
+		"contenido":       resp.Contenido,
+		"leido":           resp.Leido,
+		"created_at":      t,
+		"attachment_url":  resp.AttachmentUrl,
+		"attachment_type": resp.AttachmentType,
+		"is_group":        resp.IsGroup,
+	})
 }
 
 // MarcarLeido marca un mensaje individual como leido y notifica al emisor.
@@ -249,4 +274,81 @@ PeerID: userID,
 }
 
 c.JSON(http.StatusOK, gin.H{"ok": resp.Ok})
+}
+
+// CreateGroup crea un nuevo grupo de mensajes.
+func (h *MensajesHandler) CreateGroup(c *gin.Context) {
+	userID := c.GetString(mw.CtxUserID)
+	var body struct {
+		Nombre  string   `json:"nombre"`
+		Members []string `json:"members"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
+		return
+	}
+
+	// Always add the creator to the members list if not present
+	membersMap := make(map[string]bool)
+	membersMap[userID] = true
+	for _, m := range body.Members {
+		membersMap[m] = true
+	}
+	var finalMembers []string
+	for m := range membersMap {
+		finalMembers = append(finalMembers, m)
+	}
+
+	resp, err := h.client.CreateGroup(c.Request.Context(), &mensajespb.CreateGroupRequest{
+		Nombre:   body.Nombre,
+		AdminId:  userID,
+		Members:  finalMembers,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando grupo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"grupo_id": resp.GrupoId,
+		"nombre":   resp.Nombre,
+	})
+}
+
+// AddGroupMembers agrega miembros a un grupo.
+func (h *MensajesHandler) AddGroupMembers(c *gin.Context) {
+	grupoID := c.Param("grupo_id")
+	var body struct {
+		Members []string `json:"members"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
+		return
+	}
+
+	_, err := h.client.AddGroupMembers(c.Request.Context(), &mensajespb.AddGroupMembersRequest{
+		GrupoId: grupoID,
+		UserIds: body.Members,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error añadiendo miembros al grupo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "miembros añadidos"})
+}
+
+// GetGroupMembers obtiene los miembros de un grupo.
+func (h *MensajesHandler) GetGroupMembers(c *gin.Context) {
+	grupoID := c.Param("grupo_id")
+
+	resp, err := h.client.GetGroupMembers(c.Request.Context(), &mensajespb.GetGroupMembersRequest{
+		GrupoId: grupoID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo miembros del grupo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"members": resp.UserIds})
 }

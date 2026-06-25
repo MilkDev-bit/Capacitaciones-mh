@@ -90,3 +90,12 @@ func (h *UsuariosHandler) DeleteUser(ctx context.Context, req *usuariospb.UserID
 	}
 	return &usuariospb.EmptyResponse{}, nil
 }
+
+func (h *UsuariosHandler) SearchUsers(ctx context.Context, req *usuariospb.SearchUsersRequest) (*usuariospb.SearchUsersResponse, error) {
+	resp, err := h.svc.SearchUsers(ctx, req.Query, int(req.Limit))
+	if err != nil {
+		slog.Error("SearchUsers", "error", err)
+		return nil, status.Error(codes.Internal, "error buscando usuarios")
+	}
+	return resp, nil
+}

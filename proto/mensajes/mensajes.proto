@@ -1,4 +1,4 @@
-﻿syntax = "proto3";
+syntax = "proto3";
 
 package mensajes;
 
@@ -10,6 +10,10 @@ service MensajesService {
   rpc ListConversaciones   (ListConversacionesRequest) returns (ListConversacionesResponse);
   rpc NoLeidos             (NoLeidosRequest)           returns (NoLeidosResponse);
   rpc MarcarLeido          (MarcarLeidoRequest)        returns (MarcarLeidoResponse);
+  rpc MarcarLeidos         (MarcarLeidosRequest)       returns (Empty);
+  rpc CreateGroup          (CreateGroupRequest)        returns (CreateGroupResponse);
+  rpc AddGroupMembers      (AddGroupMembersRequest)    returns (Empty);
+  rpc GetGroupMembers      (GetGroupMembersRequest)    returns (GetGroupMembersResponse);
 }
 
 message SendMensajeRequest {
@@ -20,6 +24,7 @@ message SendMensajeRequest {
   string contenido       = 5;
   string attachment_url  = 6;
   string attachment_type = 7;
+  bool   is_group        = 8;
 }
 
 message GetMensajesRequest {
@@ -27,6 +32,7 @@ message GetMensajesRequest {
   string peer_id   = 2;
   int32  limit     = 3;
   string before_id = 4;
+  bool   is_group  = 5;
 }
 
 message ListConversacionesRequest {
@@ -42,6 +48,12 @@ message MarcarLeidoRequest {
   string user_id = 2;
 }
 
+message MarcarLeidosRequest {
+  string user_id  = 1;
+  string peer_id  = 2;
+  bool   is_group = 3;
+}
+
 message MensajeResponse {
   string id              = 1;
   string emisor_id       = 2;
@@ -53,6 +65,7 @@ message MensajeResponse {
   string created_at      = 8;
   string attachment_url  = 9;
   string attachment_type = 10;
+  bool   is_group        = 11;
 }
 
 message GetMensajesResponse {
@@ -66,6 +79,7 @@ message ConversacionResponse {
   string last_message = 3;
   string last_time    = 4;
   int32  unread_count = 5;
+  bool   is_group     = 6;
 }
 
 message ListConversacionesResponse {
@@ -80,3 +94,29 @@ message MarcarLeidoResponse {
   bool   ok        = 1;
   string emisor_id = 2;
 }
+
+message CreateGroupRequest {
+  string nombre   = 1;
+  string admin_id = 2;
+  repeated string members = 3;
+}
+
+message CreateGroupResponse {
+  string grupo_id = 1;
+  string nombre   = 2;
+}
+
+message AddGroupMembersRequest {
+  string grupo_id = 1;
+  repeated string user_ids = 2;
+}
+
+message GetGroupMembersRequest {
+  string grupo_id = 1;
+}
+
+message GetGroupMembersResponse {
+  repeated string user_ids = 1;
+}
+
+message Empty {}
