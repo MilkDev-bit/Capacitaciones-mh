@@ -307,22 +307,44 @@ func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, co
 func (s *CursosService) WebhookEnroll(ctx context.Context, userID, capacitacionID, licenciaID string) error {
 	// The webhook already verified payment, so we just enroll them.
 	err := s.repo.InscribirseConLicencia(ctx, userID, capacitacionID, licenciaID)
-	if err == nil {
+	if err == nil && licenciaID != "" {
 		_ = s.repo.IncrementarUsoLicencia(ctx, licenciaID)
 	}
 	return err
 }
 
 func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
-	lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
-	if err != nil {
-		return nil, err
-	}
-	if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
-		return nil, errors.New("licencia agotada")
-	}
-
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
+	var productName string
+	var amount int64
+	var clientRef string
+
+	if req.CursoId != "" {
+		// B2C Course Purchase
+		curso, err := s.repo.GetCursoByID(ctx, req.CursoId)
+		if err != nil {
+			return nil, err
+		}
+		if curso.Precio <= 0 {
+			return nil, errors.New("el curso no tiene precio")
+		}
+		productName = curso.Title
+		amount = int64(curso.Precio * 100)
+		clientRef = "curso||" + req.UserId + "||" + curso.ID
+	} else {
+		// B2B License Purchase
+		lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
+		if err != nil {
+			return nil, err
+		}
+		if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
+			return nil, errors.New("licencia agotada")
+		}
+		productName = lic.Nombre
+		amount = int64(lic.Precio * 100)
+		clientRef = req.UserId + "||" + lic.CapacitacionID + "||" + lic.ID
+	}
 
 	// Crear sesión
 	params := &stripe.CheckoutSessionParams{
@@ -332,9 +354,9 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 					Currency: stripe.String("mxn"),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String(lic.Nombre),
+						Name: stripe.String(productName),
 					},
-					UnitAmount: stripe.Int64(int64(lic.Precio * 100)),
+					UnitAmount: stripe.Int64(amount),
 				},
 				Quantity: stripe.Int64(1),
 			},
@@ -342,7 +364,7 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
 		SuccessURL: stripe.String(req.SuccessUrl),
 		CancelURL:  stripe.String(req.CancelUrl),
-		ClientReferenceID: stripe.String(req.UserId + "||" + lic.CapacitacionID + "||" + lic.ID),
+		ClientReferenceID: stripe.String(clientRef),
 	}
 
 	sess, err := session.New(params)

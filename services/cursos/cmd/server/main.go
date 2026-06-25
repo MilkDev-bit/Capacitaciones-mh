@@ -94,6 +94,7 @@ func runMigrations(db *sqlx.DB) error {
 			welcome_message TEXT DEFAULT '',
 			thumbnail_url TEXT DEFAULT '',
 			color TEXT DEFAULT '#f97316',
+			precio NUMERIC(10,2) NOT NULL DEFAULT 0.00,
 			deleted_at TIMESTAMPTZ,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		)`,
@@ -111,6 +112,7 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS welcome_message TEXT DEFAULT ''`,
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS thumbnail_url TEXT DEFAULT ''`,
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#f97316'`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS precio NUMERIC(10,2) NOT NULL DEFAULT 0.00`,
 		`ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_name TEXT DEFAULT ''`,
 		`ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_email TEXT DEFAULT ''`,
 		// Ampliar color de VARCHAR(20) a TEXT para soportar valores de gradiente CSS

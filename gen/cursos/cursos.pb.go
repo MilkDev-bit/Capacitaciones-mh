@@ -253,6 +253,7 @@ type CreateCursoRequest struct {
 	WelcomeMessage string                 `protobuf:"bytes,8,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
 	ThumbnailUrl   string                 `protobuf:"bytes,9,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
 	Color          string                 `protobuf:"bytes,10,opt,name=color,proto3" json:"color,omitempty"`
+	Precio         float64                `protobuf:"fixed64,11,opt,name=precio,proto3" json:"precio,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -357,6 +358,13 @@ func (x *CreateCursoRequest) GetColor() string {
 	return ""
 }
 
+func (x *CreateCursoRequest) GetPrecio() float64 {
+	if x != nil {
+		return x.Precio
+	}
+	return 0
+}
+
 type UpdateCursoRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	CursoId        string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -370,6 +378,7 @@ type UpdateCursoRequest struct {
 	WelcomeMessage string                 `protobuf:"bytes,9,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
 	ThumbnailUrl   string                 `protobuf:"bytes,10,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
 	Color          string                 `protobuf:"bytes,11,opt,name=color,proto3" json:"color,omitempty"`
+	Precio         float64                `protobuf:"fixed64,12,opt,name=precio,proto3" json:"precio,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -479,6 +488,13 @@ func (x *UpdateCursoRequest) GetColor() string {
 		return x.Color
 	}
 	return ""
+}
+
+func (x *UpdateCursoRequest) GetPrecio() float64 {
+	if x != nil {
+		return x.Precio
+	}
+	return 0
 }
 
 type InscribirseRequest struct {
@@ -668,6 +684,7 @@ type CursoResponse struct {
 	ThumbnailUrl   string                 `protobuf:"bytes,11,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
 	Color          string                 `protobuf:"bytes,12,opt,name=color,proto3" json:"color,omitempty"`
 	CreatedAt      string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Precio         float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -791,6 +808,13 @@ func (x *CursoResponse) GetCreatedAt() string {
 		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *CursoResponse) GetPrecio() float64 {
+	if x != nil {
+		return x.Precio
+	}
+	return 0
 }
 
 type ListCursosResponse struct {
@@ -1628,9 +1652,10 @@ func (x *WebhookEnrollRequest) GetLicenciaId() string {
 type CheckoutSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	LicenciaId    string                 `protobuf:"bytes,2,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	LicenciaId    string                 `protobuf:"bytes,2,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"` // optional, used for B2B payment flow (if still supported)
 	SuccessUrl    string                 `protobuf:"bytes,3,opt,name=success_url,json=successUrl,proto3" json:"success_url,omitempty"`
 	CancelUrl     string                 `protobuf:"bytes,4,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
+	CursoId       string                 `protobuf:"bytes,5,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"` // optional, used for individual B2C course purchase
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1693,6 +1718,13 @@ func (x *CheckoutSessionRequest) GetCancelUrl() string {
 	return ""
 }
 
+func (x *CheckoutSessionRequest) GetCursoId() string {
+	if x != nil {
+		return x.CursoId
+	}
+	return ""
+}
+
 type CheckoutSessionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
@@ -1751,7 +1783,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xb1\x02\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xc9\x02\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -1763,7 +1795,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x0fwelcome_message\x18\b \x01(\tR\x0ewelcomeMessage\x12#\n" +
 	"\rthumbnail_url\x18\t \x01(\tR\fthumbnailUrl\x12\x14\n" +
 	"\x05color\x18\n" +
-	" \x01(\tR\x05color\"\xcc\x02\n" +
+	" \x01(\tR\x05color\x12\x16\n" +
+	"\x06precio\x18\v \x01(\x01R\x06precio\"\xe4\x02\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -1776,7 +1809,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x0fwelcome_message\x18\t \x01(\tR\x0ewelcomeMessage\x12#\n" +
 	"\rthumbnail_url\x18\n" +
 	" \x01(\tR\fthumbnailUrl\x12\x14\n" +
-	"\x05color\x18\v \x01(\tR\x05color\"H\n" +
+	"\x05color\x18\v \x01(\tR\x05color\x12\x16\n" +
+	"\x06precio\x18\f \x01(\x01R\x06precio\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -1787,7 +1821,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\x8c\x03\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xa4\x03\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -1803,7 +1837,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rthumbnail_url\x18\v \x01(\tR\fthumbnailUrl\x12\x14\n" +
 	"\x05color\x18\f \x01(\tR\x05color\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\r \x01(\tR\tcreatedAt\"C\n" +
+	"created_at\x18\r \x01(\tR\tcreatedAt\x12\x16\n" +
+	"\x06precio\x18\x0e \x01(\x01R\x06precio\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +
@@ -1863,7 +1898,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x1f\n" +
 	"\vlicencia_id\x18\x03 \x01(\tR\n" +
-	"licenciaId\"\x92\x01\n" +
+	"licenciaId\"\xad\x01\n" +
 	"\x16CheckoutSessionRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vlicencia_id\x18\x02 \x01(\tR\n" +
@@ -1871,7 +1906,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\vsuccess_url\x18\x03 \x01(\tR\n" +
 	"successUrl\x12\x1d\n" +
 	"\n" +
-	"cancel_url\x18\x04 \x01(\tR\tcancelUrl\"+\n" +
+	"cancel_url\x18\x04 \x01(\tR\tcancelUrl\x12\x19\n" +
+	"\bcurso_id\x18\x05 \x01(\tR\acursoId\"+\n" +
 	"\x17CheckoutSessionResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url2\xb9\x10\n" +
 	"\rCursosService\x12<\n" +

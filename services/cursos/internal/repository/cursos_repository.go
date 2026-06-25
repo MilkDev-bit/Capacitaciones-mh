@@ -25,6 +25,7 @@ type Curso struct {
 	WelcomeMessage string    `db:"welcome_message"`
 	ThumbnailURL   string    `db:"thumbnail_url"`
 	Color          string    `db:"color"`
+	Precio         float64   `db:"precio"`
 	CreatedAt      time.Time `db:"created_at"`
 }
 
@@ -34,6 +35,7 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		FilePath: c.FilePath, Content: c.Content, IsPublic: c.IsPublic,
 		CodigoAcceso: c.CodigoAcceso, WelcomeMessage: c.WelcomeMessage,
 		ThumbnailUrl: c.ThumbnailURL, Color: c.Color,
+		Precio:    c.Precio,
 		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if c.InstructorID != nil {
@@ -162,7 +164,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(file_path,'') file_path, COALESCE(content,'') content,
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
-	COALESCE(color,'#f97316') color, created_at FROM capacitaciones`
+	COALESCE(color,'#f97316') color, precio, created_at FROM capacitaciones`
 
 func (r *postgresCursosRepository) List(ctx context.Context) ([]*Curso, error) {
 	var cursos []*Curso
@@ -211,11 +213,10 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	}
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO capacitaciones(title,description,type,file_path,content,instructor_id,
-		 is_public,welcome_message,thumbnail_url,color)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -229,10 +230,9 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 		color = "#f97316"
 	}
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE capacitaciones SET title=$1,description=$2,type=$3,file_path=$4,content=$5,
-		 is_public=$6,welcome_message=$7,thumbnail_url=$8,color=$9 WHERE id=$10`,
+		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10 WHERE id=$11`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.CursoId,
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.CursoId,
 	)
 	if err != nil {
 		return nil, err
@@ -404,11 +404,17 @@ func (r *postgresCursosRepository) IncrementarUsoLicencia(ctx context.Context, l
 }
 
 func (r *postgresCursosRepository) InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error {
+	var licID interface{}
+	if licenciaID == "" {
+		licID = nil
+	} else {
+		licID = licenciaID
+	}
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO inscripciones(user_id, capacitacion_id, licencia_id)
 		 VALUES($1,$2,$3)
 		 ON CONFLICT DO NOTHING`,
-		userID, cursoID, licenciaID)
+		userID, cursoID, licID)
 	return err
 }
 

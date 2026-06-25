@@ -47,6 +47,7 @@ async function saveInfo() {
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
+      precio: Number(form.value.precio) || 0,
     }
 
     if (thumbnailFile.value) {
@@ -95,7 +96,7 @@ async function saveInfo() {
       <div class="drawer-tabs">
         <button class="tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">Información</button>
         <button class="tab" :class="{ active: activeTab === 'lessons' }" @click="activeTab = 'lessons'">Lecciones</button>
-        <button class="tab" :class="{ active: activeTab === 'licencias' }" @click="activeTab = 'licencias'">Licencias</button>
+        <button class="tab" :class="{ active: activeTab === 'licencias' }" @click="activeTab = 'licencias'">Códigos Corporativos</button>
       </div>
 
       <div class="drawer-body">
@@ -107,6 +108,10 @@ async function saveInfo() {
           <div class="field mt-4">
             <label>Descripción</label>
             <textarea v-model="form.description" class="field-input" rows="3"></textarea>
+          </div>
+          <div class="field mt-4">
+            <label>Precio Individual (MXN)</label>
+            <input type="number" v-model="form.precio" class="field-input" placeholder="Ej: 500.00" min="0" step="0.01" />
           </div>
           <div class="field mt-4">
             <label>Color de Portada</label>

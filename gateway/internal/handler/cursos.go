@@ -178,7 +178,8 @@ func (h *CursosHandler) ListLicencias(ctx *gin.Context) {
 // POST /api/checkout-session
 func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 	var req struct {
-		LicenciaID string `json:"licencia_id" binding:"required"`
+		LicenciaID string `json:"licencia_id"`
+		CursoID    string `json:"curso_id"`
 		SuccessUrl string `json:"success_url" binding:"required"`
 		CancelUrl  string `json:"cancel_url" binding:"required"`
 	}
@@ -189,6 +190,7 @@ func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 	resp, err := h.c.Cursos.CreateCheckoutSession(genMetadata(ctx), &cursospb.CheckoutSessionRequest{
 		UserId:     ctx.GetString(middleware.CtxUserID),
 		LicenciaId: req.LicenciaID,
+		CursoId:    req.CursoID,
 		SuccessUrl: req.SuccessUrl,
 		CancelUrl:  req.CancelUrl,
 	})
@@ -236,6 +238,16 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 				CapacitacionId: capID,
 				LicenciaId:     licID,
 			})
+		} else if len(parts) == 3 && parts[0] == "curso" {
+			// Es una compra de curso individual (B2C)
+			// Formato: curso||userID||cursoID
+			userID := parts[1]
+			capID := parts[2]
+			_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
+				UserId:         userID,
+				CapacitacionId: capID,
+				LicenciaId:     "", // no hay licencia, es directo
+			})
 		}
 	}
 	c.Status(http.StatusOK)
@@ -258,14 +270,15 @@ func (h *CursosHandler) InstructorListCapacitaciones(ctx *gin.Context) {
 // POST /api/instructor/capacitaciones
 func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title          string `json:"title"           binding:"required"`
-		Description    string `json:"description"`
-		Type           string `json:"type"`
-		Content        string `json:"content"`
-		IsPublic       bool   `json:"is_public"`
-		WelcomeMessage string `json:"welcome_message"`
-		ThumbnailURL   string `json:"thumbnail_url"`
-		Color          string `json:"color"`
+		Title          string  `json:"title"           binding:"required"`
+		Description    string  `json:"description"`
+		Type           string  `json:"type"`
+		Content        string  `json:"content"`
+		IsPublic       bool    `json:"is_public"`
+		WelcomeMessage string  `json:"welcome_message"`
+		ThumbnailURL   string  `json:"thumbnail_url"`
+		Color          string  `json:"color"`
+		Precio         float64 `json:"precio"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -281,6 +294,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage: body.WelcomeMessage,
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
+		Precio:         body.Precio,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -292,14 +306,15 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 // PUT /api/instructor/capacitaciones/:id
 func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title          string `json:"title"`
-		Description    string `json:"description"`
-		Type           string `json:"type"`
-		Content        string `json:"content"`
-		IsPublic       bool   `json:"is_public"`
-		WelcomeMessage string `json:"welcome_message"`
-		ThumbnailURL   string `json:"thumbnail_url"`
-		Color          string `json:"color"`
+		Title          string  `json:"title"`
+		Description    string  `json:"description"`
+		Type           string  `json:"type"`
+		Content        string  `json:"content"`
+		IsPublic       bool    `json:"is_public"`
+		WelcomeMessage string  `json:"welcome_message"`
+		ThumbnailURL   string  `json:"thumbnail_url"`
+		Color          string  `json:"color"`
+		Precio         float64 `json:"precio"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -316,6 +331,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage: body.WelcomeMessage,
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
+		Precio:         body.Precio,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

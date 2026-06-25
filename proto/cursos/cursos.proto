@@ -65,6 +65,7 @@ message CreateCursoRequest {
   string welcome_message = 8;
   string thumbnail_url   = 9;
   string color           = 10;
+  double precio          = 11;
 }
 
 message UpdateCursoRequest {
@@ -79,6 +80,7 @@ message UpdateCursoRequest {
   string welcome_message = 9;
   string thumbnail_url   = 10;
   string color           = 11;
+  double precio          = 12;
 }
 
 message InscribirseRequest {
@@ -114,6 +116,7 @@ message CursoResponse {
   string thumbnail_url   = 11;
   string color           = 12;
   string created_at      = 13;
+  double precio          = 14;
 }
 
 message ListCursosResponse {
@@ -200,9 +203,10 @@ message WebhookEnrollRequest {
 
 message CheckoutSessionRequest {
   string user_id = 1;
-  string licencia_id = 2;
+  string licencia_id = 2; // optional, used for B2B payment flow (if still supported)
   string success_url = 3;
   string cancel_url = 4;
+  string curso_id = 5; // optional, used for individual B2C course purchase
 }
 
 message CheckoutSessionResponse {

@@ -64,10 +64,11 @@ async function unirseConCodigo() {
   }
 }
 
-async function buyLicencia(lic: any) {
+async function buyCourse() {
+  if (!curso.value) return
   try {
     const res = await api.post('/checkout-session', {
-      licencia_id: lic.id,
+      curso_id: curso.value.id,
       success_url: window.location.origin + '/usuario/capacitaciones?success=true',
       cancel_url: window.location.href
     })
@@ -131,22 +132,16 @@ async function buyLicencia(lic: any) {
         </div>
 
         <div class="right-col">
-          <h3>Opciones de Acceso</h3>
-          <div v-if="licencias.length === 0" class="empty-lic">
-            Este curso no tiene licencias de pago disponibles.
+          <div class="purchase-card" v-if="curso.precio > 0">
+            <h3>Comprar Curso</h3>
+            <div class="price">${{ curso.precio }} MXN</div>
+            <button class="btn btn-primary w-100 mt-3" @click="buyCourse">
+              Comprar Ahora
+            </button>
           </div>
-          
-          <div v-else class="lic-list">
-            <div v-for="lic in licencias" :key="lic.id" class="lic-card">
-              <h4>{{ lic.nombre }}</h4>
-              <div class="price">${{ lic.precio }} USD</div>
-              <div class="cap" v-if="lic.capacidad_maxima > 0">
-                Quedan {{ lic.capacidad_maxima - lic.usadas }} lugares
-              </div>
-              <button class="btn btn-primary w-100 mt-3" @click="buyLicencia(lic)">
-                Comprar Licencia
-              </button>
-            </div>
+          <div v-else class="purchase-card">
+            <h3>Curso Gratuito</h3>
+            <p style="color: var(--muted); font-size: 0.95rem; margin-top: 8px;">Este curso no tiene costo o es solo por invitación.</p>
           </div>
         </div>
       </div>
@@ -173,15 +168,11 @@ async function buyLicencia(lic: any) {
 .code-helper-text { font-size: 0.9rem; color: var(--muted); margin: 0 0 16px 0; line-height: 1.4; }
 .field-input { flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-md); font-size: 1rem; outline: none; }
 .field-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.purchase-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; text-align: center; }
+.purchase-card h3 { margin: 0; font-size: 1.2rem; color: var(--dark); font-weight: 700; }
+.purchase-card .price { font-size: 2rem; font-weight: 800; color: var(--brand); margin-top: 16px; }
 .w-100 { width: 100%; }
 .mt-3 { margin-top: 16px; }
-
-.lic-list { display: flex; flex-direction: column; gap: 16px; }
-.lic-card { background: #fff; padding: 24px; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; }
-.lic-card h4 { font-size: 1.15rem; font-weight: 800; margin: 0 0 8px 0; color: var(--dark); }
-.price { font-size: 2rem; font-weight: 900; color: var(--brand); margin-bottom: 8px; }
-.cap { font-size: 0.85rem; color: var(--muted); background: var(--surface-soft); padding: 4px 12px; border-radius: 20px; display: inline-block; }
-.empty-lic { color: var(--muted); font-style: italic; }
 
 .state-center { display: flex; flex-direction: column; align-items: center; gap: 16px; color: var(--muted); }
 .spin-ring { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(249,115,22,.2); border-top-color: var(--brand); animation: spin .8s linear infinite; }
