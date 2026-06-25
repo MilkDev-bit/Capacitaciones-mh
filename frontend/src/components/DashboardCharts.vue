@@ -97,7 +97,10 @@ const barData = computed(() => ({
     {
       label: 'Nuevos Accesos',
       backgroundColor: (context: any) => {
-        const ctx = context.chart.ctx;
+        const chart = context.chart;
+        if (!chart) return '#f97316';
+        const ctx = chart.ctx;
+        if (!ctx) return '#f97316';
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, '#f97316');
         gradient.addColorStop(1, isDark.value ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.05)');
@@ -113,7 +116,10 @@ const barData = computed(() => ({
     {
       label: 'Certificados Emitidos',
       backgroundColor: (context: any) => {
-        const ctx = context.chart.ctx;
+        const chart = context.chart;
+        if (!chart) return '#3b82f6';
+        const ctx = chart.ctx;
+        if (!ctx) return '#3b82f6';
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, '#3b82f6');
         gradient.addColorStop(1, isDark.value ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.05)');
