@@ -67,10 +67,24 @@ CREATE TABLE IF NOT EXISTS respuestas (
     UNIQUE(user_id, examen_id, pregunta_id)
 );
 
+CREATE TABLE IF NOT EXISTS curso_licencias (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    nombre VARCHAR(100) NOT NULL,
+    precio NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    capacidad_maxima INT NOT NULL DEFAULT 0,
+    usadas INT NOT NULL DEFAULT 0,
+    codigo_acceso VARCHAR(50) UNIQUE,
+    stripe_product_id VARCHAR(100),
+    stripe_price_id VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS inscripciones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    licencia_id UUID REFERENCES curso_licencias(id) ON DELETE SET NULL,
     inscrito_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, capacitacion_id)
 );
@@ -124,6 +138,7 @@ CREATE TABLE IF NOT EXISTS foro_posts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    licencia_id UUID REFERENCES curso_licencias(id) ON DELETE CASCADE,
     titulo VARCHAR(200) NOT NULL,
     contenido TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()

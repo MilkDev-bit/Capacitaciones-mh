@@ -6,6 +6,10 @@ import (
 
 	cursospb "Prueba-Go/gen/cursos"
 	"Prueba-Go/services/cursos/internal/repository"
+	"os"
+
+	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v78/checkout/session"
 )
 
 // Errores de dominio.
@@ -229,4 +233,104 @@ func toProtoSlice(cursos []*repository.Curso) []*cursospb.CursoResponse {
 		result = append(result, c.ToProto())
 	}
 	return result
+}
+
+// ── Licencias ─────────────────────────────────────────────────────────────────
+
+func (s *CursosService) CreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*cursospb.Licencia, error) {
+	lic, err := s.repo.CreateLicencia(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return lic.ToProto(), nil
+}
+
+func (s *CursosService) UpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*cursospb.Licencia, error) {
+	lic, err := s.repo.UpdateLicencia(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return lic.ToProto(), nil
+}
+
+func (s *CursosService) DeleteLicencia(ctx context.Context, id string) error {
+	return s.repo.DeleteLicencia(ctx, id)
+}
+
+func (s *CursosService) ListLicencias(ctx context.Context, cursoID string) ([]*cursospb.Licencia, error) {
+	lics, err := s.repo.ListLicencias(ctx, cursoID)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*cursospb.Licencia, len(lics))
+	for i, l := range lics {
+		res[i] = l.ToProto()
+	}
+	return res, nil
+}
+
+func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capacitacionID, codigo string) error {
+	lic, err := s.repo.FindLicenciaByCodigo(ctx, codigo)
+	if err != nil {
+		return err
+	}
+	if lic.CapacitacionID != capacitacionID {
+		return ErrNotFound
+	}
+	if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
+		return errors.New("licencia agotada")
+	}
+	err = s.repo.InscribirseConLicencia(ctx, userID, capacitacionID, lic.ID)
+	if err == nil {
+		_ = s.repo.IncrementarUsoLicencia(ctx, lic.ID)
+	}
+	return err
+}
+
+func (s *CursosService) WebhookEnroll(ctx context.Context, userID, capacitacionID, licenciaID string) error {
+	// The webhook already verified payment, so we just enroll them.
+	err := s.repo.InscribirseConLicencia(ctx, userID, capacitacionID, licenciaID)
+	if err == nil {
+		_ = s.repo.IncrementarUsoLicencia(ctx, licenciaID)
+	}
+	return err
+}
+
+func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
+	lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
+	if err != nil {
+		return nil, err
+	}
+	if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
+		return nil, errors.New("licencia agotada")
+	}
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
+	// Crear sesión
+	params := &stripe.CheckoutSessionParams{
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+					Currency: stripe.String("usd"),
+					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+						Name: stripe.String(lic.Nombre),
+					},
+					UnitAmount: stripe.Int64(int64(lic.Precio * 100)),
+				},
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String(req.SuccessUrl),
+		CancelURL:  stripe.String(req.CancelUrl),
+		ClientReferenceID: stripe.String(req.UserId + "||" + lic.CapacitacionID + "||" + lic.ID),
+	}
+
+	sess, err := session.New(params)
+	if err != nil {
+		return nil, err
+	}
+	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
 }

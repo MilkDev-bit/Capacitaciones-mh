@@ -63,6 +63,41 @@ func (a *Asignacion) ToProto() *cursospb.AsignacionInfo {
 	return r
 }
 
+type Licencia struct {
+	ID              string    `db:"id"`
+	CapacitacionID  string    `db:"capacitacion_id"`
+	Nombre          string    `db:"nombre"`
+	Precio          float64   `db:"precio"`
+	CapacidadMaxima int32     `db:"capacidad_maxima"`
+	Usadas          int32     `db:"usadas"`
+	CodigoAcceso    *string   `db:"codigo_acceso"`
+	StripeProductID *string   `db:"stripe_product_id"`
+	StripePriceID   *string   `db:"stripe_price_id"`
+	CreatedAt       time.Time `db:"created_at"`
+}
+
+func (l *Licencia) ToProto() *cursospb.Licencia {
+	r := &cursospb.Licencia{
+		Id:              l.ID,
+		CapacitacionId:  l.CapacitacionID,
+		Nombre:          l.Nombre,
+		Precio:          l.Precio,
+		CapacidadMaxima: l.CapacidadMaxima,
+		Usadas:          l.Usadas,
+		CreatedAt:       l.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if l.CodigoAcceso != nil {
+		r.CodigoAcceso = *l.CodigoAcceso
+	}
+	if l.StripeProductID != nil {
+		r.StripeProductId = *l.StripeProductID
+	}
+	if l.StripePriceID != nil {
+		r.StripePriceId = *l.StripePriceID
+	}
+	return r
+}
+
 // EstudianteRow para listar estudiantes de un curso.
 type EstudianteRow struct {
 	ID         string    `db:"id"`
@@ -105,6 +140,16 @@ type CursosRepository interface {
 	ListAsignaciones(ctx context.Context) ([]*Asignacion, error)
 	AdminAsignar(ctx context.Context, userID, cursoID string) error
 	DesAsignar(ctx context.Context, asignacionID string) error
+
+	// Licencias
+	CreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*Licencia, error)
+	UpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*Licencia, error)
+	DeleteLicencia(ctx context.Context, licenciaID string) error
+	ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error)
+	FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error)
+	FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error)
+	IncrementarUsoLicencia(ctx context.Context, licenciaID string) error
+	InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error
 }
 
 type postgresCursosRepository struct{ db *sqlx.DB }
@@ -302,6 +347,68 @@ func (r *postgresCursosRepository) AdminAsignar(ctx context.Context, userID, cur
 
 func (r *postgresCursosRepository) DesAsignar(ctx context.Context, asignacionID string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM asignaciones WHERE id=$1`, asignacionID)
+	return err
+}
+
+// ── Licencias ─────────────────────────────────────────────────────────────────
+
+func (r *postgresCursosRepository) CreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*Licencia, error) {
+	codigo := uuid.New().String()[:12]
+	var id string
+	err := r.db.QueryRowContext(ctx,
+		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso)
+		 VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		req.CapacitacionId, req.Nombre, req.Precio, req.CapacidadMaxima, codigo,
+	).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindLicenciaByID(ctx, id)
+}
+
+func (r *postgresCursosRepository) UpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*Licencia, error) {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE curso_licencias SET nombre=$1, precio=$2, capacidad_maxima=$3 WHERE id=$4`,
+		req.Nombre, req.Precio, req.CapacidadMaxima, req.Id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindLicenciaByID(ctx, req.Id)
+}
+
+func (r *postgresCursosRepository) DeleteLicencia(ctx context.Context, licenciaID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM curso_licencias WHERE id=$1`, licenciaID)
+	return err
+}
+
+func (r *postgresCursosRepository) ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error) {
+	var lics []*Licencia
+	return lics, r.db.SelectContext(ctx, &lics,
+		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE capacitacion_id=$1 ORDER BY created_at DESC`, cursoID)
+}
+
+func (r *postgresCursosRepository) FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error) {
+	l := &Licencia{}
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE id=$1`, licenciaID)
+}
+
+func (r *postgresCursosRepository) FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error) {
+	l := &Licencia{}
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE codigo_acceso=$1`, codigo)
+}
+
+func (r *postgresCursosRepository) IncrementarUsoLicencia(ctx context.Context, licenciaID string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET usadas = usadas + 1 WHERE id=$1`, licenciaID)
+	return err
+}
+
+func (r *postgresCursosRepository) InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO inscripciones(user_id, capacitacion_id, licencia_id)
+		 VALUES($1,$2,$3)
+		 ON CONFLICT DO NOTHING`,
+		userID, cursoID, licenciaID)
 	return err
 }
 

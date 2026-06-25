@@ -24,7 +24,7 @@ COPY gen/go.sum* gen/
 COPY gateway/go.mod gateway/go.sum* ./gateway/
 
 WORKDIR /app/gateway
-RUN GOWORK=off go mod download
+RUN GOWORK=off go mod download && GOWORK=off go mod tidy
 
 WORKDIR /app
 COPY gen/     gen/

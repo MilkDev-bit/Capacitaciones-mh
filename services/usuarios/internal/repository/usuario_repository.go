@@ -47,7 +47,7 @@ type UsuarioRepository interface {
 	UpdateField(ctx context.Context, userID, field, value string) error
 	List(ctx context.Context, role string) ([]*Usuario, error)
 	Delete(ctx context.Context, userID string) error
-	Search(ctx context.Context, query string, limit int) ([]*Usuario, error)
+	Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error)
 }
 
 type postgresUsuarioRepository struct{ db *sqlx.DB }
@@ -101,18 +101,42 @@ func (r *postgresUsuarioRepository) Delete(ctx context.Context, userID string) e
 	return err
 }
 
-func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, limit int) ([]*Usuario, error) {
+func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error) {
 	if limit <= 0 {
 		limit = 10
 	}
-	q := `SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
-	             COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
-	             COALESCE(specialty,'') specialty, created_at
-	      FROM users
-	      WHERE name ILIKE $1 OR email ILIKE $1
-	      ORDER BY name ASC
-	      LIMIT $2`
-	args := []any{"%" + query + "%", limit}
+	// Fetch requester role
+	var role string
+	_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
+
+	var q string
+	var args []any
+	if role == "admin" || role == "instructor" {
+		q = `SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
+		            COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
+		            COALESCE(specialty,'') specialty, created_at
+		     FROM users
+		     WHERE name ILIKE $1 OR email ILIKE $1
+		     ORDER BY name ASC LIMIT $2`
+		args = []any{"%" + query + "%", limit}
+	} else {
+		// Isolate to same cohort
+		q = `SELECT DISTINCT u.id, u.name, u.email, u.role, COALESCE(u.bio,'') bio, COALESCE(u.avatar_url,'') avatar_url,
+		            COALESCE(u.cover_url,'') cover_url, COALESCE(u.phone,'') phone,
+		            COALESCE(u.specialty,'') specialty, u.created_at
+		     FROM users u
+		     JOIN inscripciones i ON u.id = i.user_id
+		     WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
+		       AND EXISTS (
+		           SELECT 1 FROM inscripciones i2
+		           WHERE i2.user_id = $3
+		             AND i2.capacitacion_id = i.capacitacion_id
+		             AND i2.licencia_id IS NOT DISTINCT FROM i.licencia_id
+		       )
+		     ORDER BY u.name ASC LIMIT $2`
+		args = []any{"%" + query + "%", limit, requesterID}
+	}
+
 	var users []*Usuario
 	return users, r.db.SelectContext(ctx, &users, q, args...)
 }

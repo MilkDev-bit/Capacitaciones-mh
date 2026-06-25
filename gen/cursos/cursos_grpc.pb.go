@@ -25,6 +25,10 @@ const (
 	CursosService_GetCurso_FullMethodName                     = "/cursos.CursosService/GetCurso"
 	CursosService_Inscribirse_FullMethodName                  = "/cursos.CursosService/Inscribirse"
 	CursosService_UnirseConCodigo_FullMethodName              = "/cursos.CursosService/UnirseConCodigo"
+	CursosService_UnirseConLicencia_FullMethodName            = "/cursos.CursosService/UnirseConLicencia"
+	CursosService_WebhookEnroll_FullMethodName                = "/cursos.CursosService/WebhookEnroll"
+	CursosService_CreateCheckoutSession_FullMethodName        = "/cursos.CursosService/CreateCheckoutSession"
+	CursosService_ListLicencias_FullMethodName                = "/cursos.CursosService/ListLicencias"
 	CursosService_InstructorListCapacitaciones_FullMethodName = "/cursos.CursosService/InstructorListCapacitaciones"
 	CursosService_InstructorCreateCapacitacion_FullMethodName = "/cursos.CursosService/InstructorCreateCapacitacion"
 	CursosService_InstructorUpdateCapacitacion_FullMethodName = "/cursos.CursosService/InstructorUpdateCapacitacion"
@@ -33,6 +37,9 @@ const (
 	CursosService_InstructorResetCodigo_FullMethodName        = "/cursos.CursosService/InstructorResetCodigo"
 	CursosService_InstructorListEstudiantes_FullMethodName    = "/cursos.CursosService/InstructorListEstudiantes"
 	CursosService_InstructorAsignar_FullMethodName            = "/cursos.CursosService/InstructorAsignar"
+	CursosService_InstructorCreateLicencia_FullMethodName     = "/cursos.CursosService/InstructorCreateLicencia"
+	CursosService_InstructorUpdateLicencia_FullMethodName     = "/cursos.CursosService/InstructorUpdateLicencia"
+	CursosService_InstructorDeleteLicencia_FullMethodName     = "/cursos.CursosService/InstructorDeleteLicencia"
 	CursosService_AdminListCapacitaciones_FullMethodName      = "/cursos.CursosService/AdminListCapacitaciones"
 	CursosService_AdminCreateCapacitacion_FullMethodName      = "/cursos.CursosService/AdminCreateCapacitacion"
 	CursosService_AdminUpdateCapacitacion_FullMethodName      = "/cursos.CursosService/AdminUpdateCapacitacion"
@@ -58,6 +65,10 @@ type CursosServiceClient interface {
 	GetCurso(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	Inscribirse(ctx context.Context, in *InscribirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	UnirseConLicencia(ctx context.Context, in *UnirseConLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
+	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -67,6 +78,9 @@ type CursosServiceClient interface {
 	InstructorResetCodigo(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	InstructorListEstudiantes(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListEstudiantesResponse, error)
 	InstructorAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	InstructorCreateLicencia(ctx context.Context, in *CreateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error)
+	InstructorUpdateLicencia(ctx context.Context, in *UpdateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error)
+	InstructorDeleteLicencia(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// ── Admin ─────────────────────────────────────────────────────────────────
 	AdminListCapacitaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	AdminCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -139,6 +153,46 @@ func (c *cursosServiceClient) UnirseConCodigo(ctx context.Context, in *UnirseReq
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, CursosService_UnirseConCodigo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) UnirseConLicencia(ctx context.Context, in *UnirseConLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_UnirseConLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_WebhookEnroll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutSessionResponse)
+	err := c.cc.Invoke(ctx, CursosService_CreateCheckoutSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLicenciasResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListLicencias_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +273,36 @@ func (c *cursosServiceClient) InstructorAsignar(ctx context.Context, in *Asignar
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, CursosService_InstructorAsignar_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) InstructorCreateLicencia(ctx context.Context, in *CreateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Licencia)
+	err := c.cc.Invoke(ctx, CursosService_InstructorCreateLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) InstructorUpdateLicencia(ctx context.Context, in *UpdateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Licencia)
+	err := c.cc.Invoke(ctx, CursosService_InstructorUpdateLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) InstructorDeleteLicencia(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_InstructorDeleteLicencia_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -311,6 +395,10 @@ type CursosServiceServer interface {
 	GetCurso(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	Inscribirse(context.Context, *InscribirseRequest) (*EmptyResponse, error)
 	UnirseConCodigo(context.Context, *UnirseRequest) (*EmptyResponse, error)
+	UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error)
+	WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EmptyResponse, error)
+	CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error)
+	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
@@ -320,6 +408,9 @@ type CursosServiceServer interface {
 	InstructorResetCodigo(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	InstructorListEstudiantes(context.Context, *UserRequest) (*ListEstudiantesResponse, error)
 	InstructorAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error)
+	InstructorCreateLicencia(context.Context, *CreateLicenciaRequest) (*Licencia, error)
+	InstructorUpdateLicencia(context.Context, *UpdateLicenciaRequest) (*Licencia, error)
+	InstructorDeleteLicencia(context.Context, *LicenciaIDRequest) (*EmptyResponse, error)
 	// ── Admin ─────────────────────────────────────────────────────────────────
 	AdminListCapacitaciones(context.Context, *EmptyRequest) (*ListCursosResponse, error)
 	AdminCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
@@ -356,6 +447,18 @@ func (UnimplementedCursosServiceServer) Inscribirse(context.Context, *Inscribirs
 func (UnimplementedCursosServiceServer) UnirseConCodigo(context.Context, *UnirseRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UnirseConCodigo not implemented")
 }
+func (UnimplementedCursosServiceServer) UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnirseConLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WebhookEnroll not implemented")
+}
+func (UnimplementedCursosServiceServer) CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSession not implemented")
+}
+func (UnimplementedCursosServiceServer) ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLicencias not implemented")
+}
 func (UnimplementedCursosServiceServer) InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListCapacitaciones not implemented")
 }
@@ -379,6 +482,15 @@ func (UnimplementedCursosServiceServer) InstructorListEstudiantes(context.Contex
 }
 func (UnimplementedCursosServiceServer) InstructorAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorAsignar not implemented")
+}
+func (UnimplementedCursosServiceServer) InstructorCreateLicencia(context.Context, *CreateLicenciaRequest) (*Licencia, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorCreateLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) InstructorUpdateLicencia(context.Context, *UpdateLicenciaRequest) (*Licencia, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorUpdateLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) InstructorDeleteLicencia(context.Context, *LicenciaIDRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorDeleteLicencia not implemented")
 }
 func (UnimplementedCursosServiceServer) AdminListCapacitaciones(context.Context, *EmptyRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminListCapacitaciones not implemented")
@@ -530,6 +642,78 @@ func _CursosService_UnirseConCodigo_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_UnirseConLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnirseConLicenciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).UnirseConLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_UnirseConLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).UnirseConLicencia(ctx, req.(*UnirseConLicenciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_WebhookEnroll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WebhookEnrollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).WebhookEnroll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_WebhookEnroll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).WebhookEnroll(ctx, req.(*WebhookEnrollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_CreateCheckoutSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckoutSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).CreateCheckoutSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_CreateCheckoutSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).CreateCheckoutSession(ctx, req.(*CheckoutSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListLicencias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLicenciasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListLicencias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListLicencias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListLicencias(ctx, req.(*ListLicenciasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_InstructorListCapacitaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserRequest)
 	if err := dec(in); err != nil {
@@ -670,6 +854,60 @@ func _CursosService_InstructorAsignar_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).InstructorAsignar(ctx, req.(*AsignarRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_InstructorCreateLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLicenciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).InstructorCreateLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_InstructorCreateLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).InstructorCreateLicencia(ctx, req.(*CreateLicenciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_InstructorUpdateLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLicenciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).InstructorUpdateLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_InstructorUpdateLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).InstructorUpdateLicencia(ctx, req.(*UpdateLicenciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_InstructorDeleteLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LicenciaIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).InstructorDeleteLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_InstructorDeleteLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).InstructorDeleteLicencia(ctx, req.(*LicenciaIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -832,6 +1070,22 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CursosService_UnirseConCodigo_Handler,
 		},
 		{
+			MethodName: "UnirseConLicencia",
+			Handler:    _CursosService_UnirseConLicencia_Handler,
+		},
+		{
+			MethodName: "WebhookEnroll",
+			Handler:    _CursosService_WebhookEnroll_Handler,
+		},
+		{
+			MethodName: "CreateCheckoutSession",
+			Handler:    _CursosService_CreateCheckoutSession_Handler,
+		},
+		{
+			MethodName: "ListLicencias",
+			Handler:    _CursosService_ListLicencias_Handler,
+		},
+		{
 			MethodName: "InstructorListCapacitaciones",
 			Handler:    _CursosService_InstructorListCapacitaciones_Handler,
 		},
@@ -862,6 +1116,18 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstructorAsignar",
 			Handler:    _CursosService_InstructorAsignar_Handler,
+		},
+		{
+			MethodName: "InstructorCreateLicencia",
+			Handler:    _CursosService_InstructorCreateLicencia_Handler,
+		},
+		{
+			MethodName: "InstructorUpdateLicencia",
+			Handler:    _CursosService_InstructorUpdateLicencia_Handler,
+		},
+		{
+			MethodName: "InstructorDeleteLicencia",
+			Handler:    _CursosService_InstructorDeleteLicencia_Handler,
 		},
 		{
 			MethodName: "AdminListCapacitaciones",

@@ -17,6 +17,10 @@ service CursosService {
   rpc GetCurso(CursoIDRequest) returns (CursoResponse);
   rpc Inscribirse(InscribirseRequest) returns (EmptyResponse);
   rpc UnirseConCodigo(UnirseRequest) returns (EmptyResponse);
+  rpc UnirseConLicencia(UnirseConLicenciaRequest) returns (EmptyResponse);
+  rpc WebhookEnroll(WebhookEnrollRequest) returns (EmptyResponse);
+  rpc CreateCheckoutSession(CheckoutSessionRequest) returns (CheckoutSessionResponse);
+  rpc ListLicencias(ListLicenciasRequest) returns (ListLicenciasResponse);
 
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
@@ -27,6 +31,10 @@ service CursosService {
   rpc InstructorResetCodigo(CursoIDRequest) returns (CursoResponse);
   rpc InstructorListEstudiantes(UserRequest) returns (ListEstudiantesResponse);
   rpc InstructorAsignar(AsignarRequest) returns (EmptyResponse);
+  
+  rpc InstructorCreateLicencia(CreateLicenciaRequest) returns (Licencia);
+  rpc InstructorUpdateLicencia(UpdateLicenciaRequest) returns (Licencia);
+  rpc InstructorDeleteLicencia(LicenciaIDRequest) returns (EmptyResponse);
 
   // ── Admin ─────────────────────────────────────────────────────────────────
   rpc AdminListCapacitaciones(EmptyRequest) returns (ListCursosResponse);
@@ -137,3 +145,65 @@ message ListAsignacionesResponse {
 }
 
 message EmptyResponse {}
+
+message Licencia {
+  string id = 1;
+  string capacitacion_id = 2;
+  string nombre = 3;
+  double precio = 4;
+  int32 capacidad_maxima = 5;
+  int32 usadas = 6;
+  string codigo_acceso = 7;
+  string stripe_product_id = 8;
+  string stripe_price_id = 9;
+  string created_at = 10;
+}
+
+message CreateLicenciaRequest {
+  string capacitacion_id = 1;
+  string nombre = 2;
+  double precio = 3;
+  int32 capacidad_maxima = 4;
+}
+
+message UpdateLicenciaRequest {
+  string id = 1;
+  string nombre = 2;
+  double precio = 3;
+  int32 capacidad_maxima = 4;
+}
+
+message LicenciaIDRequest {
+  string id = 1;
+}
+
+message ListLicenciasRequest {
+  string capacitacion_id = 1;
+}
+
+message ListLicenciasResponse {
+  repeated Licencia licencias = 1;
+}
+
+message UnirseConLicenciaRequest {
+  string user_id = 1;
+  string capacitacion_id = 2;
+  string codigo_acceso = 3;
+}
+
+message WebhookEnrollRequest {
+  string user_id = 1;
+  string capacitacion_id = 2;
+  string licencia_id = 3;
+}
+
+message CheckoutSessionRequest {
+  string user_id = 1;
+  string licencia_id = 2;
+  string success_url = 3;
+  string cancel_url = 4;
+}
+
+message CheckoutSessionResponse {
+  string url = 1;
+}

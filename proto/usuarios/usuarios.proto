@@ -66,8 +66,9 @@ message ListUsersRequest {
 }
 
 message SearchUsersRequest {
-  string query = 1;
-  int32  limit = 2;
+  string query        = 1;
+  int32  limit        = 2;
+  string requester_id = 3;
 }
 
 // ── Responses ────────────────────────────────────────────────────────────────

@@ -92,10 +92,14 @@ func (h *UsuariosHandler) DeleteUser(ctx context.Context, req *usuariospb.UserID
 }
 
 func (h *UsuariosHandler) SearchUsers(ctx context.Context, req *usuariospb.SearchUsersRequest) (*usuariospb.SearchUsersResponse, error) {
-	resp, err := h.svc.SearchUsers(ctx, req.Query, int(req.Limit))
+	limit := int(req.Limit)
+	if limit <= 0 {
+		limit = 10
+	}
+	resp, err := h.svc.Search(ctx, req.Query, limit, req.RequesterId)
 	if err != nil {
 		slog.Error("SearchUsers", "error", err)
 		return nil, status.Error(codes.Internal, "error buscando usuarios")
 	}
-	return resp, nil
+	return &usuariospb.SearchUsersResponse{Users: resp}, nil
 }

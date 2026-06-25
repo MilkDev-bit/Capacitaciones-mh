@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
@@ -10,6 +14,8 @@ import (
 	cursospb "Prueba-Go/gen/cursos"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v78/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -34,6 +40,15 @@ type CursosHandler struct {
 
 func NewCursosHandler(c *clients.Clients) *CursosHandler {
 	return &CursosHandler{c: c}
+}
+
+// func genMetadata(ctx *gin.Context) context.Context
+func genMetadata(ctx *gin.Context) context.Context {
+	md := metadata.Pairs(
+		"x-user-name", toASCII(ctx.GetString(middleware.CtxUserName)),
+		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
+	)
+	return metadata.NewOutgoingContext(ctx.Request.Context(), md)
 }
 
 // GET /api/cursos-publicos
@@ -124,6 +139,106 @@ func (h *CursosHandler) UnirseConCodigo(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"message": "inscripción exitosa"})
+}
+
+// POST /api/inscripciones-licencia
+func (h *CursosHandler) UnirseConLicencia(ctx *gin.Context) {
+	var req struct {
+		CapacitacionID string `json:"capacitacion_id" binding:"required"`
+		CodigoAcceso   string `json:"codigo_acceso" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	_, err := h.c.Cursos.UnirseConLicencia(genMetadata(ctx), &cursospb.UnirseConLicenciaRequest{
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		CapacitacionId: req.CapacitacionID,
+		CodigoAcceso:   req.CodigoAcceso,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Inscrito con licencia correctamente"})
+}
+
+// GET /api/capacitaciones/:id/licencias
+func (h *CursosHandler) ListLicencias(ctx *gin.Context) {
+	resp, err := h.c.Cursos.ListLicencias(genMetadata(ctx), &cursospb.ListLicenciasRequest{
+		CapacitacionId: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Licencias)
+}
+
+// POST /api/checkout-session
+func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
+	var req struct {
+		LicenciaID string `json:"licencia_id" binding:"required"`
+		SuccessUrl string `json:"success_url" binding:"required"`
+		CancelUrl  string `json:"cancel_url" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Cursos.CreateCheckoutSession(genMetadata(ctx), &cursospb.CheckoutSessionRequest{
+		UserId:     ctx.GetString(middleware.CtxUserID),
+		LicenciaId: req.LicenciaID,
+		SuccessUrl: req.SuccessUrl,
+		CancelUrl:  req.CancelUrl,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"url": resp.Url})
+}
+
+// POST /api/webhooks/stripe
+func (h *CursosHandler) StripeWebhook(c *gin.Context) {
+	const MaxBodyBytes = int64(65536)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
+	payload, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Error reading request body"})
+		return
+	}
+
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	signatureHeader := c.GetHeader("Stripe-Signature")
+	event, err := webhook.ConstructEvent(payload, signatureHeader, endpointSecret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Webhook signature verification failed"})
+		return
+	}
+
+	if event.Type == "checkout.session.completed" {
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+
+		ref := session.ClientReferenceID
+		parts := strings.Split(ref, "||")
+		if len(parts) == 3 {
+			userID := parts[0]
+			capID := parts[1]
+			licID := parts[2]
+			
+			_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
+				UserId:         userID,
+				CapacitacionId: capID,
+				LicenciaId:     licID,
+			})
+		}
+	}
+	c.Status(http.StatusOK)
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
@@ -289,6 +404,47 @@ func (h *CursosHandler) InstructorAsignar(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"message": "asignado"})
+}
+
+// POST /api/instructor/licencias
+func (h *CursosHandler) InstructorCreateLicencia(ctx *gin.Context) {
+	var req cursospb.CreateLicenciaRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Cursos.InstructorCreateLicencia(genMetadata(ctx), &req)
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// PUT /api/instructor/licencias/:id
+func (h *CursosHandler) InstructorUpdateLicencia(ctx *gin.Context) {
+	var req cursospb.UpdateLicenciaRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	req.Id = ctx.Param("id")
+	resp, err := h.c.Cursos.InstructorUpdateLicencia(genMetadata(ctx), &req)
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// DELETE /api/instructor/licencias/:id
+func (h *CursosHandler) InstructorDeleteLicencia(ctx *gin.Context) {
+	_, err := h.c.Cursos.InstructorDeleteLicencia(genMetadata(ctx), &cursospb.LicenciaIDRequest{Id: ctx.Param("id")})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "eliminada"})
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

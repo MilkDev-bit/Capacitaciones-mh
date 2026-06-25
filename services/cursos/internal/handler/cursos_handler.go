@@ -72,6 +72,36 @@ func (h *CursosHandler) UnirseConCodigo(ctx context.Context, req *cursospb.Unirs
 	return &cursospb.EmptyResponse{}, nil
 }
 
+func (h *CursosHandler) UnirseConLicencia(ctx context.Context, req *cursospb.UnirseConLicenciaRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.UnirseConLicencia(ctx, req.UserId, req.CapacitacionId, req.CodigoAcceso); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.WebhookEnroll(ctx, req.UserId, req.CapacitacionId, req.LicenciaId); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
+	resp, err := h.svc.CreateCheckoutSession(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+func (h *CursosHandler) ListLicencias(ctx context.Context, req *cursospb.ListLicenciasRequest) (*cursospb.ListLicenciasResponse, error) {
+	list, err := h.svc.ListLicencias(ctx, req.CapacitacionId)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.ListLicenciasResponse{Licencias: list}, nil
+}
+
 // ── Instructor ────────────────────────────────────────────────────────────────
 
 func (h *CursosHandler) InstructorListCapacitaciones(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListCursosResponse, error) {
@@ -136,6 +166,29 @@ func (h *CursosHandler) InstructorListEstudiantes(ctx context.Context, req *curs
 
 func (h *CursosHandler) InstructorAsignar(ctx context.Context, req *cursospb.AsignarRequest) (*cursospb.EmptyResponse, error) {
 	if err := h.svc.InstructorAsignar(ctx, req.RequesterId, req.TargetUserId, req.CapacitacionId); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) InstructorCreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*cursospb.Licencia, error) {
+	l, err := h.svc.CreateLicencia(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return l, nil
+}
+
+func (h *CursosHandler) InstructorUpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*cursospb.Licencia, error) {
+	l, err := h.svc.UpdateLicencia(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return l, nil
+}
+
+func (h *CursosHandler) InstructorDeleteLicencia(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.DeleteLicencia(ctx, req.Id); err != nil {
 		return nil, mapErr(err)
 	}
 	return &cursospb.EmptyResponse{}, nil
