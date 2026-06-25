@@ -82,3 +82,15 @@ func (s *UsuariosService) Search(ctx context.Context, query string, limit int, r
 	}
 	return summaries, nil
 }
+
+func (s *UsuariosService) ListNotificaciones(ctx context.Context, userID string) (*usuariospb.ListNotificacionesResponse, error) {
+	notifs, err := s.repo.ListNotificaciones(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &usuariospb.ListNotificacionesResponse{Notificaciones: notifs}, nil
+}
+
+func (s *UsuariosService) MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error {
+	return s.repo.MarkNotificacionesRead(ctx, userID, ids)
+}

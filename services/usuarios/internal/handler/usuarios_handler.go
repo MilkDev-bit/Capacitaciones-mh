@@ -103,3 +103,20 @@ func (h *UsuariosHandler) SearchUsers(ctx context.Context, req *usuariospb.Searc
 	}
 	return &usuariospb.SearchUsersResponse{Users: resp}, nil
 }
+
+func (h *UsuariosHandler) ListNotificaciones(ctx context.Context, req *usuariospb.UserIDRequest) (*usuariospb.ListNotificacionesResponse, error) {
+	resp, err := h.svc.ListNotificaciones(ctx, req.UserId)
+	if err != nil {
+		slog.Error("ListNotificaciones", "user_id", req.UserId, "error", err)
+		return nil, status.Error(codes.Internal, "error listando notificaciones")
+	}
+	return resp, nil
+}
+
+func (h *UsuariosHandler) MarkNotificacionesRead(ctx context.Context, req *usuariospb.MarkNotificacionesReadRequest) (*usuariospb.EmptyResponse, error) {
+	if err := h.svc.MarkNotificacionesRead(ctx, req.UserId, req.Ids); err != nil {
+		slog.Error("MarkNotificacionesRead", "user_id", req.UserId, "error", err)
+		return nil, status.Error(codes.Internal, "error marcando notificaciones leidas")
+	}
+	return &usuariospb.EmptyResponse{}, nil
+}

@@ -101,6 +101,10 @@ func New(d Deps) *gin.Engine {
 			auth.GET("/usuarios/:id/perfil", d.UsuariosH.GetPublicPerfil)
 			auth.GET("/usuarios/search", d.UsuariosH.SearchUsers)
 
+			// Notificaciones
+			auth.GET("/notificaciones", d.UsuariosH.ListNotificaciones)
+			auth.POST("/notificaciones/marcar-leidas", d.UsuariosH.MarcarNotificacionesLeidas)
+
 			// Cursos
 			auth.GET("/mis-capacitaciones", d.CursosH.ListMisCapacitaciones)
 			auth.GET("/capacitaciones/:id", d.CursosH.GetCurso)

@@ -48,6 +48,8 @@ type UsuarioRepository interface {
 	List(ctx context.Context, role string) ([]*Usuario, error)
 	Delete(ctx context.Context, userID string) error
 	Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error)
+	ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error)
+	MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error
 }
 
 type postgresUsuarioRepository struct{ db *sqlx.DB }
@@ -139,4 +141,52 @@ func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, li
 
 	var users []*Usuario
 	return users, r.db.SelectContext(ctx, &users, q, args...)
+}
+
+func (r *postgresUsuarioRepository) ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error) {
+	query := `
+		SELECT id, user_id, tipo, titulo, mensaje, leida, COALESCE(enlace, '') as enlace, created_at
+		FROM notificaciones
+		WHERE user_id = $1
+		ORDER BY created_at DESC LIMIT 50`
+	
+	type dbNotif struct {
+		ID        string    `db:"id"`
+		UserID    string    `db:"user_id"`
+		Tipo      string    `db:"tipo"`
+		Titulo    string    `db:"titulo"`
+		Mensaje   string    `db:"mensaje"`
+		Leida     bool      `db:"leida"`
+		Enlace    string    `db:"enlace"`
+		CreatedAt time.Time `db:"created_at"`
+	}
+
+	var rows []dbNotif
+	if err := r.db.SelectContext(ctx, &rows, query, userID); err != nil {
+		return nil, err
+	}
+
+	res := make([]*usuariospb.Notificacion, len(rows))
+	for i, r := range rows {
+		res[i] = &usuariospb.Notificacion{
+			Id:        r.ID,
+			UserId:    r.UserID,
+			Tipo:      r.Tipo,
+			Titulo:    r.Titulo,
+			Mensaje:   r.Mensaje,
+			Leida:     r.Leida,
+			Enlace:    r.Enlace,
+			CreatedAt: r.CreatedAt.Format(time.RFC3339),
+		}
+	}
+	return res, nil
+}
+
+func (r *postgresUsuarioRepository) MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	query := `UPDATE notificaciones SET leida = true WHERE user_id = $1 AND id = ANY($2)`
+	_, err := r.db.ExecContext(ctx, query, userID, ids)
+	return err
 }

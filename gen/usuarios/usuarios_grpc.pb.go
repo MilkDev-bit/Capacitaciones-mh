@@ -19,15 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UsuariosService_GetPerfil_FullMethodName        = "/usuarios.UsuariosService/GetPerfil"
-	UsuariosService_UpdatePerfil_FullMethodName     = "/usuarios.UsuariosService/UpdatePerfil"
-	UsuariosService_UpdateAvatarURL_FullMethodName  = "/usuarios.UsuariosService/UpdateAvatarURL"
-	UsuariosService_UpdateCoverURL_FullMethodName   = "/usuarios.UsuariosService/UpdateCoverURL"
-	UsuariosService_BecomeInstructor_FullMethodName = "/usuarios.UsuariosService/BecomeInstructor"
-	UsuariosService_GetPublicPerfil_FullMethodName  = "/usuarios.UsuariosService/GetPublicPerfil"
-	UsuariosService_ListUsers_FullMethodName        = "/usuarios.UsuariosService/ListUsers"
-	UsuariosService_DeleteUser_FullMethodName       = "/usuarios.UsuariosService/DeleteUser"
-	UsuariosService_SearchUsers_FullMethodName      = "/usuarios.UsuariosService/SearchUsers"
+	UsuariosService_GetPerfil_FullMethodName              = "/usuarios.UsuariosService/GetPerfil"
+	UsuariosService_UpdatePerfil_FullMethodName           = "/usuarios.UsuariosService/UpdatePerfil"
+	UsuariosService_UpdateAvatarURL_FullMethodName        = "/usuarios.UsuariosService/UpdateAvatarURL"
+	UsuariosService_UpdateCoverURL_FullMethodName         = "/usuarios.UsuariosService/UpdateCoverURL"
+	UsuariosService_BecomeInstructor_FullMethodName       = "/usuarios.UsuariosService/BecomeInstructor"
+	UsuariosService_GetPublicPerfil_FullMethodName        = "/usuarios.UsuariosService/GetPublicPerfil"
+	UsuariosService_ListUsers_FullMethodName              = "/usuarios.UsuariosService/ListUsers"
+	UsuariosService_DeleteUser_FullMethodName             = "/usuarios.UsuariosService/DeleteUser"
+	UsuariosService_SearchUsers_FullMethodName            = "/usuarios.UsuariosService/SearchUsers"
+	UsuariosService_ListNotificaciones_FullMethodName     = "/usuarios.UsuariosService/ListNotificaciones"
+	UsuariosService_MarkNotificacionesRead_FullMethodName = "/usuarios.UsuariosService/MarkNotificacionesRead"
 )
 
 // UsuariosServiceClient is the client API for UsuariosService service.
@@ -56,6 +58,9 @@ type UsuariosServiceClient interface {
 	DeleteUser(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Busca usuarios por nombre o correo.
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
+	// Notificaciones
+	ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error)
+	MarkNotificacionesRead(ctx context.Context, in *MarkNotificacionesReadRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type usuariosServiceClient struct {
@@ -156,6 +161,26 @@ func (c *usuariosServiceClient) SearchUsers(ctx context.Context, in *SearchUsers
 	return out, nil
 }
 
+func (c *usuariosServiceClient) ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNotificacionesResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_ListNotificaciones_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usuariosServiceClient) MarkNotificacionesRead(ctx context.Context, in *MarkNotificacionesReadRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_MarkNotificacionesRead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsuariosServiceServer is the server API for UsuariosService service.
 // All implementations must embed UnimplementedUsuariosServiceServer
 // for forward compatibility.
@@ -182,6 +207,9 @@ type UsuariosServiceServer interface {
 	DeleteUser(context.Context, *UserIDRequest) (*EmptyResponse, error)
 	// Busca usuarios por nombre o correo.
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
+	// Notificaciones
+	ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error)
+	MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedUsuariosServiceServer()
 }
 
@@ -218,6 +246,12 @@ func (UnimplementedUsuariosServiceServer) DeleteUser(context.Context, *UserIDReq
 }
 func (UnimplementedUsuariosServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
+}
+func (UnimplementedUsuariosServiceServer) ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNotificaciones not implemented")
+}
+func (UnimplementedUsuariosServiceServer) MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MarkNotificacionesRead not implemented")
 }
 func (UnimplementedUsuariosServiceServer) mustEmbedUnimplementedUsuariosServiceServer() {}
 func (UnimplementedUsuariosServiceServer) testEmbeddedByValue()                         {}
@@ -402,6 +436,42 @@ func _UsuariosService_SearchUsers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsuariosService_ListNotificaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).ListNotificaciones(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_ListNotificaciones_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).ListNotificaciones(ctx, req.(*UserIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsuariosService_MarkNotificacionesRead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkNotificacionesReadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).MarkNotificacionesRead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_MarkNotificacionesRead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).MarkNotificacionesRead(ctx, req.(*MarkNotificacionesReadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UsuariosService_ServiceDesc is the grpc.ServiceDesc for UsuariosService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -444,6 +514,14 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchUsers",
 			Handler:    _UsuariosService_SearchUsers_Handler,
+		},
+		{
+			MethodName: "ListNotificaciones",
+			Handler:    _UsuariosService_ListNotificaciones_Handler,
+		},
+		{
+			MethodName: "MarkNotificacionesRead",
+			Handler:    _UsuariosService_MarkNotificacionesRead_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

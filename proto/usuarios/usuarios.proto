@@ -34,6 +34,10 @@ service UsuariosService {
 
   // Busca usuarios por nombre o correo.
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  // Notificaciones
+  rpc ListNotificaciones(UserIDRequest) returns (ListNotificacionesResponse);
+  rpc MarkNotificacionesRead(MarkNotificacionesReadRequest) returns (EmptyResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -71,6 +75,11 @@ message SearchUsersRequest {
   string requester_id = 3;
 }
 
+message MarkNotificacionesReadRequest {
+  string user_id = 1;
+  repeated string ids = 2;
+}
+
 // ── Responses ────────────────────────────────────────────────────────────────
 
 message PerfilResponse {
@@ -102,6 +111,21 @@ message UserSummary {
 
 message SearchUsersResponse {
   repeated UserSummary users = 1;
+}
+
+message Notificacion {
+  string id         = 1;
+  string user_id    = 2;
+  string tipo       = 3;
+  string titulo     = 4;
+  string mensaje    = 5;
+  bool   leida      = 6;
+  string enlace     = 7;
+  string created_at = 8;
+}
+
+message ListNotificacionesResponse {
+  repeated Notificacion notificaciones = 1;
 }
 
 message EmptyResponse {}

@@ -157,6 +157,38 @@ func (h *UsuariosHandler) SearchUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp.Users)
 }
 
+// GET /api/notificaciones
+func (h *UsuariosHandler) ListNotificaciones(ctx *gin.Context) {
+	resp, err := h.c.Usuarios.ListNotificaciones(ctx.Request.Context(), &usuariospb.UserIDRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Notificaciones)
+}
+
+// POST /api/notificaciones/marcar-leidas
+func (h *UsuariosHandler) MarcarNotificacionesLeidas(ctx *gin.Context) {
+	var body struct {
+		IDs []string `json:"ids"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	_, err := h.c.Usuarios.MarkNotificacionesRead(ctx.Request.Context(), &usuariospb.MarkNotificacionesReadRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+		Ids:    body.IDs,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
 // uploadFileToR2 lee el multipart del contexto y lo sube a R2.
 func uploadFileToR2(ctx *gin.Context, folder string) (string, error) {
 	fh, err := ctx.FormFile("file")

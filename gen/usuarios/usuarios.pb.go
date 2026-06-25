@@ -357,6 +357,58 @@ func (x *SearchUsersRequest) GetRequesterId() string {
 	return ""
 }
 
+type MarkNotificacionesReadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Ids           []string               `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarkNotificacionesReadRequest) Reset() {
+	*x = MarkNotificacionesReadRequest{}
+	mi := &file_usuarios_usuarios_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarkNotificacionesReadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarkNotificacionesReadRequest) ProtoMessage() {}
+
+func (x *MarkNotificacionesReadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_usuarios_usuarios_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarkNotificacionesReadRequest.ProtoReflect.Descriptor instead.
+func (*MarkNotificacionesReadRequest) Descriptor() ([]byte, []int) {
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MarkNotificacionesReadRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MarkNotificacionesReadRequest) GetIds() []string {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
 type PerfilResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -375,7 +427,7 @@ type PerfilResponse struct {
 
 func (x *PerfilResponse) Reset() {
 	*x = PerfilResponse{}
-	mi := &file_usuarios_usuarios_proto_msgTypes[6]
+	mi := &file_usuarios_usuarios_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +439,7 @@ func (x *PerfilResponse) String() string {
 func (*PerfilResponse) ProtoMessage() {}
 
 func (x *PerfilResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_usuarios_usuarios_proto_msgTypes[6]
+	mi := &file_usuarios_usuarios_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,7 +452,7 @@ func (x *PerfilResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerfilResponse.ProtoReflect.Descriptor instead.
 func (*PerfilResponse) Descriptor() ([]byte, []int) {
-	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{6}
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PerfilResponse) GetId() string {
@@ -483,7 +535,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_usuarios_usuarios_proto_msgTypes[7]
+	mi := &file_usuarios_usuarios_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -495,7 +547,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_usuarios_usuarios_proto_msgTypes[7]
+	mi := &file_usuarios_usuarios_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -508,7 +560,7 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
-	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{7}
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListUsersResponse) GetUsers() []*UserSummary {
@@ -539,7 +591,7 @@ type UserSummary struct {
 
 func (x *UserSummary) Reset() {
 	*x = UserSummary{}
-	mi := &file_usuarios_usuarios_proto_msgTypes[8]
+	mi := &file_usuarios_usuarios_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +603,7 @@ func (x *UserSummary) String() string {
 func (*UserSummary) ProtoMessage() {}
 
 func (x *UserSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_usuarios_usuarios_proto_msgTypes[8]
+	mi := &file_usuarios_usuarios_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +616,7 @@ func (x *UserSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSummary.ProtoReflect.Descriptor instead.
 func (*UserSummary) Descriptor() ([]byte, []int) {
-	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{8}
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UserSummary) GetId() string {
@@ -618,7 +670,7 @@ type SearchUsersResponse struct {
 
 func (x *SearchUsersResponse) Reset() {
 	*x = SearchUsersResponse{}
-	mi := &file_usuarios_usuarios_proto_msgTypes[9]
+	mi := &file_usuarios_usuarios_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -630,7 +682,7 @@ func (x *SearchUsersResponse) String() string {
 func (*SearchUsersResponse) ProtoMessage() {}
 
 func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_usuarios_usuarios_proto_msgTypes[9]
+	mi := &file_usuarios_usuarios_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -643,12 +695,156 @@ func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUsersResponse.ProtoReflect.Descriptor instead.
 func (*SearchUsersResponse) Descriptor() ([]byte, []int) {
-	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{9}
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SearchUsersResponse) GetUsers() []*UserSummary {
 	if x != nil {
 		return x.Users
+	}
+	return nil
+}
+
+type Notificacion struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Tipo          string                 `protobuf:"bytes,3,opt,name=tipo,proto3" json:"tipo,omitempty"`
+	Titulo        string                 `protobuf:"bytes,4,opt,name=titulo,proto3" json:"titulo,omitempty"`
+	Mensaje       string                 `protobuf:"bytes,5,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
+	Leida         bool                   `protobuf:"varint,6,opt,name=leida,proto3" json:"leida,omitempty"`
+	Enlace        string                 `protobuf:"bytes,7,opt,name=enlace,proto3" json:"enlace,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Notificacion) Reset() {
+	*x = Notificacion{}
+	mi := &file_usuarios_usuarios_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Notificacion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Notificacion) ProtoMessage() {}
+
+func (x *Notificacion) ProtoReflect() protoreflect.Message {
+	mi := &file_usuarios_usuarios_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Notificacion.ProtoReflect.Descriptor instead.
+func (*Notificacion) Descriptor() ([]byte, []int) {
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *Notificacion) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Notificacion) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *Notificacion) GetTipo() string {
+	if x != nil {
+		return x.Tipo
+	}
+	return ""
+}
+
+func (x *Notificacion) GetTitulo() string {
+	if x != nil {
+		return x.Titulo
+	}
+	return ""
+}
+
+func (x *Notificacion) GetMensaje() string {
+	if x != nil {
+		return x.Mensaje
+	}
+	return ""
+}
+
+func (x *Notificacion) GetLeida() bool {
+	if x != nil {
+		return x.Leida
+	}
+	return false
+}
+
+func (x *Notificacion) GetEnlace() string {
+	if x != nil {
+		return x.Enlace
+	}
+	return ""
+}
+
+func (x *Notificacion) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListNotificacionesResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Notificaciones []*Notificacion        `protobuf:"bytes,1,rep,name=notificaciones,proto3" json:"notificaciones,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ListNotificacionesResponse) Reset() {
+	*x = ListNotificacionesResponse{}
+	mi := &file_usuarios_usuarios_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNotificacionesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNotificacionesResponse) ProtoMessage() {}
+
+func (x *ListNotificacionesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_usuarios_usuarios_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNotificacionesResponse.ProtoReflect.Descriptor instead.
+func (*ListNotificacionesResponse) Descriptor() ([]byte, []int) {
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListNotificacionesResponse) GetNotificaciones() []*Notificacion {
+	if x != nil {
+		return x.Notificaciones
 	}
 	return nil
 }
@@ -661,7 +857,7 @@ type EmptyResponse struct {
 
 func (x *EmptyResponse) Reset() {
 	*x = EmptyResponse{}
-	mi := &file_usuarios_usuarios_proto_msgTypes[10]
+	mi := &file_usuarios_usuarios_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -673,7 +869,7 @@ func (x *EmptyResponse) String() string {
 func (*EmptyResponse) ProtoMessage() {}
 
 func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_usuarios_usuarios_proto_msgTypes[10]
+	mi := &file_usuarios_usuarios_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,7 +882,7 @@ func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{10}
+	return file_usuarios_usuarios_proto_rawDescGZIP(), []int{13}
 }
 
 var File_usuarios_usuarios_proto protoreflect.FileDescriptor
@@ -714,7 +910,10 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x12SearchUsersRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12!\n" +
-	"\frequester_id\x18\x03 \x01(\tR\vrequesterId\"\xff\x01\n" +
+	"\frequester_id\x18\x03 \x01(\tR\vrequesterId\"J\n" +
+	"\x1dMarkNotificacionesReadRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x10\n" +
+	"\x03ids\x18\x02 \x03(\tR\x03ids\"\xff\x01\n" +
 	"\x0ePerfilResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -742,8 +941,20 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\n" +
 	"avatar_url\x18\x06 \x01(\tR\tavatarUrl\"B\n" +
 	"\x13SearchUsersResponse\x12+\n" +
-	"\x05users\x18\x01 \x03(\v2\x15.usuarios.UserSummaryR\x05users\"\x0f\n" +
-	"\rEmptyResponse2\x97\x05\n" +
+	"\x05users\x18\x01 \x03(\v2\x15.usuarios.UserSummaryR\x05users\"\xca\x01\n" +
+	"\fNotificacion\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04tipo\x18\x03 \x01(\tR\x04tipo\x12\x16\n" +
+	"\x06titulo\x18\x04 \x01(\tR\x06titulo\x12\x18\n" +
+	"\amensaje\x18\x05 \x01(\tR\amensaje\x12\x14\n" +
+	"\x05leida\x18\x06 \x01(\bR\x05leida\x12\x16\n" +
+	"\x06enlace\x18\a \x01(\tR\x06enlace\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\"\\\n" +
+	"\x1aListNotificacionesResponse\x12>\n" +
+	"\x0enotificaciones\x18\x01 \x03(\v2\x16.usuarios.NotificacionR\x0enotificaciones\"\x0f\n" +
+	"\rEmptyResponse2\xc8\x06\n" +
 	"\x0fUsuariosService\x12A\n" +
 	"\tGetPerfil\x12\x1a.usuarios.GetPerfilRequest\x1a\x18.usuarios.PerfilResponse\x12G\n" +
 	"\fUpdatePerfil\x12\x1d.usuarios.UpdatePerfilRequest\x1a\x18.usuarios.PerfilResponse\x12L\n" +
@@ -754,7 +965,9 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\tListUsers\x12\x1a.usuarios.ListUsersRequest\x1a\x1b.usuarios.ListUsersResponse\x12>\n" +
 	"\n" +
 	"DeleteUser\x12\x17.usuarios.UserIDRequest\x1a\x17.usuarios.EmptyResponse\x12J\n" +
-	"\vSearchUsers\x12\x1c.usuarios.SearchUsersRequest\x1a\x1d.usuarios.SearchUsersResponseB#Z!Prueba-Go/gen/usuarios;usuariospbb\x06proto3"
+	"\vSearchUsers\x12\x1c.usuarios.SearchUsersRequest\x1a\x1d.usuarios.SearchUsersResponse\x12S\n" +
+	"\x12ListNotificaciones\x12\x17.usuarios.UserIDRequest\x1a$.usuarios.ListNotificacionesResponse\x12Z\n" +
+	"\x16MarkNotificacionesRead\x12'.usuarios.MarkNotificacionesReadRequest\x1a\x17.usuarios.EmptyResponseB#Z!Prueba-Go/gen/usuarios;usuariospbb\x06proto3"
 
 var (
 	file_usuarios_usuarios_proto_rawDescOnce sync.Once
@@ -768,46 +981,54 @@ func file_usuarios_usuarios_proto_rawDescGZIP() []byte {
 	return file_usuarios_usuarios_proto_rawDescData
 }
 
-var file_usuarios_usuarios_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_usuarios_usuarios_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_usuarios_usuarios_proto_goTypes = []any{
-	(*GetPerfilRequest)(nil),      // 0: usuarios.GetPerfilRequest
-	(*UpdatePerfilRequest)(nil),   // 1: usuarios.UpdatePerfilRequest
-	(*UpdateMediaURLRequest)(nil), // 2: usuarios.UpdateMediaURLRequest
-	(*UserIDRequest)(nil),         // 3: usuarios.UserIDRequest
-	(*ListUsersRequest)(nil),      // 4: usuarios.ListUsersRequest
-	(*SearchUsersRequest)(nil),    // 5: usuarios.SearchUsersRequest
-	(*PerfilResponse)(nil),        // 6: usuarios.PerfilResponse
-	(*ListUsersResponse)(nil),     // 7: usuarios.ListUsersResponse
-	(*UserSummary)(nil),           // 8: usuarios.UserSummary
-	(*SearchUsersResponse)(nil),   // 9: usuarios.SearchUsersResponse
-	(*EmptyResponse)(nil),         // 10: usuarios.EmptyResponse
+	(*GetPerfilRequest)(nil),              // 0: usuarios.GetPerfilRequest
+	(*UpdatePerfilRequest)(nil),           // 1: usuarios.UpdatePerfilRequest
+	(*UpdateMediaURLRequest)(nil),         // 2: usuarios.UpdateMediaURLRequest
+	(*UserIDRequest)(nil),                 // 3: usuarios.UserIDRequest
+	(*ListUsersRequest)(nil),              // 4: usuarios.ListUsersRequest
+	(*SearchUsersRequest)(nil),            // 5: usuarios.SearchUsersRequest
+	(*MarkNotificacionesReadRequest)(nil), // 6: usuarios.MarkNotificacionesReadRequest
+	(*PerfilResponse)(nil),                // 7: usuarios.PerfilResponse
+	(*ListUsersResponse)(nil),             // 8: usuarios.ListUsersResponse
+	(*UserSummary)(nil),                   // 9: usuarios.UserSummary
+	(*SearchUsersResponse)(nil),           // 10: usuarios.SearchUsersResponse
+	(*Notificacion)(nil),                  // 11: usuarios.Notificacion
+	(*ListNotificacionesResponse)(nil),    // 12: usuarios.ListNotificacionesResponse
+	(*EmptyResponse)(nil),                 // 13: usuarios.EmptyResponse
 }
 var file_usuarios_usuarios_proto_depIdxs = []int32{
-	8,  // 0: usuarios.ListUsersResponse.users:type_name -> usuarios.UserSummary
-	8,  // 1: usuarios.SearchUsersResponse.users:type_name -> usuarios.UserSummary
-	0,  // 2: usuarios.UsuariosService.GetPerfil:input_type -> usuarios.GetPerfilRequest
-	1,  // 3: usuarios.UsuariosService.UpdatePerfil:input_type -> usuarios.UpdatePerfilRequest
-	2,  // 4: usuarios.UsuariosService.UpdateAvatarURL:input_type -> usuarios.UpdateMediaURLRequest
-	2,  // 5: usuarios.UsuariosService.UpdateCoverURL:input_type -> usuarios.UpdateMediaURLRequest
-	3,  // 6: usuarios.UsuariosService.BecomeInstructor:input_type -> usuarios.UserIDRequest
-	3,  // 7: usuarios.UsuariosService.GetPublicPerfil:input_type -> usuarios.UserIDRequest
-	4,  // 8: usuarios.UsuariosService.ListUsers:input_type -> usuarios.ListUsersRequest
-	3,  // 9: usuarios.UsuariosService.DeleteUser:input_type -> usuarios.UserIDRequest
-	5,  // 10: usuarios.UsuariosService.SearchUsers:input_type -> usuarios.SearchUsersRequest
-	6,  // 11: usuarios.UsuariosService.GetPerfil:output_type -> usuarios.PerfilResponse
-	6,  // 12: usuarios.UsuariosService.UpdatePerfil:output_type -> usuarios.PerfilResponse
-	6,  // 13: usuarios.UsuariosService.UpdateAvatarURL:output_type -> usuarios.PerfilResponse
-	6,  // 14: usuarios.UsuariosService.UpdateCoverURL:output_type -> usuarios.PerfilResponse
-	6,  // 15: usuarios.UsuariosService.BecomeInstructor:output_type -> usuarios.PerfilResponse
-	6,  // 16: usuarios.UsuariosService.GetPublicPerfil:output_type -> usuarios.PerfilResponse
-	7,  // 17: usuarios.UsuariosService.ListUsers:output_type -> usuarios.ListUsersResponse
-	10, // 18: usuarios.UsuariosService.DeleteUser:output_type -> usuarios.EmptyResponse
-	9,  // 19: usuarios.UsuariosService.SearchUsers:output_type -> usuarios.SearchUsersResponse
-	11, // [11:20] is the sub-list for method output_type
-	2,  // [2:11] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	9,  // 0: usuarios.ListUsersResponse.users:type_name -> usuarios.UserSummary
+	9,  // 1: usuarios.SearchUsersResponse.users:type_name -> usuarios.UserSummary
+	11, // 2: usuarios.ListNotificacionesResponse.notificaciones:type_name -> usuarios.Notificacion
+	0,  // 3: usuarios.UsuariosService.GetPerfil:input_type -> usuarios.GetPerfilRequest
+	1,  // 4: usuarios.UsuariosService.UpdatePerfil:input_type -> usuarios.UpdatePerfilRequest
+	2,  // 5: usuarios.UsuariosService.UpdateAvatarURL:input_type -> usuarios.UpdateMediaURLRequest
+	2,  // 6: usuarios.UsuariosService.UpdateCoverURL:input_type -> usuarios.UpdateMediaURLRequest
+	3,  // 7: usuarios.UsuariosService.BecomeInstructor:input_type -> usuarios.UserIDRequest
+	3,  // 8: usuarios.UsuariosService.GetPublicPerfil:input_type -> usuarios.UserIDRequest
+	4,  // 9: usuarios.UsuariosService.ListUsers:input_type -> usuarios.ListUsersRequest
+	3,  // 10: usuarios.UsuariosService.DeleteUser:input_type -> usuarios.UserIDRequest
+	5,  // 11: usuarios.UsuariosService.SearchUsers:input_type -> usuarios.SearchUsersRequest
+	3,  // 12: usuarios.UsuariosService.ListNotificaciones:input_type -> usuarios.UserIDRequest
+	6,  // 13: usuarios.UsuariosService.MarkNotificacionesRead:input_type -> usuarios.MarkNotificacionesReadRequest
+	7,  // 14: usuarios.UsuariosService.GetPerfil:output_type -> usuarios.PerfilResponse
+	7,  // 15: usuarios.UsuariosService.UpdatePerfil:output_type -> usuarios.PerfilResponse
+	7,  // 16: usuarios.UsuariosService.UpdateAvatarURL:output_type -> usuarios.PerfilResponse
+	7,  // 17: usuarios.UsuariosService.UpdateCoverURL:output_type -> usuarios.PerfilResponse
+	7,  // 18: usuarios.UsuariosService.BecomeInstructor:output_type -> usuarios.PerfilResponse
+	7,  // 19: usuarios.UsuariosService.GetPublicPerfil:output_type -> usuarios.PerfilResponse
+	8,  // 20: usuarios.UsuariosService.ListUsers:output_type -> usuarios.ListUsersResponse
+	13, // 21: usuarios.UsuariosService.DeleteUser:output_type -> usuarios.EmptyResponse
+	10, // 22: usuarios.UsuariosService.SearchUsers:output_type -> usuarios.SearchUsersResponse
+	12, // 23: usuarios.UsuariosService.ListNotificaciones:output_type -> usuarios.ListNotificacionesResponse
+	13, // 24: usuarios.UsuariosService.MarkNotificacionesRead:output_type -> usuarios.EmptyResponse
+	14, // [14:25] is the sub-list for method output_type
+	3,  // [3:14] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_usuarios_usuarios_proto_init() }
@@ -821,7 +1042,7 @@ func file_usuarios_usuarios_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_usuarios_usuarios_proto_rawDesc), len(file_usuarios_usuarios_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
