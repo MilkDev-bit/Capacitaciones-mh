@@ -240,17 +240,29 @@ func CreateForoComentario(c *gin.Context) {
 
 	// Trigger notificaciones async
 	go func() {
+		var capacitacionID string
+		db.DB.QueryRow(`
+			SELECT l.capacitacion_id 
+			FROM foro_posts p 
+			JOIN lecciones l ON p.leccion_id = l.id 
+			WHERE p.id=$1`, postID).Scan(&capacitacionID)
+
+		enlace := "/usuario/capacitaciones"
+		if capacitacionID != "" {
+			enlace = "/usuario/capacitaciones/" + capacitacionID
+		}
+
 		if parentIDPtr != nil {
 			var parentAuthorID string
 			db.DB.QueryRow(`SELECT user_id FROM foro_comentarios WHERE id=$1`, *parentIDPtr).Scan(&parentAuthorID)
 			if parentAuthorID != "" && parentAuthorID != userID.(string) {
-				CrearNotificacion(parentAuthorID, "foro_reply", "Nueva respuesta a tu comentario", "Alguien respondió a tu comentario en el foro.", "/usuario/capacitaciones")
+				CrearNotificacion(parentAuthorID, "foro_reply", "Nueva respuesta a tu comentario", "Alguien respondió a tu comentario en el foro.", enlace)
 			}
 		} else {
 			var postAuthorID string
 			db.DB.QueryRow(`SELECT user_id FROM foro_posts WHERE id=$1`, postID).Scan(&postAuthorID)
 			if postAuthorID != "" && postAuthorID != userID.(string) {
-				CrearNotificacion(postAuthorID, "foro_comment", "Nuevo comentario en tu publicación", "Alguien comentó en tu publicación del foro.", "/usuario/capacitaciones")
+				CrearNotificacion(postAuthorID, "foro_comment", "Nuevo comentario en tu publicación", "Alguien comentó en tu publicación del foro.", enlace)
 			}
 		}
 	}()
@@ -295,16 +307,29 @@ func ToggleForoPostReaction(c *gin.Context) {
 	if exists {
 		db.DB.Exec(`DELETE FROM foro_post_reactions WHERE post_id=$1 AND user_id=$2 AND emoji=$3`, postID, userID, body.Emoji)
 	} else {
-		db.DB.Exec(`INSERT INTO foro_post_reactions(post_id, user_id, emoji) VALUES($1, $2, $3)`, postID, userID, body.Emoji)
-		
-		// Notificación (opcional)
-		go func() {
-			var postAuthorID string
-			db.DB.QueryRow(`SELECT user_id FROM foro_posts WHERE id=$1`, postID).Scan(&postAuthorID)
-			if postAuthorID != "" && postAuthorID != userID.(string) {
-				CrearNotificacion(postAuthorID, "foro_reaction", "Nueva reacción", "Alguien reaccionó con " + body.Emoji + " a tu publicación.", "/usuario/capacitaciones")
-			}
-		}()
+		_, err := db.DB.Exec(`INSERT INTO foro_post_reactions(post_id, user_id, emoji) VALUES($1, $2, $3)`, postID, userID, body.Emoji)
+		if err == nil {
+			// Notificación (opcional)
+			go func() {
+				var capacitacionID string
+				db.DB.QueryRow(`
+					SELECT l.capacitacion_id 
+					FROM foro_posts p 
+					JOIN lecciones l ON p.leccion_id = l.id 
+					WHERE p.id=$1`, postID).Scan(&capacitacionID)
+
+				enlace := "/usuario/capacitaciones"
+				if capacitacionID != "" {
+					enlace = "/usuario/capacitaciones/" + capacitacionID
+				}
+
+				var postAuthorID string
+				db.DB.QueryRow(`SELECT user_id FROM foro_posts WHERE id=$1`, postID).Scan(&postAuthorID)
+				if postAuthorID != "" && postAuthorID != userID.(string) {
+					CrearNotificacion(postAuthorID, "foro_reaction", "Nueva reacción", "Alguien reaccionó con " + body.Emoji + " a tu publicación.", enlace)
+				}
+			}()
+		}
 	}
 
 	rows, _ := db.DB.Query(`SELECT emoji, COUNT(*) as cnt FROM foro_post_reactions WHERE post_id=$1 GROUP BY emoji`, postID)
@@ -337,16 +362,30 @@ func ToggleForoComentarioReaction(c *gin.Context) {
 	if exists {
 		db.DB.Exec(`DELETE FROM foro_comentario_reactions WHERE comentario_id=$1 AND user_id=$2 AND emoji=$3`, comentarioID, userID, body.Emoji)
 	} else {
-		db.DB.Exec(`INSERT INTO foro_comentario_reactions(comentario_id, user_id, emoji) VALUES($1, $2, $3)`, comentarioID, userID, body.Emoji)
-		
-		// Notificación (opcional)
-		go func() {
-			var authorID string
-			db.DB.QueryRow(`SELECT user_id FROM foro_comentarios WHERE id=$1`, comentarioID).Scan(&authorID)
-			if authorID != "" && authorID != userID.(string) {
-				CrearNotificacion(authorID, "foro_reaction", "Nueva reacción", "Alguien reaccionó con " + body.Emoji + " a tu comentario.", "/usuario/capacitaciones")
-			}
-		}()
+		_, err := db.DB.Exec(`INSERT INTO foro_comentario_reactions(comentario_id, user_id, emoji) VALUES($1, $2, $3)`, comentarioID, userID, body.Emoji)
+		if err == nil {
+			// Notificación (opcional)
+			go func() {
+				var capacitacionID string
+				db.DB.QueryRow(`
+					SELECT l.capacitacion_id 
+					FROM foro_comentarios c
+					JOIN foro_posts p ON c.post_id = p.id
+					JOIN lecciones l ON p.leccion_id = l.id 
+					WHERE c.id=$1`, comentarioID).Scan(&capacitacionID)
+
+				enlace := "/usuario/capacitaciones"
+				if capacitacionID != "" {
+					enlace = "/usuario/capacitaciones/" + capacitacionID
+				}
+
+				var authorID string
+				db.DB.QueryRow(`SELECT user_id FROM foro_comentarios WHERE id=$1`, comentarioID).Scan(&authorID)
+				if authorID != "" && authorID != userID.(string) {
+					CrearNotificacion(authorID, "foro_reaction", "Nueva reacción", "Alguien reaccionó con " + body.Emoji + " a tu comentario.", enlace)
+				}
+			}()
+		}
 	}
 
 	rows, _ := db.DB.Query(`SELECT emoji, COUNT(*) as cnt FROM foro_comentario_reactions WHERE comentario_id=$1 GROUP BY emoji`, comentarioID)

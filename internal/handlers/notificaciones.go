@@ -3,6 +3,7 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"Prueba-Go/internal/db"
 	"github.com/gin-gonic/gin"
@@ -10,14 +11,14 @@ import (
 )
 
 type Notificacion struct {
-	ID        string `json:"id"`
-	UserID    string `json:"user_id"`
-	Tipo      string `json:"tipo"`
-	Titulo    string `json:"titulo"`
-	Mensaje   string `json:"mensaje"`
-	Leida     bool   `json:"leida"`
-	Enlace    string `json:"enlace"`
-	CreatedAt string `json:"created_at"`
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Tipo      string    `json:"tipo"`
+	Titulo    string    `json:"titulo"`
+	Mensaje   string    `json:"mensaje"`
+	Leida     bool      `json:"leida"`
+	Enlace    string    `json:"enlace"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func ListNotificaciones(c *gin.Context) {
