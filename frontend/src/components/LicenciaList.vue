@@ -130,8 +130,8 @@ async function remove(id: string) {
         
         <div class="row">
           <div class="field">
-            <label>Precio (USD)</label>
-            <input type="number" v-model="form.precio" class="field-input" min="0" step="0.01" />
+            <label>Precio (MXN)</label>
+            <input type="number" v-model="form.precio" class="field-input" min="0" step="10" />
           </div>
           <div class="field">
             <label>Capacidad Máxima</label>

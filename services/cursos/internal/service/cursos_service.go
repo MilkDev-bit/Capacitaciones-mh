@@ -327,7 +327,7 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("usd"),
+					Currency: stripe.String("mxn"),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 						Name: stripe.String(lic.Nombre),
 					},
