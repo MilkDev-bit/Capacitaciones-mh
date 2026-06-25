@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
 import CameraCapture from '../../components/CameraCapture.vue'
+import VideoCallModal from '../../components/VideoCallModal.vue'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -51,6 +52,27 @@ const threadRef      = ref<HTMLElement | null>(null)
 const sentinelRef    = ref<HTMLElement | null>(null)
 const textareaRef    = ref<HTMLTextAreaElement | null>(null)
 const errorMsg       = ref('')
+
+// ─── Videollamada ──────────────────────────────────────────────────────────
+const showVideoCall  = ref(false)
+const currentRoomName = ref('')
+
+function startVideoCall() {
+  if (!activePeerId.value || !auth.user?.id) return
+  // Generate consistent room name based on sorted IDs
+  const sortedIds = [auth.user.id, activePeerId.value].sort()
+  currentRoomName.value = `Capacitaciones-mh-${sortedIds[0]}-${sortedIds[1]}`
+  showVideoCall.value = true
+
+  // Send automated message
+  newMsg.value = `📞 Videollamada iniciada. [SALA:${currentRoomName.value}]`
+  sendMensaje()
+}
+
+function joinVideoCall(roomName: string) {
+  currentRoomName.value = roomName
+  showVideoCall.value = true
+}
 
 const activePeerId = computed(() => route.params.peer_id as string | undefined)
 
@@ -535,7 +557,7 @@ onUnmounted(() => {
       </div>
 
       <template v-else>
-        <!-- Header -->
+          <!-- Header -->
         <div class="thread-header">
           <button class="back-btn" @click="router.back()">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
@@ -545,6 +567,15 @@ onUnmounted(() => {
             <span v-else>{{ initials(peerName) }}</span>
           </div>
           <span class="thread-peername clickable-name" @click="verPerfilId(activePeerId!)" title="Ver perfil">{{ peerName || '...' }}</span>
+          
+          <div style="flex-grow: 1;"></div>
+          
+          <button class="videocall-btn" @click="startVideoCall" title="Iniciar Videollamada">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path d="M23 7l-7 5 7 5V7z" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+          </button>
         </div>
 
         <!-- Toast de error -->
@@ -605,7 +636,28 @@ onUnmounted(() => {
                       <span>{{ msg.attachment_url.split('/').pop() }}</span>
                     </a>
                   </div>
-                  <p v-if="msg.contenido">{{ msg.contenido }}</p>
+                  
+                  <!-- Contenido del mensaje -->
+                  <div v-if="msg.contenido">
+                    <!-- Es una invitación a videollamada -->
+                    <template v-if="msg.contenido.includes('📞 Videollamada iniciada. [SALA:')">
+                      <div class="videocall-invite">
+                        <p>📞 <strong>Videollamada iniciada</strong></p>
+                        <button class="join-call-btn" @click.stop="joinVideoCall(msg.contenido.split('[SALA:')[1].split(']')[0])">
+                          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M23 7l-7 5 7 5V7z" />
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                          </svg>
+                          Unirse a la llamada
+                        </button>
+                      </div>
+                    </template>
+                    <!-- Mensaje normal -->
+                    <template v-else>
+                      <p>{{ msg.contenido }}</p>
+                    </template>
+                  </div>
+                  
                   <span class="bubble-meta">
                     <span class="bubble-time">{{ formatTime(msg.created_at) }}</span>
                     <span v-if="msg.emisor_id === auth.user?.id" class="status-icon">
@@ -703,6 +755,14 @@ onUnmounted(() => {
       @capture="onCameraCapture"
       @close="showCamera = false"
       @gallery="onGalleryFromCamera"
+    />
+
+    <!-- Modal de Videollamada Jitsi -->
+    <VideoCallModal
+      v-if="showVideoCall"
+      :roomName="currentRoomName"
+      :userName="auth.user?.name ?? 'Usuario'"
+      @close="showVideoCall = false"
     />
   </div>
 </template>
@@ -1038,5 +1098,59 @@ onUnmounted(() => {
   width: 32px;
   margin-right: 8px;
   flex-shrink: 0;
+}
+.videocall-btn {
+  background: var(--surface-soft);
+  border: none;
+  color: var(--primary, #3b82f6);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 0.5rem;
+}
+
+.videocall-btn:hover {
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.videocall-invite {
+  background: var(--surface-hover);
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--primary, #3b82f6);
+  margin-top: 0.2rem;
+}
+
+.videocall-invite p {
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+}
+
+.join-call-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.join-call-btn:hover {
+  background: #2563eb;
 }
 </style>
