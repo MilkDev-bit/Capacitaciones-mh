@@ -287,6 +287,9 @@ func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, co
 	if lic.CapacitacionID != capID {
 		return errors.New("el código no corresponde a esta capacitación")
 	}
+	if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
+		return errors.New("la licencia ha alcanzado su capacidad máxima")
+	}
 	err = s.repo.InscribirseConLicencia(ctx, userID, capID, lic.ID)
 	if err == nil {
 		_ = s.repo.IncrementarUsoLicencia(ctx, lic.ID)

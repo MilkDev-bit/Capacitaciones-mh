@@ -110,6 +110,10 @@ async function remove(id: string) {
             <span class="capacity">Máx: {{ lic.capacidad_maxima || 'Ilimitado' }} alumnos</span>
             <span class="badge" v-if="lic.is_active !== false">Activa</span>
           </div>
+          <div class="code-share" v-if="lic.codigo_acceso">
+            <small>Código para alumnos:</small>
+            <code class="code-box">{{ lic.codigo_acceso }}</code>
+          </div>
         </div>
         <div class="lic-actions">
           <button class="btn-text" @click="openEdit(lic)">Editar</button>
@@ -162,6 +166,9 @@ async function remove(id: string) {
 .price { font-weight: 700; color: var(--brand); }
 .capacity { background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; }
 .lic-actions { display: flex; gap: 8px; }
+.code-share { margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+.code-share small { color: var(--muted); font-size: 0.8rem; }
+.code-box { background: rgba(249,115,22,0.1); color: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; user-select: all; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
 .modal-content { background: var(--surface); padding: 24px; border-radius: var(--r-lg); width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }

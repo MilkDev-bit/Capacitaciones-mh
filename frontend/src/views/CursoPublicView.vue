@@ -46,14 +46,14 @@ async function unirseConCodigo() {
     // Try license code first
     await api.post('/inscripciones-licencia', {
       capacitacion_id: id,
-      codigo_acceso: codigoForm.value.toUpperCase()
+      codigo_acceso: codigoForm.value
     })
     toast.success('Inscrito correctamente a la cohorte')
     router.push('/usuario/capacitaciones')
   } catch (e:any) {
     // If it fails, maybe it's a generic course code
     try {
-      await api.post('/inscripciones', { codigo: codigoForm.value.toUpperCase() })
+      await api.post('/inscripciones', { codigo: codigoForm.value })
       toast.success('Inscrito correctamente al curso')
       router.push('/usuario/capacitaciones')
     } catch (err: any) {
