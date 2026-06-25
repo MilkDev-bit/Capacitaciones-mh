@@ -168,6 +168,10 @@ func main() {
 			auth.GET("/foro/posts/:post_id/comentarios", handlers.ListForoComentarios)
 			auth.POST("/foro/posts/:post_id/comentarios", handlers.CreateForoComentario)
 			auth.POST("/foro/posts/:post_id/like", handlers.ToggleForoPostLike)
+			auth.GET("/foro/posts/:post_id/reactions", handlers.ListForoPostReactions)
+			auth.POST("/foro/posts/:post_id/reactions", handlers.ToggleForoPostReaction)
+			auth.GET("/foro/comentarios/:comentario_id/reactions", handlers.ListForoComentarioReactions)
+			auth.POST("/foro/comentarios/:comentario_id/reactions", handlers.ToggleForoComentarioReaction)
 
 			auth.GET("/perfil", handlers.GetPerfil)
 			auth.PUT("/perfil", handlers.UpdatePerfil)

@@ -25,7 +25,8 @@ import {
   LinearScale,
   ArcElement,
   LineElement,
-  PointElement
+  PointElement,
+  BarElement
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
 import { computed } from 'vue'

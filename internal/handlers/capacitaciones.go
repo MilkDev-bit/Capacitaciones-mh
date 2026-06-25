@@ -179,7 +179,9 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT DISTINCT c.id, c.title, c.description, c.type,
 		       COALESCE(c.file_path,''), COALESCE(c.content,''),
-		       COALESCE(c.thumbnail_url,''), COALESCE(c.color,'#f97316'), c.created_at
+		       COALESCE(c.thumbnail_url,''), COALESCE(c.color,'#f97316'), c.created_at,
+		       (SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = c.id AND l.deleted_at IS NULL) as total_lecciones,
+		       (SELECT COUNT(*) FROM progreso_lecciones pl JOIN lecciones l ON l.id = pl.leccion_id WHERE l.capacitacion_id = c.id AND pl.user_id = $1 AND l.deleted_at IS NULL) as lecciones_completadas
 		FROM capacitaciones c
 		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
 		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
@@ -195,7 +197,7 @@ func ListCapacitacionesUsuario(c *gin.Context) {
 	result := []models.Capacitacion{}
 	for rows.Next() {
 		var cap models.Capacitacion
-		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.ThumbnailURL, &cap.Color, &cap.CreatedAt)
+		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type, &cap.FilePath, &cap.Content, &cap.ThumbnailURL, &cap.Color, &cap.CreatedAt, &cap.TotalLecciones, &cap.LeccionesCompletadas)
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)

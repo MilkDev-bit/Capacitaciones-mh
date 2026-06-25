@@ -28,9 +28,11 @@ type Capacitacion struct {
 	IsPublic       bool      `json:"is_public"`
 	CodigoAcceso   string    `json:"codigo_acceso,omitempty"`
 	WelcomeMessage string    `json:"welcome_message,omitempty"`
-	ThumbnailURL   string    `json:"thumbnail_url,omitempty"`
-	Color          string    `json:"color,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
+	ThumbnailURL         string    `json:"thumbnail_url,omitempty"`
+	Color                string    `json:"color,omitempty"`
+	TotalLecciones       int       `json:"total_lecciones,omitempty"`
+	LeccionesCompletadas int       `json:"lecciones_completadas,omitempty"`
+	CreatedAt            time.Time `json:"created_at"`
 }
 
 type Leccion struct {
@@ -114,6 +116,11 @@ type OpcionIntermedia struct {
 	EsCorrecta bool   `json:"es_correcta,omitempty"`
 }
 
+type ReactionCount struct {
+	Emoji string `json:"emoji"`
+	Count int    `json:"count"`
+}
+
 type ForoPost struct {
 	ID          string           `json:"id"`
 	LeccionID   string           `json:"leccion_id"`
@@ -125,15 +132,21 @@ type ForoPost struct {
 	MediaType   string           `json:"media_type,omitempty"`
 	LikeCount   int              `json:"like_count"`
 	UserLiked   bool             `json:"user_liked"`
+	Reactions   []ReactionCount  `json:"reactions,omitempty"`
 	Comentarios []ForoComentario `json:"comentarios,omitempty"`
 	CreatedAt   time.Time        `json:"created_at"`
 }
 
 type ForoComentario struct {
-	ID        string    `json:"id"`
-	PostID    string    `json:"post_id"`
-	UserID    string    `json:"user_id"`
-	UserName  string    `json:"user_name,omitempty"`
-	Contenido string    `json:"contenido"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        string          `json:"id"`
+	PostID    string          `json:"post_id"`
+	ParentID  *string         `json:"parent_id,omitempty"`
+	UserID    string          `json:"user_id"`
+	UserName  string          `json:"user_name,omitempty"`
+	Contenido string          `json:"contenido"`
+	MediaURL  string          `json:"media_url,omitempty"`
+	MediaType string          `json:"media_type,omitempty"`
+	IsPrivate bool            `json:"is_private"`
+	Reactions []ReactionCount `json:"reactions,omitempty"`
+	CreatedAt time.Time       `json:"created_at"`
 }

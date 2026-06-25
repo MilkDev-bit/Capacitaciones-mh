@@ -116,23 +116,7 @@ async function loadMis() {
   loadError.value = ''
   try {
     const res = await api.get('/mis-capacitaciones')
-    const cursos = res.data || []
-    const cursosConProgreso = await Promise.all(
-      cursos.map(async (curso: any) => {
-        try {
-          const lRes = await api.get(`/capacitaciones/${curso.id}/lecciones`)
-          const lecciones = lRes.data || []
-          return {
-            ...curso,
-            total_lecciones: lecciones.length,
-            lecciones_completadas: lecciones.filter((l: any) => l.completada).length,
-          }
-        } catch {
-          return { ...curso, total_lecciones: 0, lecciones_completadas: 0 }
-        }
-      })
-    )
-    capacitaciones.value = cursosConProgreso
+    capacitaciones.value = res.data || []
   } catch (e: any) {
     loadError.value = e.response?.data?.error || 'No pudimos cargar tus cursos.'
   } finally {

@@ -58,6 +58,13 @@ const foroLoading = ref(false)
 const foroError = ref('')
 const postLoading = ref(false)
 
+// Comentarios State
+const activeComentarioFile = ref<File | null>(null)
+const activeComentarioPreview = ref<string | null>(null)
+const activeComentarioIsVideo = ref(false)
+const activeComentarioFileKey = ref<string | null>(null) // Para saber a qué input pertenece
+const comentarioFileInput = ref<HTMLInputElement | null>(null)
+const isComentarioPrivate = ref<Record<string, boolean>>({})
 // Learning Aids
 const focusMode = ref(false)
 const notasPersonales = ref<Record<string, string>>({})
@@ -283,6 +290,33 @@ function removePostFile() {
   if (postFileInput.value) postFileInput.value.value = ''
 }
 
+function triggerComentarioFile(key: string) {
+  activeComentarioFileKey.value = key
+  if (comentarioFileInput.value) comentarioFileInput.value.click()
+}
+
+function onComentarioFile(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0]
+  if (!f) return
+  if (f.size > 50 * 1024 * 1024) {
+    toast.error('El archivo no puede superar 50 MB')
+    return
+  }
+  activeComentarioFile.value = f
+  activeComentarioIsVideo.value = f.type.startsWith('video/')
+  if (activeComentarioPreview.value) URL.revokeObjectURL(activeComentarioPreview.value)
+  activeComentarioPreview.value = URL.createObjectURL(f)
+}
+
+function removeComentarioFile() {
+  activeComentarioFile.value = null
+  if (activeComentarioPreview.value) URL.revokeObjectURL(activeComentarioPreview.value)
+  activeComentarioPreview.value = null
+  activeComentarioIsVideo.value = false
+  activeComentarioFileKey.value = null
+  if (comentarioFileInput.value) comentarioFileInput.value.value = ''
+}
+
 function openMedia(url: string) { window.open(url, '_blank') }
 
 async function eliminarPost(postId: string) {
@@ -351,15 +385,33 @@ async function toggleComentarioReaction(postId: string, comId: string, emoji: st
 async function crearComentario(postId: string, parentId?: string) {
   const mapKey = parentId || postId
   const texto = nuevoComentario.value[mapKey]
-  if (!texto?.trim()) return
+  const hasFile = activeComentarioFileKey.value === mapKey && activeComentarioFile.value
+  
+  if (!texto?.trim() && !hasFile) return
+
+  const formData = new FormData()
+  formData.append('contenido', texto || '')
+  if (parentId) formData.append('parent_id', parentId)
+  if (isComentarioPrivate.value[mapKey]) formData.append('is_private', 'true')
+  if (hasFile && activeComentarioFile.value) {
+    formData.append('media', activeComentarioFile.value)
+  }
+
+  const loadingToast = hasFile ? toast.loading('Subiendo archivo...') : null
+
   try {
-    await api.post(`/foro/posts/${postId}/comentarios`, { contenido: texto, parent_id: parentId || '' })
+    await api.post(`/foro/posts/${postId}/comentarios`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
     nuevoComentario.value[mapKey] = ''
+    if (hasFile) removeComentarioFile()
     replyingTo.value = null
     const res = await api.get(`/foro/posts/${postId}/comentarios`)
     comentariosMap.value[postId] = res.data || []
   } catch {
     toast.error('Error al publicar comentario')
+  } finally {
+    loadingToast?.close()
   }
 }
 
@@ -860,6 +912,7 @@ function goBack() {
                     </button>
                   </div>
                   <input ref="postFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onPostFile" />
+                  <input ref="comentarioFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onComentarioFile" />
                 </div>
               </div>
               <!-- Previsualización de adjunto -->
@@ -955,7 +1008,14 @@ function goBack() {
                           <div class="fb-comment-content">
                             <div class="fb-comment-bubble">
                               <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
-                              <p class="fb-comment-text">{{ com.contenido }}</p>
+                              <p class="fb-comment-text">
+                                {{ com.contenido }}
+                                <span v-if="com.is_private" style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
+                              </p>
+                              <div v-if="com.media_url" class="fb-comment-media">
+                                <video v-if="com.media_type === 'video'" :src="com.media_url" class="fb-cm-video" controls />
+                                <img v-else :src="com.media_url" class="fb-cm-img" @click="openMedia(com.media_url)" title="Ver imagen completa" />
+                              </div>
                             </div>
                             <div class="fb-comment-actions">
                               <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + com.id" @mouseleave="activeReactionPicker = null">
@@ -982,7 +1042,14 @@ function goBack() {
                             <div class="fb-comment-content">
                               <div class="fb-comment-bubble">
                                 <router-link :to="`/usuario/perfil/${reply.user_id}`" class="fb-comment-author">{{ reply.user_name }}</router-link>
-                                <p class="fb-comment-text">{{ reply.contenido }}</p>
+                                <p class="fb-comment-text">
+                                  {{ reply.contenido }}
+                                  <span v-if="reply.is_private" style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
+                                </p>
+                                <div v-if="reply.media_url" class="fb-comment-media">
+                                  <video v-if="reply.media_type === 'video'" :src="reply.media_url" class="fb-cm-video" controls />
+                                  <img v-else :src="reply.media_url" class="fb-cm-img" @click="openMedia(reply.media_url)" title="Ver imagen completa" />
+                                </div>
                               </div>
                               <div class="fb-comment-actions">
                                 <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + reply.id" @mouseleave="activeReactionPicker = null">
@@ -1003,17 +1070,35 @@ function goBack() {
                         </div>
 
                         <!-- Input responder -->
-                        <div v-if="replyingTo === com.id" class="fb-new-comment-row reply-row">
+                        <div v-if="replyingTo === com.id" class="fb-new-comment-row reply-row" style="margin-top:8px">
                           <div class="fb-comment-avatar me">{{ meInitials() }}</div>
                           <div class="fb-comment-input-wrap">
                             <input v-model="nuevoComentario[com.id]"
                               @keydown.enter="crearComentario(post.id, com.id)"
                               placeholder="Escribe una respuesta..."
                               class="fb-comment-input" />
-                            <button @click="crearComentario(post.id, com.id)" class="fb-comment-send" :disabled="!nuevoComentario[com.id]?.trim()" title="Enviar">
+                              
+                            <!-- Attach button -->
+                            <button @click="triggerComentarioFile(com.id)" class="fb-comment-attach-btn" title="Adjuntar archivo">
+                              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            
+                            <label v-if="authStore.isInstructor || authStore.isAdmin" class="fb-private-toggle" title="Hacer respuesta privada (solo visible para el alumno y administradores)">
+                              <input type="checkbox" v-model="isComentarioPrivate[com.id]" />
+                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </label>
+
+                            <button @click="crearComentario(post.id, com.id)" class="fb-comment-send" :disabled="!nuevoComentario[com.id]?.trim() && activeComentarioFileKey !== com.id" title="Enviar">
                               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
                           </div>
+                        </div>
+                        
+                        <!-- File preview para respuestas -->
+                        <div v-if="replyingTo === com.id && activeComentarioFileKey === com.id && activeComentarioPreview" class="fb-comment-file-preview">
+                          <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media" controls muted />
+                          <img v-else :src="activeComentarioPreview" class="fb-cfp-media" />
+                          <button @click="removeComentarioFile" class="fb-cfp-remove">✕</button>
                         </div>
                       </div>
 
@@ -1027,10 +1112,23 @@ function goBack() {
                             @keydown.enter="crearComentario(post.id)"
                             placeholder="Escribe un comentario..."
                             class="fb-comment-input" />
-                          <button @click="crearComentario(post.id)" class="fb-comment-send" :disabled="!nuevoComentario[post.id]?.trim()" title="Enviar">
+
+                          <!-- Attach button -->
+                          <button @click="triggerComentarioFile(post.id)" class="fb-comment-attach-btn" title="Adjuntar archivo">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+
+                          <button @click="crearComentario(post.id)" class="fb-comment-send" :disabled="!nuevoComentario[post.id]?.trim() && activeComentarioFileKey !== post.id" title="Enviar">
                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                           </button>
                         </div>
+                      </div>
+                      
+                      <!-- File preview para comentario principal -->
+                      <div v-if="activeComentarioFileKey === post.id && activeComentarioPreview" class="fb-comment-file-preview">
+                        <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media" controls muted />
+                        <img v-else :src="activeComentarioPreview" class="fb-cfp-media" />
+                        <button @click="removeComentarioFile" class="fb-cfp-remove">✕</button>
                       </div>
                     </div>
                   </Transition>
@@ -1617,6 +1715,38 @@ function goBack() {
 }
 .fb-stat-comments { cursor: pointer; }
 .fb-stat-comments:hover { text-decoration: underline; }
+
+/* Styles for comment attachments and privacy */
+.fb-comment-attach-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px;
+  border-radius: 50%; transition: color 0.15s, background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.fb-comment-attach-btn:hover { color: var(--brand); background: var(--surface-soft); }
+
+.fb-private-toggle {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); cursor: pointer; padding: 4px; border-radius: 50%;
+  transition: all 0.15s; margin-right: 2px; position: relative;
+}
+.fb-private-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.fb-private-toggle:hover { background: var(--surface-soft); }
+.fb-private-toggle:has(input:checked) { color: var(--brand); }
+
+.fb-comment-file-preview {
+  margin: 6px 0 0 52px; padding: 6px; border-radius: 8px; border: 1px solid var(--border-light);
+  display: inline-flex; position: relative; background: var(--surface);
+}
+.fb-cfp-media { max-height: 100px; max-width: 150px; border-radius: 4px; object-fit: cover; }
+.fb-cfp-remove {
+  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--dark); color: #fff; border: none; font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);
+}
+
+.fb-comment-media { margin-top: 6px; }
+.fb-cm-img { max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-light); }
+.fb-cm-video { max-width: 250px; max-height: 200px; border-radius: 8px; background: #000; }
 
 /* Botones acción */
 .fb-post-actions {

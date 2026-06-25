@@ -71,75 +71,89 @@ const statCards = computed(() => [
       </div>
     </header>
 
-    <section v-if="!loading" class="ad-stats">
-      <div v-for="stat in statCards" :key="stat.label" class="ad-stat-card">
-        <div class="ad-stat-icon" :style="{ background: stat.bg, color: stat.accent }">
-          <svg v-if="stat.icon === 'users'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <svg v-else-if="stat.icon === 'book'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          <svg v-else-if="stat.icon === 'clipboard'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <svg v-else-if="stat.icon === 'link'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+    <section class="ad-stats">
+      <template v-if="loading">
+        <div v-for="n in 4" :key="n" class="ad-stat-card skeleton" style="height: 104px; border:none; box-shadow:none"></div>
+      </template>
+      <template v-else>
+        <div v-for="stat in statCards" :key="stat.label" class="ad-stat-card">
+          <div class="ad-stat-icon" :style="{ background: stat.bg, color: stat.accent }">
+            <svg v-if="stat.icon === 'users'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <svg v-else-if="stat.icon === 'book'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <svg v-else-if="stat.icon === 'clipboard'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <svg v-else-if="stat.icon === 'link'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          </div>
+          <div class="ad-stat-info">
+            <strong>{{ stat.value }}</strong>
+            <span>{{ stat.label }}</span>
+            <p>{{ stat.sub }}</p>
+          </div>
         </div>
-        <div class="ad-stat-info">
-          <strong>{{ stat.value }}</strong>
-          <span>{{ stat.label }}</span>
-          <p>{{ stat.sub }}</p>
-        </div>
-      </div>
-    </section>
-    <section v-else class="ad-stats">
-      <div v-for="n in 4" :key="n" class="ad-stat-card">
-        <div class="skeleton" style="width:48px;height:48px;border-radius:12px;flex-shrink:0"></div>
-        <div style="flex:1"><div class="skeleton skel-title"></div><div class="skeleton skel-text-sm" style="margin-top:6px"></div></div>
-      </div>
+      </template>
     </section>
 
-    <DashboardCharts v-if="!loading" style="margin-top: 28px; margin-bottom: 28px;" />
+    <template v-if="loading">
+      <div class="skeleton" style="height: 340px; margin-top: 28px; margin-bottom: 28px; border-radius: 12px; border:none; box-shadow:none"></div>
+    </template>
+    <DashboardCharts v-else style="margin-top: 28px; margin-bottom: 28px;" />
 
-    <section v-if="!loading" class="ad-section">
+    <section class="ad-section">
       <h2 class="ad-section-title">Acciones rápidas</h2>
       <div class="ad-actions">
-        <button class="ad-action-card" @click="router.push('/admin/capacitaciones')">
-          <div class="ad-action-icon" style="background:#fff7ed;color:#ea580c"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
-          <div class="ad-action-info">
-            <strong>Gestionar cursos</strong>
-            <p>Crear, editar y eliminar capacitaciones</p>
-          </div>
-          <span class="ad-action-arrow">→</span>
-        </button>
-        <button class="ad-action-card" @click="router.push('/admin/examenes')">
-          <div class="ad-action-icon" style="background:#e0f2fe;color:#0284c7"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
-          <div class="ad-action-info">
-            <strong>Gestionar exámenes</strong>
-            <p>Crear evaluaciones con preguntas</p>
-          </div>
-          <span class="ad-action-arrow">→</span>
-        </button>
-        <button class="ad-action-card" @click="router.push('/admin/usuarios')">
-          <div class="ad-action-icon" style="background:#ede9fe;color:#7c3aed"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
-          <div class="ad-action-info">
-            <strong>Usuarios y asignaciones</strong>
-            <p>Asignar cursos y exámenes a usuarios</p>
-          </div>
-          <span class="ad-action-arrow">→</span>
-        </button>
+        <template v-if="loading">
+          <div v-for="n in 3" :key="n" class="ad-action-card skeleton" style="height: 84px; border:none; box-shadow:none"></div>
+        </template>
+        <template v-else>
+          <button class="ad-action-card" @click="router.push('/admin/capacitaciones')">
+            <div class="ad-action-icon" style="background:#fff7ed;color:#ea580c"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
+            <div class="ad-action-info">
+              <strong>Gestionar cursos</strong>
+              <p>Crear, editar y eliminar capacitaciones</p>
+            </div>
+            <span class="ad-action-arrow">→</span>
+          </button>
+          <button class="ad-action-card" @click="router.push('/admin/examenes')">
+            <div class="ad-action-icon" style="background:#e0f2fe;color:#0284c7"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+            <div class="ad-action-info">
+              <strong>Gestionar exámenes</strong>
+              <p>Crear evaluaciones con preguntas</p>
+            </div>
+            <span class="ad-action-arrow">→</span>
+          </button>
+          <button class="ad-action-card" @click="router.push('/admin/usuarios')">
+            <div class="ad-action-icon" style="background:#ede9fe;color:#7c3aed"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+            <div class="ad-action-info">
+              <strong>Usuarios y asignaciones</strong>
+              <p>Asignar cursos y exámenes a usuarios</p>
+            </div>
+            <span class="ad-action-arrow">→</span>
+          </button>
+        </template>
       </div>
     </section>
 
-    <section v-if="!loading && recentAssignments.length" class="ad-section">
+    <section v-if="loading || recentAssignments.length" class="ad-section">
       <div class="ad-section-head">
         <h2 class="ad-section-title">Asignaciones recientes</h2>
-        <button class="ad-link-btn" @click="router.push('/admin/usuarios')">Ver todas →</button>
+        <button v-if="!loading" class="ad-link-btn" @click="router.push('/admin/usuarios')">Ver todas →</button>
       </div>
-      <div class="ad-recent-list">
-        <div v-for="a in recentAssignments" :key="a.id" class="ad-recent-item">
-          <div class="ad-recent-avatar">{{ a.userName?.charAt(0)?.toUpperCase() || 'U' }}</div>
-          <div class="ad-recent-info">
-            <strong>{{ a.userName }}</strong>
-            <p>{{ a.capTitle || a.exTitle || 'Sin contenido' }} · {{ new Date(a.assigned_at).toLocaleDateString('es') }}</p>
-          </div>
-          <span class="badge" :class="a.capTitle ? 'badge-orange' : 'badge-blue'">{{ a.capTitle ? 'Curso' : 'Examen' }}</span>
+      <template v-if="loading">
+        <div class="ad-recent-list">
+          <div v-for="n in 3" :key="n" class="ad-recent-item skeleton" style="height: 64px; border:none; box-shadow:none"></div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="ad-recent-list">
+          <div v-for="a in recentAssignments" :key="a.id" class="ad-recent-item">
+            <div class="ad-recent-avatar">{{ a.userName?.charAt(0)?.toUpperCase() || 'U' }}</div>
+            <div class="ad-recent-info">
+              <strong>{{ a.userName }}</strong>
+              <p>{{ a.capTitle || a.exTitle || 'Sin contenido' }} · {{ new Date(a.assigned_at).toLocaleDateString('es') }}</p>
+            </div>
+            <span class="badge" :class="a.capTitle ? 'badge-orange' : 'badge-blue'">{{ a.capTitle ? 'Curso' : 'Examen' }}</span>
+          </div>
+        </div>
+      </template>
     </section>
   </div>
 </template>
