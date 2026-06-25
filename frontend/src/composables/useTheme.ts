@@ -7,9 +7,11 @@ if (typeof window !== 'undefined') {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   if (saved === 'dark' || (!saved && prefersDark)) {
     document.documentElement.classList.add('dark-theme')
+    document.documentElement.classList.remove('light-theme')
     isDark.value = true
   } else {
     document.documentElement.classList.remove('dark-theme')
+    document.documentElement.classList.add('light-theme')
     isDark.value = false
   }
 }
@@ -23,9 +25,11 @@ export function useTheme() {
     const isNowDark = !document.documentElement.classList.contains('dark-theme')
     if (isNowDark) {
       document.documentElement.classList.add('dark-theme')
+      document.documentElement.classList.remove('light-theme')
       localStorage.setItem('theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark-theme')
+      document.documentElement.classList.add('light-theme')
       localStorage.setItem('theme', 'light')
     }
     updateState()
