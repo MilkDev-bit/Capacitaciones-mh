@@ -117,9 +117,12 @@ async function buyLicencia(lic: any) {
           <p style="color: var(--muted); line-height: 1.6;">{{ curso.welcome_message || 'Aprende y desarrolla nuevas habilidades con este curso.' }}</p>
           
           <div class="code-section">
-            <h4>¿Tienes un código de invitación?</h4>
+            <h4>¿Tienes un código de acceso?</h4>
+            <p class="code-helper-text">
+              Si tu empresa adquirió una licencia corporativa o tienes una invitación, ingrésalo aquí.
+            </p>
             <div style="display:flex; gap: 8px;">
-              <input v-model="codigoForm" class="field-input" placeholder="Ingresa tu código" />
+              <input v-model="codigoForm" class="field-input" placeholder="Ingresa tu código de licencia o acceso" />
               <button class="btn btn-primary" @click="unirseConCodigo" :disabled="joiningCodigo">
                 {{ joiningCodigo ? 'Verificando...' : 'Canjear' }}
               </button>
@@ -166,7 +169,8 @@ async function buyLicencia(lic: any) {
 .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
 .left-col h3, .right-col h3 { font-size: 1.4rem; font-weight: 800; color: var(--dark); margin: 0 0 16px 0; }
 .code-section { margin-top: 40px; padding: 24px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); }
-.code-section h4 { margin: 0 0 16px 0; font-size: 1.1rem; color: var(--dark); }
+.code-section h4 { margin: 0 0 8px 0; font-size: 1.1rem; color: var(--dark); }
+.code-helper-text { font-size: 0.9rem; color: var(--muted); margin: 0 0 16px 0; line-height: 1.4; }
 .field-input { flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-md); font-size: 1rem; outline: none; }
 .field-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
 .w-100 { width: 100%; }
