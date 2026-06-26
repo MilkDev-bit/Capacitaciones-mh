@@ -13,6 +13,7 @@ import (
 
 	"github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/checkout/session"
+	"google.golang.org/grpc/metadata"
 )
 
 // Errores de dominio.
@@ -387,6 +388,12 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		ClientReferenceID: stripe.String(clientRef),
 	}
 
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
+			params.CustomerEmail = stripe.String(vals[0])
+		}
+	}
+
 	if stripe.Key == "" {
 		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
 	}
@@ -470,6 +477,12 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 		SuccessURL: stripe.String(req.SuccessUrl),
 		CancelURL:  stripe.String(req.CancelUrl),
 		ClientReferenceID: stripe.String(clientRef),
+	}
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
+			params.CustomerEmail = stripe.String(vals[0])
+		}
 	}
 
 	if stripe.Key == "" {
