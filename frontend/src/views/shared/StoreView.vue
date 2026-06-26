@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import heroBg from '../../assets/store-hero-bg.png'
+import logoSrc from '../../assets/logo-capacitaciones.png'
 
 const router = useRouter()
+
+// ── Scroll-based nav opacity ──────────────────────────────
+const scrolled = ref(false)
+function onScroll() { scrolled.value = window.scrollY > 40 }
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
+
+// ── Card entry stagger ───────────────────────────────────
+const cardsVisible = ref(false)
 const cursosPublicos = ref<any[]>([])
 const loading = ref(true)
 const search = ref('')
@@ -91,7 +101,16 @@ async function loadPublicos() {
   }
 }
 
-onMounted(loadPublicos)
+onMounted(() => {
+  loadPublicos()
+  // trigger stagger after a tick
+  setTimeout(() => { cardsVisible.value = true }, 80)
+})
+
+watch(publicosPaginados, () => {
+  cardsVisible.value = false
+  setTimeout(() => { cardsVisible.value = true }, 50)
+})
 
 function goToCourse(id: string) {
   router.push(`/curso/${id}`)
@@ -100,17 +119,44 @@ function goToCourse(id: string) {
 function formatPrice(precio: number) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(precio)
 }
+
+// ── 3-D card tilt ────────────────────────────────────────
+function onCardEnter(e: MouseEvent) {
+  const card = e.currentTarget as HTMLElement
+  card.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease'
+}
+function onCardLeave(e: MouseEvent) {
+  const card = e.currentTarget as HTMLElement
+  card.style.transform = ''
+  card.style.transition = 'transform 0.4s ease, box-shadow 0.3s ease, border-color 0.3s ease'
+}
+function onCardMove(e: MouseEvent) {
+  const card = e.currentTarget as HTMLElement
+  const rect = card.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  const cx = rect.width / 2
+  const cy = rect.height / 2
+  const rotateX = ((y - cy) / cy) * -6
+  const rotateY = ((x - cx) / cx) * 6
+  card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px) scale(1.01)`
+}
 </script>
 
 <template>
   <div class="store-root">
 
+    <!-- ───── PARTICLES ───── -->
+    <div class="particles" aria-hidden="true">
+      <span v-for="n in 18" :key="n" :class="`p p-${n}`"></span>
+    </div>
+
     <!-- ───── NAVBAR ───── -->
-    <nav class="glass-nav">
+    <nav :class="['glass-nav', scrolled ? 'nav-scrolled' : '']">
       <div class="nav-inner">
         <button class="nav-brand" @click="router.push('/')">
-          <span class="brand-dot"></span>
-          MH Capacitaciones
+          <img :src="logoSrc" alt="Logo MH" class="nav-logo" />
+          <span class="brand-name">MH <span class="brand-accent">Capacitaciones</span></span>
         </button>
         <div class="nav-actions">
           <button class="nav-btn ghost" @click="router.push('/login')">Iniciar sesión</button>
@@ -239,7 +285,7 @@ function formatPrice(precio: number) {
 
         <!-- Skeleton loading -->
         <div v-if="loading" class="courses-grid">
-          <article v-for="n in 6" :key="n" class="course-card skeleton-card">
+          <article v-for="n in 6" :key="n" class="course-card skeleton-card" :style="{ '--i': n }">
             <div class="skel-img"></div>
             <div class="skel-body">
               <div class="skel-badge"></div>
@@ -252,12 +298,22 @@ function formatPrice(precio: number) {
         </div>
 
         <!-- Course Grid -->
-        <div v-else-if="publicosPaginados.length" class="courses-grid">
+        <TransitionGroup
+          v-else-if="publicosPaginados.length"
+          tag="div"
+          class="courses-grid"
+          name="card-stagger"
+        >
           <article
-            v-for="c in publicosPaginados"
+            v-for="(c, idx) in publicosPaginados"
             :key="c.id"
             class="course-card"
+            :class="{ 'card-visible': cardsVisible }"
+            :style="{ '--i': idx }"
             @click="goToCourse(c.id)"
+            @mouseenter="onCardEnter($event)"
+            @mouseleave="onCardLeave($event)"
+            @mousemove="onCardMove($event)"
             role="button"
             :aria-label="`Ver el curso ${c.title}`"
           >
@@ -307,7 +363,7 @@ function formatPrice(precio: number) {
               </div>
             </div>
           </article>
-        </div>
+        </TransitionGroup>
 
         <!-- Empty state -->
         <div v-else class="empty-wrap">
@@ -397,7 +453,7 @@ function formatPrice(precio: number) {
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: none;
   border: none;
   color: #f1f5f9;
@@ -405,13 +461,40 @@ function formatPrice(precio: number) {
   font-weight: 700;
   cursor: pointer;
   letter-spacing: -0.01em;
+  transition: opacity 0.2s;
 }
 
-.brand-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #f97316;
-  box-shadow: 0 0 8px rgba(249,115,22,0.8);
+.nav-brand:hover {
+  opacity: 0.85;
+}
+
+.nav-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(249,115,22,0.55));
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(249,115,22,0.5)); }
+  50%       { filter: drop-shadow(0 0 14px rgba(249,115,22,0.9)); }
+}
+
+.brand-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-accent {
+  color: #fb923c;
+}
+
+/* scrolled nav gets a stronger bg */
+.nav-scrolled {
+  background: rgba(8,9,10,0.92);
+  box-shadow: 0 1px 24px rgba(0,0,0,0.5);
 }
 
 .nav-actions {
@@ -1147,7 +1230,209 @@ function formatPrice(precio: number) {
   color: rgba(255,255,255,0.22);
 }
 
-/* ── RESPONSIVE ────────────────────────────────────────── */
+/* ── PARTICLES ─────────────────────────────────────────── */
+.particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.p {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation: float-particle linear infinite;
+}
+
+/* Individual particle sizes, positions, delays */
+.p-1  { width: 4px;  height: 4px;  background: rgba(249,115,22,.7);  left: 8%;  animation-duration: 14s; animation-delay: 0s;   }
+.p-2  { width: 2px;  height: 2px;  background: rgba(255,255,255,.5); left: 16%; animation-duration: 18s; animation-delay: 2s;   }
+.p-3  { width: 3px;  height: 3px;  background: rgba(167,139,250,.6); left: 23%; animation-duration: 12s; animation-delay: 5s;   }
+.p-4  { width: 5px;  height: 5px;  background: rgba(249,115,22,.5);  left: 30%; animation-duration: 20s; animation-delay: 1s;   }
+.p-5  { width: 2px;  height: 2px;  background: rgba(255,255,255,.4); left: 38%; animation-duration: 15s; animation-delay: 7s;   }
+.p-6  { width: 4px;  height: 4px;  background: rgba(52,211,153,.6);  left: 45%; animation-duration: 11s; animation-delay: 3s;   }
+.p-7  { width: 3px;  height: 3px;  background: rgba(249,115,22,.8);  left: 53%; animation-duration: 17s; animation-delay: 9s;   }
+.p-8  { width: 2px;  height: 2px;  background: rgba(255,255,255,.5); left: 60%; animation-duration: 13s; animation-delay: 4s;   }
+.p-9  { width: 6px;  height: 6px;  background: rgba(167,139,250,.4); left: 67%; animation-duration: 22s; animation-delay: 6s;   }
+.p-10 { width: 3px;  height: 3px;  background: rgba(249,115,22,.6);  left: 74%; animation-duration: 16s; animation-delay: 0.5s; }
+.p-11 { width: 2px;  height: 2px;  background: rgba(255,255,255,.3); left: 81%; animation-duration: 19s; animation-delay: 8s;   }
+.p-12 { width: 4px;  height: 4px;  background: rgba(52,211,153,.5);  left: 88%; animation-duration: 10s; animation-delay: 2.5s; }
+.p-13 { width: 3px;  height: 3px;  background: rgba(249,115,22,.7);  left: 12%; animation-duration: 21s; animation-delay: 11s;  }
+.p-14 { width: 5px;  height: 5px;  background: rgba(255,255,255,.2); left: 27%; animation-duration: 14s; animation-delay: 13s;  }
+.p-15 { width: 2px;  height: 2px;  background: rgba(167,139,250,.7); left: 50%; animation-duration: 9s;  animation-delay: 0.8s; }
+.p-16 { width: 4px;  height: 4px;  background: rgba(249,115,22,.4);  left: 71%; animation-duration: 23s; animation-delay: 15s;  }
+.p-17 { width: 3px;  height: 3px;  background: rgba(52,211,153,.6);  left: 91%; animation-duration: 12s; animation-delay: 6.5s; }
+.p-18 { width: 2px;  height: 2px;  background: rgba(255,255,255,.4); left: 4%;  animation-duration: 17s; animation-delay: 10s;  }
+
+@keyframes float-particle {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(-120px) scale(1.4) rotate(360deg); opacity: 0; }
+}
+
+/* ── HERO AURORA ────────────────────────────────────────── */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(249,115,22,0.12) 0%, rgba(167,139,250,0.08) 40%, transparent 70%);
+  filter: blur(60px);
+  animation: aurora-pulse 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes aurora-pulse {
+  0%   { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  100% { opacity: 1;   transform: translateX(-50%) scale(1.15); }
+}
+
+/* ── HERO CONTENT ANIMATION ─────────────────────────────── */
+.hero-eyebrow   { animation: hero-fade-up 0.7s ease both; animation-delay: 0.1s; }
+.hero-title     { animation: hero-fade-up 0.7s ease both; animation-delay: 0.25s; }
+.hero-subtitle  { animation: hero-fade-up 0.7s ease both; animation-delay: 0.4s; }
+.hero-search-wrap { animation: hero-fade-up 0.7s ease both; animation-delay: 0.55s; }
+.hero-stats     { animation: hero-fade-up 0.7s ease both; animation-delay: 0.7s; }
+
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CARD STAGGER ───────────────────────────────────────── */
+.course-card {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(.34,1.2,.64,1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  transition-delay: calc(var(--i, 0) * 60ms);
+}
+
+.course-card.card-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── CARD GLOW ON HOVER ─────────────────────────────────── */
+.course-card:hover {
+  box-shadow:
+    0 24px 48px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(249,115,22,0.25),
+    0 0 40px rgba(249,115,22,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.09);
+  border-color: rgba(249,115,22,0.3);
+}
+
+/* ── CARD CTA PULSE ─────────────────────────────────────── */
+.card-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card-cta:hover::after {
+  opacity: 1;
+}
+
+/* ── SEARCH BAR ANIMATED BORDER ─────────────────────────── */
+.glass-search {
+  position: relative;
+}
+
+.glass-search::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, rgba(249,115,22,0), rgba(167,139,250,0), rgba(249,115,22,0));
+  opacity: 0;
+  transition: opacity 0.4s;
+  z-index: -1;
+}
+
+.glass-search:focus-within::before {
+  background: linear-gradient(135deg, rgba(249,115,22,0.5), rgba(167,139,250,0.4), rgba(249,115,22,0.5));
+  opacity: 1;
+  animation: border-spin 3s linear infinite;
+}
+
+@keyframes border-spin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+   100% { background-position: 0% 50%; }
+}
+
+/* ── STAT NUMBER COUNT-UP FEEL ──────────────────────────── */
+.stat-num {
+  display: inline-block;
+  animation: stat-pop 0.6s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: 0.8s;
+}
+
+@keyframes stat-pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* ── CARD SHIMMER ON HOVER ──────────────────────────────── */
+.card-img-wrap::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -60%;
+  width: 60%;
+  height: 300%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%);
+  transform: skewX(-15deg);
+  transition: left 0s;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.course-card:hover .card-img-wrap::after {
+  left: 160%;
+  transition: left 0.6s ease;
+}
+
+/* ── FILTER PILL ACTIVE GLOW ────────────────────────────── */
+.filter-pill.active {
+  background: rgba(249,115,22,0.15);
+  border-color: rgba(249,115,22,0.5);
+  color: #fb923c;
+  box-shadow: 0 0 12px rgba(249,115,22,0.2);
+}
+
+/* ── CARD STAGGER TRANSITION (Vue TransitionGroup) ──────── */
+.card-stagger-enter-active { transition: all 0.4s ease; }
+.card-stagger-leave-active { transition: all 0.2s ease; }
+.card-stagger-enter-from  { opacity: 0; transform: translateY(20px) scale(0.97); }
+.card-stagger-leave-to    { opacity: 0; transform: scale(0.96); }
+
+/* ── LOGO GLOW ON HERO SECTION ──────────────────────────── */
+.placeholder-emoji {
+  animation: emoji-float 4s ease-in-out infinite;
+}
+
+@keyframes emoji-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
 @media (max-width: 768px) {
   .nav-inner { padding: 0 20px; }
   .hero-section { padding-top: 110px; padding-bottom: 64px; }
