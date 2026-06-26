@@ -231,20 +231,22 @@ async function unirseConCodigo() {
             <!-- What you'll learn -->
             <div class="learn-grid">
               <div class="learn-item">
-                <span class="learn-icon">✅</span>
+                <span class="learn-icon">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                </span>
                 <span>Contenido actualizado al {{ new Date().getFullYear() }}</span>
               </div>
               <div class="learn-item">
-                <span class="learn-icon">📱</span>
+                <span class="learn-icon">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                </span>
                 <span>Acceso desde cualquier dispositivo</span>
               </div>
               <div class="learn-item">
-                <span class="learn-icon">🏆</span>
+                <span class="learn-icon">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                </span>
                 <span>Certificado al completar</span>
-              </div>
-              <div class="learn-item">
-                <span class="learn-icon">♾️</span>
-                <span>Acceso de por vida</span>
               </div>
             </div>
           </div>
@@ -252,7 +254,8 @@ async function unirseConCodigo() {
           <!-- Code section -->
           <div class="glass-card mt-4">
             <h2 class="glass-card-title">
-              <span>🔑</span> ¿Tienes un código de acceso?
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; color: #fb923c;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              ¿Tienes un código de acceso?
             </h2>
             <p class="glass-card-text">
               Si tu empresa adquirió una licencia corporativa o tienes una invitación, canjéala aquí para acceder al curso.
@@ -288,7 +291,7 @@ async function unirseConCodigo() {
             <div v-if="curso.precio > 0">
               <div class="purchase-label">Precio del curso</div>
               <div class="purchase-price">{{ formattedPrice }}</div>
-              <div class="purchase-period">Pago único · Acceso permanente</div>
+              <div class="purchase-period">Pago único</div>
 
               <button class="cpv-btn-buy w-full mt-4" @click="buyCourse" :disabled="buying">
                 <span v-if="buying" class="cpv-btn-spinner"></span>
@@ -309,7 +312,7 @@ async function unirseConCodigo() {
             <div v-else>
               <div class="purchase-label free-label">Acceso Gratuito</div>
               <div class="purchase-price free-price">GRATIS</div>
-              <div class="purchase-period">Sin costo · Para siempre</div>
+              <div class="purchase-period">Sin costo</div>
 
               <button class="cpv-btn-free w-full mt-4" @click="enrollFree" :disabled="enrolling">
                 <span v-if="enrolling" class="cpv-btn-spinner"></span>
@@ -331,10 +334,18 @@ async function unirseConCodigo() {
             <!-- Includes list -->
             <div class="purchase-includes">
               <div class="includes-title">Este curso incluye:</div>
-              <div class="include-item"><span>🎬</span><span>Contenido multimedia</span></div>
-              <div class="include-item"><span>📱</span><span>Acceso móvil y escritorio</span></div>
-              <div class="include-item"><span>🏅</span><span>Certificado de finalización</span></div>
-              <div class="include-item"><span>♾️</span><span>Acceso de por vida</span></div>
+              <div class="include-item">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                <span>Contenido multimedia</span>
+              </div>
+              <div class="include-item">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                <span>Acceso móvil y escritorio</span>
+              </div>
+              <div class="include-item">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                <span>Certificado de finalización</span>
+              </div>
             </div>
           </div>
         </aside>
