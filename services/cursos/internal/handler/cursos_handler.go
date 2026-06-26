@@ -110,6 +110,22 @@ func (h *CursosHandler) ListLicencias(ctx context.Context, req *cursospb.ListLic
 	return &cursospb.ListLicenciasResponse{Licencias: list}, nil
 }
 
+func (h *CursosHandler) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
+	resp, err := h.svc.GetLicenciaPublica(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+func (h *CursosHandler) ListLicenciasCompradas(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListLicenciasResponse, error) {
+	resp, err := h.svc.ListLicenciasCompradas(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
 // ── Instructor ────────────────────────────────────────────────────────────────
 
 func (h *CursosHandler) InstructorListCapacitaciones(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListCursosResponse, error) {
