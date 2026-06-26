@@ -75,6 +75,13 @@ func (s *CursosService) Inscribirse(ctx context.Context, userID, cursoID string)
 	if enrolled {
 		return ErrConflict
 	}
+	curso, err := s.repo.FindByID(ctx, cursoID)
+	if err != nil {
+		return err
+	}
+	if curso.Precio > 0 {
+		return errors.New("este curso es de pago, usa el flujo de compra")
+	}
 	return s.repo.Inscribirse(ctx, userID, cursoID)
 }
 

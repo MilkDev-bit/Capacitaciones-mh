@@ -420,6 +420,13 @@ async function unirseConCodigo() {
             <div class="course-footer-row">
               <span v-if="c.inscrito" class="badge badge-green">Ya inscrito</span>
               <button
+                v-else-if="c.precio > 0"
+                class="btn btn-primary btn-sm"
+                @click.stop="openCourse(c.id)"
+              >
+                Comprar curso - ${{ c.precio }} MXN
+              </button>
+              <button
                 v-else
                 class="btn btn-primary btn-sm"
                 :disabled="inscribiendose === c.id"
