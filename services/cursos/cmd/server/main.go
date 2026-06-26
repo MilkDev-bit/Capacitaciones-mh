@@ -150,16 +150,6 @@ func runMigrations(db *sqlx.DB) error {
 		)`,
 		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
-		// Garantizar unicidad en asignaciones para que ON CONFLICT funcione
-		`DO $$ BEGIN
-		   IF NOT EXISTS (
-		     SELECT 1 FROM pg_constraint
-		     WHERE conrelid='asignaciones'::regclass AND contype='u'
-		   ) THEN
-		     ALTER TABLE asignaciones ADD CONSTRAINT asignaciones_user_curso_unique
-		       UNIQUE (user_id, capacitacion_id);
-		   END IF;
-		 END $$`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
