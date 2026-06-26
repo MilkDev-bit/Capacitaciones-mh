@@ -187,6 +187,30 @@ func (h *CursosHandler) ListLicencias(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp.Licencias)
 }
 
+// GET /api/licencias-publicas/:id
+func (h *CursosHandler) GetLicenciaPublica(ctx *gin.Context) {
+	resp, err := h.c.Cursos.GetLicenciaPublica(ctx.Request.Context(), &cursospb.LicenciaIDRequest{
+		Id: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// GET /api/usuario/licencias-compradas
+func (h *CursosHandler) ListLicenciasCompradas(ctx *gin.Context) {
+	resp, err := h.c.Cursos.ListLicenciasCompradas(genMetadata(ctx), &cursospb.UserRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp.Licencias)
+}
+
 // POST /api/checkout-session
 func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 	var req struct {
@@ -240,17 +264,7 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 
 		ref := session.ClientReferenceID
 		parts := strings.Split(ref, "||")
-		if len(parts) == 3 {
-			userID := parts[0]
-			capID := parts[1]
-			licID := parts[2]
-			
-			_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
-				UserId:         userID,
-				CapacitacionId: capID,
-				LicenciaId:     licID,
-			})
-		} else if len(parts) == 3 && parts[0] == "curso" {
+		if len(parts) == 3 && parts[0] == "curso" {
 			// Es una compra de curso individual (B2C)
 			// Formato: curso||userID||cursoID
 			userID := parts[1]
@@ -259,6 +273,15 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 				UserId:         userID,
 				CapacitacionId: capID,
 				LicenciaId:     "", // no hay licencia, es directo
+			})
+		} else if len(parts) == 3 && parts[0] == "licencia" {
+			// Es una compra de licencia corporativa (B2B)
+			// Formato: licencia||userID||licenciaID
+			userID := parts[1]
+			licID := parts[2]
+			_, _ = h.c.Cursos.WebhookComprarLicencia(c.Request.Context(), &cursospb.WebhookComprarLicenciaRequest{
+				UserId:     userID,
+				LicenciaId: licID,
 			})
 		}
 	}

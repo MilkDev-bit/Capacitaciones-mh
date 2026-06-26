@@ -398,3 +398,40 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 	}
 	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
 }
+
+func (s *CursosService) WebhookComprarLicencia(ctx context.Context, req *cursospb.WebhookComprarLicenciaRequest) (*cursospb.EmptyResponse, error) {
+	err := s.repo.AsignarCompradorLicencia(ctx, req.LicenciaId, req.UserId)
+	return &cursospb.EmptyResponse{}, err
+}
+
+func (s *CursosService) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
+	lic, err := s.repo.FindLicenciaByID(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	curso, err := s.repo.FindByID(ctx, lic.CapacitacionID)
+	if err != nil {
+		return nil, err
+	}
+	return &cursospb.LicenciaPublicaResponse{
+		Id:                   lic.ID,
+		Nombre:               lic.Nombre,
+		Precio:               lic.Precio,
+		CapacidadMaxima:      lic.CapacidadMaxima,
+		CapacitacionId:       curso.ID,
+		CapacitacionTitulo:   curso.Title,
+		CapacitacionThumbnail: curso.ThumbnailURL,
+	}, nil
+}
+
+func (s *CursosService) ListLicenciasCompradas(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListLicenciasResponse, error) {
+	lics, err := s.repo.ListLicenciasCompradas(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+	var res []*cursospb.Licencia
+	for _, l := range lics {
+		res = append(res, l.ToProto())
+	}
+	return &cursospb.ListLicenciasResponse{Licencias: res}, nil
+}

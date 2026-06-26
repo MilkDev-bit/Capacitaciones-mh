@@ -86,6 +86,7 @@ func New(d Deps) *gin.Engine {
 		api.GET("/preview-curso/:codigo", d.CursosH.PreviewCurso)
 		api.GET("/cursos-publicos", d.CursosH.ListCursosPublicos)
 		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
+		api.GET("/licencias-publicas/:id", d.CursosH.GetLicenciaPublica)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 
@@ -106,15 +107,15 @@ func New(d Deps) *gin.Engine {
 			auth.GET("/notificaciones", d.UsuariosH.ListNotificaciones)
 			auth.POST("/notificaciones/marcar-leidas", d.UsuariosH.MarcarNotificacionesLeidas)
 
-			// Cursos
+			// Cursos y capacitaciones
 			auth.GET("/mis-capacitaciones", d.CursosH.ListMisCapacitaciones)
 			auth.GET("/capacitaciones/:id", d.CursosH.GetCurso)
 			auth.POST("/cursos/:id/inscripciones", d.CursosH.Inscribirse)
 			auth.POST("/inscripciones", d.CursosH.UnirseConCodigo)
-			// Licencias de cohorte
 			auth.POST("/inscripciones-licencia", d.CursosH.UnirseConLicencia)
 			auth.GET("/capacitaciones/:id/licencias", d.CursosH.ListLicencias)
 			auth.POST("/checkout-session", d.CursosH.CreateCheckoutSession)
+			auth.GET("/licencias-compradas", d.CursosH.ListLicenciasCompradas)
 
 			// Lecciones
 			auth.GET("/capacitaciones/:id/lecciones", d.LeccionesH.GetLeccionesConProgreso)

@@ -77,8 +77,10 @@ CREATE TABLE IF NOT EXISTS curso_licencias (
     codigo_acceso VARCHAR(50) UNIQUE,
     stripe_product_id VARCHAR(100),
     stripe_price_id VARCHAR(100),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+	created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS comprador_id UUID REFERENCES users(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS inscripciones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

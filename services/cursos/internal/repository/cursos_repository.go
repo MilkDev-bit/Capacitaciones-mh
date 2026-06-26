@@ -76,6 +76,8 @@ type Licencia struct {
 	CodigoAcceso    *string   `db:"codigo_acceso"`
 	StripeProductID *string   `db:"stripe_product_id"`
 	StripePriceID   *string   `db:"stripe_price_id"`
+	CompradorID     *string   `db:"comprador_id"`
+	IsActive        *bool     `db:"is_active"`
 	CreatedAt       time.Time `db:"created_at"`
 }
 
@@ -153,6 +155,8 @@ type CursosRepository interface {
 	FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error)
 	IncrementarUsoLicencia(ctx context.Context, licenciaID string) error
 	InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error
+	ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error)
+	AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error
 }
 
 type postgresCursosRepository struct{ db *sqlx.DB }
@@ -389,17 +393,17 @@ func (r *postgresCursosRepository) DeleteLicencia(ctx context.Context, licenciaI
 func (r *postgresCursosRepository) ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error) {
 	var lics []*Licencia
 	return lics, r.db.SelectContext(ctx, &lics,
-		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE capacitacion_id=$1 ORDER BY created_at DESC`, cursoID)
+		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE capacitacion_id=$1 ORDER BY created_at DESC`, cursoID)
 }
 
 func (r *postgresCursosRepository) FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error) {
 	l := &Licencia{}
-	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE id=$1`, licenciaID)
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE id=$1`, licenciaID)
 }
 
 func (r *postgresCursosRepository) FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error) {
 	l := &Licencia{}
-	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, created_at FROM curso_licencias WHERE codigo_acceso=$1`, codigo)
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE codigo_acceso=$1`, codigo)
 }
 
 func (r *postgresCursosRepository) IncrementarUsoLicencia(ctx context.Context, licenciaID string) error {
@@ -419,6 +423,20 @@ func (r *postgresCursosRepository) InscribirseConLicencia(ctx context.Context, u
 		 VALUES($1,$2,$3)
 		 ON CONFLICT DO NOTHING`,
 		userID, cursoID, licID)
+	return err
+}
+
+func (r *postgresCursosRepository) ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error) {
+	var lics []*Licencia
+	return lics, r.db.SelectContext(ctx, &lics,
+		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at 
+		 FROM curso_licencias 
+		 WHERE comprador_id=$1 
+		 ORDER BY created_at DESC`, userID)
+}
+
+func (r *postgresCursosRepository) AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET comprador_id=$1 WHERE id=$2`, userID, licenciaID)
 	return err
 }
 

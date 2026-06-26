@@ -20,8 +20,11 @@ service CursosService {
   rpc UnirseConCodigo(UnirseRequest) returns (EmptyResponse);
   rpc UnirseConLicencia(UnirseConLicenciaRequest) returns (EmptyResponse);
   rpc WebhookEnroll(WebhookEnrollRequest) returns (EmptyResponse);
+  rpc WebhookComprarLicencia(WebhookComprarLicenciaRequest) returns (EmptyResponse);
   rpc CreateCheckoutSession(CheckoutSessionRequest) returns (CheckoutSessionResponse);
   rpc ListLicencias(ListLicenciasRequest) returns (ListLicenciasResponse);
+  rpc GetLicenciaPublica(LicenciaIDRequest) returns (LicenciaPublicaResponse);
+  rpc ListLicenciasCompradas(UserRequest) returns (ListLicenciasResponse);
 
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
@@ -160,7 +163,18 @@ message Licencia {
   string codigo_acceso = 7;
   string stripe_product_id = 8;
   string stripe_price_id = 9;
-  string created_at = 10;
+  string comprador_id = 10;
+  string created_at = 11;
+}
+
+message LicenciaPublicaResponse {
+  string id = 1;
+  string nombre = 2;
+  double precio = 3;
+  int32 capacidad_maxima = 4;
+  string capacitacion_id = 5;
+  string capacitacion_titulo = 6;
+  string capacitacion_thumbnail = 7;
 }
 
 message CreateLicenciaRequest {
@@ -200,6 +214,11 @@ message WebhookEnrollRequest {
   string user_id = 1;
   string capacitacion_id = 2;
   string licencia_id = 3;
+}
+
+message WebhookComprarLicenciaRequest {
+  string user_id = 1;
+  string licencia_id = 2;
 }
 
 message CheckoutSessionRequest {

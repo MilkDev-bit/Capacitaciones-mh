@@ -10,6 +10,8 @@ const router = createRouter({
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
+    { path: '/comprar-licencia/:id', component: () => import('../views/ComprarLicenciaView.vue') },
+    { path: '/comprar-licencia/:id/success', component: () => import('../views/ComprarLicenciaSuccessView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
     {
       path: '/admin',
@@ -50,6 +52,7 @@ const router = createRouter({
         { path: 'examenes', component: () => import('../views/user/MisExamenes.vue') },
         { path: 'examenes/:id', component: () => import('../views/user/ResponderExamen.vue') },
         { path: 'capacitaciones/:id', component: () => import('../views/user/VerCapacitacion.vue') },
+        { path: 'licencias', component: () => import('../views/user/MisLicencias.vue') },
         { path: 'perfil', component: () => import('../views/user/PerfilView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },

@@ -81,6 +81,12 @@ async function remove(id: string) {
     toast.error('Error al eliminar')
   }
 }
+
+function copyBuyLink(licId: string) {
+  const url = `${window.location.origin}/comprar-licencia/${licId}`
+  navigator.clipboard.writeText(url)
+  toast.success('Enlace de compra copiado')
+}
 </script>
 
 <template>
@@ -116,6 +122,7 @@ async function remove(id: string) {
           </div>
         </div>
         <div class="lic-actions">
+          <button class="btn-text text-brand" @click="copyBuyLink(lic.id)">Enlace Compra B2B</button>
           <button class="btn-text" @click="openEdit(lic)">Editar</button>
           <button class="btn-text text-danger" @click="remove(lic.id)">Eliminar</button>
         </div>
