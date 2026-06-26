@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
@@ -288,6 +289,9 @@ func (r *postgresCursosRepository) UnirseConCodigo(ctx context.Context, userID, 
 	curso, err := r.FindByCodigo(ctx, codigo)
 	if err != nil {
 		return nil, err
+	}
+	if curso.Precio > 0 {
+		return nil, errors.New("este curso es de pago, el código de invitación general no es válido")
 	}
 	if err := r.Inscribirse(ctx, userID, curso.ID); err != nil {
 		return nil, err

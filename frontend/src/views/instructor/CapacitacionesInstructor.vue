@@ -122,8 +122,8 @@ function copyCode(code: string) {
           <p class="course-desc">{{ c.description || 'Sin descripción' }}</p>
           
           <div class="course-footer">
-            <div class="course-code" v-if="c.codigo_acceso">
-              <span class="code-label">Código:</span>
+            <div class="course-code" v-if="c.codigo_acceso && (!c.precio || c.precio === 0)">
+              <span class="code-label">Código de Invitación:</span>
               <strong @click="copyCode(c.codigo_acceso)" title="Copiar código">{{ c.codigo_acceso }}</strong>
               <button class="btn-text small" @click="resetCode(c.id)">Reset</button>
             </div>
