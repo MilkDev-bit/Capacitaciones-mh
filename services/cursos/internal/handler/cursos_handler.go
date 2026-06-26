@@ -32,6 +32,14 @@ func (h *CursosHandler) PreviewCurso(ctx context.Context, req *cursospb.CodigoRe
 	return c, nil
 }
 
+func (h *CursosHandler) GetCursoPublico(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.CursoResponse, error) {
+	c, err := h.svc.GetCursoPublico(ctx, req.CursoId)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return c, nil
+}
+
 func (h *CursosHandler) ListCursosPublicos(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.ListCursosResponse, error) {
 	list, err := h.svc.ListPublicos(ctx)
 	if err != nil {

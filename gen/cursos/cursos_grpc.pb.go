@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	CursosService_PreviewCurso_FullMethodName                 = "/cursos.CursosService/PreviewCurso"
+	CursosService_GetCursoPublico_FullMethodName              = "/cursos.CursosService/GetCursoPublico"
 	CursosService_ListCursosPublicos_FullMethodName           = "/cursos.CursosService/ListCursosPublicos"
 	CursosService_ListMisCapacitaciones_FullMethodName        = "/cursos.CursosService/ListMisCapacitaciones"
 	CursosService_GetCurso_FullMethodName                     = "/cursos.CursosService/GetCurso"
@@ -59,6 +60,7 @@ const (
 type CursosServiceClient interface {
 	// ── Público ──────────────────────────────────────────────────────────────
 	PreviewCurso(ctx context.Context, in *CodigoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
+	GetCursoPublico(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	ListCursosPublicos(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	// ── Usuario autenticado ───────────────────────────────────────────────────
 	ListMisCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
@@ -103,6 +105,16 @@ func (c *cursosServiceClient) PreviewCurso(ctx context.Context, in *CodigoReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CursoResponse)
 	err := c.cc.Invoke(ctx, CursosService_PreviewCurso_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) GetCursoPublico(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CursoResponse)
+	err := c.cc.Invoke(ctx, CursosService_GetCursoPublico_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -389,6 +401,7 @@ func (c *cursosServiceClient) AdminDesAsignar(ctx context.Context, in *Asignacio
 type CursosServiceServer interface {
 	// ── Público ──────────────────────────────────────────────────────────────
 	PreviewCurso(context.Context, *CodigoRequest) (*CursoResponse, error)
+	GetCursoPublico(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	ListCursosPublicos(context.Context, *EmptyRequest) (*ListCursosResponse, error)
 	// ── Usuario autenticado ───────────────────────────────────────────────────
 	ListMisCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
@@ -431,6 +444,9 @@ type UnimplementedCursosServiceServer struct{}
 
 func (UnimplementedCursosServiceServer) PreviewCurso(context.Context, *CodigoRequest) (*CursoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PreviewCurso not implemented")
+}
+func (UnimplementedCursosServiceServer) GetCursoPublico(context.Context, *CursoIDRequest) (*CursoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCursoPublico not implemented")
 }
 func (UnimplementedCursosServiceServer) ListCursosPublicos(context.Context, *EmptyRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCursosPublicos not implemented")
@@ -548,6 +564,24 @@ func _CursosService_PreviewCurso_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).PreviewCurso(ctx, req.(*CodigoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_GetCursoPublico_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetCursoPublico(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetCursoPublico_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetCursoPublico(ctx, req.(*CursoIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1048,6 +1082,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PreviewCurso",
 			Handler:    _CursosService_PreviewCurso_Handler,
+		},
+		{
+			MethodName: "GetCursoPublico",
+			Handler:    _CursosService_GetCursoPublico_Handler,
 		},
 		{
 			MethodName: "ListCursosPublicos",

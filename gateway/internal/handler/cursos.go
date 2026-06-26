@@ -61,6 +61,18 @@ func (h *CursosHandler) ListCursosPublicos(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp.Cursos)
 }
 
+// GET /api/cursos-publicos/:id
+func (h *CursosHandler) GetCursoPublico(ctx *gin.Context) {
+	resp, err := h.c.Cursos.GetCursoPublico(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
 // GET /api/preview-curso/:codigo
 func (h *CursosHandler) PreviewCurso(ctx *gin.Context) {
 	resp, err := h.c.Cursos.PreviewCurso(ctx.Request.Context(), &cursospb.CodigoRequest{

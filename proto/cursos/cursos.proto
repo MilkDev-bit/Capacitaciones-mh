@@ -10,6 +10,7 @@ option go_package = "Prueba-Go/gen/cursos;cursospb";
 service CursosService {
   // ── Público ──────────────────────────────────────────────────────────────
   rpc PreviewCurso(CodigoRequest) returns (CursoResponse);
+  rpc GetCursoPublico(CursoIDRequest) returns (CursoResponse);
   rpc ListCursosPublicos(EmptyRequest) returns (ListCursosResponse);
 
   // ── Usuario autenticado ───────────────────────────────────────────────────

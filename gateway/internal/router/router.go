@@ -85,6 +85,7 @@ func New(d Deps) *gin.Engine {
 		// ── Público ───────────────────────────────────────────────────────────
 		api.GET("/preview-curso/:codigo", d.CursosH.PreviewCurso)
 		api.GET("/cursos-publicos", d.CursosH.ListCursosPublicos)
+		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 

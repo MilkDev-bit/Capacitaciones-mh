@@ -46,6 +46,17 @@ func (s *CursosService) PreviewCurso(ctx context.Context, codigo string) (*curso
 	return c.ToProto(), nil
 }
 
+func (s *CursosService) GetCursoPublico(ctx context.Context, cursoID string) (*cursospb.CursoResponse, error) {
+	c, err := s.repo.FindByID(ctx, cursoID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	if !c.IsPublic {
+		return nil, ErrForbidden
+	}
+	return c.ToProto(), nil
+}
+
 func (s *CursosService) ListMisCapacitaciones(ctx context.Context, userID string) ([]*cursospb.CursoResponse, error) {
 	cursos, err := s.repo.ListByUser(ctx, userID)
 	if err != nil {

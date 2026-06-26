@@ -22,11 +22,8 @@ onMounted(async () => {
     // 1. Get course info. The preview endpoint takes code, but we need by ID.
     // Wait, do we have a public endpoint by ID? Let's check backend.
     // For now, let's assume we can fetch it, or we'll add a public endpoint if needed.
-    const resC = await api.get(`/capacitaciones/${id}`) // This requires auth in current backend. We might need to handle this.
+    const resC = await api.get(`/cursos-publicos/${id}`)
     curso.value = resC.data
-    
-    const resL = await api.get(`/capacitaciones/${id}/licencias`)
-    licencias.value = resL.data || []
   } catch (e: any) {
     if (e.response?.status === 401) {
       toast.info('Debes iniciar sesión para ver este curso')
@@ -64,7 +61,28 @@ async function unirseConCodigo() {
   }
 }
 
+async function enrollFree() {
+  if (!auth.isLoggedIn) {
+    toast.info('Crea una cuenta o inicia sesión para guardar tu progreso')
+    router.push(`/login?redirect=/curso/${curso.value?.id}`)
+    return
+  }
+  
+  try {
+    await api.post(`/cursos/${curso.value?.id}/inscripciones`)
+    toast.success('Te has inscrito correctamente')
+    router.push('/usuario/capacitaciones')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al inscribirse')
+  }
+}
+
 async function buyCourse() {
+  if (!auth.isLoggedIn) {
+    toast.info('Crea una cuenta o inicia sesión para continuar con la compra')
+    router.push(`/login?redirect=/curso/${curso.value?.id}`)
+    return
+  }
   if (!curso.value) return
   try {
     const res = await api.post('/checkout-session', {
@@ -141,7 +159,10 @@ async function buyCourse() {
           </div>
           <div v-else class="purchase-card">
             <h3>Curso Gratuito</h3>
-            <p style="color: var(--muted); font-size: 0.95rem; margin-top: 8px;">Este curso no tiene costo o es solo por invitación.</p>
+            <p style="color: var(--muted); font-size: 0.95rem; margin-top: 8px;">Este curso no tiene costo. Inscríbete gratis y comienza a aprender.</p>
+            <button class="btn btn-primary w-100 mt-3" @click="enrollFree">
+              Inscribirse Gratis
+            </button>
           </div>
         </div>
       </div>

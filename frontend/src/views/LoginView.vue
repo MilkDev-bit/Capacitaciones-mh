@@ -209,6 +209,11 @@ async function resetPassword() {
             <span>Exámenes y seguimiento de progreso</span>
           </div>
         </div>
+        <div style="margin-top: 32px;">
+          <button style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" @click="router.push('/tienda')">
+            Explorar Catálogo Público
+          </button>
+        </div>
       </div>
     </div>
 
@@ -217,6 +222,10 @@ async function resetPassword() {
         <div class="mobile-logo">
           <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
           <span>Capacitaciones MH</span>
+        </div>
+        
+        <div class="mobile-store-btn" v-if="tab !== 'forgot'">
+          <button class="btn btn-secondary" style="width: 100%; margin-bottom: 24px;" @click="router.push('/tienda')">Explorar Catálogo Público</button>
         </div>
 
         <div class="form-tabs" v-if="tab !== 'forgot'">
@@ -488,6 +497,9 @@ async function resetPassword() {
   .auth-hero { display: none; }
   .auth-form-panel { padding: 32px 20px; }
   .mobile-logo { display: flex; }
+}
+@media (min-width: 861px) {
+  .mobile-store-btn { display: none; }
 }
 @media (max-width: 420px) { 
   .pass-row { flex-direction: column; gap: 14px; }
