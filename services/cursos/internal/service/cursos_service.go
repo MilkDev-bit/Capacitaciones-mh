@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
+	"os"
 
 	cursospb "Prueba-Go/gen/cursos"
 	mensajespb "Prueba-Go/gen/mensajes"
 	"Prueba-Go/services/cursos/internal/repository"
-	"os"
 
 	"github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/checkout/session"
@@ -385,9 +387,14 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		ClientReferenceID: stripe.String(clientRef),
 	}
 
+	if stripe.Key == "" {
+		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
+	}
+
 	sess, err := session.New(params)
 	if err != nil {
-		return nil, err
+		log.Printf("Error de Stripe al crear sesión: %v", err)
+		return nil, fmt.Errorf("error al conectar con el procesador de pagos: %v", err)
 	}
 	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
 }
