@@ -31,14 +31,19 @@ function copyCode(codigo: string) {
 <template>
   <div class="mis-licencias">
     <div class="header-section">
-      <h2>🏢 Mis Licencias Corporativas</h2>
+      <div class="glass-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="glass-icon"><path d="M4 10h16"/><path d="M4 14h16"/><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z"/><path d="M18 22H4"/><path d="M22 18V6a2 2 0 0 0-2-2h-4"/></svg>
+      </div>
+      <h2>Mis Licencias Corporativas</h2>
       <p class="subtitle">Gestiona los accesos que has adquirido para tu equipo.</p>
     </div>
 
     <div v-if="loading" class="loading">Cargando tus licencias...</div>
     
     <div v-else-if="licencias.length === 0" class="empty-state">
-      <div class="empty-icon">💼</div>
+      <div class="empty-icon glass-icon-wrapper-large">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="glass-icon"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
       <h3>Aún no has adquirido licencias</h3>
       <p>Cuando compres accesos grupales para tu empresa, aparecerán aquí con sus respectivos códigos de invitación.</p>
       <router-link to="/tienda" class="btn btn-primary mt-4">Explorar Catálogo</router-link>
@@ -67,7 +72,7 @@ function copyCode(codigo: string) {
             <p class="code-instruction">Envía este código a tu equipo para que puedan acceder al curso:</p>
             <div class="code-box" @click="copyCode(lic.codigo_acceso)">
               {{ lic.codigo_acceso }}
-              <span class="copy-icon">📋</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </div>
           </div>
         </div>
@@ -85,8 +90,38 @@ function copyCode(codigo: string) {
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.header-section h2 { margin: 0 0 8px 0; color: var(--dark); font-size: 1.8rem; }
-.subtitle { margin: 0; color: var(--muted); }
+.header-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-section h2 { margin: 0 0 8px 0; color: var(--dark); font-size: 1.8rem; width: 100%; }
+.subtitle { margin: 0; color: var(--muted); width: 100%; }
+
+.glass-icon-wrapper {
+  background: rgba(249, 115, 22, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  backdrop-filter: blur(4px);
+}
+.glass-icon-wrapper-large {
+  background: rgba(249, 115, 22, 0.1);
+  padding: 24px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  backdrop-filter: blur(4px);
+}
+.glass-icon {
+  color: var(--primary);
+}
 
 .empty-state {
   text-align: center;
