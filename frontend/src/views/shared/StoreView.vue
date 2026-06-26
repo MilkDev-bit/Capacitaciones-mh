@@ -21,6 +21,7 @@ const search = ref('')
 const exploreSort = ref('reciente')
 const explorePage = ref(1)
 const activeFilter = ref('todos')
+const priceFilter = ref('todos') // 'todos' | 'gratis' | 'pago'
 const EXPLORE_PAGE_SIZE = 12
 
 const typeLabel: Record<string, string> = {
@@ -71,7 +72,11 @@ const publicosFiltrados = computed(() => {
   let list = cursosPublicos.value.filter((c: any) => {
     const matchSearch = !term || hasMatch(c, term)
     const matchFilter = activeFilter.value === 'todos' || c.type === activeFilter.value
-    return matchSearch && matchFilter
+    const matchPrice =
+      priceFilter.value === 'todos' ||
+      (priceFilter.value === 'gratis' && (!c.precio || c.precio === 0)) ||
+      (priceFilter.value === 'pago'   && c.precio > 0)
+    return matchSearch && matchFilter && matchPrice
   })
   if (exploreSort.value === 'az') list = [...list].sort((a: any, b: any) => a.title.localeCompare(b.title))
   else if (exploreSort.value === 'za') list = [...list].sort((a: any, b: any) => b.title.localeCompare(a.title))
@@ -88,8 +93,8 @@ const publicosPaginados = computed(() => {
   return publicosFiltrados.value.slice(start, start + EXPLORE_PAGE_SIZE)
 })
 
-// Reset page when filter/search changes
-watch([search, activeFilter, exploreSort], () => { explorePage.value = 1 })
+// Reset page when filter/search/priceFilter changes
+watch([search, activeFilter, exploreSort, priceFilter], () => { explorePage.value = 1 })
 
 async function loadPublicos() {
   loading.value = true
@@ -256,6 +261,23 @@ function onCardMove(e: MouseEvent) {
               📖 Lecturas
               <span class="pill-count">{{ filterOptions['text'] }}</span>
             </button>
+
+            <!-- Price filters -->
+            <div class="filter-divider"></div>
+            <button
+              :class="['filter-pill price-pill', priceFilter === 'gratis' ? 'active green' : '']"
+              @click="priceFilter = priceFilter === 'gratis' ? 'todos' : 'gratis'"
+            >
+              🆓 Gratis
+              <span class="pill-count">{{ cursosPublicos.filter((c:any) => !c.precio || c.precio === 0).length }}</span>
+            </button>
+            <button
+              :class="['filter-pill price-pill', priceFilter === 'pago' ? 'active orange' : '']"
+              @click="priceFilter = priceFilter === 'pago' ? 'todos' : 'pago'"
+            >
+              💎 Premium
+              <span class="pill-count">{{ cursosPublicos.filter((c:any) => c.precio > 0).length }}</span>
+            </button>
           </div>
 
           <div class="sort-wrap">
@@ -280,6 +302,8 @@ function onCardMove(e: MouseEvent) {
           <p class="results-text">
             <strong>{{ publicosFiltrados.length }}</strong> resultado{{ publicosFiltrados.length !== 1 ? 's' : '' }}
             <span v-if="search"> para "<em>{{ search }}</em>"</span>
+            <span v-if="priceFilter !== 'todos'"> · <button class="clear-chip" @click="priceFilter='todos'">{{ priceFilter === 'gratis' ? '🆓 Gratis' : '💎 Premium' }} ✕</button></span>
+            <span v-if="activeFilter !== 'todos'"> · <button class="clear-chip" @click="activeFilter='todos'">{{ activeFilter }} ✕</button></span>
           </p>
         </div>
 
@@ -775,6 +799,47 @@ function onCardMove(e: MouseEvent) {
   background: rgba(249,115,22,0.15);
   border-color: rgba(249,115,22,0.5);
   color: #fb923c;
+}
+
+.filter-pill.active.green {
+  background: rgba(52,211,153,0.15);
+  border-color: rgba(52,211,153,0.45);
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(52,211,153,0.15);
+}
+
+.filter-pill.active.orange {
+  background: rgba(249,115,22,0.15);
+  border-color: rgba(249,115,22,0.5);
+  color: #fb923c;
+  box-shadow: 0 0 10px rgba(249,115,22,0.15);
+}
+
+.filter-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.clear-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9999px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem;
+  font-family: inherit;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.clear-chip:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
 }
 
 .pill-count {

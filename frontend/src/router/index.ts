@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/login' },
+    { path: '/', redirect: '/tienda' },
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/reset-password', component: () => import('../views/ResetPasswordView.vue') },
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
