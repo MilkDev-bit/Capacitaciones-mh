@@ -77,7 +77,6 @@ type Licencia struct {
 	StripeProductID *string   `db:"stripe_product_id"`
 	StripePriceID   *string   `db:"stripe_price_id"`
 	CompradorID     *string   `db:"comprador_id"`
-	IsActive        *bool     `db:"is_active"`
 	CreatedAt       time.Time `db:"created_at"`
 }
 
