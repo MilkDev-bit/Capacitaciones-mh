@@ -175,17 +175,6 @@ func (h *CursosHandler) UnirseConLicencia(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Inscrito con licencia correctamente"})
 }
 
-// GET /api/usuario/licencias-compradas
-func (h *CursosHandler) ListLicenciasCompradas(ctx *gin.Context) {
-	resp, err := h.c.Cursos.ListLicenciasCompradas(genMetadata(ctx), &cursospb.UserRequest{
-		UserId: ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, resp.Licencias)
-}
 
 // GET /api/usuario/licencias-compradas
 func (h *CursosHandler) ListLicenciasCompradas(ctx *gin.Context) {
