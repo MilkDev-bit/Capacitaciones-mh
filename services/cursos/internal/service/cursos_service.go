@@ -386,6 +386,13 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		SuccessURL: stripe.String(req.SuccessUrl),
 		CancelURL:  stripe.String(req.CancelUrl),
 		ClientReferenceID: stripe.String(clientRef),
+		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
+			Enabled: stripe.Bool(true),
+		},
+		BillingAddressCollection: stripe.String(string(stripe.CheckoutSessionBillingAddressCollectionAuto)),
+		TaxIDCollection: &stripe.CheckoutSessionTaxIDCollectionParams{
+			Enabled: stripe.Bool(true),
+		},
 	}
 
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
@@ -477,6 +484,13 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 		SuccessURL: stripe.String(req.SuccessUrl),
 		CancelURL:  stripe.String(req.CancelUrl),
 		ClientReferenceID: stripe.String(clientRef),
+		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
+			Enabled: stripe.Bool(true),
+		},
+		BillingAddressCollection: stripe.String(string(stripe.CheckoutSessionBillingAddressCollectionAuto)),
+		TaxIDCollection: &stripe.CheckoutSessionTaxIDCollectionParams{
+			Enabled: stripe.Bool(true),
+		},
 	}
 
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
