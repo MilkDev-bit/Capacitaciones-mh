@@ -287,6 +287,17 @@ func (s *CursosService) DeleteLicencia(ctx context.Context, id string) error {
 	return s.repo.DeleteLicencia(ctx, id)
 }
 
+func (s *CursosService) ListLicencias(ctx context.Context, cursoID string) ([]*cursospb.Licencia, error) {
+	lics, err := s.repo.ListLicencias(ctx, cursoID)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*cursospb.Licencia, len(lics))
+	for i, l := range lics {
+		res[i] = l.ToProto()
+	}
+	return res, nil
+}
 
 func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, codigoAcceso string) error {
 	lic, err := s.repo.FindLicenciaByCodigo(ctx, codigoAcceso)
@@ -393,73 +404,34 @@ func (s *CursosService) WebhookComprarLicencia(ctx context.Context, req *cursosp
 	return &cursospb.EmptyResponse{}, err
 }
 
-func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req *cursospb.CreateCheckoutSessionB2BDirectRequest) (*cursospb.CheckoutSessionResponse, error) {
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-
-	curso, err := s.repo.FindByID(ctx, req.CursoId)
+func (s *CursosService) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
+	lic, err := s.repo.FindLicenciaByID(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
-	if curso.Precio <= 0 {
-		return nil, errors.New("el curso no tiene precio")
-	}
-
-	productName := "Licencias Corporativas: " + curso.Title
-	amount := int64(curso.Precio * float64(req.Cantidad) * 100)
-	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
-
-	// Crear sesión
-	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("mxn"),
-					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String(productName),
-					},
-					UnitAmount: stripe.Int64(amount),
-				},
-				Quantity: stripe.Int64(1),
-			},
-		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(req.SuccessUrl),
-		CancelURL:  stripe.String(req.CancelUrl),
-		ClientReferenceID: stripe.String(clientRef),
-	}
-
-	if stripe.Key == "" {
-		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
-	}
-
-	sess, err := session.New(params)
+	curso, err := s.repo.FindByID(ctx, lic.CapacitacionID)
 	if err != nil {
-		log.Printf("Error de Stripe al crear sesión B2B directa: %v", err)
-		return nil, fmt.Errorf("error al conectar con el procesador de pagos: %v", err)
+		return nil, err
 	}
-	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
+	return &cursospb.LicenciaPublicaResponse{
+		Id:                   lic.ID,
+		Nombre:               lic.Nombre,
+		Precio:               lic.Precio,
+		CapacidadMaxima:      lic.CapacidadMaxima,
+		CapacitacionId:       curso.ID,
+		CapacitacionTitulo:   curso.Title,
+		CapacitacionThumbnail: curso.ThumbnailURL,
+	}, nil
 }
 
-func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.EmptyResponse, error) {
-	// Verificar que el curso existe
-	curso, err := s.repo.FindByID(ctx, req.CursoId)
+func (s *CursosService) ListLicenciasCompradas(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListLicenciasResponse, error) {
+	lics, err := s.repo.ListLicenciasCompradas(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
-	
-	precioTotal := curso.Precio * float64(req.Cantidad)
-	
-	// Crear licencia
-	_, err = s.repo.CreateLicenciaB2BDirect(ctx, req, precioTotal)
-	if err != nil {
-		return nil, err
+	var res []*cursospb.Licencia
+	for _, l := range lics {
+		res = append(res, l.ToProto())
 	}
-	
-	// Enviar notificacion (omitido temporalmente ya que CursosService no tiene usuariosSvc)
-	
-	return &cursospb.EmptyResponse{}, nil
+	return &cursospb.ListLicenciasResponse{Licencias: res}, nil
 }
-
-
-

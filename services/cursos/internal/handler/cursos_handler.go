@@ -120,22 +120,6 @@ func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	return resp, nil
 }
 
-func (h *CursosHandler) ListLicencias(ctx context.Context, req *cursospb.ListLicenciasRequest) (*cursospb.ListLicenciasResponse, error) {
-	list, err := h.svc.ListLicencias(ctx, req.CapacitacionId)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return &cursospb.ListLicenciasResponse{Licencias: list}, nil
-}
-
-func (h *CursosHandler) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
-	resp, err := h.svc.GetLicenciaPublica(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return resp, nil
-}
-
 func (h *CursosHandler) ListLicenciasCompradas(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListLicenciasResponse, error) {
 	resp, err := h.svc.ListLicenciasCompradas(ctx, req)
 	if err != nil {
@@ -213,29 +197,6 @@ func (h *CursosHandler) InstructorAsignar(ctx context.Context, req *cursospb.Asi
 	return &cursospb.EmptyResponse{}, nil
 }
 
-func (h *CursosHandler) InstructorCreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*cursospb.Licencia, error) {
-	l, err := h.svc.CreateLicencia(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return l, nil
-}
-
-func (h *CursosHandler) InstructorUpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*cursospb.Licencia, error) {
-	l, err := h.svc.UpdateLicencia(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return l, nil
-}
-
-func (h *CursosHandler) InstructorDeleteLicencia(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.DeleteLicencia(ctx, req.Id); err != nil {
-		return nil, mapErr(err)
-	}
-	return &cursospb.EmptyResponse{}, nil
-}
-
 // ── Admin ──────────────────────────────────────────────────────────────────────
 
 func (h *CursosHandler) AdminListCapacitaciones(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.ListCursosResponse, error) {
@@ -305,4 +266,24 @@ func mapErr(err error) error {
 		slog.Error("cursos: error interno", "error", err)
 		return status.Error(codes.Internal, "error interno del servidor")
 	}
+}
+
+func (h *CursosHandler) ListLicencias(ctx context.Context, req *cursospb.ListLicenciasRequest) (*cursospb.ListLicenciasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "obsolete")
+}
+
+func (h *CursosHandler) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "obsolete")
+}
+
+func (h *CursosHandler) InstructorCreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*cursospb.Licencia, error) {
+	return nil, status.Error(codes.Unimplemented, "obsolete")
+}
+
+func (h *CursosHandler) InstructorUpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*cursospb.Licencia, error) {
+	return nil, status.Error(codes.Unimplemented, "obsolete")
+}
+
+func (h *CursosHandler) InstructorDeleteLicencia(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "obsolete")
 }
