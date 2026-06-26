@@ -31,12 +31,13 @@ const typeLabel: Record<string, string> = {
   link: 'Enlace',
 }
 
-const typeEmoji: Record<string, string> = {
-  video: '🎬',
-  document: '📄',
-  text: '📖',
-  link: '🔗',
+const typeIcon: Record<string, string> = {
+  video: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  document: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  text: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  link: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
 }
+const defaultIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>'
 
 const typeGradient: Record<string, string> = {
   video:    'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
@@ -242,7 +243,8 @@ function onCardMove(e: MouseEvent) {
               :class="['filter-pill', activeFilter === 'video' ? 'active' : '']"
               @click="activeFilter = 'video'"
             >
-              🎬 Videos
+              <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Videos
               <span class="pill-count">{{ filterOptions['video'] }}</span>
             </button>
             <button
@@ -250,7 +252,8 @@ function onCardMove(e: MouseEvent) {
               :class="['filter-pill', activeFilter === 'document' ? 'active' : '']"
               @click="activeFilter = 'document'"
             >
-              📄 Documentos
+              <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Documentos
               <span class="pill-count">{{ filterOptions['document'] }}</span>
             </button>
             <button
@@ -258,7 +261,8 @@ function onCardMove(e: MouseEvent) {
               :class="['filter-pill', activeFilter === 'text' ? 'active' : '']"
               @click="activeFilter = 'text'"
             >
-              📖 Lecturas
+              <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              Lecturas
               <span class="pill-count">{{ filterOptions['text'] }}</span>
             </button>
 
@@ -275,7 +279,8 @@ function onCardMove(e: MouseEvent) {
               :class="['filter-pill price-pill', priceFilter === 'pago' ? 'active orange' : '']"
               @click="priceFilter = priceFilter === 'pago' ? 'todos' : 'pago'"
             >
-              💎 Premium
+              <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Premium
               <span class="pill-count">{{ cursosPublicos.filter((c:any) => c.precio > 0).length }}</span>
             </button>
           </div>
@@ -302,7 +307,7 @@ function onCardMove(e: MouseEvent) {
           <p class="results-text">
             <strong>{{ publicosFiltrados.length }}</strong> resultado{{ publicosFiltrados.length !== 1 ? 's' : '' }}
             <span v-if="search"> para "<em>{{ search }}</em>"</span>
-            <span v-if="priceFilter !== 'todos'"> · <button class="clear-chip" @click="priceFilter='todos'">{{ priceFilter === 'gratis' ? '🆓 Gratis' : '💎 Premium' }} ✕</button></span>
+            <span v-if="priceFilter !== 'todos'"> · <button class="clear-chip" @click="priceFilter='todos'">{{ priceFilter === 'gratis' ? 'Gratis' : 'Premium' }} ✕</button></span>
             <span v-if="activeFilter !== 'todos'"> · <button class="clear-chip" @click="activeFilter='todos'">{{ activeFilter }} ✕</button></span>
           </p>
         </div>
@@ -354,7 +359,7 @@ function onCardMove(e: MouseEvent) {
                 class="card-img-placeholder"
                 :style="{ background: typeGradient[c.type] || typeGradient['video'] }"
               >
-                <span class="placeholder-emoji">{{ typeEmoji[c.type] || '📚' }}</span>
+                <div class="glass-icon" v-html="typeIcon[c.type] || defaultIcon"></div>
               </div>
 
               <!-- Overlay gradient -->
@@ -774,6 +779,13 @@ function onCardMove(e: MouseEvent) {
   flex-wrap: wrap;
 }
 
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  display: inline-block;
+  vertical-align: middle;
+}
 .filter-pill {
   display: flex;
   align-items: center;
@@ -980,9 +992,17 @@ function onCardMove(e: MouseEvent) {
   transform: scale(1.05);
 }
 
-.placeholder-emoji {
-  font-size: 3.5rem;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+.glass-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 12px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .card-img-overlay {
@@ -1490,14 +1510,6 @@ function onCardMove(e: MouseEvent) {
 .card-stagger-leave-to    { opacity: 0; transform: scale(0.96); }
 
 /* ── LOGO GLOW ON HERO SECTION ──────────────────────────── */
-.placeholder-emoji {
-  animation: emoji-float 4s ease-in-out infinite;
-}
-
-@keyframes emoji-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
 @media (max-width: 768px) {
   .nav-inner { padding: 0 20px; }
   .hero-section { padding-top: 110px; padding-bottom: 64px; }

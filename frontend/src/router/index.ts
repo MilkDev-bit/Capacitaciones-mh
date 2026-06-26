@@ -10,8 +10,6 @@ const router = createRouter({
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
-    { path: '/comprar-licencia/:id', component: () => import('../views/ComprarLicenciaView.vue') },
-    { path: '/comprar-licencia/:id/success', component: () => import('../views/ComprarLicenciaSuccessView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
     {
       path: '/admin',

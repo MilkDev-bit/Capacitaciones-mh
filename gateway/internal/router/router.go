@@ -86,7 +86,6 @@ func New(d Deps) *gin.Engine {
 		api.GET("/preview-curso/:codigo", d.CursosH.PreviewCurso)
 		api.GET("/cursos-publicos", d.CursosH.ListCursosPublicos)
 		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
-		api.GET("/licencias-publicas/:id", d.CursosH.GetLicenciaPublica)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 
@@ -113,8 +112,8 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/cursos/:id/inscripciones", d.CursosH.Inscribirse)
 			auth.POST("/inscripciones", d.CursosH.UnirseConCodigo)
 			auth.POST("/inscripciones-licencia", d.CursosH.UnirseConLicencia)
-			auth.GET("/capacitaciones/:id/licencias", d.CursosH.ListLicencias)
 			auth.POST("/checkout-session", d.CursosH.CreateCheckoutSession)
+			auth.POST("/checkout-session-b2b-direct", d.CursosH.CreateCheckoutSessionB2BDirect)
 			auth.GET("/licencias-compradas", d.CursosH.ListLicenciasCompradas)
 
 			// Lecciones
@@ -172,10 +171,6 @@ func New(d Deps) *gin.Engine {
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
-				// Licencias
-				inst.POST("/licencias", d.CursosH.InstructorCreateLicencia)
-				inst.PUT("/licencias/:id", d.CursosH.InstructorUpdateLicencia)
-				inst.DELETE("/licencias/:id", d.CursosH.InstructorDeleteLicencia)
 
 				inst.GET("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorListPreguntasIntermedias)
 				inst.POST("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorCreatePreguntaIntermedia)

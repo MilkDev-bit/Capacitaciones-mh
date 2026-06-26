@@ -18,12 +18,24 @@ const enrolling = ref(false)
 const codigoForm = ref('')
 const joiningCodigo = ref(false)
 
+const showB2BModal = ref(false)
+const b2bCantidad = ref(5)
+const buyingB2B = ref(false)
+
 const typeLabel: Record<string, string> = {
-  video: '🎬 Video',
-  document: '📄 Documento',
-  text: '📖 Lectura',
-  link: '🔗 Enlace',
+  video: 'Video',
+  document: 'Documento',
+  text: 'Lectura',
+  link: 'Enlace',
 }
+
+const typeIcon: Record<string, string> = {
+  video: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  document: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  text: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  link: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+}
+const defaultIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>'
 
 const typeGradient: Record<string, string> = {
   video:    'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
@@ -66,7 +78,7 @@ async function enrollFree() {
   enrolling.value = true
   try {
     await api.post(`/cursos/${id}/inscripciones`)
-    toast.success('¡Te has inscrito correctamente! 🎉')
+    toast.success('¡Te has inscrito correctamente!')
     router.push('/usuario/capacitaciones')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al inscribirse')
@@ -119,18 +131,55 @@ async function unirseConCodigo() {
       capacitacion_id: id,
       codigo_acceso: codigoForm.value.trim(),
     })
-    toast.success('¡Inscrito correctamente a la cohorte! 🎉')
+    toast.success('¡Inscrito correctamente a la cohorte!')
     router.push('/usuario/capacitaciones')
   } catch {
     try {
       await api.post('/inscripciones', { codigo: codigoForm.value.trim() })
-      toast.success('¡Inscrito correctamente! 🎉')
+      toast.success('¡Inscrito correctamente!')
       router.push('/usuario/capacitaciones')
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Código inválido o expirado')
     }
   } finally {
     joiningCodigo.value = false
+  }
+}
+
+function openB2BModal() {
+  if (!auth.isLoggedIn) {
+    toast.info('Inicia sesión para comprar licencias corporativas')
+    router.push(`/login?redirect=/curso/${id}`)
+    return
+  }
+  b2bCantidad.value = 5 // Default
+  showB2BModal.value = true
+}
+
+async function buyB2B() {
+  if (!curso.value) return
+  buyingB2B.value = true
+  try {
+    const res = await api.post('/checkout-session-b2b-direct', {
+      curso_id: curso.value.id,
+      cantidad: b2bCantidad.value,
+      success_url: window.location.origin + '/usuario/capacitaciones?success=true',
+      cancel_url: window.location.href,
+    })
+    if (res.data?.url) {
+      window.location.href = res.data.url
+    } else {
+      toast.error('No se pudo obtener el enlace de pago corporativo')
+    }
+  } catch (e: any) {
+    const msg = e.response?.data?.error || ''
+    if (e.response?.status === 500 || !msg) {
+      toast.error('El servicio de pagos no está disponible en este momento.')
+    } else {
+      toast.error(msg)
+    }
+  } finally {
+    buyingB2B.value = false
   }
 }
 </script>
@@ -196,7 +245,10 @@ async function unirseConCodigo() {
         <!-- Hero content -->
         <div class="cpv-hero-content">
           <div class="cpv-hero-chips">
-            <span class="cpv-chip type">{{ typeLabel[curso.type] || '📚 Curso' }}</span>
+            <span class="cpv-chip type">
+              <span class="inline-svg" v-html="typeIcon[curso.type] || defaultIcon"></span>
+              {{ typeLabel[curso.type] || 'Curso' }}
+            </span>
             <span v-if="!curso.precio || curso.precio === 0" class="cpv-chip free">Gratis</span>
             <span v-else class="cpv-chip paid">Premium</span>
           </div>
@@ -304,9 +356,16 @@ async function unirseConCodigo() {
               </button>
 
               <div class="purchase-badges">
-                <span class="badge">🔒 Pago seguro</span>
-                <span class="badge">↩️ Garantía 30 días</span>
+                <span class="badge"><svg class="inline-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Pago seguro</span>
+                <span class="badge"><svg class="inline-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Garantía 30 días</span>
               </div>
+
+              <button class="cpv-btn-b2b w-full mt-3" @click="openB2BModal">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:8px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Comprar Licencias Corporativas
+              </button>
             </div>
 
             <div v-else>
@@ -326,8 +385,35 @@ async function unirseConCodigo() {
               </button>
 
               <div class="purchase-badges">
-                <span class="badge">🆓 Sin tarjeta</span>
-                <span class="badge">⚡ Acceso inmediato</span>
+                <span class="badge"><svg class="inline-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Sin tarjeta</span>
+                <span class="badge"><svg class="inline-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Acceso inmediato</span>
+              </div>
+            </div>
+
+            <!-- Modal B2B -->
+            <div v-if="showB2BModal" class="b2b-modal-overlay" @click.self="showB2BModal = false">
+              <div class="b2b-modal-content glass-card">
+                <h3 class="glass-card-title">Comprar Licencias Corporativas</h3>
+                <p class="glass-card-text" style="margin-bottom:1rem;">
+                  ¿Cuántas licencias necesitas para tu equipo? El precio por licencia es de {{ formattedPrice }}.
+                </p>
+                
+                <div class="b2b-input-group">
+                  <label>Cantidad de licencias</label>
+                  <input type="number" v-model.number="b2bCantidad" min="2" max="1000" class="code-input" />
+                </div>
+                
+                <div class="b2b-total" v-if="b2bCantidad >= 1 && curso.precio">
+                  Total a pagar: <strong>{{ new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(curso.precio * b2bCantidad) }}</strong>
+                </div>
+
+                <div class="b2b-actions" style="margin-top:1.5rem; display:flex; gap:10px;">
+                  <button class="cpv-btn-cancel" @click="showB2BModal = false" style="flex:1;">Cancelar</button>
+                  <button class="cpv-btn-buy" @click="buyB2B" :disabled="buyingB2B || b2bCantidad < 1" style="flex:1;">
+                    <span v-if="buyingB2B" class="cpv-btn-spinner"></span>
+                    <span v-else>Comprar {{ b2bCantidad }} licencias</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -355,7 +441,9 @@ async function unirseConCodigo() {
 
     <!-- 404 state -->
     <div v-else class="cpv-loading">
-      <div style="font-size: 3rem; margin-bottom: 16px;">😕</div>
+      <div class="empty-icon glass-icon-xl">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
       <h2 style="color: #fff;">Curso no encontrado</h2>
       <p style="color: rgba(255,255,255,0.5);">El curso que buscas no existe o no está disponible.</p>
       <button class="cpv-nav-btn primary mt-4" style="margin-top: 24px;" @click="router.push('/tienda')">Ir al catálogo</button>
@@ -865,6 +953,82 @@ async function unirseConCodigo() {
   box-shadow: 0 8px 28px rgba(16,185,129,0.5);
 }
 .cpv-btn-free:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cpv-btn-code:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 4px 14px rgba(251, 146, 60, 0.4);
+}
+
+.cpv-btn-b2b {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.cpv-btn-b2b:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Modals */
+.b2b-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.b2b-modal-content {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.b2b-input-group label {
+  display: block;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 5px;
+}
+
+.b2b-total {
+  margin-top: 15px;
+  font-size: 1.1rem;
+  color: #fb923c;
+  text-align: right;
+}
+
+.cpv-btn-cancel {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cpv-btn-cancel:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+.cpv-btn-spinner {
+  display: inline-block;
+}
 
 .cpv-btn-code {
   background: rgba(249,115,22,0.15);

@@ -19,38 +19,40 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CursosService_PreviewCurso_FullMethodName                 = "/cursos.CursosService/PreviewCurso"
-	CursosService_GetCursoPublico_FullMethodName              = "/cursos.CursosService/GetCursoPublico"
-	CursosService_ListCursosPublicos_FullMethodName           = "/cursos.CursosService/ListCursosPublicos"
-	CursosService_ListMisCapacitaciones_FullMethodName        = "/cursos.CursosService/ListMisCapacitaciones"
-	CursosService_GetCurso_FullMethodName                     = "/cursos.CursosService/GetCurso"
-	CursosService_Inscribirse_FullMethodName                  = "/cursos.CursosService/Inscribirse"
-	CursosService_UnirseConCodigo_FullMethodName              = "/cursos.CursosService/UnirseConCodigo"
-	CursosService_UnirseConLicencia_FullMethodName            = "/cursos.CursosService/UnirseConLicencia"
-	CursosService_WebhookEnroll_FullMethodName                = "/cursos.CursosService/WebhookEnroll"
-	CursosService_WebhookComprarLicencia_FullMethodName       = "/cursos.CursosService/WebhookComprarLicencia"
-	CursosService_CreateCheckoutSession_FullMethodName        = "/cursos.CursosService/CreateCheckoutSession"
-	CursosService_ListLicencias_FullMethodName                = "/cursos.CursosService/ListLicencias"
-	CursosService_GetLicenciaPublica_FullMethodName           = "/cursos.CursosService/GetLicenciaPublica"
-	CursosService_ListLicenciasCompradas_FullMethodName       = "/cursos.CursosService/ListLicenciasCompradas"
-	CursosService_InstructorListCapacitaciones_FullMethodName = "/cursos.CursosService/InstructorListCapacitaciones"
-	CursosService_InstructorCreateCapacitacion_FullMethodName = "/cursos.CursosService/InstructorCreateCapacitacion"
-	CursosService_InstructorUpdateCapacitacion_FullMethodName = "/cursos.CursosService/InstructorUpdateCapacitacion"
-	CursosService_InstructorDeleteCapacitacion_FullMethodName = "/cursos.CursosService/InstructorDeleteCapacitacion"
-	CursosService_InstructorTogglePublic_FullMethodName       = "/cursos.CursosService/InstructorTogglePublic"
-	CursosService_InstructorResetCodigo_FullMethodName        = "/cursos.CursosService/InstructorResetCodigo"
-	CursosService_InstructorListEstudiantes_FullMethodName    = "/cursos.CursosService/InstructorListEstudiantes"
-	CursosService_InstructorAsignar_FullMethodName            = "/cursos.CursosService/InstructorAsignar"
-	CursosService_InstructorCreateLicencia_FullMethodName     = "/cursos.CursosService/InstructorCreateLicencia"
-	CursosService_InstructorUpdateLicencia_FullMethodName     = "/cursos.CursosService/InstructorUpdateLicencia"
-	CursosService_InstructorDeleteLicencia_FullMethodName     = "/cursos.CursosService/InstructorDeleteLicencia"
-	CursosService_AdminListCapacitaciones_FullMethodName      = "/cursos.CursosService/AdminListCapacitaciones"
-	CursosService_AdminCreateCapacitacion_FullMethodName      = "/cursos.CursosService/AdminCreateCapacitacion"
-	CursosService_AdminUpdateCapacitacion_FullMethodName      = "/cursos.CursosService/AdminUpdateCapacitacion"
-	CursosService_AdminDeleteCapacitacion_FullMethodName      = "/cursos.CursosService/AdminDeleteCapacitacion"
-	CursosService_AdminListAsignaciones_FullMethodName        = "/cursos.CursosService/AdminListAsignaciones"
-	CursosService_AdminAsignar_FullMethodName                 = "/cursos.CursosService/AdminAsignar"
-	CursosService_AdminDesAsignar_FullMethodName              = "/cursos.CursosService/AdminDesAsignar"
+	CursosService_PreviewCurso_FullMethodName                   = "/cursos.CursosService/PreviewCurso"
+	CursosService_GetCursoPublico_FullMethodName                = "/cursos.CursosService/GetCursoPublico"
+	CursosService_ListCursosPublicos_FullMethodName             = "/cursos.CursosService/ListCursosPublicos"
+	CursosService_ListMisCapacitaciones_FullMethodName          = "/cursos.CursosService/ListMisCapacitaciones"
+	CursosService_GetCurso_FullMethodName                       = "/cursos.CursosService/GetCurso"
+	CursosService_Inscribirse_FullMethodName                    = "/cursos.CursosService/Inscribirse"
+	CursosService_UnirseConCodigo_FullMethodName                = "/cursos.CursosService/UnirseConCodigo"
+	CursosService_UnirseConLicencia_FullMethodName              = "/cursos.CursosService/UnirseConLicencia"
+	CursosService_WebhookEnroll_FullMethodName                  = "/cursos.CursosService/WebhookEnroll"
+	CursosService_WebhookComprarLicencia_FullMethodName         = "/cursos.CursosService/WebhookComprarLicencia"
+	CursosService_WebhookComprarB2BDirect_FullMethodName        = "/cursos.CursosService/WebhookComprarB2BDirect"
+	CursosService_CreateCheckoutSession_FullMethodName          = "/cursos.CursosService/CreateCheckoutSession"
+	CursosService_CreateCheckoutSessionB2BDirect_FullMethodName = "/cursos.CursosService/CreateCheckoutSessionB2BDirect"
+	CursosService_ListLicencias_FullMethodName                  = "/cursos.CursosService/ListLicencias"
+	CursosService_GetLicenciaPublica_FullMethodName             = "/cursos.CursosService/GetLicenciaPublica"
+	CursosService_ListLicenciasCompradas_FullMethodName         = "/cursos.CursosService/ListLicenciasCompradas"
+	CursosService_InstructorListCapacitaciones_FullMethodName   = "/cursos.CursosService/InstructorListCapacitaciones"
+	CursosService_InstructorCreateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorCreateCapacitacion"
+	CursosService_InstructorUpdateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorUpdateCapacitacion"
+	CursosService_InstructorDeleteCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorDeleteCapacitacion"
+	CursosService_InstructorTogglePublic_FullMethodName         = "/cursos.CursosService/InstructorTogglePublic"
+	CursosService_InstructorResetCodigo_FullMethodName          = "/cursos.CursosService/InstructorResetCodigo"
+	CursosService_InstructorListEstudiantes_FullMethodName      = "/cursos.CursosService/InstructorListEstudiantes"
+	CursosService_InstructorAsignar_FullMethodName              = "/cursos.CursosService/InstructorAsignar"
+	CursosService_InstructorCreateLicencia_FullMethodName       = "/cursos.CursosService/InstructorCreateLicencia"
+	CursosService_InstructorUpdateLicencia_FullMethodName       = "/cursos.CursosService/InstructorUpdateLicencia"
+	CursosService_InstructorDeleteLicencia_FullMethodName       = "/cursos.CursosService/InstructorDeleteLicencia"
+	CursosService_AdminListCapacitaciones_FullMethodName        = "/cursos.CursosService/AdminListCapacitaciones"
+	CursosService_AdminCreateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminCreateCapacitacion"
+	CursosService_AdminUpdateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminUpdateCapacitacion"
+	CursosService_AdminDeleteCapacitacion_FullMethodName        = "/cursos.CursosService/AdminDeleteCapacitacion"
+	CursosService_AdminListAsignaciones_FullMethodName          = "/cursos.CursosService/AdminListAsignaciones"
+	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
+	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
 )
 
 // CursosServiceClient is the client API for CursosService service.
@@ -73,7 +75,9 @@ type CursosServiceClient interface {
 	UnirseConLicencia(ctx context.Context, in *UnirseConLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	WebhookComprarLicencia(ctx context.Context, in *WebhookComprarLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
+	CreateCheckoutSessionB2BDirect(ctx context.Context, in *CreateCheckoutSessionB2BDirectRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
@@ -207,10 +211,30 @@ func (c *cursosServiceClient) WebhookComprarLicencia(ctx context.Context, in *We
 	return out, nil
 }
 
+func (c *cursosServiceClient) WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_WebhookComprarB2BDirect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CheckoutSessionResponse)
 	err := c.cc.Invoke(ctx, CursosService_CreateCheckoutSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) CreateCheckoutSessionB2BDirect(ctx context.Context, in *CreateCheckoutSessionB2BDirectRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutSessionResponse)
+	err := c.cc.Invoke(ctx, CursosService_CreateCheckoutSessionB2BDirect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +471,9 @@ type CursosServiceServer interface {
 	UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error)
 	WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EmptyResponse, error)
 	WebhookComprarLicencia(context.Context, *WebhookComprarLicenciaRequest) (*EmptyResponse, error)
+	WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*EmptyResponse, error)
 	CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error)
+	CreateCheckoutSessionB2BDirect(context.Context, *CreateCheckoutSessionB2BDirectRequest) (*CheckoutSessionResponse, error)
 	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(context.Context, *LicenciaIDRequest) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error)
@@ -511,8 +537,14 @@ func (UnimplementedCursosServiceServer) WebhookEnroll(context.Context, *WebhookE
 func (UnimplementedCursosServiceServer) WebhookComprarLicencia(context.Context, *WebhookComprarLicenciaRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WebhookComprarLicencia not implemented")
 }
+func (UnimplementedCursosServiceServer) WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WebhookComprarB2BDirect not implemented")
+}
 func (UnimplementedCursosServiceServer) CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSession not implemented")
+}
+func (UnimplementedCursosServiceServer) CreateCheckoutSessionB2BDirect(context.Context, *CreateCheckoutSessionB2BDirectRequest) (*CheckoutSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSessionB2BDirect not implemented")
 }
 func (UnimplementedCursosServiceServer) ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLicencias not implemented")
@@ -778,6 +810,24 @@ func _CursosService_WebhookComprarLicencia_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_WebhookComprarB2BDirect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WebhookComprarB2BDirectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).WebhookComprarB2BDirect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_WebhookComprarB2BDirect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).WebhookComprarB2BDirect(ctx, req.(*WebhookComprarB2BDirectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_CreateCheckoutSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckoutSessionRequest)
 	if err := dec(in); err != nil {
@@ -792,6 +842,24 @@ func _CursosService_CreateCheckoutSession_Handler(srv interface{}, ctx context.C
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).CreateCheckoutSession(ctx, req.(*CheckoutSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_CreateCheckoutSessionB2BDirect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCheckoutSessionB2BDirectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).CreateCheckoutSessionB2BDirect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_CreateCheckoutSessionB2BDirect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).CreateCheckoutSessionB2BDirect(ctx, req.(*CreateCheckoutSessionB2BDirectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1222,8 +1290,16 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CursosService_WebhookComprarLicencia_Handler,
 		},
 		{
+			MethodName: "WebhookComprarB2BDirect",
+			Handler:    _CursosService_WebhookComprarB2BDirect_Handler,
+		},
+		{
 			MethodName: "CreateCheckoutSession",
 			Handler:    _CursosService_CreateCheckoutSession_Handler,
+		},
+		{
+			MethodName: "CreateCheckoutSessionB2BDirect",
+			Handler:    _CursosService_CreateCheckoutSessionB2BDirect_Handler,
 		},
 		{
 			MethodName: "ListLicencias",

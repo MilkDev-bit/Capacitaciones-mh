@@ -147,6 +147,7 @@ type CursosRepository interface {
 
 	// Licencias
 	CreateLicencia(ctx context.Context, req *cursospb.CreateLicenciaRequest) (*Licencia, error)
+	CreateLicenciaB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest, precioTotal float64) (*Licencia, error)
 	UpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*Licencia, error)
 	DeleteLicencia(ctx context.Context, licenciaID string) error
 	ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error)
@@ -366,6 +367,21 @@ func (r *postgresCursosRepository) CreateLicencia(ctx context.Context, req *curs
 		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso)
 		 VALUES($1,$2,$3,$4,$5) RETURNING id`,
 		req.CapacitacionId, req.Nombre, req.Precio, req.CapacidadMaxima, codigo,
+	).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindLicenciaByID(ctx, id)
+}
+
+func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest, precioTotal float64) (*Licencia, error) {
+	codigo := uuid.New().String()[:12]
+	var id string
+	nombre := "Licencia Corporativa - Auto-servicio"
+	err := r.db.QueryRowContext(ctx,
+		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id)
+		 VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId,
 	).Scan(&id)
 	if err != nil {
 		return nil, err

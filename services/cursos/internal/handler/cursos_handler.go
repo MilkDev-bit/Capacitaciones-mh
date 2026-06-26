@@ -94,10 +94,28 @@ func (h *CursosHandler) WebhookEnroll(ctx context.Context, req *cursospb.Webhook
 	return &cursospb.EmptyResponse{}, nil
 }
 
+func (h *CursosHandler) WebhookComprarLicencia(ctx context.Context, req *cursospb.WebhookComprarLicenciaRequest) (*cursospb.EmptyResponse, error) {
+	return h.svc.WebhookComprarLicencia(ctx, req)
+}
+
+func (h *CursosHandler) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.EmptyResponse, error) {
+	return h.svc.WebhookComprarB2BDirect(ctx, req)
+}
+
 func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
 	resp, err := h.svc.CreateCheckoutSession(ctx, req)
 	if err != nil {
-		return nil, mapErr(err)
+		slog.Error("CreateCheckoutSession error", "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return resp, nil
+}
+
+func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx context.Context, req *cursospb.CreateCheckoutSessionB2BDirectRequest) (*cursospb.CheckoutSessionResponse, error) {
+	resp, err := h.svc.CreateCheckoutSessionB2BDirect(ctx, req)
+	if err != nil {
+		slog.Error("CreateCheckoutSessionB2BDirect error", "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return resp, nil
 }

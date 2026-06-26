@@ -7,7 +7,6 @@ import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import ContentTypeSelector from './ContentTypeSelector.vue'
 import LessonList from './LessonList.vue'
-import LicenciaList from './LicenciaList.vue'
 
 const props = defineProps<{
   show: boolean
@@ -96,7 +95,6 @@ async function saveInfo() {
       <div class="drawer-tabs">
         <button class="tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">Información</button>
         <button class="tab" :class="{ active: activeTab === 'lessons' }" @click="activeTab = 'lessons'">Lecciones</button>
-        <button class="tab" :class="{ active: activeTab === 'licencias' }" @click="activeTab = 'licencias'">Códigos Corporativos</button>
       </div>
 
       <div class="drawer-body">
@@ -150,10 +148,6 @@ async function saveInfo() {
 
         <div v-if="activeTab === 'lessons'" class="tab-pane slide-down-enter-active">
           <LessonList v-if="form.id" :capId="form.id" />
-        </div>
-
-        <div v-if="activeTab === 'licencias'" class="tab-pane slide-down-enter-active">
-          <LicenciaList v-if="form.id" :cursoId="form.id" />
         </div>
       </div>
     </div>
