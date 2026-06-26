@@ -435,3 +435,71 @@ func (s *CursosService) ListLicenciasCompradas(ctx context.Context, req *cursosp
 	}
 	return &cursospb.ListLicenciasResponse{Licencias: res}, nil
 }
+
+func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req *cursospb.CreateCheckoutSessionB2BDirectRequest) (*cursospb.CheckoutSessionResponse, error) {
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
+	curso, err := s.repo.FindByID(ctx, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	if curso.Precio <= 0 {
+		return nil, errors.New("el curso no tiene precio")
+	}
+
+	productName := "Licencias Corporativas: " + curso.Title
+	amount := int64(curso.Precio * float64(req.Cantidad) * 100)
+	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
+
+	// Crear sesión
+	params := &stripe.CheckoutSessionParams{
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+					Currency: stripe.String("mxn"),
+					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+						Name: stripe.String(productName),
+					},
+					UnitAmount: stripe.Int64(amount),
+				},
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String(req.SuccessUrl),
+		CancelURL:  stripe.String(req.CancelUrl),
+		ClientReferenceID: stripe.String(clientRef),
+	}
+
+	if stripe.Key == "" {
+		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
+	}
+
+	sess, err := session.New(params)
+	if err != nil {
+		log.Printf("Error de Stripe al crear sesión B2B directa: %v", err)
+		return nil, fmt.Errorf("error al conectar con el procesador de pagos: %v", err)
+	}
+	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
+}
+
+func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.EmptyResponse, error) {
+	// Verificar que el curso existe
+	curso, err := s.repo.FindByID(ctx, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	
+	precioTotal := curso.Precio * float64(req.Cantidad)
+	
+	// Crear licencia
+	_, err = s.repo.CreateLicenciaB2BDirect(ctx, req, precioTotal)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Enviar notificacion (omitido temporalmente ya que CursosService no tiene usuariosSvc)
+	
+	return &cursospb.EmptyResponse{}, nil
+}
