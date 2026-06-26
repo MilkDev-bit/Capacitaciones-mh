@@ -77,8 +77,20 @@ async function submit() {
     auth.user = res.data.user
     localStorage.setItem('user', JSON.stringify(res.data.user))
     toast.success(`¡Bienvenido/a, ${res.data.user.name}!`, 'Sesión iniciada')
-    const redirect = route.query.redirect as string | undefined
-    const redirectPath = redirect || (res.data.user?.role === 'admin' ? '/admin' : res.data.user?.role === 'instructor' ? '/instructor' : '/usuario')
+    let redirectPath = route.query.redirect as string | undefined
+    
+    // Check if there's a stored redirect in sessionStorage (e.g., from B2B checkout)
+    if (!redirectPath) {
+      const storedRedirect = sessionStorage.getItem('redirect_after_login')
+      if (storedRedirect) {
+        redirectPath = storedRedirect
+        sessionStorage.removeItem('redirect_after_login')
+      }
+    }
+
+    if (!redirectPath) {
+      redirectPath = res.data.user?.role === 'admin' ? '/admin' : res.data.user?.role === 'instructor' ? '/instructor' : '/usuario'
+    }
     
     router.push(redirectPath).then((failure) => {
       if (failure) {
