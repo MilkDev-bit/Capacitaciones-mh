@@ -150,6 +150,23 @@ func runMigrations(db *sqlx.DB) error {
 		)`,
 		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
+		// Eliminar asignaciones duplicadas conservando solo la más antigua, luego aplicar constraint único
+		`DO $$ BEGIN
+		   IF NOT EXISTS (
+		     SELECT 1 FROM pg_constraint
+		     WHERE conrelid='asignaciones'::regclass AND contype='u'
+		   ) THEN
+		     DELETE FROM asignaciones a USING (
+		       SELECT MIN(ctid) as ctid, user_id, capacitacion_id
+		       FROM asignaciones 
+		       GROUP BY user_id, capacitacion_id HAVING COUNT(*) > 1
+		     ) b 
+		     WHERE a.user_id = b.user_id AND a.capacitacion_id = b.capacitacion_id AND a.ctid <> b.ctid;
+		     
+		     ALTER TABLE asignaciones ADD CONSTRAINT asignaciones_user_curso_unique
+		       UNIQUE (user_id, capacitacion_id);
+		   END IF;
+		 END $$`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
