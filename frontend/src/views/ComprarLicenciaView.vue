@@ -94,14 +94,18 @@ async function buyLicencia() {
 
         <div class="details-grid">
           <div class="detail-box">
-            <div class="icon">👥</div>
+            <div class="icon glass-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
             <div class="detail-text">
               <span class="label">Capacidad Máxima</span>
               <span class="value">{{ licencia.capacidad_maxima > 0 ? `${licencia.capacidad_maxima} empleados` : 'Ilimitado' }}</span>
             </div>
           </div>
           <div class="detail-box">
-            <div class="icon">💳</div>
+            <div class="icon glass-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            </div>
             <div class="detail-text">
               <span class="label">Precio Total</span>
               <span class="value price">${{ licencia.precio }} MXN</span>
@@ -255,7 +259,25 @@ async function buyLicencia() {
   align-items: center;
   gap: 12px;
 }
-.icon { font-size: 1.5rem; }
+.icon.glass-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+.icon.glass-icon svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.9;
+}
 .detail-text { display: flex; flex-direction: column; gap: 4px; }
 .label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
 .value { font-size: 1.1rem; font-weight: 600; color: #fff; }
