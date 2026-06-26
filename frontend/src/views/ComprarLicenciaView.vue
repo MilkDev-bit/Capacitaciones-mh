@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { toast } from '../utils/toast'
+import { useAuthStore } from '../stores/auth'
 import logoSrc from '../assets/logo-capacitaciones.png'
 
 const route = useRoute()
@@ -28,8 +29,8 @@ onMounted(() => {
 })
 
 async function buyLicencia() {
-  const token = localStorage.getItem('token')
-  if (!token) {
+  const auth = useAuthStore()
+  if (!auth.isAuthenticated) {
     // Si no está autenticado, lo mandamos al login y que regrese acá
     sessionStorage.setItem('redirect_after_login', route.fullPath)
     toast.info('Crea una cuenta o inicia sesión primero')
