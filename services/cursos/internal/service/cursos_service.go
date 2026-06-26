@@ -322,7 +322,7 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 
 	if req.CursoId != "" {
 		// B2C Course Purchase
-		curso, err := s.repo.GetCursoByID(ctx, req.CursoId)
+		curso, err := s.repo.FindByID(ctx, req.CursoId)
 		if err != nil {
 			return nil, err
 		}
