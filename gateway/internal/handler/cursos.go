@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
@@ -214,6 +215,32 @@ func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"url": resp.Url})
 }
 
+// POST /api/checkout-session-b2b-direct
+func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx *gin.Context) {
+	var req struct {
+		CursoID    string `json:"curso_id" binding:"required"`
+		Cantidad   int32  `json:"cantidad" binding:"required"`
+		SuccessUrl string `json:"success_url" binding:"required"`
+		CancelUrl  string `json:"cancel_url" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Cursos.CreateCheckoutSessionB2BDirect(genMetadata(ctx), &cursospb.CreateCheckoutSessionB2BDirectRequest{
+		UserId:     ctx.GetString(middleware.CtxUserID),
+		CursoId:    req.CursoID,
+		Cantidad:   req.Cantidad,
+		SuccessUrl: req.SuccessUrl,
+		CancelUrl:  req.CancelUrl,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"url": resp.Url})
+}
+
 // POST /api/webhooks/stripe
 func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
@@ -259,6 +286,18 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 			_, _ = h.c.Cursos.WebhookComprarLicencia(c.Request.Context(), &cursospb.WebhookComprarLicenciaRequest{
 				UserId:     userID,
 				LicenciaId: licID,
+			})
+		} else if len(parts) == 4 && parts[0] == "b2b_direct" {
+			// Es una compra de licencia corporativa en autoservicio (B2B Direct)
+			// Formato: b2b_direct||userID||cursoID||cantidad
+			userID := parts[1]
+			cursoID := parts[2]
+			cantidadStr := parts[3]
+			cantidad, _ := strconv.Atoi(cantidadStr)
+			_, _ = h.c.Cursos.WebhookComprarB2BDirect(c.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+				UserId:   userID,
+				CursoId:  cursoID,
+				Cantidad: int32(cantidad),
 			})
 		}
 	}
