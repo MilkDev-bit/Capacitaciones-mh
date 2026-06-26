@@ -148,6 +148,7 @@ func runMigrations(db *sqlx.DB) error {
 			enlace TEXT,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		)`,
+		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
 		// Garantizar unicidad en asignaciones para que ON CONFLICT funcione
 		`DO $$ BEGIN
