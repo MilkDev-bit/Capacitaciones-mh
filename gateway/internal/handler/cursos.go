@@ -398,9 +398,17 @@ func (h *CursosHandler) GetLicenciaInvoicePDF(ctx *gin.Context) {
 	}
 
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-	sess, err := stripeSession.Get(sessionID, nil)
+	params := &stripe.CheckoutSessionParams{}
+	params.AddExpand("invoice")
+	sess, err := stripeSession.Get(sessionID, params)
+	
 	if err != nil || sess.Invoice == nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Factura no encontrada en Stripe"})
+		return
+	}
+
+	if sess.Invoice.InvoicePDF == "" && sess.Invoice.HostedInvoiceURL == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "La factura aún no se ha generado o no tiene PDF disponible"})
 		return
 	}
 
