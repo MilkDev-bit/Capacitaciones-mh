@@ -13,7 +13,7 @@ COPY gen/              gen/
 COPY services/mensajes/ services/mensajes/
 
 WORKDIR /app/services/mensajes
-RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /mensajes-service ./cmd/server
+RUN GOMAXPROCS=1 GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /mensajes-service ./cmd/server
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /mensajes-service /mensajes-service

@@ -14,7 +14,7 @@ COPY gen/ gen/
 COPY services/auth/ services/auth/
 
 WORKDIR /app/services/auth
-RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /auth-service ./cmd/server
+RUN GOMAXPROCS=1 GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /auth-service ./cmd/server
 
 # ── Imagen final (mínima) ─────────────────────────────────────────────────────
 FROM gcr.io/distroless/static-debian12

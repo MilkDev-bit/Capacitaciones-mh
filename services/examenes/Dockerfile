@@ -13,7 +13,7 @@ COPY gen/               gen/
 COPY services/examenes/ services/examenes/
 
 WORKDIR /app/services/examenes
-RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /examenes-service ./cmd/server
+RUN GOMAXPROCS=1 GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /examenes-service ./cmd/server
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /examenes-service /examenes-service

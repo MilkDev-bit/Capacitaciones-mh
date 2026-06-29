@@ -31,7 +31,7 @@ COPY gen/     gen/
 COPY gateway/ gateway/
 
 WORKDIR /app/gateway
-RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /gateway ./cmd/server
+RUN GOMAXPROCS=1 GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /gateway ./cmd/server
 
 # ── Stage 3: Imagen final mínima ─────────────────────────────────────────────
 FROM gcr.io/distroless/static-debian12
