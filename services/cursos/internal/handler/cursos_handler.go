@@ -303,6 +303,14 @@ func (h *CursosHandler) EndVideocall(ctx context.Context, req *cursospb.CursoIDR
 
 // ── Horarios Instructores ────────────────────────────────────────────────
 
+func (h *CursosHandler) ListPublicSchedules(ctx context.Context, req *cursospb.ListPublicSchedulesRequest) (*cursospb.ListPublicSchedulesResponse, error) {
+	list, err := h.svc.ListPublicSchedules(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return list, nil
+}
+
 func (h *CursosHandler) AdminListSchedules(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListSchedulesResponse, error) {
 	list, err := h.svc.AdminListSchedules(ctx, req)
 	if err != nil {
