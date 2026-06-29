@@ -27,6 +27,40 @@ func main() {
 	}
 	defer db.Close()
 
+	// Garantizar que las tablas requeridas existan
+	migrations := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			name VARCHAR(255) NOT NULL,
+			email VARCHAR(255) UNIQUE NOT NULL,
+			role VARCHAR(50) NOT NULL DEFAULT 'alumno',
+			bio TEXT NOT NULL DEFAULT '',
+			avatar_url TEXT NOT NULL DEFAULT '',
+			cover_url TEXT NOT NULL DEFAULT '',
+			phone VARCHAR(50) NOT NULL DEFAULT '',
+			specialty VARCHAR(255) NOT NULL DEFAULT '',
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS notificaciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			tipo VARCHAR(50) NOT NULL,
+			titulo VARCHAR(200) NOT NULL,
+			mensaje TEXT NOT NULL,
+			leida BOOLEAN NOT NULL DEFAULT false,
+			enlace TEXT,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
+		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
+	}
+	for _, m := range migrations {
+		if _, err := db.Exec(m); err != nil {
+			slog.Error("migración fallida", "error", err, "sql", m[:60])
+			os.Exit(1)
+		}
+	}
+
 	// DI: Repository → Service → Handler
 	repo := repository.NewUsuarioRepository(db)
 	svc := service.NewUsuariosService(repo)
