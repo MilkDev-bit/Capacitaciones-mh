@@ -254,6 +254,7 @@ type CreateCursoRequest struct {
 	ThumbnailUrl   string                 `protobuf:"bytes,9,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
 	Color          string                 `protobuf:"bytes,10,opt,name=color,proto3" json:"color,omitempty"`
 	Precio         float64                `protobuf:"fixed64,11,opt,name=precio,proto3" json:"precio,omitempty"`
+	ScheduledAt    string                 `protobuf:"bytes,12,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -365,22 +366,31 @@ func (x *CreateCursoRequest) GetPrecio() float64 {
 	return 0
 }
 
+func (x *CreateCursoRequest) GetScheduledAt() string {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return ""
+}
+
 type UpdateCursoRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CursoId        string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
-	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Type           string                 `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	Content        string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
-	FilePath       string                 `protobuf:"bytes,7,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	IsPublic       bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
-	WelcomeMessage string                 `protobuf:"bytes,9,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
-	ThumbnailUrl   string                 `protobuf:"bytes,10,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
-	Color          string                 `protobuf:"bytes,11,opt,name=color,proto3" json:"color,omitempty"`
-	Precio         float64                `protobuf:"fixed64,12,opt,name=precio,proto3" json:"precio,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	CursoId         string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
+	UserId          string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Title           string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Type            string                 `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Content         string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
+	FilePath        string                 `protobuf:"bytes,7,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	IsPublic        bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	WelcomeMessage  string                 `protobuf:"bytes,9,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
+	ThumbnailUrl    string                 `protobuf:"bytes,10,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
+	Color           string                 `protobuf:"bytes,11,opt,name=color,proto3" json:"color,omitempty"`
+	Precio          float64                `protobuf:"fixed64,12,opt,name=precio,proto3" json:"precio,omitempty"`
+	ScheduledAt     string                 `protobuf:"bytes,13,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	VideocallStatus string                 `protobuf:"bytes,14,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateCursoRequest) Reset() {
@@ -495,6 +505,20 @@ func (x *UpdateCursoRequest) GetPrecio() float64 {
 		return x.Precio
 	}
 	return 0
+}
+
+func (x *UpdateCursoRequest) GetScheduledAt() string {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return ""
+}
+
+func (x *UpdateCursoRequest) GetVideocallStatus() string {
+	if x != nil {
+		return x.VideocallStatus
+	}
+	return ""
 }
 
 type InscribirseRequest struct {
@@ -670,23 +694,25 @@ func (x *AsignarRequest) GetExamenId() string {
 }
 
 type CursoResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description    string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Type           string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	FilePath       string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	Content        string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
-	InstructorId   string                 `protobuf:"bytes,7,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
-	IsPublic       bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
-	CodigoAcceso   string                 `protobuf:"bytes,9,opt,name=codigo_acceso,json=codigoAcceso,proto3" json:"codigo_acceso,omitempty"`
-	WelcomeMessage string                 `protobuf:"bytes,10,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
-	ThumbnailUrl   string                 `protobuf:"bytes,11,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
-	Color          string                 `protobuf:"bytes,12,opt,name=color,proto3" json:"color,omitempty"`
-	CreatedAt      string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Precio         float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title           string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Type            string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	FilePath        string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	Content         string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
+	InstructorId    string                 `protobuf:"bytes,7,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	IsPublic        bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	CodigoAcceso    string                 `protobuf:"bytes,9,opt,name=codigo_acceso,json=codigoAcceso,proto3" json:"codigo_acceso,omitempty"`
+	WelcomeMessage  string                 `protobuf:"bytes,10,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
+	ThumbnailUrl    string                 `protobuf:"bytes,11,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
+	Color           string                 `protobuf:"bytes,12,opt,name=color,proto3" json:"color,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Precio          float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
+	ScheduledAt     string                 `protobuf:"bytes,15,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	VideocallStatus string                 `protobuf:"bytes,16,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CursoResponse) Reset() {
@@ -815,6 +841,20 @@ func (x *CursoResponse) GetPrecio() float64 {
 		return x.Precio
 	}
 	return 0
+}
+
+func (x *CursoResponse) GetScheduledAt() string {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return ""
+}
+
+func (x *CursoResponse) GetVideocallStatus() string {
+	if x != nil {
+		return x.VideocallStatus
+	}
+	return ""
 }
 
 type ListCursosResponse struct {
@@ -1694,6 +1734,7 @@ type WebhookEnrollRequest struct {
 	UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CapacitacionId string                 `protobuf:"bytes,2,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
 	LicenciaId     string                 `protobuf:"bytes,3,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	ScheduleId     string                 `protobuf:"bytes,4,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1745,6 +1786,13 @@ func (x *WebhookEnrollRequest) GetCapacitacionId() string {
 func (x *WebhookEnrollRequest) GetLicenciaId() string {
 	if x != nil {
 		return x.LicenciaId
+	}
+	return ""
+}
+
+func (x *WebhookEnrollRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
 	}
 	return ""
 }
@@ -1807,7 +1855,8 @@ type CheckoutSessionRequest struct {
 	LicenciaId    string                 `protobuf:"bytes,2,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"` // optional, used for B2B payment flow (if still supported)
 	SuccessUrl    string                 `protobuf:"bytes,3,opt,name=success_url,json=successUrl,proto3" json:"success_url,omitempty"`
 	CancelUrl     string                 `protobuf:"bytes,4,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
-	CursoId       string                 `protobuf:"bytes,5,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"` // optional, used for individual B2C course purchase
+	CursoId       string                 `protobuf:"bytes,5,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`          // optional, used for individual B2C course purchase
+	ScheduleId    string                 `protobuf:"bytes,6,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"` // optional, for videocall bookings
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1877,6 +1926,13 @@ func (x *CheckoutSessionRequest) GetCursoId() string {
 	return ""
 }
 
+func (x *CheckoutSessionRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
 type CheckoutSessionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
@@ -1921,6 +1977,82 @@ func (x *CheckoutSessionResponse) GetUrl() string {
 	return ""
 }
 
+type AdminDashboardStatsResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	TotalVentasBrutas   float32                `protobuf:"fixed32,1,opt,name=total_ventas_brutas,json=totalVentasBrutas,proto3" json:"total_ventas_brutas,omitempty"`
+	TotalVentasNetas    float32                `protobuf:"fixed32,2,opt,name=total_ventas_netas,json=totalVentasNetas,proto3" json:"total_ventas_netas,omitempty"` // Brutas descontando tarifas Stripe aproximadas (3.6% + 3 MXN)
+	TotalTransacciones  int32                  `protobuf:"varint,3,opt,name=total_transacciones,json=totalTransacciones,proto3" json:"total_transacciones,omitempty"`
+	LicenciasVendidas   int32                  `protobuf:"varint,4,opt,name=licencias_vendidas,json=licenciasVendidas,proto3" json:"licencias_vendidas,omitempty"`
+	ComprasIndividuales int32                  `protobuf:"varint,5,opt,name=compras_individuales,json=comprasIndividuales,proto3" json:"compras_individuales,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AdminDashboardStatsResponse) Reset() {
+	*x = AdminDashboardStatsResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminDashboardStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminDashboardStatsResponse) ProtoMessage() {}
+
+func (x *AdminDashboardStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminDashboardStatsResponse.ProtoReflect.Descriptor instead.
+func (*AdminDashboardStatsResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *AdminDashboardStatsResponse) GetTotalVentasBrutas() float32 {
+	if x != nil {
+		return x.TotalVentasBrutas
+	}
+	return 0
+}
+
+func (x *AdminDashboardStatsResponse) GetTotalVentasNetas() float32 {
+	if x != nil {
+		return x.TotalVentasNetas
+	}
+	return 0
+}
+
+func (x *AdminDashboardStatsResponse) GetTotalTransacciones() int32 {
+	if x != nil {
+		return x.TotalTransacciones
+	}
+	return 0
+}
+
+func (x *AdminDashboardStatsResponse) GetLicenciasVendidas() int32 {
+	if x != nil {
+		return x.LicenciasVendidas
+	}
+	return 0
+}
+
+func (x *AdminDashboardStatsResponse) GetComprasIndividuales() int32 {
+	if x != nil {
+		return x.ComprasIndividuales
+	}
+	return 0
+}
+
 type CreateCheckoutSessionB2BDirectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -1928,13 +2060,14 @@ type CreateCheckoutSessionB2BDirectRequest struct {
 	Cantidad      int32                  `protobuf:"varint,3,opt,name=cantidad,proto3" json:"cantidad,omitempty"`
 	SuccessUrl    string                 `protobuf:"bytes,4,opt,name=success_url,json=successUrl,proto3" json:"success_url,omitempty"`
 	CancelUrl     string                 `protobuf:"bytes,5,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
+	ScheduleId    string                 `protobuf:"bytes,6,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"` // optional, for videocall bookings
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCheckoutSessionB2BDirectRequest) Reset() {
 	*x = CreateCheckoutSessionB2BDirectRequest{}
-	mi := &file_cursos_cursos_proto_msgTypes[29]
+	mi := &file_cursos_cursos_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1946,7 +2079,7 @@ func (x *CreateCheckoutSessionB2BDirectRequest) String() string {
 func (*CreateCheckoutSessionB2BDirectRequest) ProtoMessage() {}
 
 func (x *CreateCheckoutSessionB2BDirectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cursos_cursos_proto_msgTypes[29]
+	mi := &file_cursos_cursos_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1959,7 +2092,7 @@ func (x *CreateCheckoutSessionB2BDirectRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use CreateCheckoutSessionB2BDirectRequest.ProtoReflect.Descriptor instead.
 func (*CreateCheckoutSessionB2BDirectRequest) Descriptor() ([]byte, []int) {
-	return file_cursos_cursos_proto_rawDescGZIP(), []int{29}
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CreateCheckoutSessionB2BDirectRequest) GetUserId() string {
@@ -1997,18 +2130,26 @@ func (x *CreateCheckoutSessionB2BDirectRequest) GetCancelUrl() string {
 	return ""
 }
 
+func (x *CreateCheckoutSessionB2BDirectRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
 type WebhookComprarB2BDirectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CursoId       string                 `protobuf:"bytes,2,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
 	Cantidad      int32                  `protobuf:"varint,3,opt,name=cantidad,proto3" json:"cantidad,omitempty"`
+	ScheduleId    string                 `protobuf:"bytes,4,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WebhookComprarB2BDirectRequest) Reset() {
 	*x = WebhookComprarB2BDirectRequest{}
-	mi := &file_cursos_cursos_proto_msgTypes[30]
+	mi := &file_cursos_cursos_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2020,7 +2161,7 @@ func (x *WebhookComprarB2BDirectRequest) String() string {
 func (*WebhookComprarB2BDirectRequest) ProtoMessage() {}
 
 func (x *WebhookComprarB2BDirectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cursos_cursos_proto_msgTypes[30]
+	mi := &file_cursos_cursos_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2033,7 +2174,7 @@ func (x *WebhookComprarB2BDirectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WebhookComprarB2BDirectRequest.ProtoReflect.Descriptor instead.
 func (*WebhookComprarB2BDirectRequest) Descriptor() ([]byte, []int) {
-	return file_cursos_cursos_proto_rawDescGZIP(), []int{30}
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *WebhookComprarB2BDirectRequest) GetUserId() string {
@@ -2057,6 +2198,685 @@ func (x *WebhookComprarB2BDirectRequest) GetCantidad() int32 {
 	return 0
 }
 
+func (x *WebhookComprarB2BDirectRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
+type ListLicenciaTicketsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tickets       []*VideocallTicket     `protobuf:"bytes,1,rep,name=tickets,proto3" json:"tickets,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListLicenciaTicketsResponse) Reset() {
+	*x = ListLicenciaTicketsResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListLicenciaTicketsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListLicenciaTicketsResponse) ProtoMessage() {}
+
+func (x *ListLicenciaTicketsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListLicenciaTicketsResponse.ProtoReflect.Descriptor instead.
+func (*ListLicenciaTicketsResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *ListLicenciaTicketsResponse) GetTickets() []*VideocallTicket {
+	if x != nil {
+		return x.Tickets
+	}
+	return nil
+}
+
+type InstructorSchedule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	InstructorId  string                 `protobuf:"bytes,2,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	StartTime     string                 `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime       string                 `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstructorSchedule) Reset() {
+	*x = InstructorSchedule{}
+	mi := &file_cursos_cursos_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstructorSchedule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstructorSchedule) ProtoMessage() {}
+
+func (x *InstructorSchedule) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstructorSchedule.ProtoReflect.Descriptor instead.
+func (*InstructorSchedule) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *InstructorSchedule) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *InstructorSchedule) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
+	}
+	return ""
+}
+
+func (x *InstructorSchedule) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+func (x *InstructorSchedule) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+func (x *InstructorSchedule) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *InstructorSchedule) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ScheduleIDRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ScheduleId    string                 `protobuf:"bytes,1,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScheduleIDRequest) Reset() {
+	*x = ScheduleIDRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScheduleIDRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScheduleIDRequest) ProtoMessage() {}
+
+func (x *ScheduleIDRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScheduleIDRequest.ProtoReflect.Descriptor instead.
+func (*ScheduleIDRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *ScheduleIDRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
+type ListSchedulesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Schedules     []*InstructorSchedule  `protobuf:"bytes,1,rep,name=schedules,proto3" json:"schedules,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSchedulesResponse) Reset() {
+	*x = ListSchedulesResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSchedulesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSchedulesResponse) ProtoMessage() {}
+
+func (x *ListSchedulesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSchedulesResponse.ProtoReflect.Descriptor instead.
+func (*ListSchedulesResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *ListSchedulesResponse) GetSchedules() []*InstructorSchedule {
+	if x != nil {
+		return x.Schedules
+	}
+	return nil
+}
+
+type CreateScheduleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstructorId  string                 `protobuf:"bytes,1,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	StartTime     string                 `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime       string                 `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateScheduleRequest) Reset() {
+	*x = CreateScheduleRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateScheduleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateScheduleRequest) ProtoMessage() {}
+
+func (x *CreateScheduleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateScheduleRequest.ProtoReflect.Descriptor instead.
+func (*CreateScheduleRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *CreateScheduleRequest) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
+	}
+	return ""
+}
+
+func (x *CreateScheduleRequest) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+func (x *CreateScheduleRequest) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+type UpdateScheduleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ScheduleId    string                 `protobuf:"bytes,1,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
+	StartTime     string                 `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime       string                 `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateScheduleRequest) Reset() {
+	*x = UpdateScheduleRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateScheduleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateScheduleRequest) ProtoMessage() {}
+
+func (x *UpdateScheduleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateScheduleRequest.ProtoReflect.Descriptor instead.
+func (*UpdateScheduleRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *UpdateScheduleRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
+func (x *UpdateScheduleRequest) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+func (x *UpdateScheduleRequest) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+func (x *UpdateScheduleRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type JoinVideocallRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Codigo        string                 `protobuf:"bytes,2,opt,name=codigo,proto3" json:"codigo,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinVideocallRequest) Reset() {
+	*x = JoinVideocallRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinVideocallRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinVideocallRequest) ProtoMessage() {}
+
+func (x *JoinVideocallRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinVideocallRequest.ProtoReflect.Descriptor instead.
+func (*JoinVideocallRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *JoinVideocallRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *JoinVideocallRequest) GetCodigo() string {
+	if x != nil {
+		return x.Codigo
+	}
+	return ""
+}
+
+type JoinVideocallResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RoomName      string                 `protobuf:"bytes,1,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinVideocallResponse) Reset() {
+	*x = JoinVideocallResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinVideocallResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinVideocallResponse) ProtoMessage() {}
+
+func (x *JoinVideocallResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinVideocallResponse.ProtoReflect.Descriptor instead.
+func (*JoinVideocallResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *JoinVideocallResponse) GetRoomName() string {
+	if x != nil {
+		return x.RoomName
+	}
+	return ""
+}
+
+func (x *JoinVideocallResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type LeaveVideocallRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Codigo        string                 `protobuf:"bytes,2,opt,name=codigo,proto3" json:"codigo,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LeaveVideocallRequest) Reset() {
+	*x = LeaveVideocallRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LeaveVideocallRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaveVideocallRequest) ProtoMessage() {}
+
+func (x *LeaveVideocallRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaveVideocallRequest.ProtoReflect.Descriptor instead.
+func (*LeaveVideocallRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *LeaveVideocallRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *LeaveVideocallRequest) GetCodigo() string {
+	if x != nil {
+		return x.Codigo
+	}
+	return ""
+}
+
+type VideocallTicket struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CapacitacionId string                 `protobuf:"bytes,2,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	LicenciaId     string                 `protobuf:"bytes,3,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	Codigo         string                 `protobuf:"bytes,4,opt,name=codigo,proto3" json:"codigo,omitempty"`
+	InUseByUser    string                 `protobuf:"bytes,5,opt,name=in_use_by_user,json=inUseByUser,proto3" json:"in_use_by_user,omitempty"`
+	IsValid        bool                   `protobuf:"varint,6,opt,name=is_valid,json=isValid,proto3" json:"is_valid,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VideocallTicket) Reset() {
+	*x = VideocallTicket{}
+	mi := &file_cursos_cursos_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VideocallTicket) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VideocallTicket) ProtoMessage() {}
+
+func (x *VideocallTicket) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VideocallTicket.ProtoReflect.Descriptor instead.
+func (*VideocallTicket) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *VideocallTicket) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *VideocallTicket) GetCapacitacionId() string {
+	if x != nil {
+		return x.CapacitacionId
+	}
+	return ""
+}
+
+func (x *VideocallTicket) GetLicenciaId() string {
+	if x != nil {
+		return x.LicenciaId
+	}
+	return ""
+}
+
+func (x *VideocallTicket) GetCodigo() string {
+	if x != nil {
+		return x.Codigo
+	}
+	return ""
+}
+
+func (x *VideocallTicket) GetInUseByUser() string {
+	if x != nil {
+		return x.InUseByUser
+	}
+	return ""
+}
+
+func (x *VideocallTicket) GetIsValid() bool {
+	if x != nil {
+		return x.IsValid
+	}
+	return false
+}
+
+type ListPublicSchedulesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstructorId  string                 `protobuf:"bytes,1,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPublicSchedulesRequest) Reset() {
+	*x = ListPublicSchedulesRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPublicSchedulesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPublicSchedulesRequest) ProtoMessage() {}
+
+func (x *ListPublicSchedulesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPublicSchedulesRequest.ProtoReflect.Descriptor instead.
+func (*ListPublicSchedulesRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ListPublicSchedulesRequest) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
+	}
+	return ""
+}
+
+type ListPublicSchedulesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Schedules     []*InstructorSchedule  `protobuf:"bytes,1,rep,name=schedules,proto3" json:"schedules,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPublicSchedulesResponse) Reset() {
+	*x = ListPublicSchedulesResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPublicSchedulesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPublicSchedulesResponse) ProtoMessage() {}
+
+func (x *ListPublicSchedulesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPublicSchedulesResponse.ProtoReflect.Descriptor instead.
+func (*ListPublicSchedulesResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ListPublicSchedulesResponse) GetSchedules() []*InstructorSchedule {
+	if x != nil {
+		return x.Schedules
+	}
+	return nil
+}
+
 var File_cursos_cursos_proto protoreflect.FileDescriptor
 
 const file_cursos_cursos_proto_rawDesc = "" +
@@ -2071,7 +2891,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xc9\x02\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xec\x02\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2084,7 +2904,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rthumbnail_url\x18\t \x01(\tR\fthumbnailUrl\x12\x14\n" +
 	"\x05color\x18\n" +
 	" \x01(\tR\x05color\x12\x16\n" +
-	"\x06precio\x18\v \x01(\x01R\x06precio\"\xe4\x02\n" +
+	"\x06precio\x18\v \x01(\x01R\x06precio\x12!\n" +
+	"\fscheduled_at\x18\f \x01(\tR\vscheduledAt\"\xb2\x03\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -2098,7 +2919,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rthumbnail_url\x18\n" +
 	" \x01(\tR\fthumbnailUrl\x12\x14\n" +
 	"\x05color\x18\v \x01(\tR\x05color\x12\x16\n" +
-	"\x06precio\x18\f \x01(\x01R\x06precio\"H\n" +
+	"\x06precio\x18\f \x01(\x01R\x06precio\x12!\n" +
+	"\fscheduled_at\x18\r \x01(\tR\vscheduledAt\x12)\n" +
+	"\x10videocall_status\x18\x0e \x01(\tR\x0fvideocallStatus\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -2109,7 +2932,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xa4\x03\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xf2\x03\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2126,7 +2949,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x05color\x18\f \x01(\tR\x05color\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\r \x01(\tR\tcreatedAt\x12\x16\n" +
-	"\x06precio\x18\x0e \x01(\x01R\x06precio\"C\n" +
+	"\x06precio\x18\x0e \x01(\x01R\x06precio\x12!\n" +
+	"\fscheduled_at\x18\x0f \x01(\tR\vscheduledAt\x12)\n" +
+	"\x10videocall_status\x18\x10 \x01(\tR\x0fvideocallStatus\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +
@@ -2190,16 +3015,18 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x18UnirseConLicenciaRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12#\n" +
-	"\rcodigo_acceso\x18\x03 \x01(\tR\fcodigoAcceso\"y\n" +
+	"\rcodigo_acceso\x18\x03 \x01(\tR\fcodigoAcceso\"\x9a\x01\n" +
 	"\x14WebhookEnrollRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x1f\n" +
 	"\vlicencia_id\x18\x03 \x01(\tR\n" +
-	"licenciaId\"Y\n" +
+	"licenciaId\x12\x1f\n" +
+	"\vschedule_id\x18\x04 \x01(\tR\n" +
+	"scheduleId\"Y\n" +
 	"\x1dWebhookComprarLicenciaRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vlicencia_id\x18\x02 \x01(\tR\n" +
-	"licenciaId\"\xad\x01\n" +
+	"licenciaId\"\xce\x01\n" +
 	"\x16CheckoutSessionRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vlicencia_id\x18\x02 \x01(\tR\n" +
@@ -2208,9 +3035,17 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"successUrl\x12\x1d\n" +
 	"\n" +
 	"cancel_url\x18\x04 \x01(\tR\tcancelUrl\x12\x19\n" +
-	"\bcurso_id\x18\x05 \x01(\tR\acursoId\"+\n" +
+	"\bcurso_id\x18\x05 \x01(\tR\acursoId\x12\x1f\n" +
+	"\vschedule_id\x18\x06 \x01(\tR\n" +
+	"scheduleId\"+\n" +
 	"\x17CheckoutSessionResponse\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\"\xb7\x01\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\x8e\x02\n" +
+	"\x1bAdminDashboardStatsResponse\x12.\n" +
+	"\x13total_ventas_brutas\x18\x01 \x01(\x02R\x11totalVentasBrutas\x12,\n" +
+	"\x12total_ventas_netas\x18\x02 \x01(\x02R\x10totalVentasNetas\x12/\n" +
+	"\x13total_transacciones\x18\x03 \x01(\x05R\x12totalTransacciones\x12-\n" +
+	"\x12licencias_vendidas\x18\x04 \x01(\x05R\x11licenciasVendidas\x121\n" +
+	"\x14compras_individuales\x18\x05 \x01(\x05R\x13comprasIndividuales\"\xd8\x01\n" +
 	"%CreateCheckoutSessionB2BDirectRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\x12\x1a\n" +
@@ -2218,11 +3053,64 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\vsuccess_url\x18\x04 \x01(\tR\n" +
 	"successUrl\x12\x1d\n" +
 	"\n" +
-	"cancel_url\x18\x05 \x01(\tR\tcancelUrl\"p\n" +
+	"cancel_url\x18\x05 \x01(\tR\tcancelUrl\x12\x1f\n" +
+	"\vschedule_id\x18\x06 \x01(\tR\n" +
+	"scheduleId\"\x91\x01\n" +
 	"\x1eWebhookComprarB2BDirectRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\x12\x1a\n" +
-	"\bcantidad\x18\x03 \x01(\x05R\bcantidad2\xbf\x14\n" +
+	"\bcantidad\x18\x03 \x01(\x05R\bcantidad\x12\x1f\n" +
+	"\vschedule_id\x18\x04 \x01(\tR\n" +
+	"scheduleId\"P\n" +
+	"\x1bListLicenciaTicketsResponse\x121\n" +
+	"\atickets\x18\x01 \x03(\v2\x17.cursos.VideocallTicketR\atickets\"\xba\x01\n" +
+	"\x12InstructorSchedule\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
+	"\rinstructor_id\x18\x02 \x01(\tR\finstructorId\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x03 \x01(\tR\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x04 \x01(\tR\aendTime\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\"4\n" +
+	"\x11ScheduleIDRequest\x12\x1f\n" +
+	"\vschedule_id\x18\x01 \x01(\tR\n" +
+	"scheduleId\"Q\n" +
+	"\x15ListSchedulesResponse\x128\n" +
+	"\tschedules\x18\x01 \x03(\v2\x1a.cursos.InstructorScheduleR\tschedules\"v\n" +
+	"\x15CreateScheduleRequest\x12#\n" +
+	"\rinstructor_id\x18\x01 \x01(\tR\finstructorId\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x02 \x01(\tR\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x03 \x01(\tR\aendTime\"\x8a\x01\n" +
+	"\x15UpdateScheduleRequest\x12\x1f\n" +
+	"\vschedule_id\x18\x01 \x01(\tR\n" +
+	"scheduleId\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x02 \x01(\tR\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x03 \x01(\tR\aendTime\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\"G\n" +
+	"\x14JoinVideocallRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
+	"\x06codigo\x18\x02 \x01(\tR\x06codigo\"J\n" +
+	"\x15JoinVideocallResponse\x12\x1b\n" +
+	"\troom_name\x18\x01 \x01(\tR\broomName\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"H\n" +
+	"\x15LeaveVideocallRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
+	"\x06codigo\x18\x02 \x01(\tR\x06codigo\"\xc3\x01\n" +
+	"\x0fVideocallTicket\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
+	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x1f\n" +
+	"\vlicencia_id\x18\x03 \x01(\tR\n" +
+	"licenciaId\x12\x16\n" +
+	"\x06codigo\x18\x04 \x01(\tR\x06codigo\x12#\n" +
+	"\x0ein_use_by_user\x18\x05 \x01(\tR\vinUseByUser\x12\x19\n" +
+	"\bis_valid\x18\x06 \x01(\bR\aisValid\"A\n" +
+	"\x1aListPublicSchedulesRequest\x12#\n" +
+	"\rinstructor_id\x18\x01 \x01(\tR\finstructorId\"W\n" +
+	"\x1bListPublicSchedulesResponse\x128\n" +
+	"\tschedules\x18\x01 \x03(\v2\x1a.cursos.InstructorScheduleR\tschedules2\xd7\x1a\n" +
 	"\rCursosService\x12<\n" +
 	"\fPreviewCurso\x12\x15.cursos.CodigoRequest\x1a\x15.cursos.CursoResponse\x12@\n" +
 	"\x0fGetCursoPublico\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12F\n" +
@@ -2239,7 +3127,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x1eCreateCheckoutSessionB2BDirect\x12-.cursos.CreateCheckoutSessionB2BDirectRequest\x1a\x1f.cursos.CheckoutSessionResponse\x12L\n" +
 	"\rListLicencias\x12\x1c.cursos.ListLicenciasRequest\x1a\x1d.cursos.ListLicenciasResponse\x12P\n" +
 	"\x12GetLicenciaPublica\x12\x19.cursos.LicenciaIDRequest\x1a\x1f.cursos.LicenciaPublicaResponse\x12L\n" +
-	"\x16ListLicenciasCompradas\x12\x13.cursos.UserRequest\x1a\x1d.cursos.ListLicenciasResponse\x12O\n" +
+	"\x16ListLicenciasCompradas\x12\x13.cursos.UserRequest\x1a\x1d.cursos.ListLicenciasResponse\x12U\n" +
+	"\x13ListLicenciaTickets\x12\x19.cursos.LicenciaIDRequest\x1a#.cursos.ListLicenciaTicketsResponse\x12O\n" +
 	"\x1cInstructorListCapacitaciones\x12\x13.cursos.UserRequest\x1a\x1a.cursos.ListCursosResponse\x12Q\n" +
 	"\x1cInstructorCreateCapacitacion\x12\x1a.cursos.CreateCursoRequest\x1a\x15.cursos.CursoResponse\x12Q\n" +
 	"\x1cInstructorUpdateCapacitacion\x12\x1a.cursos.UpdateCursoRequest\x1a\x15.cursos.CursoResponse\x12M\n" +
@@ -2257,7 +3146,16 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x17AdminDeleteCapacitacion\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.EmptyResponse\x12O\n" +
 	"\x15AdminListAsignaciones\x12\x14.cursos.EmptyRequest\x1a .cursos.ListAsignacionesResponse\x12=\n" +
 	"\fAdminAsignar\x12\x16.cursos.AsignarRequest\x1a\x15.cursos.EmptyResponse\x12E\n" +
-	"\x0fAdminDesAsignar\x12\x1b.cursos.AsignacionIDRequest\x1a\x15.cursos.EmptyResponseB\x1fZ\x1dPrueba-Go/gen/cursos;cursospbb\x06proto3"
+	"\x0fAdminDesAsignar\x12\x1b.cursos.AsignacionIDRequest\x1a\x15.cursos.EmptyResponse\x12L\n" +
+	"\rJoinVideocall\x12\x1c.cursos.JoinVideocallRequest\x1a\x1d.cursos.JoinVideocallResponse\x12F\n" +
+	"\x0eLeaveVideocall\x12\x1d.cursos.LeaveVideocallRequest\x1a\x15.cursos.EmptyResponse\x12=\n" +
+	"\fEndVideocall\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.EmptyResponse\x12H\n" +
+	"\x12AdminListSchedules\x12\x13.cursos.UserRequest\x1a\x1d.cursos.ListSchedulesResponse\x12P\n" +
+	"\x13AdminCreateSchedule\x12\x1d.cursos.CreateScheduleRequest\x1a\x1a.cursos.InstructorSchedule\x12P\n" +
+	"\x13AdminUpdateSchedule\x12\x1d.cursos.UpdateScheduleRequest\x1a\x1a.cursos.InstructorSchedule\x12G\n" +
+	"\x13AdminDeleteSchedule\x12\x19.cursos.ScheduleIDRequest\x1a\x15.cursos.EmptyResponse\x12^\n" +
+	"\x13ListPublicSchedules\x12\".cursos.ListPublicSchedulesRequest\x1a#.cursos.ListPublicSchedulesResponse\x12S\n" +
+	"\x16GetAdminDashboardStats\x12\x14.cursos.EmptyRequest\x1a#.cursos.AdminDashboardStatsResponseB\x1fZ\x1dPrueba-Go/gen/cursos;cursospbb\x06proto3"
 
 var (
 	file_cursos_cursos_proto_rawDescOnce sync.Once
@@ -2271,7 +3169,7 @@ func file_cursos_cursos_proto_rawDescGZIP() []byte {
 	return file_cursos_cursos_proto_rawDescData
 }
 
-var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_cursos_cursos_proto_goTypes = []any{
 	(*EmptyRequest)(nil),                          // 0: cursos.EmptyRequest
 	(*UserRequest)(nil),                           // 1: cursos.UserRequest
@@ -2302,87 +3200,123 @@ var file_cursos_cursos_proto_goTypes = []any{
 	(*WebhookComprarLicenciaRequest)(nil),         // 26: cursos.WebhookComprarLicenciaRequest
 	(*CheckoutSessionRequest)(nil),                // 27: cursos.CheckoutSessionRequest
 	(*CheckoutSessionResponse)(nil),               // 28: cursos.CheckoutSessionResponse
-	(*CreateCheckoutSessionB2BDirectRequest)(nil), // 29: cursos.CreateCheckoutSessionB2BDirectRequest
-	(*WebhookComprarB2BDirectRequest)(nil),        // 30: cursos.WebhookComprarB2BDirectRequest
+	(*AdminDashboardStatsResponse)(nil),           // 29: cursos.AdminDashboardStatsResponse
+	(*CreateCheckoutSessionB2BDirectRequest)(nil), // 30: cursos.CreateCheckoutSessionB2BDirectRequest
+	(*WebhookComprarB2BDirectRequest)(nil),        // 31: cursos.WebhookComprarB2BDirectRequest
+	(*ListLicenciaTicketsResponse)(nil),           // 32: cursos.ListLicenciaTicketsResponse
+	(*InstructorSchedule)(nil),                    // 33: cursos.InstructorSchedule
+	(*ScheduleIDRequest)(nil),                     // 34: cursos.ScheduleIDRequest
+	(*ListSchedulesResponse)(nil),                 // 35: cursos.ListSchedulesResponse
+	(*CreateScheduleRequest)(nil),                 // 36: cursos.CreateScheduleRequest
+	(*UpdateScheduleRequest)(nil),                 // 37: cursos.UpdateScheduleRequest
+	(*JoinVideocallRequest)(nil),                  // 38: cursos.JoinVideocallRequest
+	(*JoinVideocallResponse)(nil),                 // 39: cursos.JoinVideocallResponse
+	(*LeaveVideocallRequest)(nil),                 // 40: cursos.LeaveVideocallRequest
+	(*VideocallTicket)(nil),                       // 41: cursos.VideocallTicket
+	(*ListPublicSchedulesRequest)(nil),            // 42: cursos.ListPublicSchedulesRequest
+	(*ListPublicSchedulesResponse)(nil),           // 43: cursos.ListPublicSchedulesResponse
 }
 var file_cursos_cursos_proto_depIdxs = []int32{
 	10, // 0: cursos.ListCursosResponse.cursos:type_name -> cursos.CursoResponse
 	12, // 1: cursos.ListEstudiantesResponse.estudiantes:type_name -> cursos.EstudianteInfo
 	14, // 2: cursos.ListAsignacionesResponse.asignaciones:type_name -> cursos.AsignacionInfo
 	17, // 3: cursos.ListLicenciasResponse.licencias:type_name -> cursos.Licencia
-	3,  // 4: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
-	2,  // 5: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
-	0,  // 6: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
-	1,  // 7: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
-	2,  // 8: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
-	7,  // 9: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
-	8,  // 10: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
-	24, // 11: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
-	25, // 12: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
-	26, // 13: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
-	30, // 14: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
-	27, // 15: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
-	29, // 16: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
-	22, // 17: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
-	21, // 18: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
-	1,  // 19: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
-	1,  // 20: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
-	5,  // 21: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 22: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 23: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	2,  // 24: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
-	2,  // 25: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
-	1,  // 26: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
-	9,  // 27: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
-	19, // 28: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
-	20, // 29: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
-	21, // 30: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
-	0,  // 31: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
-	5,  // 32: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 33: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 34: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	0,  // 35: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
-	9,  // 36: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
-	4,  // 37: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
-	10, // 38: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
-	10, // 39: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
-	11, // 40: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
-	11, // 41: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 42: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
-	16, // 43: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
-	16, // 44: cursos.CursosService.UnirseConCodigo:output_type -> cursos.EmptyResponse
-	16, // 45: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
-	16, // 46: cursos.CursosService.WebhookEnroll:output_type -> cursos.EmptyResponse
-	16, // 47: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
-	16, // 48: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.EmptyResponse
-	28, // 49: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
-	28, // 50: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
-	23, // 51: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
-	18, // 52: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
-	23, // 53: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
-	11, // 54: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 55: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 56: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 57: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 58: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
-	10, // 59: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
-	13, // 60: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
-	16, // 61: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
-	17, // 62: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
-	17, // 63: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
-	16, // 64: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
-	11, // 65: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 66: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 67: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 68: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	15, // 69: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
-	16, // 70: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
-	16, // 71: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
-	38, // [38:72] is the sub-list for method output_type
-	4,  // [4:38] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	41, // 4: cursos.ListLicenciaTicketsResponse.tickets:type_name -> cursos.VideocallTicket
+	33, // 5: cursos.ListSchedulesResponse.schedules:type_name -> cursos.InstructorSchedule
+	33, // 6: cursos.ListPublicSchedulesResponse.schedules:type_name -> cursos.InstructorSchedule
+	3,  // 7: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
+	2,  // 8: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
+	0,  // 9: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
+	1,  // 10: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
+	2,  // 11: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
+	7,  // 12: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
+	8,  // 13: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
+	24, // 14: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
+	25, // 15: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
+	26, // 16: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
+	31, // 17: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
+	27, // 18: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
+	30, // 19: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
+	22, // 20: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
+	21, // 21: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
+	1,  // 22: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
+	21, // 23: cursos.CursosService.ListLicenciaTickets:input_type -> cursos.LicenciaIDRequest
+	1,  // 24: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
+	5,  // 25: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 26: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 27: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	2,  // 28: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
+	2,  // 29: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
+	1,  // 30: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
+	9,  // 31: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
+	19, // 32: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
+	20, // 33: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
+	21, // 34: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
+	0,  // 35: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
+	5,  // 36: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 37: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 38: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	0,  // 39: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
+	9,  // 40: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
+	4,  // 41: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
+	38, // 42: cursos.CursosService.JoinVideocall:input_type -> cursos.JoinVideocallRequest
+	40, // 43: cursos.CursosService.LeaveVideocall:input_type -> cursos.LeaveVideocallRequest
+	2,  // 44: cursos.CursosService.EndVideocall:input_type -> cursos.CursoIDRequest
+	1,  // 45: cursos.CursosService.AdminListSchedules:input_type -> cursos.UserRequest
+	36, // 46: cursos.CursosService.AdminCreateSchedule:input_type -> cursos.CreateScheduleRequest
+	37, // 47: cursos.CursosService.AdminUpdateSchedule:input_type -> cursos.UpdateScheduleRequest
+	34, // 48: cursos.CursosService.AdminDeleteSchedule:input_type -> cursos.ScheduleIDRequest
+	42, // 49: cursos.CursosService.ListPublicSchedules:input_type -> cursos.ListPublicSchedulesRequest
+	0,  // 50: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
+	10, // 51: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
+	10, // 52: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
+	11, // 53: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
+	11, // 54: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 55: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
+	16, // 56: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
+	16, // 57: cursos.CursosService.UnirseConCodigo:output_type -> cursos.EmptyResponse
+	16, // 58: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
+	16, // 59: cursos.CursosService.WebhookEnroll:output_type -> cursos.EmptyResponse
+	16, // 60: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
+	16, // 61: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.EmptyResponse
+	28, // 62: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
+	28, // 63: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
+	23, // 64: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
+	18, // 65: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
+	23, // 66: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
+	32, // 67: cursos.CursosService.ListLicenciaTickets:output_type -> cursos.ListLicenciaTicketsResponse
+	11, // 68: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 69: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 70: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 71: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 72: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
+	10, // 73: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
+	13, // 74: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
+	16, // 75: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
+	17, // 76: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
+	17, // 77: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
+	16, // 78: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
+	11, // 79: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 80: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 81: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 82: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	15, // 83: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
+	16, // 84: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
+	16, // 85: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
+	39, // 86: cursos.CursosService.JoinVideocall:output_type -> cursos.JoinVideocallResponse
+	16, // 87: cursos.CursosService.LeaveVideocall:output_type -> cursos.EmptyResponse
+	16, // 88: cursos.CursosService.EndVideocall:output_type -> cursos.EmptyResponse
+	35, // 89: cursos.CursosService.AdminListSchedules:output_type -> cursos.ListSchedulesResponse
+	33, // 90: cursos.CursosService.AdminCreateSchedule:output_type -> cursos.InstructorSchedule
+	33, // 91: cursos.CursosService.AdminUpdateSchedule:output_type -> cursos.InstructorSchedule
+	16, // 92: cursos.CursosService.AdminDeleteSchedule:output_type -> cursos.EmptyResponse
+	43, // 93: cursos.CursosService.ListPublicSchedules:output_type -> cursos.ListPublicSchedulesResponse
+	29, // 94: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
+	51, // [51:95] is the sub-list for method output_type
+	7,  // [7:51] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_cursos_cursos_proto_init() }
@@ -2396,7 +3330,7 @@ func file_cursos_cursos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cursos_cursos_proto_rawDesc), len(file_cursos_cursos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

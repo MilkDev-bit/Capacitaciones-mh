@@ -25,9 +25,11 @@ type Curso struct {
 	CodigoAcceso   string    `db:"codigo_acceso"`
 	WelcomeMessage string    `db:"welcome_message"`
 	ThumbnailURL   string    `db:"thumbnail_url"`
-	Color          string    `db:"color"`
-	Precio         float64   `db:"precio"`
-	CreatedAt      time.Time `db:"created_at"`
+	Color          string     `db:"color"`
+	Precio         float64    `db:"precio"`
+	ScheduledAt    *time.Time `db:"scheduled_at"`
+	VideocallStatus *string   `db:"videocall_status"`
+	CreatedAt      time.Time  `db:"created_at"`
 }
 
 func (c *Curso) ToProto() *cursospb.CursoResponse {
@@ -41,6 +43,9 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 	}
 	if c.InstructorID != nil {
 		r.InstructorId = *c.InstructorID
+	}
+	if c.ScheduledAt != nil {
+		r.ScheduledAt = c.ScheduledAt.Format("2006-01-02T15:04:05Z")
 	}
 	return r
 }
@@ -102,6 +107,54 @@ func (l *Licencia) ToProto() *cursospb.Licencia {
 	return r
 }
 
+// InstructorSchedule representa el horario disponible de un instructor
+type InstructorSchedule struct {
+	ID           string    `db:"id"`
+	InstructorID string    `db:"instructor_id"`
+	StartTime    time.Time `db:"start_time"`
+	EndTime      time.Time `db:"end_time"`
+	Status       string    `db:"status"`
+	CreatedAt    time.Time `db:"created_at"`
+}
+
+func (s *InstructorSchedule) ToProto() *cursospb.InstructorSchedule {
+	return &cursospb.InstructorSchedule{
+		Id:           s.ID,
+		InstructorId: s.InstructorID,
+		StartTime:    s.StartTime.Format(time.RFC3339),
+		EndTime:      s.EndTime.Format(time.RFC3339),
+		Status:       s.Status,
+		CreatedAt:    s.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+// VideocallTicket representa un acceso concurrente a una videollamada
+type VideocallTicket struct {
+	ID             string    `db:"id"`
+	CapacitacionID string    `db:"capacitacion_id"`
+	LicenciaID     *string   `db:"licencia_id"`
+	Codigo         string    `db:"codigo"`
+	InUseByUserID  *string   `db:"in_use_by_user_id"`
+	IsValid        bool      `db:"is_valid"`
+	CreatedAt      time.Time `db:"created_at"`
+}
+
+func (t *VideocallTicket) ToProto() *cursospb.VideocallTicket {
+	r := &cursospb.VideocallTicket{
+		Id:             t.ID,
+		CapacitacionId: t.CapacitacionID,
+		Codigo:         t.Codigo,
+		IsValid:        t.IsValid,
+	}
+	if t.LicenciaID != nil {
+		r.LicenciaId = *t.LicenciaID
+	}
+	if t.InUseByUserID != nil {
+		r.InUseByUser = *t.InUseByUserID
+	}
+	return r
+}
+
 // EstudianteRow para listar estudiantes de un curso.
 type EstudianteRow struct {
 	ID         string    `db:"id"`
@@ -153,10 +206,26 @@ type CursosRepository interface {
 	ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error)
 	FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error)
 	FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error)
+	
+
+	// Horarios y Videollamadas
+	ListSchedules(ctx context.Context, instructorID *string) ([]*InstructorSchedule, error)
+	CreateSchedule(ctx context.Context, req *cursospb.CreateScheduleRequest) (*InstructorSchedule, error)
+	UpdateSchedule(ctx context.Context, req *cursospb.UpdateScheduleRequest) (*InstructorSchedule, error)
+	DeleteSchedule(ctx context.Context, scheduleID string) error
+	
+	CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, count int) ([]*VideocallTicket, error)
+	JoinVideocall(ctx context.Context, codigo, userID string) (string, error) // retorna el room
+	LeaveVideocall(ctx context.Context, codigo, userID string) error
+	EndVideocall(ctx context.Context, cursoID string) error
+	ListTicketsByLicencia(ctx context.Context, licenciaID string) ([]*VideocallTicket, error)
+	
 	IncrementarUsoLicencia(ctx context.Context, licenciaID string) error
 	InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error
 	ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error)
 	AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error
+
+	GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error)
 }
 
 type postgresCursosRepository struct{ db *sqlx.DB }
@@ -468,3 +537,51 @@ var errForbidden = &forbiddenError{}
 type forbiddenError struct{}
 
 func (e *forbiddenError) Error() string { return "forbidden" }
+
+func (r *postgresCursosRepository) GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error) {
+	stats := &cursospb.AdminDashboardStatsResponse{}
+
+	// B2B Licencias vendidas (comprador_id no nulo)
+	var ventasB2B struct {
+		Total float64 `db:"total"`
+		Count int32   `db:"count"`
+	}
+	err := r.db.GetContext(ctx, &ventasB2B, `SELECT COALESCE(SUM(precio), 0) as total, COUNT(*) as count FROM curso_licencias WHERE comprador_id IS NOT NULL`)
+	if err != nil {
+		return nil, err
+	}
+
+	// B2C Inscripciones directas (licencia_id IS NULL) cruzando con capacitaciones.precio
+	var ventasB2C struct {
+		Total float64 `db:"total"`
+		Count int32   `db:"count"`
+	}
+	err = r.db.GetContext(ctx, &ventasB2C, `
+		SELECT COALESCE(SUM(c.precio), 0) as total, COUNT(*) as count
+		FROM inscripciones i
+		JOIN capacitaciones c ON c.id = i.capacitacion_id
+		WHERE i.licencia_id IS NULL AND c.precio > 0
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	stats.TotalVentasBrutas = float32(ventasB2B.Total + ventasB2C.Total)
+	
+	// Calcular netas aproximadas (Bruto - 3.6% - 3 MXN por transacción)
+	totalTransacciones := ventasB2B.Count + ventasB2C.Count
+	var totalNeto float64 = 0
+	if stats.TotalVentasBrutas > 0 {
+		totalNeto = float64(stats.TotalVentasBrutas) - (float64(stats.TotalVentasBrutas)*0.036 + (float64(totalTransacciones) * 3.0))
+		if totalNeto < 0 {
+			totalNeto = 0
+		}
+	}
+
+	stats.TotalVentasNetas = float32(totalNeto)
+	stats.TotalTransacciones = totalTransacciones
+	stats.LicenciasVendidas = ventasB2B.Count
+	stats.ComprasIndividuales = ventasB2C.Count
+
+	return stats, nil
+}

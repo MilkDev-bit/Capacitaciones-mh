@@ -166,16 +166,24 @@ async function unirseConCodigo() {
   codigoLoading.value = true
 
   try {
-    const res = await api.post('/inscripciones', { codigo: code })
-    codigoSuccess.value = `Te uniste a "${res.data.title}"`
-    codigoInput.value = ''
-    await loadMis()
-    setTimeout(() => {
-      codigoSuccess.value = ''
-      activeTab.value = 'mis'
-    }, 1800)
+    if (code.startsWith('VC-')) {
+      const res = await api.post('/videocalls/join', { codigo: code })
+      codigoSuccess.value = 'Uniéndose a la videollamada...'
+      setTimeout(() => {
+        router.push(`/usuario/videocall/${res.data.roomName}?codigo=${code}`)
+      }, 1000)
+    } else {
+      const res = await api.post('/inscripciones', { codigo: code })
+      codigoSuccess.value = `Te uniste a "${res.data.title}"`
+      codigoInput.value = ''
+      await loadMis()
+      setTimeout(() => {
+        codigoSuccess.value = ''
+        activeTab.value = 'mis'
+      }, 1800)
+    }
   } catch (e: any) {
-    codigoError.value = e.response?.data?.error || 'Codigo invalido'
+    codigoError.value = e.response?.data?.error || 'Codigo invalido o en uso'
   } finally {
     codigoLoading.value = false
   }

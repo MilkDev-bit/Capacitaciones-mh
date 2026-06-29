@@ -86,6 +86,7 @@ func New(d Deps) *gin.Engine {
 		api.GET("/preview-curso/:codigo", d.CursosH.PreviewCurso)
 		api.GET("/cursos-publicos", d.CursosH.ListCursosPublicos)
 		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
+		api.GET("/schedules/public/:instructor_id", d.CursosH.GetPublicSchedules)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 
@@ -117,6 +118,9 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/verify-checkout-session", d.CursosH.VerifyCheckoutSession)
 			auth.GET("/licencias-compradas", d.CursosH.ListLicenciasCompradas)
 			auth.GET("/licencias/:id/invoice", d.CursosH.GetLicenciaInvoicePDF)
+			auth.GET("/licencias/:id/tickets", d.CursosH.GetLicenciaTickets)
+			auth.POST("/videocalls/join", d.CursosH.JoinVideocall)
+			auth.POST("/videocalls/leave", d.CursosH.LeaveVideocall)
 
 			// Lecciones
 			auth.GET("/capacitaciones/:id/lecciones", d.LeccionesH.GetLeccionesConProgreso)
@@ -173,6 +177,7 @@ func New(d Deps) *gin.Engine {
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
+				inst.POST("/videocalls/:id/end", d.CursosH.EndVideocall)
 
 				inst.GET("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorListPreguntasIntermedias)
 				inst.POST("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorCreatePreguntaIntermedia)
@@ -190,7 +195,10 @@ func New(d Deps) *gin.Engine {
 			adm.Use(d.AdminMW)
 			{
 				adm.GET("/users", d.UsuariosH.ListUsers)
+				adm.PATCH("/users/:id/role", d.UsuariosH.AdminUpdateRole)
 				adm.POST("/users/:id/revoke-sessions", d.UsuariosH.RevokeUserSessions)
+
+				adm.GET("/dashboard/stats", d.CursosH.GetAdminDashboardStats)
 
 				adm.GET("/capacitaciones", d.CursosH.AdminListCapacitaciones)
 				adm.POST("/asignar", d.CursosH.AdminAsignar)
@@ -200,6 +208,11 @@ func New(d Deps) *gin.Engine {
 				adm.PUT("/capacitaciones/:id", d.CursosH.AdminUpdateCapacitacion)
 				adm.DELETE("/capacitaciones/:id", d.CursosH.AdminDeleteCapacitacion)
 				adm.GET("/asignaciones", d.CursosH.AdminListAsignaciones)
+
+				adm.GET("/schedules", d.CursosH.AdminListSchedules)
+				adm.POST("/schedules", d.CursosH.AdminCreateSchedule)
+				adm.PUT("/schedules/:id", d.CursosH.AdminUpdateSchedule)
+				adm.DELETE("/schedules/:id", d.CursosH.AdminDeleteSchedule)
 
 				adm.GET("/examenes", d.ExamenesH.AdminListExamenes)
 				adm.POST("/examenes", d.ExamenesH.AdminCreateExamen)

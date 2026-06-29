@@ -55,6 +55,25 @@ func (s *UsuariosService) BecomeInstructor(ctx context.Context, userID string) (
 	return s.GetPerfil(ctx, userID)
 }
 
+func (s *UsuariosService) AdminUpdateRole(ctx context.Context, req *usuariospb.AdminUpdateRoleRequest) (*usuariospb.PerfilResponse, error) {
+	admin, err := s.repo.FindByID(ctx, req.AdminId)
+	if err != nil {
+		return nil, err
+	}
+	if admin.Role != "admin" {
+		return nil, fmt.Errorf("forbidden: only admins can update roles")
+	}
+
+	if req.NewRole != "admin" && req.NewRole != "instructor" && req.NewRole != "user" {
+		return nil, fmt.Errorf("invalid role: %s", req.NewRole)
+	}
+
+	if err := s.repo.UpdateField(ctx, req.TargetUserId, "role", req.NewRole); err != nil {
+		return nil, err
+	}
+	return s.GetPerfil(ctx, req.TargetUserId)
+}
+
 func (s *UsuariosService) ListUsers(ctx context.Context, role string) (*usuariospb.ListUsersResponse, error) {
 	users, err := s.repo.List(ctx, role)
 	if err != nil {

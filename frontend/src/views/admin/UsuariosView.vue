@@ -85,6 +85,17 @@ async function desasignar(id: string) {
   await load()
 }
 
+async function updateRole(user: any, newRole: string) {
+  if (!await toast.confirm(`¿Cambiar el rol de ${user.name} a ${newRole}?`)) return
+  try {
+    await api.patch(`/admin/users/${user.id}/role`, { role: newRole })
+    toast.success('Rol actualizado')
+    await load()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Error al cambiar rol')
+  }
+}
+
 function userName(id: string) { return users.value.find(u => u.id === id)?.name || 'Desconocido' }
 function capTitle(id: string) { return capacitaciones.value.find(c => c.id === id)?.title || '—' }
 function exTitle(id: string) { return examenes.value.find(e => e.id === id)?.title || '—' }
@@ -205,9 +216,11 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
             <strong>{{ u.name }}</strong>
             <p>{{ u.email }}</p>
           </div>
-          <span :class="['badge', u.role === 'admin' ? 'badge-blue' : u.role === 'instructor' ? 'badge-orange' : 'badge-green']">
-            {{ u.role === 'admin' ? 'Admin' : u.role === 'instructor' ? 'Instructor' : 'Estudiante' }}
-          </span>
+          <select class="au-role-select" :value="u.role" @change="e => updateRole(u, (e.target as HTMLSelectElement).value)">
+            <option value="admin">Admin</option>
+            <option value="instructor">Instructor</option>
+            <option value="user">Estudiante</option>
+          </select>
           <span class="au-user-date">{{ new Date(u.created_at).toLocaleDateString('es') }}</span>
         </div>
       </div>
@@ -272,26 +285,30 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
 .au-role-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .au-role-stat strong { font-weight: 800; }
 
-.au-users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.au-users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .au-user-card {
-  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
-  background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
-  box-shadow: var(--shadow-xs); transition: all 0.15s;
+  background: var(--surface); border-radius: var(--r); padding: 16px;
+  border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 10px;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.au-user-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.au-user-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--brand-border); }
 .au-user-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
-  font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--dark), #4b5563);
+  color: #fff; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
 }
-.au-user-info { flex: 1; min-width: 0; }
-.au-user-info strong { font-size: 0.9rem; font-weight: 700; color: var(--dark); display: block; }
-.au-user-info p { font-size: 0.8rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.au-user-date { font-size: 0.72rem; color: var(--subtle); white-space: nowrap; }
+.au-user-info strong { font-size: 0.95rem; font-weight: 700; color: var(--dark); display: block; }
+.au-user-info p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.au-user-date { font-size: 0.75rem; color: var(--subtle); align-self: flex-end; margin-top: auto; }
 
-@media (max-width: 768px) {
+.au-role-select {
+  padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); font-size: 0.8rem; font-weight: 600; color: var(--dark);
+  cursor: pointer; outline: none; width: max-content;
+}
+.au-role-select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(249,115,22,.15); }
+
+@media (max-width: 600px) {
+  .tabs-bar { overflow-x: auto; padding-bottom: 4px; }
   .au-assign-grid { grid-template-columns: 1fr; }
-  .au-users-grid { grid-template-columns: 1fr; }
-  .au-role-stats { flex-direction: column; gap: 8px; }
 }
 </style>

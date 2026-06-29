@@ -325,13 +325,18 @@ func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, co
 	return err
 }
 
-func (s *CursosService) WebhookEnroll(ctx context.Context, userID, capacitacionID, licenciaID string) error {
-	// The webhook already verified payment, so we just enroll them.
-	err := s.repo.InscribirseConLicencia(ctx, userID, capacitacionID, licenciaID)
-	if err == nil && licenciaID != "" {
-		_ = s.repo.IncrementarUsoLicencia(ctx, licenciaID)
+func (s *CursosService) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EmptyResponse, error) {
+	err := s.repo.InscribirseConLicencia(ctx, req.UserId, req.CapacitacionId, req.LicenciaId)
+	if err == nil && req.LicenciaId != "" {
+		_ = s.repo.IncrementarUsoLicencia(ctx, req.LicenciaId)
 	}
-	return err
+	if err == nil && req.ScheduleId != "" {
+		_, _ = s.repo.UpdateSchedule(ctx, &cursospb.UpdateScheduleRequest{
+			ScheduleId: req.ScheduleId,
+			Status: "booked",
+		})
+	}
+	return &cursospb.EmptyResponse{}, err
 }
 
 func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
@@ -353,6 +358,9 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		productName = curso.Title
 		amount = int64(curso.Precio * 100)
 		clientRef = "curso||" + req.UserId + "||" + curso.ID
+		if req.ScheduleId != "" {
+			clientRef += "||" + req.ScheduleId
+		}
 	} else {
 		// B2B License Purchase
 		lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
@@ -464,6 +472,9 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	productName := "Licencias Corporativas: " + curso.Title
 	amount := int64(curso.Precio * float64(req.Cantidad) * 100)
 	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
+	if req.ScheduleId != "" {
+		clientRef += "||" + req.ScheduleId
+	}
 
 	// Crear sesión
 	params := &stripe.CheckoutSessionParams{
@@ -521,12 +532,28 @@ func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursos
 	precioTotal := curso.Precio * float64(req.Cantidad)
 	
 	// Crear licencia
-	_, err = s.repo.CreateLicenciaB2BDirect(ctx, req, precioTotal)
+	lic, err := s.repo.CreateLicenciaB2BDirect(ctx, req, precioTotal)
 	if err != nil {
 		return nil, err
 	}
 	
-	// Enviar notificacion (omitido temporalmente ya que CursosService no tiene usuariosSvc)
+	// Si es videollamada, generar N tickets únicos en lugar de usar un solo código de licencia
+	if curso.Type == "videocall" {
+		_, err = s.repo.CreateVideocallTickets(ctx, req.CursoId, &lic.ID, int(req.Cantidad))
+		if err != nil {
+			return nil, err
+		}
+		if req.ScheduleId != "" {
+			_, _ = s.repo.UpdateSchedule(ctx, &cursospb.UpdateScheduleRequest{
+				ScheduleId: req.ScheduleId,
+				Status: "booked",
+			})
+		}
+	}
 	
 	return &cursospb.EmptyResponse{}, nil
+}
+
+func (s *CursosService) GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error) {
+	return s.repo.GetAdminDashboardStats(ctx)
 }

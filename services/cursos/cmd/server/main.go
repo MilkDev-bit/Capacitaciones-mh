@@ -167,6 +167,25 @@ func runMigrations(db *sqlx.DB) error {
 		       UNIQUE (user_id, capacitacion_id);
 		   END IF;
 		 END $$`,
+		`CREATE TABLE IF NOT EXISTS instructor_schedules (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			instructor_id UUID NOT NULL,
+			start_time TIMESTAMPTZ NOT NULL,
+			end_time TIMESTAMPTZ NOT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'available',
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS videocall_status VARCHAR(20) DEFAULT 'pending'`,
+		`CREATE TABLE IF NOT EXISTS videocall_tickets (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			licencia_id UUID REFERENCES curso_licencias(id) ON DELETE CASCADE,
+			codigo VARCHAR(50) UNIQUE NOT NULL,
+			in_use_by_user_id UUID,
+			is_valid BOOLEAN NOT NULL DEFAULT true,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

@@ -88,10 +88,11 @@ func (h *CursosHandler) UnirseConLicencia(ctx context.Context, req *cursospb.Uni
 }
 
 func (h *CursosHandler) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.WebhookEnroll(ctx, req.UserId, req.CapacitacionId, req.LicenciaId); err != nil {
+	resp, err := h.svc.WebhookEnroll(ctx, req)
+	if err != nil {
 		return nil, mapErr(err)
 	}
-	return &cursospb.EmptyResponse{}, nil
+	return resp, nil
 }
 
 func (h *CursosHandler) WebhookComprarLicencia(ctx context.Context, req *cursospb.WebhookComprarLicenciaRequest) (*cursospb.EmptyResponse, error) {
@@ -129,6 +130,24 @@ func (h *CursosHandler) ListLicenciasCompradas(ctx context.Context, req *cursosp
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
+
+func (h *CursosHandler) ListLicenciaTickets(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.ListLicenciaTicketsResponse, error) {
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "licencia_id es requerido")
+	}
+
+	tickets, err := h.svc.ListTicketsByLicencia(ctx, req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error al obtener tickets: %v", err)
+	}
+
+	var pbTickets []*cursospb.VideocallTicket
+	for _, t := range tickets {
+		pbTickets = append(pbTickets, t.ToProto())
+	}
+
+	return &cursospb.ListLicenciaTicketsResponse{Tickets: pbTickets}, nil
+}
 
 func (h *CursosHandler) InstructorListCapacitaciones(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListCursosResponse, error) {
 	list, err := h.svc.InstructorListCapacitaciones(ctx, req.UserId)
@@ -230,6 +249,14 @@ func (h *CursosHandler) AdminDeleteCapacitacion(ctx context.Context, req *cursos
 	return &cursospb.EmptyResponse{}, nil
 }
 
+func (h *CursosHandler) GetAdminDashboardStats(ctx context.Context, req *cursospb.EmptyRequest) (*cursospb.AdminDashboardStatsResponse, error) {
+	stats, err := h.svc.GetAdminDashboardStats(ctx)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return stats, nil
+}
+
 func (h *CursosHandler) AdminListAsignaciones(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.ListAsignacionesResponse, error) {
 	list, err := h.svc.AdminListAsignaciones(ctx)
 	if err != nil {
@@ -253,6 +280,59 @@ func (h *CursosHandler) AdminDesAsignar(ctx context.Context, req *cursospb.Asign
 }
 
 // ── error mapper ──────────────────────────────────────────────────────────────
+
+// ── Videocalls ────────────────────────────────────────────────────────────
+
+func (h *CursosHandler) JoinVideocall(ctx context.Context, req *cursospb.JoinVideocallRequest) (*cursospb.JoinVideocallResponse, error) {
+	return h.svc.JoinVideocall(ctx, req)
+}
+
+func (h *CursosHandler) LeaveVideocall(ctx context.Context, req *cursospb.LeaveVideocallRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.LeaveVideocall(ctx, req); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) EndVideocall(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.EndVideocall(ctx, req); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+// ── Horarios Instructores ────────────────────────────────────────────────
+
+func (h *CursosHandler) AdminListSchedules(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListSchedulesResponse, error) {
+	list, err := h.svc.AdminListSchedules(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return list, nil
+}
+
+func (h *CursosHandler) AdminCreateSchedule(ctx context.Context, req *cursospb.CreateScheduleRequest) (*cursospb.InstructorSchedule, error) {
+	s, err := h.svc.AdminCreateSchedule(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return s, nil
+}
+
+func (h *CursosHandler) AdminUpdateSchedule(ctx context.Context, req *cursospb.UpdateScheduleRequest) (*cursospb.InstructorSchedule, error) {
+	s, err := h.svc.AdminUpdateSchedule(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return s, nil
+}
+
+func (h *CursosHandler) AdminDeleteSchedule(ctx context.Context, req *cursospb.ScheduleIDRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.AdminDeleteSchedule(ctx, req); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
 
 func mapErr(err error) error {
 	switch {

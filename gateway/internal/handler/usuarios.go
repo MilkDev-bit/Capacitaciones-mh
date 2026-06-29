@@ -197,3 +197,25 @@ func uploadFileToR2(ctx *gin.Context, folder string) (string, error) {
 	}
 	return storage.UploadMultipart(ctx.Request.Context(), fh, folder)
 }
+
+// PATCH /api/admin/users/:id/role
+func (h *UsuariosHandler) AdminUpdateRole(ctx *gin.Context) {
+	targetID := ctx.Param("id")
+	var body struct {
+		Role string `json:"role"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.c.Usuarios.AdminUpdateRole(ctx.Request.Context(), &usuariospb.AdminUpdateRoleRequest{
+		AdminId:      ctx.GetString(middleware.CtxUserID),
+		TargetUserId: targetID,
+		NewRole:      body.Role,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}

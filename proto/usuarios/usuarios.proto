@@ -35,6 +35,9 @@ service UsuariosService {
   // Busca usuarios por nombre o correo.
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
 
+  // Cambia el rol de cualquier usuario (solo admin).
+  rpc AdminUpdateRole(AdminUpdateRoleRequest) returns (PerfilResponse);
+
   // Notificaciones
   rpc ListNotificaciones(UserIDRequest) returns (ListNotificacionesResponse);
   rpc MarkNotificacionesRead(MarkNotificacionesReadRequest) returns (EmptyResponse);
@@ -57,6 +60,12 @@ message UpdatePerfilRequest {
 message UpdateMediaURLRequest {
   string user_id = 1;
   string url     = 2;
+}
+
+message AdminUpdateRoleRequest {
+  string admin_id = 1;
+  string target_user_id = 2;
+  string new_role = 3;
 }
 
 message UserIDRequest {

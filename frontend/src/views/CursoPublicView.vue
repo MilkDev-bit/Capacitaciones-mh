@@ -22,6 +22,9 @@ const showB2BModal = ref(false)
 const b2bCantidad = ref(5)
 const buyingB2B = ref(false)
 
+const schedules = ref<any[]>([])
+const selectedScheduleId = ref('')
+
 const typeLabel: Record<string, string> = {
   video: 'Video',
   document: 'Documento',
@@ -57,6 +60,11 @@ onMounted(async () => {
   try {
     const res = await api.get(`/cursos-publicos/${id}`)
     curso.value = res.data
+
+    if (curso.value.type === 'videocall' && curso.value.instructor_id) {
+      const sRes = await api.get(`/schedules/public/${curso.value.instructor_id}`)
+      schedules.value = sRes.data || []
+    }
   } catch (e: any) {
     if (e.response?.status === 403 || e.response?.status === 404) {
       toast.error('Este curso no está disponible públicamente')
@@ -68,6 +76,12 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+function formatSchedule(s: any) {
+  const d = new Date(s.start_time)
+  const e = new Date(s.end_time)
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${e.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`
+}
 
 async function enrollFree() {
   if (!auth.isLoggedIn) {
@@ -100,6 +114,7 @@ async function buyCourse() {
       curso_id: curso.value.id,
       success_url: window.location.origin + '/usuario/capacitaciones?session_id={CHECKOUT_SESSION_ID}&tipo=curso',
       cancel_url: window.location.href,
+      schedule_id: selectedScheduleId.value || undefined
     })
     if (res.data?.url) {
       window.location.href = res.data.url
@@ -165,6 +180,7 @@ async function buyB2B() {
       cantidad: b2bCantidad.value,
       success_url: window.location.origin + '/usuario/licencias?session_id={CHECKOUT_SESSION_ID}&tipo=b2b',
       cancel_url: window.location.href,
+      schedule_id: selectedScheduleId.value || undefined
     })
     if (res.data?.url) {
       window.location.href = res.data.url
@@ -343,9 +359,19 @@ async function buyB2B() {
             <div v-if="curso.precio > 0">
               <div class="purchase-label">Precio del curso</div>
               <div class="purchase-price">{{ formattedPrice }}</div>
-              <div class="purchase-period">Pago único</div>
+              <div v-if="curso.type === 'videocall'" class="purchase-period">Videollamada</div>
+              <div v-else class="purchase-period">Pago único</div>
 
-              <button class="cpv-btn-buy w-full mt-4" @click="buyCourse" :disabled="buying">
+              <div v-if="curso.type === 'videocall'" class="schedule-selector" style="margin-top: 15px; margin-bottom: 10px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:0.9rem; color:var(--text-color);">Selecciona un horario:</label>
+                <select v-model="selectedScheduleId" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-color);">
+                  <option value="" disabled>-- Horarios disponibles --</option>
+                  <option v-for="s in schedules" :key="s.id" :value="s.id">{{ formatSchedule(s) }}</option>
+                </select>
+                <div v-if="schedules.length === 0" style="color:var(--danger); font-size:0.8rem; margin-top:4px;">No hay horarios disponibles por el momento.</div>
+              </div>
+
+              <button class="cpv-btn-buy w-full mt-4" @click="buyCourse" :disabled="buying || (curso.type === 'videocall' && !selectedScheduleId)">
                 <span v-if="buying" class="cpv-btn-spinner"></span>
                 <template v-else>
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -360,7 +386,7 @@ async function buyB2B() {
                 <span class="badge"><svg class="inline-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Garantía 30 días</span>
               </div>
 
-              <button class="cpv-btn-b2b w-full mt-3" @click="openB2BModal">
+              <button class="cpv-btn-b2b w-full mt-3" @click="openB2BModal" :disabled="curso.type === 'videocall' && !selectedScheduleId">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:8px;">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>

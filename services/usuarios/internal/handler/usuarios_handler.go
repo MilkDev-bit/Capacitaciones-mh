@@ -67,6 +67,14 @@ func (h *UsuariosHandler) BecomeInstructor(ctx context.Context, req *usuariospb.
 	return perfil, nil
 }
 
+func (h *UsuariosHandler) AdminUpdateRole(ctx context.Context, req *usuariospb.AdminUpdateRoleRequest) (*usuariospb.PerfilResponse, error) {
+	perfil, err := h.svc.AdminUpdateRole(ctx, req)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return perfil, nil
+}
+
 func (h *UsuariosHandler) GetPublicPerfil(ctx context.Context, req *usuariospb.UserIDRequest) (*usuariospb.PerfilResponse, error) {
 	perfil, err := h.svc.GetPerfil(ctx, req.UserId)
 	if err != nil {

@@ -128,10 +128,15 @@ function copyCode(code: string) {
               <button class="btn-text small" @click="resetCode(c.id)">Reset</button>
             </div>
             
-            <button class="toggle-btn" :class="{ on: c.is_public }" @click="togglePublic(c)" title="Cambiar visibilidad">
-              <div class="toggle-track"></div>
-              <div class="toggle-thumb"></div>
-            </button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button v-if="c.type === 'videocall'" class="btn btn-primary btn-sm" @click="$router.push(`/instructor/videocall/${c.id}`)">
+                Iniciar Videollamada
+              </button>
+              <button class="toggle-btn" :class="{ on: c.is_public }" @click="togglePublic(c)" title="Cambiar visibilidad">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
           </div>
         </div>
       </div>

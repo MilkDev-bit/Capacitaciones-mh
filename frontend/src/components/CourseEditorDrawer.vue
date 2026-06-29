@@ -27,6 +27,10 @@ const file = ref<File | null>(null)
 watch(() => props.show, (val) => {
   if (val && props.course) {
     form.value = { ...props.course }
+    if (form.value.scheduled_at) {
+      // slice ISO string to match datetime-local format YYYY-MM-DDThh:mm
+      form.value.scheduled_at = new Date(form.value.scheduled_at).toISOString().slice(0, 16);
+    }
     thumbnailFile.value = null
     file.value = null
     activeTab.value = 'info'
@@ -47,6 +51,9 @@ async function saveInfo() {
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
       precio: Number(form.value.precio) || 0,
+    }
+    if (form.value.scheduled_at) {
+      payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
     }
 
     if (thumbnailFile.value) {
@@ -122,6 +129,10 @@ async function saveInfo() {
           <div class="field mt-4">
             <label>Tipo de contenido</label>
             <ContentTypeSelector v-model="form.type" />
+          </div>
+          <div v-if="form.type === 'videocall'" class="field mt-4">
+            <label>Fecha y Hora Programada</label>
+            <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
           </div>
           <div class="field mt-4">
             <label>Archivo principal nuevo (opcional)</label>

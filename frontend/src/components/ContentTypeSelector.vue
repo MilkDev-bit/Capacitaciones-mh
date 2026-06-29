@@ -32,6 +32,12 @@ const types = [
     desc: "YouTube, Vimeo, URL externa",
     icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 10-7.07-7.07L11.7 4.22"/><path d="M14 11a5 5 0 01-7.07 0L4.1 8.17a5 5 0 017.07-7.07L12.3 2.22"/></svg>',
   },
+  {
+    id: "videocall",
+    name: "Videollamada",
+    desc: "Clase en vivo (Jitsi)",
+    icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+  },
 ];
 </script>
 

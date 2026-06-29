@@ -27,6 +27,7 @@ service CursosService {
   rpc ListLicencias(ListLicenciasRequest) returns (ListLicenciasResponse);
   rpc GetLicenciaPublica(LicenciaIDRequest) returns (LicenciaPublicaResponse);
   rpc ListLicenciasCompradas(UserRequest) returns (ListLicenciasResponse);
+  rpc ListLicenciaTickets(LicenciaIDRequest) returns (ListLicenciaTicketsResponse);
 
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
@@ -50,6 +51,21 @@ service CursosService {
   rpc AdminListAsignaciones(EmptyRequest) returns (ListAsignacionesResponse);
   rpc AdminAsignar(AsignarRequest) returns (EmptyResponse);
   rpc AdminDesAsignar(AsignacionIDRequest) returns (EmptyResponse);
+
+  // Videocall & Schedules
+  rpc JoinVideocall(JoinVideocallRequest) returns (JoinVideocallResponse);
+  rpc LeaveVideocall(LeaveVideocallRequest) returns (EmptyResponse);
+  rpc EndVideocall(CursoIDRequest) returns (EmptyResponse);
+
+  rpc AdminListSchedules(UserRequest) returns (ListSchedulesResponse);
+  rpc AdminCreateSchedule(CreateScheduleRequest) returns (InstructorSchedule);
+  rpc AdminUpdateSchedule(UpdateScheduleRequest) returns (InstructorSchedule);
+  rpc AdminDeleteSchedule(ScheduleIDRequest) returns (EmptyResponse);
+
+  rpc ListPublicSchedules(ListPublicSchedulesRequest) returns (ListPublicSchedulesResponse);
+
+  // Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
+  rpc GetAdminDashboardStats(EmptyRequest) returns (AdminDashboardStatsResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -72,6 +88,7 @@ message CreateCursoRequest {
   string thumbnail_url   = 9;
   string color           = 10;
   double precio          = 11;
+  string scheduled_at    = 12;
 }
 
 message UpdateCursoRequest {
@@ -87,6 +104,8 @@ message UpdateCursoRequest {
   string thumbnail_url   = 10;
   string color           = 11;
   double precio          = 12;
+  string scheduled_at    = 13;
+  string videocall_status = 14;
 }
 
 message InscribirseRequest {
@@ -123,6 +142,8 @@ message CursoResponse {
   string color           = 12;
   string created_at      = 13;
   double precio          = 14;
+  string scheduled_at    = 15;
+  string videocall_status = 16;
 }
 
 message ListCursosResponse {
@@ -216,6 +237,7 @@ message WebhookEnrollRequest {
   string user_id = 1;
   string capacitacion_id = 2;
   string licencia_id = 3;
+  string schedule_id = 4;
 }
 
 message WebhookComprarLicenciaRequest {
@@ -229,10 +251,19 @@ message CheckoutSessionRequest {
   string success_url = 3;
   string cancel_url = 4;
   string curso_id = 5; // optional, used for individual B2C course purchase
+  string schedule_id = 6; // optional, for videocall bookings
 }
 
 message CheckoutSessionResponse {
   string url = 1;
+}
+
+message AdminDashboardStatsResponse {
+  float total_ventas_brutas = 1;
+  float total_ventas_netas = 2; // Brutas descontando tarifas Stripe aproximadas (3.6% + 3 MXN)
+  int32 total_transacciones = 3;
+  int32 licencias_vendidas = 4;
+  int32 compras_individuales = 5;
 }
 
 message CreateCheckoutSessionB2BDirectRequest {
@@ -241,10 +272,78 @@ message CreateCheckoutSessionB2BDirectRequest {
   int32 cantidad = 3;
   string success_url = 4;
   string cancel_url = 5;
+  string schedule_id = 6; // optional, for videocall bookings
 }
 
 message WebhookComprarB2BDirectRequest {
   string user_id = 1;
   string curso_id = 2;
   int32 cantidad = 3;
+  string schedule_id = 4;
+}
+
+message ListLicenciaTicketsResponse {
+  repeated VideocallTicket tickets = 1;
+}
+
+message InstructorSchedule {
+  string id = 1;
+  string instructor_id = 2;
+  string start_time = 3;
+  string end_time = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message ScheduleIDRequest {
+  string schedule_id = 1;
+}
+
+message ListSchedulesResponse {
+  repeated InstructorSchedule schedules = 1;
+}
+
+message CreateScheduleRequest {
+  string instructor_id = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+message UpdateScheduleRequest {
+  string schedule_id = 1;
+  string start_time = 2;
+  string end_time = 3;
+  string status = 4;
+}
+
+message JoinVideocallRequest {
+  string user_id = 1;
+  string codigo = 2;
+}
+
+message JoinVideocallResponse {
+  string room_name = 1;
+  string token = 2;
+}
+
+message LeaveVideocallRequest {
+  string user_id = 1;
+  string codigo = 2;
+}
+
+message VideocallTicket {
+  string id = 1;
+  string capacitacion_id = 2;
+  string licencia_id = 3;
+  string codigo = 4;
+  string in_use_by_user = 5;
+  bool is_valid = 6;
+}
+
+message ListPublicSchedulesRequest {
+  string instructor_id = 1;
+}
+
+message ListPublicSchedulesResponse {
+  repeated InstructorSchedule schedules = 1;
 }

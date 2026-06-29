@@ -35,6 +35,7 @@ const (
 	CursosService_ListLicencias_FullMethodName                  = "/cursos.CursosService/ListLicencias"
 	CursosService_GetLicenciaPublica_FullMethodName             = "/cursos.CursosService/GetLicenciaPublica"
 	CursosService_ListLicenciasCompradas_FullMethodName         = "/cursos.CursosService/ListLicenciasCompradas"
+	CursosService_ListLicenciaTickets_FullMethodName            = "/cursos.CursosService/ListLicenciaTickets"
 	CursosService_InstructorListCapacitaciones_FullMethodName   = "/cursos.CursosService/InstructorListCapacitaciones"
 	CursosService_InstructorCreateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorCreateCapacitacion"
 	CursosService_InstructorUpdateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorUpdateCapacitacion"
@@ -53,6 +54,15 @@ const (
 	CursosService_AdminListAsignaciones_FullMethodName          = "/cursos.CursosService/AdminListAsignaciones"
 	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
 	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
+	CursosService_JoinVideocall_FullMethodName                  = "/cursos.CursosService/JoinVideocall"
+	CursosService_LeaveVideocall_FullMethodName                 = "/cursos.CursosService/LeaveVideocall"
+	CursosService_EndVideocall_FullMethodName                   = "/cursos.CursosService/EndVideocall"
+	CursosService_AdminListSchedules_FullMethodName             = "/cursos.CursosService/AdminListSchedules"
+	CursosService_AdminCreateSchedule_FullMethodName            = "/cursos.CursosService/AdminCreateSchedule"
+	CursosService_AdminUpdateSchedule_FullMethodName            = "/cursos.CursosService/AdminUpdateSchedule"
+	CursosService_AdminDeleteSchedule_FullMethodName            = "/cursos.CursosService/AdminDeleteSchedule"
+	CursosService_ListPublicSchedules_FullMethodName            = "/cursos.CursosService/ListPublicSchedules"
+	CursosService_GetAdminDashboardStats_FullMethodName         = "/cursos.CursosService/GetAdminDashboardStats"
 )
 
 // CursosServiceClient is the client API for CursosService service.
@@ -81,6 +91,7 @@ type CursosServiceClient interface {
 	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
+	ListLicenciaTickets(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListLicenciaTicketsResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -101,6 +112,17 @@ type CursosServiceClient interface {
 	AdminListAsignaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListAsignacionesResponse, error)
 	AdminAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	AdminDesAsignar(ctx context.Context, in *AsignacionIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Videocall & Schedules
+	JoinVideocall(ctx context.Context, in *JoinVideocallRequest, opts ...grpc.CallOption) (*JoinVideocallResponse, error)
+	LeaveVideocall(ctx context.Context, in *LeaveVideocallRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	EndVideocall(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error)
+	AdminCreateSchedule(ctx context.Context, in *CreateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
+	AdminUpdateSchedule(ctx context.Context, in *UpdateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
+	AdminDeleteSchedule(ctx context.Context, in *ScheduleIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ListPublicSchedules(ctx context.Context, in *ListPublicSchedulesRequest, opts ...grpc.CallOption) (*ListPublicSchedulesResponse, error)
+	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
+	GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error)
 }
 
 type cursosServiceClient struct {
@@ -265,6 +287,16 @@ func (c *cursosServiceClient) ListLicenciasCompradas(ctx context.Context, in *Us
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListLicenciasResponse)
 	err := c.cc.Invoke(ctx, CursosService_ListLicenciasCompradas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListLicenciaTickets(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListLicenciaTicketsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLicenciaTicketsResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListLicenciaTickets_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -451,6 +483,96 @@ func (c *cursosServiceClient) AdminDesAsignar(ctx context.Context, in *Asignacio
 	return out, nil
 }
 
+func (c *cursosServiceClient) JoinVideocall(ctx context.Context, in *JoinVideocallRequest, opts ...grpc.CallOption) (*JoinVideocallResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinVideocallResponse)
+	err := c.cc.Invoke(ctx, CursosService_JoinVideocall_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) LeaveVideocall(ctx context.Context, in *LeaveVideocallRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_LeaveVideocall_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) EndVideocall(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_EndVideocall_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSchedulesResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminListSchedules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminCreateSchedule(ctx context.Context, in *CreateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InstructorSchedule)
+	err := c.cc.Invoke(ctx, CursosService_AdminCreateSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminUpdateSchedule(ctx context.Context, in *UpdateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InstructorSchedule)
+	err := c.cc.Invoke(ctx, CursosService_AdminUpdateSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminDeleteSchedule(ctx context.Context, in *ScheduleIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminDeleteSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListPublicSchedules(ctx context.Context, in *ListPublicSchedulesRequest, opts ...grpc.CallOption) (*ListPublicSchedulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPublicSchedulesResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListPublicSchedules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminDashboardStatsResponse)
+	err := c.cc.Invoke(ctx, CursosService_GetAdminDashboardStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CursosServiceServer is the server API for CursosService service.
 // All implementations must embed UnimplementedCursosServiceServer
 // for forward compatibility.
@@ -477,6 +599,7 @@ type CursosServiceServer interface {
 	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(context.Context, *LicenciaIDRequest) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error)
+	ListLicenciaTickets(context.Context, *LicenciaIDRequest) (*ListLicenciaTicketsResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
@@ -497,6 +620,17 @@ type CursosServiceServer interface {
 	AdminListAsignaciones(context.Context, *EmptyRequest) (*ListAsignacionesResponse, error)
 	AdminAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error)
 	AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error)
+	// Videocall & Schedules
+	JoinVideocall(context.Context, *JoinVideocallRequest) (*JoinVideocallResponse, error)
+	LeaveVideocall(context.Context, *LeaveVideocallRequest) (*EmptyResponse, error)
+	EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error)
+	AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error)
+	AdminCreateSchedule(context.Context, *CreateScheduleRequest) (*InstructorSchedule, error)
+	AdminUpdateSchedule(context.Context, *UpdateScheduleRequest) (*InstructorSchedule, error)
+	AdminDeleteSchedule(context.Context, *ScheduleIDRequest) (*EmptyResponse, error)
+	ListPublicSchedules(context.Context, *ListPublicSchedulesRequest) (*ListPublicSchedulesResponse, error)
+	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
+	GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error)
 	mustEmbedUnimplementedCursosServiceServer()
 }
 
@@ -555,6 +689,9 @@ func (UnimplementedCursosServiceServer) GetLicenciaPublica(context.Context, *Lic
 func (UnimplementedCursosServiceServer) ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLicenciasCompradas not implemented")
 }
+func (UnimplementedCursosServiceServer) ListLicenciaTickets(context.Context, *LicenciaIDRequest) (*ListLicenciaTicketsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLicenciaTickets not implemented")
+}
 func (UnimplementedCursosServiceServer) InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListCapacitaciones not implemented")
 }
@@ -608,6 +745,33 @@ func (UnimplementedCursosServiceServer) AdminAsignar(context.Context, *AsignarRe
 }
 func (UnimplementedCursosServiceServer) AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminDesAsignar not implemented")
+}
+func (UnimplementedCursosServiceServer) JoinVideocall(context.Context, *JoinVideocallRequest) (*JoinVideocallResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method JoinVideocall not implemented")
+}
+func (UnimplementedCursosServiceServer) LeaveVideocall(context.Context, *LeaveVideocallRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LeaveVideocall not implemented")
+}
+func (UnimplementedCursosServiceServer) EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EndVideocall not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListSchedules not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminCreateSchedule(context.Context, *CreateScheduleRequest) (*InstructorSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminCreateSchedule not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminUpdateSchedule(context.Context, *UpdateScheduleRequest) (*InstructorSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminUpdateSchedule not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminDeleteSchedule(context.Context, *ScheduleIDRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminDeleteSchedule not implemented")
+}
+func (UnimplementedCursosServiceServer) ListPublicSchedules(context.Context, *ListPublicSchedulesRequest) (*ListPublicSchedulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPublicSchedules not implemented")
+}
+func (UnimplementedCursosServiceServer) GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAdminDashboardStats not implemented")
 }
 func (UnimplementedCursosServiceServer) mustEmbedUnimplementedCursosServiceServer() {}
 func (UnimplementedCursosServiceServer) testEmbeddedByValue()                       {}
@@ -914,6 +1078,24 @@ func _CursosService_ListLicenciasCompradas_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).ListLicenciasCompradas(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListLicenciaTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LicenciaIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListLicenciaTickets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListLicenciaTickets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListLicenciaTickets(ctx, req.(*LicenciaIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1242,6 +1424,168 @@ func _CursosService_AdminDesAsignar_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_JoinVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinVideocallRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).JoinVideocall(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_JoinVideocall_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).JoinVideocall(ctx, req.(*JoinVideocallRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_LeaveVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LeaveVideocallRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).LeaveVideocall(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_LeaveVideocall_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).LeaveVideocall(ctx, req.(*LeaveVideocallRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_EndVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).EndVideocall(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_EndVideocall_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).EndVideocall(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminListSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminListSchedules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminListSchedules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminListSchedules(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminCreateSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminCreateSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminCreateSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminCreateSchedule(ctx, req.(*CreateScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminUpdateSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminUpdateSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminUpdateSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminUpdateSchedule(ctx, req.(*UpdateScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminDeleteSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScheduleIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminDeleteSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminDeleteSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminDeleteSchedule(ctx, req.(*ScheduleIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListPublicSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPublicSchedulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListPublicSchedules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListPublicSchedules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListPublicSchedules(ctx, req.(*ListPublicSchedulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_GetAdminDashboardStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetAdminDashboardStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetAdminDashboardStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetAdminDashboardStats(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CursosService_ServiceDesc is the grpc.ServiceDesc for CursosService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1314,6 +1658,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CursosService_ListLicenciasCompradas_Handler,
 		},
 		{
+			MethodName: "ListLicenciaTickets",
+			Handler:    _CursosService_ListLicenciaTickets_Handler,
+		},
+		{
 			MethodName: "InstructorListCapacitaciones",
 			Handler:    _CursosService_InstructorListCapacitaciones_Handler,
 		},
@@ -1384,6 +1732,42 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminDesAsignar",
 			Handler:    _CursosService_AdminDesAsignar_Handler,
+		},
+		{
+			MethodName: "JoinVideocall",
+			Handler:    _CursosService_JoinVideocall_Handler,
+		},
+		{
+			MethodName: "LeaveVideocall",
+			Handler:    _CursosService_LeaveVideocall_Handler,
+		},
+		{
+			MethodName: "EndVideocall",
+			Handler:    _CursosService_EndVideocall_Handler,
+		},
+		{
+			MethodName: "AdminListSchedules",
+			Handler:    _CursosService_AdminListSchedules_Handler,
+		},
+		{
+			MethodName: "AdminCreateSchedule",
+			Handler:    _CursosService_AdminCreateSchedule_Handler,
+		},
+		{
+			MethodName: "AdminUpdateSchedule",
+			Handler:    _CursosService_AdminUpdateSchedule_Handler,
+		},
+		{
+			MethodName: "AdminDeleteSchedule",
+			Handler:    _CursosService_AdminDeleteSchedule_Handler,
+		},
+		{
+			MethodName: "ListPublicSchedules",
+			Handler:    _CursosService_ListPublicSchedules_Handler,
+		},
+		{
+			MethodName: "GetAdminDashboardStats",
+			Handler:    _CursosService_GetAdminDashboardStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

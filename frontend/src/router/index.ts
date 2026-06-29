@@ -21,6 +21,7 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/admin/CapacitacionesView.vue') },
         { path: 'examenes', component: () => import('../views/admin/ExamenesView.vue') },
         { path: 'usuarios', component: () => import('../views/admin/UsuariosView.vue') },
+        { path: 'schedules', component: () => import('../views/admin/SchedulesView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
@@ -37,6 +38,7 @@ const router = createRouter({
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
         { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
+        { path: 'videocall/:id', component: () => import('../views/instructor/InstructorVideocallView.vue') },
       ],
     },
     {
@@ -55,6 +57,7 @@ const router = createRouter({
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
         { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
+        { path: 'videocall/:id', component: () => import('../views/user/VideocallView.vue') },
       ],
     },
   ],

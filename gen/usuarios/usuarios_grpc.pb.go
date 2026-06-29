@@ -28,6 +28,7 @@ const (
 	UsuariosService_ListUsers_FullMethodName              = "/usuarios.UsuariosService/ListUsers"
 	UsuariosService_DeleteUser_FullMethodName             = "/usuarios.UsuariosService/DeleteUser"
 	UsuariosService_SearchUsers_FullMethodName            = "/usuarios.UsuariosService/SearchUsers"
+	UsuariosService_AdminUpdateRole_FullMethodName        = "/usuarios.UsuariosService/AdminUpdateRole"
 	UsuariosService_ListNotificaciones_FullMethodName     = "/usuarios.UsuariosService/ListNotificaciones"
 	UsuariosService_MarkNotificacionesRead_FullMethodName = "/usuarios.UsuariosService/MarkNotificacionesRead"
 )
@@ -58,6 +59,8 @@ type UsuariosServiceClient interface {
 	DeleteUser(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Busca usuarios por nombre o correo.
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
+	// Cambia el rol de cualquier usuario (solo admin).
+	AdminUpdateRole(ctx context.Context, in *AdminUpdateRoleRequest, opts ...grpc.CallOption) (*PerfilResponse, error)
 	// Notificaciones
 	ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(ctx context.Context, in *MarkNotificacionesReadRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -161,6 +164,16 @@ func (c *usuariosServiceClient) SearchUsers(ctx context.Context, in *SearchUsers
 	return out, nil
 }
 
+func (c *usuariosServiceClient) AdminUpdateRole(ctx context.Context, in *AdminUpdateRoleRequest, opts ...grpc.CallOption) (*PerfilResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PerfilResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_AdminUpdateRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *usuariosServiceClient) ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListNotificacionesResponse)
@@ -207,6 +220,8 @@ type UsuariosServiceServer interface {
 	DeleteUser(context.Context, *UserIDRequest) (*EmptyResponse, error)
 	// Busca usuarios por nombre o correo.
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
+	// Cambia el rol de cualquier usuario (solo admin).
+	AdminUpdateRole(context.Context, *AdminUpdateRoleRequest) (*PerfilResponse, error)
 	// Notificaciones
 	ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error)
@@ -246,6 +261,9 @@ func (UnimplementedUsuariosServiceServer) DeleteUser(context.Context, *UserIDReq
 }
 func (UnimplementedUsuariosServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
+}
+func (UnimplementedUsuariosServiceServer) AdminUpdateRole(context.Context, *AdminUpdateRoleRequest) (*PerfilResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminUpdateRole not implemented")
 }
 func (UnimplementedUsuariosServiceServer) ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListNotificaciones not implemented")
@@ -436,6 +454,24 @@ func _UsuariosService_SearchUsers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsuariosService_AdminUpdateRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminUpdateRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).AdminUpdateRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_AdminUpdateRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).AdminUpdateRole(ctx, req.(*AdminUpdateRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UsuariosService_ListNotificaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserIDRequest)
 	if err := dec(in); err != nil {
@@ -514,6 +550,10 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchUsers",
 			Handler:    _UsuariosService_SearchUsers_Handler,
+		},
+		{
+			MethodName: "AdminUpdateRole",
+			Handler:    _UsuariosService_AdminUpdateRole_Handler,
 		},
 		{
 			MethodName: "ListNotificaciones",

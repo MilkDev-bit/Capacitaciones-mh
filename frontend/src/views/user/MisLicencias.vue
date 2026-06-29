@@ -48,14 +48,27 @@ onMounted(async () => {
   await fetchLicencias()
 })
 const selectedLic = ref<any>(null)
+const selectedTickets = ref<any[]>([])
+const loadingTickets = ref(false)
 const invoiceLoading = ref(false)
 
-function openDetails(lic: any) {
+async function openDetails(lic: any) {
   selectedLic.value = lic
+  selectedTickets.value = []
+  loadingTickets.value = true
+  try {
+    const res = await api.get(`/licencias/${lic.id}/tickets`)
+    selectedTickets.value = res.data || []
+  } catch(e) {
+    console.error('Error fetching tickets', e)
+  } finally {
+    loadingTickets.value = false
+  }
 }
 
 function closeModal() {
   selectedLic.value = null
+  selectedTickets.value = []
 }
 
 async function downloadInvoice(lic: any) {
@@ -158,10 +171,31 @@ function copyCode(codigo: string) {
               <div class="detail-row"><span class="detail-label">Código de acceso</span><span class="detail-value mono">{{ selectedLic.codigo_acceso }}</span></div>
               <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{ selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima : 'Ilimitados' }}</span></div>
               <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{ selectedLic.usadas || 0 }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares disponibles</span><span class="detail-value highlight">{{ selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima - (selectedLic.usadas || 0) : 'Ilimitados' }}</span></div>
-              <div class="detail-row"><span class="detail-label">Precio total</span><span class="detail-value">${{ selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
-              <div class="detail-row"><span class="detail-label">Fecha de compra</span><span class="detail-value">{{ new Date(selectedLic.created_at).toLocaleString() }}</span></div>
-              <div class="detail-row"><span class="detail-label">ID de licencia</span><span class="detail-value mono small">{{ selectedLic.id }}</span></div>
+              <div class="detail-row"><span class="detail-label">Fecha de Compra</span><span class="detail-value">{{ new Date(selectedLic.created_at).toLocaleDateString() }}</span></div>
+              <div class="detail-row"><span class="detail-label">Precio Pagado</span><span class="detail-value">${{ selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
+              <div class="detail-row"><span class="detail-label">Factura</span><span class="detail-value">
+                <button class="btn btn-secondary btn-sm" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+                  {{ invoiceLoading ? 'Descargando...' : 'Descargar Factura PDF' }}
+                </button>
+              </span></div>
+
+              <div v-if="selectedTickets && selectedTickets.length > 0" class="tickets-section">
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-color);">Códigos Únicos para Videollamada</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Envía un código distinto a cada participante de la videollamada.</p>
+                <div v-if="loadingTickets" class="loading" style="font-size: 0.9rem;">Cargando códigos...</div>
+                <div v-else class="tickets-list">
+                  <div v-for="(t, i) in selectedTickets" :key="t.id" class="ticket-item">
+                    <span class="ticket-num">#{{ i + 1 }}</span>
+                    <span class="ticket-code mono">{{ t.codigo }}</span>
+                    <span :class="['ticket-status', t.in_use_by_user ? 'status-used' : 'status-free']">
+                      {{ t.in_use_by_user ? 'En uso' : 'Disponible' }}
+                    </span>
+                    <button class="btn-copy-small" @click="copyCode(t.codigo)" title="Copiar código">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="modal-footer">
               <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 18px; font-size: 0.9rem; font-weight: 600; cursor: pointer; flex: 1; opacity: 1 !important; visibility: visible !important;" class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
@@ -489,4 +523,81 @@ function copyCode(codigo: string) {
 
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+
+.tickets-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  border-radius: 12px;
+  margin-top: 1.5rem;
+}
+
+.tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.ticket-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.ticket-num {
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 30px;
+}
+
+.ticket-code {
+  font-family: monospace;
+  font-weight: 600;
+  flex: 1;
+}
+
+.ticket-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-free {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status-used {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.btn-copy-small {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-copy-small:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary-color);
+}
 </style>

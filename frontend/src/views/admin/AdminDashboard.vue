@@ -12,6 +12,7 @@ const users = ref<any[]>([])
 const capacitaciones = ref<any[]>([])
 const examenes = ref<any[]>([])
 const asignaciones = ref<any[]>([])
+const finStats = ref<any>(null)
 const loading = ref(true)
 
 const firstName = computed(() => auth.user?.name?.split(' ')[0] ?? 'Admin')
@@ -37,16 +38,18 @@ const recentAssignments = computed(() =>
 async function loadData() {
   loading.value = true
   try {
-    const [u, c, e, a] = await Promise.all([
+    const [u, c, e, a, f] = await Promise.all([
       api.get('/admin/users', { params: { limit: 500 } }),
       api.get('/admin/capacitaciones', { params: { limit: 500 } }),
       api.get('/admin/examenes', { params: { limit: 500 } }),
       api.get('/admin/asignaciones'),
+      api.get('/admin/dashboard/stats').catch(() => ({ data: null }))
     ])
     users.value = u.data || []
     capacitaciones.value = c.data || []
     examenes.value = e.data || []
     asignaciones.value = a.data || []
+    finStats.value = f.data || null
   } finally {
     loading.value = false
   }
@@ -57,8 +60,8 @@ onMounted(loadData)
 const statCards = computed(() => [
   { label: 'Usuarios', value: stats.value.users, icon: 'users', accent: '#7c3aed', bg: '#ede9fe', sub: `${stats.value.instructors} instructores · ${stats.value.students} estudiantes` },
   { label: 'Capacitaciones', value: stats.value.courses, icon: 'book', accent: '#ea580c', bg: '#fff7ed', sub: 'Cursos creados' },
-  { label: 'Exámenes', value: stats.value.exams, icon: 'clipboard', accent: '#0284c7', bg: '#e0f2fe', sub: 'Evaluaciones activas' },
-  { label: 'Asignaciones', value: stats.value.assignments, icon: 'link', accent: '#059669', bg: '#d1fae5', sub: 'Contenido asignado' },
+  { label: 'Ventas Netas', value: `$${finStats.value?.total_ventas_netas?.toFixed(2) || '0.00'}`, icon: 'money', accent: '#059669', bg: '#d1fae5', sub: `${finStats.value?.total_transacciones || 0} transacciones` },
+  { label: 'Licencias B2B', value: finStats.value?.licencias_vendidas || 0, icon: 'briefcase', accent: '#2563eb', bg: '#dbeafe', sub: 'Ventas empresariales' },
 ])
 </script>
 
@@ -80,8 +83,8 @@ const statCards = computed(() => [
           <div class="ad-stat-icon" :style="{ background: stat.bg, color: stat.accent }">
             <svg v-if="stat.icon === 'users'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <svg v-else-if="stat.icon === 'book'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            <svg v-else-if="stat.icon === 'clipboard'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            <svg v-else-if="stat.icon === 'link'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            <svg v-else-if="stat.icon === 'money'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg v-else-if="stat.icon === 'briefcase'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           </div>
           <div class="ad-stat-info">
             <strong>{{ stat.value }}</strong>

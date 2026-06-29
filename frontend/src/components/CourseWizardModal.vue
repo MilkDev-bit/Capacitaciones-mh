@@ -22,7 +22,8 @@ const form = ref({
   content: '',
   is_public: false,
   welcome_message: '',
-  color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
+  color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
+  scheduled_at: ''
 })
 
 const file = ref<File | null>(null)
@@ -56,6 +57,9 @@ async function guardar() {
       is_public: form.value.is_public,
       welcome_message: form.value.welcome_message,
       color: form.value.color,
+    }
+    if (form.value.scheduled_at) {
+      payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
     }
 
     if (file.value && hasMedia) {
@@ -138,6 +142,10 @@ async function guardar() {
           <div v-if="form.type === 'text'" class="field mt-4">
             <label>Contenido de texto</label>
             <textarea class="field-input" v-model="form.content" rows="6"></textarea>
+          </div>
+          <div v-if="form.type === 'videocall'" class="field mt-4">
+            <label>Fecha y Hora Programada</label>
+            <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
           </div>
         </div>
 
