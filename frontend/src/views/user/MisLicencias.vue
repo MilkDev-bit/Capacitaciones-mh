@@ -156,18 +156,18 @@ function copyCode(codigo: string) {
             <div class="modal-body">
               <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">{{ selectedLic.nombre }}</span></div>
               <div class="detail-row"><span class="detail-label">Código de acceso</span><span class="detail-value mono">{{ selectedLic.codigo_acceso }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{ selectedLic.capacidad_maxima }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{ selectedLic.usadas }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares disponibles</span><span class="detail-value highlight">{{ selectedLic.capacidad_maxima - selectedLic.usadas }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{ selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima : 'Ilimitados' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{ selectedLic.usadas || 0 }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares disponibles</span><span class="detail-value highlight">{{ selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima - (selectedLic.usadas || 0) : 'Ilimitados' }}</span></div>
               <div class="detail-row"><span class="detail-label">Precio total</span><span class="detail-value">${{ selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
               <div class="detail-row"><span class="detail-label">Fecha de compra</span><span class="detail-value">{{ new Date(selectedLic.created_at).toLocaleString() }}</span></div>
               <div class="detail-row"><span class="detail-label">ID de licencia</span><span class="detail-value mono small">{{ selectedLic.id }}</span></div>
             </div>
             <div class="modal-footer">
-              <button class="btn-invoice" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+              <button class="btn-download-pdf" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
                 <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span v-if="invoiceLoading">Buscando factura...</span>
-                <span v-else>Descargar Factura (PDF)</span>
+                <span v-if="invoiceLoading">Buscando documento...</span>
+                <span v-else>Descargar Recibo (PDF)</span>
               </button>
               <button class="btn-secondary" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
             </div>
@@ -433,7 +433,7 @@ function copyCode(codigo: string) {
   flex-wrap: wrap;
 }
 
-.btn-invoice {
+.btn-download-pdf {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -449,8 +449,8 @@ function copyCode(codigo: string) {
   flex: 1;
   justify-content: center;
 }
-.btn-invoice:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.btn-invoice:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-download-pdf:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.btn-download-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-secondary {
   background: var(--border);
