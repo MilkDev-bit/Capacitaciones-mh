@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
+import iziToast from 'izitoast'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,7 +16,7 @@ let jitsiApi: any = null
 
 onMounted(() => {
   if (!cursoId) {
-    alert('Falta el curso.')
+    iziToast.warning({ title: 'Aviso', message: 'Falta el curso.' })
     router.push('/instructor/dashboard')
     return
   }
@@ -66,7 +67,7 @@ onMounted(() => {
 async function terminarLlamada() {
   try {
     await api.post(`/videocalls/${cursoId}/end`)
-    alert('Llamada finalizada. Los códigos ya no son válidos.')
+    iziToast.success({ title: 'Éxito', message: 'Llamada finalizada. Los códigos ya no son válidos.' })
     if (jitsiApi) {
       jitsiApi.dispose()
       jitsiApi = null

@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
+import iziToast from 'izitoast'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,7 +17,7 @@ let jitsiApi: any = null
 
 onMounted(() => {
   if (!roomName || !codigo) {
-    alert('Falta la sala o el código de acceso.')
+    iziToast.warning({ title: 'Aviso', message: 'Falta la sala o el código de acceso.' })
     router.push('/usuario/dashboard')
     return
   }

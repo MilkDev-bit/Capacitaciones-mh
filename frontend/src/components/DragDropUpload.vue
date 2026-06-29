@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onBeforeUnmount } from 'vue'
+import iziToast from 'izitoast'
 
 const props = defineProps<{
   accept?: string
@@ -70,7 +71,7 @@ function handleDrop(e: DragEvent) {
       })
       
       if (!isValid) {
-        alert('Tipo de archivo no permitido.')
+        iziToast.error({ title: 'Error', message: 'Tipo de archivo no permitido.' })
         return
       }
     }

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../../api'
+import iziToast from 'izitoast'
 
 const route = useRoute()
 const examen = ref<any>(null)
@@ -28,7 +29,7 @@ async function enviar() {
   const preguntas = examen.value?.preguntas || []
   const sinResponder = preguntas.filter((p: any) => !respuestas.value[p.id])
   if (sinResponder.length > 0) {
-    alert(`Tienes ${sinResponder.length} pregunta(s) sin responder.`)
+    iziToast.warning({ title: 'Aviso', message: `Tienes ${sinResponder.length} pregunta(s) sin responder.` })
     return
   }
   loading.value = true

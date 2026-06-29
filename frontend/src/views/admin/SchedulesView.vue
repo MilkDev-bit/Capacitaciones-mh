@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '../../api'
+import iziToast from 'izitoast'
 
 const schedules = ref<any[]>([])
 const loading = ref(true)
@@ -96,7 +97,7 @@ async function save() {
     showModal.value = false
     loadData()
   } catch (e) {
-    alert('Error al guardar horario')
+    iziToast.error({ title: 'Error', message: 'Error al guardar horario' })
   }
 }
 
@@ -106,7 +107,7 @@ async function remove(id: string) {
     await api.delete(`/admin/schedules/${id}`)
     loadData()
   } catch (e) {
-    alert('Error al eliminar')
+    iziToast.error({ title: 'Error', message: 'Error al eliminar' })
   }
 }
 
