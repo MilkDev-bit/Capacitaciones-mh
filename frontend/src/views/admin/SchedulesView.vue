@@ -24,7 +24,7 @@ async function loadData() {
       api.get('/admin/schedules'),
       api.get('/admin/users') // To pick an instructor
     ])
-    schedules.value = schedRes.data.schedules || []
+    schedules.value = schedRes.data || []
     users.value = (usersRes.data || []).filter((u: any) => u.role === 'instructor' || u.role === 'admin')
   } catch (e) {
     console.error(e)

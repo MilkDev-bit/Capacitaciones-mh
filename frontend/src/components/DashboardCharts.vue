@@ -24,8 +24,6 @@ import {
   CategoryScale,
   LinearScale,
   ArcElement,
-  LineElement,
-  PointElement,
   BarElement
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
@@ -36,7 +34,7 @@ const props = defineProps<{
   asignaciones: any[]
 }>()
 import { useTheme } from '@/composables/useTheme'
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 const { isDark } = useTheme()
 
 const textColor = computed(() => isDark.value ? '#aeaeb2' : '#86868b')
