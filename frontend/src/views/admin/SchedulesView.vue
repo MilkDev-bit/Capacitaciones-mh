@@ -25,7 +25,7 @@ async function loadData() {
       api.get('/admin/users') // To pick an instructor
     ])
     schedules.value = schedRes.data.schedules || []
-    users.value = (usersRes.data || []).filter((u: any) => u.role === 'instructor')
+    users.value = (usersRes.data || []).filter((u: any) => u.role === 'instructor' || u.role === 'admin')
   } catch (e) {
     console.error(e)
   } finally {
@@ -159,7 +159,7 @@ async function remove(id: string) {
           <label>Instructor</label>
           <select v-model="formData.instructor_id" class="input">
             <option value="" disabled>Seleccione un instructor</option>
-            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
+            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
           </select>
         </div>
 
