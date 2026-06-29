@@ -67,6 +67,11 @@ async function terminarLlamada() {
   try {
     await api.post(`/videocalls/${cursoId}/end`)
     alert('Llamada finalizada. Los códigos ya no son válidos.')
+    if (jitsiApi) {
+      jitsiApi.dispose()
+      jitsiApi = null
+    }
+    router.push('/instructor/cursos')
   } catch (e) {
     console.error('Error al finalizar la llamada', e)
   }
@@ -77,10 +82,12 @@ onBeforeUnmount(() => {
 })
 
 const handleReadyToClose = () => {
+  if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
   router.push('/instructor/cursos')
 }
 
 const handleVideoConferenceLeft = () => {
+  if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
   router.push('/instructor/cursos')
 }
 
@@ -101,10 +108,14 @@ const handleVideoConferenceLeft = () => {
 
 <style scoped>
 .videocall-container {
+  position: fixed;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
+  z-index: 9999;
   background: #111;
   color: #fff;
 }
