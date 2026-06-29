@@ -47,8 +47,35 @@ onMounted(async () => {
   }
   await fetchLicencias()
 })
+const selectedLic = ref<any>(null)
+const invoiceLoading = ref(false)
 
-function copyCode(codigo: string) {
+function openDetails(lic: any) {
+  selectedLic.value = lic
+}
+
+function closeModal() {
+  selectedLic.value = null
+}
+
+async function downloadInvoice(lic: any) {
+  invoiceLoading.value = true
+  try {
+    const res = await api.get(`/licencias/${lic.id}/invoice`)
+    const pdfUrl = res.data.invoice_pdf || res.data.invoice_url
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank')
+    } else {
+      toast.error('No se encontró la factura para esta licencia')
+    }
+  } catch {
+    toast.error('Factura no disponible. Solo aparece si la compra fue realizada con la facturación activada en Stripe.')
+  } finally {
+    invoiceLoading.value = false
+  }
+}
+
+
   navigator.clipboard.writeText(codigo)
   toast.success('Código copiado al portapapeles')
 }
@@ -64,7 +91,9 @@ function copyCode(codigo: string) {
       <p class="subtitle">Gestiona los accesos que has adquirido para tu equipo.</p>
     </div>
 
-    <div v-if="loading" class="loading">Cargando tus licencias...</div>
+    <div v-if="loading || verifying" class="loading">
+      {{ verifying ? 'Procesando tu compra...' : 'Cargando tus licencias...' }}
+    </div>
     
     <div v-else-if="licencias.length === 0" class="empty-state">
       <div class="empty-icon glass-icon-wrapper-large">
@@ -85,12 +114,16 @@ function copyCode(codigo: string) {
         <div class="lic-body">
           <div class="stats-row">
             <div class="stat">
-              <span class="label">Asientos Usados</span>
+              <span class="label">Lugares usados</span>
               <span class="value">{{ lic.usadas }} / {{ lic.capacidad_maxima > 0 ? lic.capacidad_maxima : '∞' }}</span>
             </div>
             <div class="stat">
               <span class="label">Fecha de Compra</span>
               <span class="value">{{ new Date(lic.created_at).toLocaleDateString() }}</span>
+            </div>
+            <div class="stat">
+              <span class="label">Precio total</span>
+              <span class="value">${{ lic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span>
             </div>
           </div>
 
@@ -101,9 +134,48 @@ function copyCode(codigo: string) {
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </div>
           </div>
+
+          <button class="btn-details" @click="openDetails(lic)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Ver Detalles y Factura
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Modal de detalles -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="selectedLic" class="modal-overlay" @click.self="closeModal">
+          <div class="modal-card">
+            <div class="modal-header">
+              <h3>Detalles de Licencia</h3>
+              <button class="modal-close" @click="closeModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">{{ selectedLic.nombre }}</span></div>
+              <div class="detail-row"><span class="detail-label">Código de acceso</span><span class="detail-value mono">{{ selectedLic.codigo_acceso }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{ selectedLic.capacidad_maxima }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{ selectedLic.usadas }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares disponibles</span><span class="detail-value highlight">{{ selectedLic.capacidad_maxima - selectedLic.usadas }}</span></div>
+              <div class="detail-row"><span class="detail-label">Precio total</span><span class="detail-value">${{ selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
+              <div class="detail-row"><span class="detail-label">Fecha de compra</span><span class="detail-value">{{ new Date(selectedLic.created_at).toLocaleString() }}</span></div>
+              <div class="detail-row"><span class="detail-label">ID de licencia</span><span class="detail-value mono small">{{ selectedLic.id }}</span></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-invoice" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+                <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span v-if="invoiceLoading">Buscando factura...</span>
+                <span v-else>Descargar Factura (PDF)</span>
+              </button>
+              <button class="btn-secondary" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -262,4 +334,160 @@ function copyCode(codigo: string) {
   font-size: 1.2rem;
   opacity: 0.5;
 }
+
+/* ── Modal & Buttons ───────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--surface);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--dark);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.modal-close:hover { background: var(--border); color: var(--dark); }
+
+.modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row:last-child { border-bottom: none; }
+
+.detail-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  font-size: 0.9rem;
+  color: var(--dark);
+  font-weight: 500;
+  text-align: right;
+  word-break: break-all;
+}
+
+.detail-value.mono { font-family: monospace; }
+.detail-value.small { font-size: 0.75rem; }
+.detail-value.highlight { color: var(--primary); font-weight: 700; }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-invoice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+}
+.btn-invoice:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.btn-invoice:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--border);
+  color: var(--dark);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: var(--muted); color: white; }
+
+.btn-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  width: 100%;
+  justify-content: center;
+  background: rgba(249, 115, 22, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-details:hover {
+  background: rgba(249, 115, 22, 0.15);
+  transform: translateY(-1px);
+}
+
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 </style>

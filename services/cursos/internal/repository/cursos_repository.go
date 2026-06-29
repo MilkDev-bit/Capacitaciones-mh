@@ -377,11 +377,18 @@ func (r *postgresCursosRepository) CreateLicencia(ctx context.Context, req *curs
 func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest, precioTotal float64) (*Licencia, error) {
 	codigo := uuid.New().String()[:12]
 	var id string
-	nombre := "Licencia Corporativa - Auto-servicio"
+	nombre := "Licencia Corporativa"
+	// Guardamos el stripe_session_id en stripe_product_id para recuperar la factura después
+	var stripeSessionID *string
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-stripe-session-id"); len(vals) > 0 && vals[0] != "" {
+			stripeSessionID = &vals[0]
+		}
+	}
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id)
-		 VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId,
+		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id, stripe_product_id)
+		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId, stripeSessionID,
 	).Scan(&id)
 	if err != nil {
 		return nil, err

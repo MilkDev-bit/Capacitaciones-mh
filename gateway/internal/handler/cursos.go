@@ -339,23 +339,30 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 
 	userID := ctx.GetString(middleware.CtxUserID)
 
+	// Pasar el session_id via metadata para que el servicio lo pueda guardar en la BD
+	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs(
+		"x-stripe-session-id", req.SessionID,
+		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
+		"x-user-name", toASCII(ctx.GetString(middleware.CtxUserName)),
+	))
+
 	if len(parts) == 3 && parts[0] == "curso" {
 		capID := parts[2]
-		_, _ = h.c.Cursos.WebhookEnroll(ctx.Request.Context(), &cursospb.WebhookEnrollRequest{
+		_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
 			UserId:         userID,
 			CapacitacionId: capID,
 			LicenciaId:     "",
 		})
 	} else if len(parts) == 3 && parts[0] == "licencia" {
 		licID := parts[2]
-		_, _ = h.c.Cursos.WebhookComprarLicencia(ctx.Request.Context(), &cursospb.WebhookComprarLicenciaRequest{
+		_, _ = h.c.Cursos.WebhookComprarLicencia(grpcCtx, &cursospb.WebhookComprarLicenciaRequest{
 			UserId:     userID,
 			LicenciaId: licID,
 		})
 	} else if len(parts) == 4 && parts[0] == "b2b_direct" {
 		cursoID := parts[2]
 		cantidad, _ := strconv.Atoi(parts[3])
-		_, _ = h.c.Cursos.WebhookComprarB2BDirect(ctx.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+		_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
 			UserId:   userID,
 			CursoId:  cursoID,
 			Cantidad: int32(cantidad),
@@ -363,6 +370,41 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// GET /api/licencias/:id/invoice  — devuelve la URL del PDF de la factura de Stripe
+func (h *CursosHandler) GetLicenciaInvoicePDF(ctx *gin.Context) {
+	licenciaID := ctx.Param("id")
+	userID := ctx.GetString(middleware.CtxUserID)
+
+	// Obtener la licencia para saber el stripe_session_id guardado
+	resp, err := h.c.Cursos.ListLicenciasCompradas(genMetadata(ctx), &cursospb.UserRequest{UserId: userID})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+
+	var sessionID string
+	for _, l := range resp.Licencias {
+		if l.Id == licenciaID {
+			sessionID = l.StripeProductId // guardamos el session_id aquí
+			break
+		}
+	}
+
+	if sessionID == "" {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "No hay factura disponible para esta licencia"})
+		return
+	}
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	sess, err := stripeSession.Get(sessionID, nil)
+	if err != nil || sess.Invoice == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Factura no encontrada en Stripe"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"invoice_pdf": sess.Invoice.InvoicePDF, "invoice_url": sess.Invoice.HostedInvoiceURL})
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
