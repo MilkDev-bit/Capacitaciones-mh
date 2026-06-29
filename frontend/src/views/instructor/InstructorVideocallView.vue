@@ -71,7 +71,7 @@ async function terminarLlamada() {
       jitsiApi.dispose()
       jitsiApi = null
     }
-    router.push('/instructor/cursos')
+    router.push('/instructor/capacitaciones')
   } catch (e) {
     console.error('Error al finalizar la llamada', e)
   }
@@ -83,12 +83,12 @@ onBeforeUnmount(() => {
 
 const handleReadyToClose = () => {
   if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
-  router.push('/instructor/cursos')
+  router.push('/instructor/capacitaciones')
 }
 
 const handleVideoConferenceLeft = () => {
   if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
-  router.push('/instructor/cursos')
+  router.push('/instructor/capacitaciones')
 }
 
 </script>
@@ -98,7 +98,7 @@ const handleVideoConferenceLeft = () => {
     <div class="header-bar">
       <h2>Panel del Instructor - Videollamada</h2>
       <div class="actions">
-        <button class="btn btn-outline" @click="router.push('/instructor/cursos')">Salir (sin finalizar)</button>
+        <button class="btn btn-outline" @click="router.push('/instructor/capacitaciones')">Salir (sin finalizar)</button>
         <button class="btn btn-danger" @click="terminarLlamada">Finalizar Videollamada para todos</button>
       </div>
     </div>
