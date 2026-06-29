@@ -36,7 +36,7 @@ const displayNotificaciones = computed(() => {
 async function fetchNotificaciones() {
   try {
     const res = await api.get('/notificaciones')
-    notificaciones.value = res.data
+    notificaciones.value = Array.isArray(res.data) ? res.data : []
   } catch (err) {
     console.error('Error fetching notificaciones', err)
   }
