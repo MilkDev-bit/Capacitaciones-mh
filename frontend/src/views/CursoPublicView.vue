@@ -98,7 +98,7 @@ async function buyCourse() {
   try {
     const res = await api.post('/checkout-session', {
       curso_id: curso.value.id,
-      success_url: window.location.origin + '/usuario/capacitaciones?success=true',
+      success_url: window.location.origin + '/usuario/capacitaciones?session_id={CHECKOUT_SESSION_ID}&tipo=curso',
       cancel_url: window.location.href,
     })
     if (res.data?.url) {
@@ -163,7 +163,7 @@ async function buyB2B() {
     const res = await api.post('/checkout-session-b2b-direct', {
       curso_id: curso.value.id,
       cantidad: b2bCantidad.value,
-      success_url: window.location.origin + '/usuario/capacitaciones?success=true',
+      success_url: window.location.origin + '/usuario/licencias?session_id={CHECKOUT_SESSION_ID}&tipo=b2b',
       cancel_url: window.location.href,
     })
     if (res.data?.url) {

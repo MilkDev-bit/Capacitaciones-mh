@@ -1,10 +1,32 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { toast } from '../../utils/toast'
 
 const licencias = ref<any[]>([])
 const loading = ref(true)
+const verifying = ref(false)
+const route = useRoute()
+const router = useRouter()
+
+async function verifySession(sessionId: string) {
+  verifying.value = true
+  try {
+    await api.post('/verify-checkout-session', { session_id: sessionId })
+    toast.success('¡Licencias generadas correctamente!')
+  } catch (e: any) {
+    // Si ya fue procesado antes (duplicate), no es un error real
+    const msg = e.response?.data?.error || ''
+    if (!msg.includes('ya existe') && !msg.includes('conflict')) {
+      console.warn('verify-checkout-session:', msg)
+    }
+  } finally {
+    verifying.value = false
+    // Limpiar el session_id de la URL para que no se reprocese al refrescar
+    router.replace({ path: '/usuario/licencias' })
+  }
+}
 
 async function fetchLicencias() {
   loading.value = true
@@ -18,8 +40,12 @@ async function fetchLicencias() {
   }
 }
 
-onMounted(() => {
-  fetchLicencias()
+onMounted(async () => {
+  const sessionId = route.query.session_id as string | undefined
+  if (sessionId) {
+    await verifySession(sessionId)
+  }
+  await fetchLicencias()
 })
 
 function copyCode(codigo: string) {

@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v78"
+	stripeSession "github.com/stripe/stripe-go/v78/checkout/session"
 	"github.com/stripe/stripe-go/v78/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -302,6 +303,66 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 		}
 	}
 	c.Status(http.StatusOK)
+}
+
+// POST /api/verify-checkout-session  ← llamado desde el frontend al volver de Stripe
+// Permite crear la licencia sin depender del webhook cuando el usuario regresa del pago.
+func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
+	var req struct {
+		SessionID string `json:"session_id" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	if stripe.Key == "" {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Stripe no configurado"})
+		return
+	}
+
+	sess, err := stripeSession.Get(req.SessionID, nil)
+	if err != nil {
+		slog.Error("VerifyCheckoutSession: error obteniendo sesión de Stripe", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Sesión inválida"})
+		return
+	}
+
+	if sess.PaymentStatus != stripe.CheckoutSessionPaymentStatusPaid {
+		ctx.JSON(http.StatusPaymentRequired, gin.H{"error": "El pago no ha sido completado"})
+		return
+	}
+
+	ref := sess.ClientReferenceID
+	parts := strings.Split(ref, "||")
+
+	userID := ctx.GetString(middleware.CtxUserID)
+
+	if len(parts) == 3 && parts[0] == "curso" {
+		capID := parts[2]
+		_, _ = h.c.Cursos.WebhookEnroll(ctx.Request.Context(), &cursospb.WebhookEnrollRequest{
+			UserId:         userID,
+			CapacitacionId: capID,
+			LicenciaId:     "",
+		})
+	} else if len(parts) == 3 && parts[0] == "licencia" {
+		licID := parts[2]
+		_, _ = h.c.Cursos.WebhookComprarLicencia(ctx.Request.Context(), &cursospb.WebhookComprarLicenciaRequest{
+			UserId:     userID,
+			LicenciaId: licID,
+		})
+	} else if len(parts) == 4 && parts[0] == "b2b_direct" {
+		cursoID := parts[2]
+		cantidad, _ := strconv.Atoi(parts[3])
+		_, _ = h.c.Cursos.WebhookComprarB2BDirect(ctx.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+			UserId:   userID,
+			CursoId:  cursoID,
+			Cantidad: int32(cantidad),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
