@@ -74,8 +74,7 @@ async function downloadInvoice(lic: any) {
     invoiceLoading.value = false
   }
 }
-
-
+function copyCode(codigo: string) {
   navigator.clipboard.writeText(codigo)
   toast.success('Código copiado al portapapeles')
 }
