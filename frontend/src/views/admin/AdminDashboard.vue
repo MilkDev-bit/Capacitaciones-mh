@@ -98,7 +98,7 @@ const statCards = computed(() => [
     <template v-if="loading">
       <div class="skeleton" style="height: 340px; margin-top: 28px; margin-bottom: 28px; border-radius: 12px; border:none; box-shadow:none"></div>
     </template>
-    <DashboardCharts v-else style="margin-top: 28px; margin-bottom: 28px;" />
+    <DashboardCharts v-else :users="users" :asignaciones="asignaciones" style="margin-top: 28px; margin-bottom: 28px;" />
 
     <section class="ad-section">
       <h2 class="ad-section-title">Acciones rápidas</h2>

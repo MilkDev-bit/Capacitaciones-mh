@@ -1,13 +1,13 @@
 <template>
   <div class="dashboard-charts">
     <div class="chart-card">
-      <h4>Actividad Reciente</h4>
+      <h4>Asignaciones (Año Actual)</h4>
       <div class="chart-wrapper">
         <Bar :data="barData" :options="barOptions" />
       </div>
     </div>
     <div class="chart-card">
-      <h4>Estado de Aprobación</h4>
+      <h4>Tipos de Usuario</h4>
       <div class="chart-wrapper">
         <Doughnut :data="doughnutData" :options="doughnutOptions" />
       </div>
@@ -30,6 +30,11 @@ import {
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
 import { computed } from 'vue'
+
+const props = defineProps<{
+  users: any[]
+  asignaciones: any[]
+}>()
 import { useTheme } from '@/composables/useTheme'
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement)
 const { isDark } = useTheme()
@@ -91,59 +96,75 @@ const doughnutOptions = computed(() => ({
   }
 }))
 
-const barData = computed(() => ({
-  labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-  datasets: [
-    {
-      label: 'Nuevos Accesos',
-      backgroundColor: (context: any) => {
-        const chart = context.chart;
-        if (!chart) return '#f97316';
-        const ctx = chart.ctx;
-        if (!ctx) return '#f97316';
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, '#f97316');
-        gradient.addColorStop(1, isDark.value ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.05)');
-        return gradient;
-      },
-      hoverBackgroundColor: '#ea580c',
-      borderColor: '#f97316',
-      borderWidth: 2,
-      borderRadius: 6,
-      barThickness: 24,
-      data: [40, 55, 45, 70, 90, 85]
-    },
-    {
-      type: 'line',
-      label: 'Certificados Emitidos',
-      backgroundColor: '#3b82f6',
-      borderColor: '#3b82f6',
-      borderWidth: 3,
-      tension: 0.4,
-      pointBackgroundColor: '#ffffff',
-      pointBorderColor: '#3b82f6',
-      pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      fill: false,
-      data: [20, 30, 25, 45, 60, 50]
-    }
-  ] as any[]
-}))
+const barData = computed(() => {
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  const counts = new Array(12).fill(0)
+  
+  const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth()
+  
+  if (props.asignaciones) {
+    props.asignaciones.forEach(a => {
+      const d = new Date(a.assigned_at)
+      if (d.getFullYear() === currentYear) {
+        counts[d.getMonth()]++
+      }
+    })
+  }
 
-const doughnutData = computed(() => ({
-  labels: ['Aprobados', 'Reprobados', 'En Progreso'],
-  datasets: [
-    {
-      backgroundColor: ['#34c759', '#ff3b30', '#f59e0b'],
-      hoverBackgroundColor: ['#28a745', '#dc3545', '#e0a800'],
-      borderWidth: 4,
-      borderColor: surfaceColor.value,
-      hoverBorderColor: surfaceColor.value,
-      data: [65, 15, 20]
-    }
-  ]
-}))
+  const dataLength = Math.max(currentMonth + 1, 1)
+
+  return {
+    labels: months.slice(0, dataLength),
+    datasets: [
+      {
+        label: 'Asignaciones Nuevas',
+        backgroundColor: (context: any) => {
+          const chart = context.chart;
+          if (!chart) return '#f97316';
+          const ctx = chart.ctx;
+          if (!ctx) return '#f97316';
+          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+          gradient.addColorStop(0, '#f97316');
+          gradient.addColorStop(1, isDark.value ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.05)');
+          return gradient;
+        },
+        hoverBackgroundColor: '#ea580c',
+        borderColor: '#f97316',
+        borderWidth: 2,
+        borderRadius: 6,
+        barThickness: 24,
+        data: counts.slice(0, dataLength)
+      }
+    ]
+  }
+})
+
+const doughnutData = computed(() => {
+  let admins = 0
+  let insts = 0
+  let studs = 0
+
+  if (props.users) {
+    admins = props.users.filter(u => u.role === 'admin').length
+    insts = props.users.filter(u => u.role === 'instructor').length
+    studs = props.users.filter(u => u.role === 'user').length
+  }
+
+  return {
+    labels: ['Estudiantes', 'Instructores', 'Admins'],
+    datasets: [
+      {
+        backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'],
+        hoverBackgroundColor: ['#2563eb', '#d97706', '#7c3aed'],
+        borderWidth: 4,
+        borderColor: surfaceColor.value,
+        hoverBorderColor: surfaceColor.value,
+        data: [studs, insts, admins]
+      }
+    ]
+  }
+})
 </script>
 
 <style scoped>
