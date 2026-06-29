@@ -164,10 +164,10 @@ function copyCode(codigo: string) {
               <div class="detail-row"><span class="detail-label">ID de licencia</span><span class="detail-value mono small">{{ selectedLic.id }}</span></div>
             </div>
             <div class="modal-footer">
-              <button class="btn-comprobante" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 18px; font-size: 0.9rem; font-weight: 600; cursor: pointer; flex: 1; opacity: 1 !important; visibility: visible !important;" class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
                 <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span v-if="invoiceLoading">Buscando documento...</span>
-                <span v-else>Descargar Comprobante</span>
+                <span v-else>Descargar Recibo</span>
               </button>
               <button class="btn-secondary" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
             </div>
