@@ -55,6 +55,9 @@ async function saveInfo() {
     if (form.value.scheduled_at) {
       payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
     }
+    if (form.value.type === 'videocall') {
+      payload.duration = Number(form.value.duration) || 60;
+    }
 
     if (thumbnailFile.value) {
       const uploadingToast = toast.loading('Subiendo portada...')
@@ -133,6 +136,10 @@ async function saveInfo() {
           <div v-if="form.type === 'videocall'" class="field mt-4">
             <label>Fecha y Hora Programada</label>
             <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
+          </div>
+          <div v-if="form.type === 'videocall'" class="field mt-4">
+            <label>Duración (minutos)</label>
+            <input type="number" class="field-input" v-model="form.duration" min="15" step="15" />
           </div>
           <div class="field mt-4">
             <label>Archivo principal nuevo (opcional)</label>

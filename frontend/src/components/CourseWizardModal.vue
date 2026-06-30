@@ -23,7 +23,8 @@ const form = ref({
   is_public: false,
   welcome_message: '',
   color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
-  scheduled_at: ''
+  scheduled_at: '',
+  duration: 60
 })
 
 const file = ref<File | null>(null)
@@ -60,6 +61,9 @@ async function guardar() {
     }
     if (form.value.scheduled_at) {
       payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
+    }
+    if (form.value.type === 'videocall') {
+      payload.duration = Number(form.value.duration) || 60;
     }
 
     if (file.value && hasMedia) {
@@ -146,6 +150,10 @@ async function guardar() {
           <div v-if="form.type === 'videocall'" class="field mt-4">
             <label>Fecha y Hora Programada</label>
             <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
+          </div>
+          <div v-if="form.type === 'videocall'" class="field mt-4">
+            <label>Duración (minutos)</label>
+            <input type="number" class="field-input" v-model="form.duration" min="15" step="15" />
           </div>
         </div>
 

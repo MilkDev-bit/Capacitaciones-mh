@@ -89,6 +89,7 @@ message CreateCursoRequest {
   string color           = 10;
   double precio          = 11;
   string scheduled_at    = 12;
+  int32  duration        = 13;
 }
 
 message UpdateCursoRequest {
@@ -106,6 +107,7 @@ message UpdateCursoRequest {
   double precio          = 12;
   string scheduled_at    = 13;
   string videocall_status = 14;
+  int32  duration        = 15;
 }
 
 message InscribirseRequest {
@@ -144,6 +146,7 @@ message CursoResponse {
   double precio          = 14;
   string scheduled_at    = 15;
   string videocall_status = 16;
+  int32  duration        = 17;
 }
 
 message ListCursosResponse {

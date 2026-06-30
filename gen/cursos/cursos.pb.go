@@ -255,6 +255,7 @@ type CreateCursoRequest struct {
 	Color          string                 `protobuf:"bytes,10,opt,name=color,proto3" json:"color,omitempty"`
 	Precio         float64                `protobuf:"fixed64,11,opt,name=precio,proto3" json:"precio,omitempty"`
 	ScheduledAt    string                 `protobuf:"bytes,12,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	Duration       int32                  `protobuf:"varint,13,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -373,6 +374,13 @@ func (x *CreateCursoRequest) GetScheduledAt() string {
 	return ""
 }
 
+func (x *CreateCursoRequest) GetDuration() int32 {
+	if x != nil {
+		return x.Duration
+	}
+	return 0
+}
+
 type UpdateCursoRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	CursoId         string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -389,6 +397,7 @@ type UpdateCursoRequest struct {
 	Precio          float64                `protobuf:"fixed64,12,opt,name=precio,proto3" json:"precio,omitempty"`
 	ScheduledAt     string                 `protobuf:"bytes,13,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	VideocallStatus string                 `protobuf:"bytes,14,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
+	Duration        int32                  `protobuf:"varint,15,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -519,6 +528,13 @@ func (x *UpdateCursoRequest) GetVideocallStatus() string {
 		return x.VideocallStatus
 	}
 	return ""
+}
+
+func (x *UpdateCursoRequest) GetDuration() int32 {
+	if x != nil {
+		return x.Duration
+	}
+	return 0
 }
 
 type InscribirseRequest struct {
@@ -711,6 +727,7 @@ type CursoResponse struct {
 	Precio          float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
 	ScheduledAt     string                 `protobuf:"bytes,15,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	VideocallStatus string                 `protobuf:"bytes,16,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
+	Duration        int32                  `protobuf:"varint,17,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -855,6 +872,13 @@ func (x *CursoResponse) GetVideocallStatus() string {
 		return x.VideocallStatus
 	}
 	return ""
+}
+
+func (x *CursoResponse) GetDuration() int32 {
+	if x != nil {
+		return x.Duration
+	}
+	return 0
 }
 
 type ListCursosResponse struct {
@@ -2891,7 +2915,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xec\x02\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\x88\x03\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2905,7 +2929,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x05color\x18\n" +
 	" \x01(\tR\x05color\x12\x16\n" +
 	"\x06precio\x18\v \x01(\x01R\x06precio\x12!\n" +
-	"\fscheduled_at\x18\f \x01(\tR\vscheduledAt\"\xb2\x03\n" +
+	"\fscheduled_at\x18\f \x01(\tR\vscheduledAt\x12\x1a\n" +
+	"\bduration\x18\r \x01(\x05R\bduration\"\xce\x03\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -2921,7 +2946,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x05color\x18\v \x01(\tR\x05color\x12\x16\n" +
 	"\x06precio\x18\f \x01(\x01R\x06precio\x12!\n" +
 	"\fscheduled_at\x18\r \x01(\tR\vscheduledAt\x12)\n" +
-	"\x10videocall_status\x18\x0e \x01(\tR\x0fvideocallStatus\"H\n" +
+	"\x10videocall_status\x18\x0e \x01(\tR\x0fvideocallStatus\x12\x1a\n" +
+	"\bduration\x18\x0f \x01(\x05R\bduration\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -2932,7 +2958,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xf2\x03\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\x8e\x04\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2951,7 +2977,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"created_at\x18\r \x01(\tR\tcreatedAt\x12\x16\n" +
 	"\x06precio\x18\x0e \x01(\x01R\x06precio\x12!\n" +
 	"\fscheduled_at\x18\x0f \x01(\tR\vscheduledAt\x12)\n" +
-	"\x10videocall_status\x18\x10 \x01(\tR\x0fvideocallStatus\"C\n" +
+	"\x10videocall_status\x18\x10 \x01(\tR\x0fvideocallStatus\x12\x1a\n" +
+	"\bduration\x18\x11 \x01(\x05R\bduration\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +
