@@ -149,6 +149,8 @@ type VideocallTicket struct {
 	InUseByUserID  *string   `db:"in_use_by_user_id"`
 	IsValid        bool      `db:"is_valid"`
 	CreatedAt      time.Time `db:"created_at"`
+	ScheduleID     *string   `db:"schedule_id"`
+	OwnerID        *string   `db:"owner_id"`
 }
 
 func (t *VideocallTicket) ToProto() *cursospb.VideocallTicket {
@@ -226,11 +228,14 @@ type CursosRepository interface {
 	UpdateSchedule(ctx context.Context, req *cursospb.UpdateScheduleRequest) (*InstructorSchedule, error)
 	DeleteSchedule(ctx context.Context, scheduleID string) error
 	
-	CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, count int) ([]*VideocallTicket, error)
+	CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, scheduleID *string, count int) ([]*VideocallTicket, error)
 	JoinVideocall(ctx context.Context, codigo, userID string) (string, error) // retorna el room
 	LeaveVideocall(ctx context.Context, codigo, userID string) error
-	EndVideocall(ctx context.Context, cursoID string) error
+	EndVideocall(ctx context.Context, cursoID string, scheduleID *string) error
 	ListTicketsByLicencia(ctx context.Context, licenciaID string) ([]*VideocallTicket, error)
+	AssignTicketToUser(ctx context.Context, ticketID, userID string) error
+	GetTicketForUserAndCourse(ctx context.Context, userID, cursoID string) (*VideocallTicket, error)
+	GetCurrentScheduleForInstructor(ctx context.Context, instructorID, cursoID string) (*string, error)
 	
 	IncrementarUsoLicencia(ctx context.Context, licenciaID string) error
 	InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error
@@ -552,6 +557,18 @@ func (r *postgresCursosRepository) ListLicenciasCompradas(ctx context.Context, u
 }
 
 func (r *postgresCursosRepository) AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error {
+	var stripeSessionID *string
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-stripe-session-id"); len(vals) > 0 && vals[0] != "" {
+			stripeSessionID = &vals[0]
+		}
+	}
+	
+	if stripeSessionID != nil {
+		_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET comprador_id=$1, stripe_product_id=CAST($2 AS VARCHAR) WHERE id=$3`, userID, stripeSessionID, licenciaID)
+		return err
+	}
+	
 	_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET comprador_id=$1 WHERE id=$2`, userID, licenciaID)
 	return err
 }

@@ -162,10 +162,10 @@ onMounted(async () => {
   loadPublicos()
 })
 
-function openCourse(id: string) {
+async function openCourse(id: string) {
   const course = capacitaciones.value.find(c => c.id === id)
   if (course && course.type === 'videocall') {
-    router.push(`/usuario/videocall/${id}`)
+    router.push(`/join?code=${course.codigo_acceso || ''}`)
   } else {
     router.push('/usuario/capacitaciones/' + id)
   }
@@ -343,7 +343,7 @@ async function unirseConCodigo() {
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
             <p class="course-desc">{{ c.description || 'Sin descripcion disponible.' }}</p>
-            <div class="progress-wrap">
+            <div class="progress-wrap" v-if="c.type !== 'videocall'">
               <div class="progress-top">
                 <span class="progress-label">{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
                 <span class="progress-pct">{{ courseProgress(c) }}%</span>
@@ -352,8 +352,20 @@ async function unirseConCodigo() {
                 <div class="progress-bar-fill" :style="`width:${courseProgress(c)}%`" />
               </div>
             </div>
+            
+            <div class="course-code-display" v-if="c.type === 'videocall'">
+              <span class="code-label">Tu código de acceso:</span>
+              <div class="code-value">{{ c.codigo_acceso || 'Generando...' }}</div>
+              <span class="code-hint">Deberás ingresarlo en la sala.</span>
+            </div>
+
             <div class="course-cta">
-              {{ courseProgress(c) === 100 ? 'Repasar contenido' : 'Continuar aprendiendo' }}
+              <template v-if="c.type === 'videocall'">
+                Ir a la sala
+              </template>
+              <template v-else>
+                {{ courseProgress(c) === 100 ? 'Repasar contenido' : 'Continuar aprendiendo' }}
+              </template>
               <span aria-hidden="true">&rarr;</span>
             </div>
           </div>
@@ -872,7 +884,41 @@ async function unirseConCodigo() {
   font-size: 0.82rem;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #fff;
+}
+
+.course-code-display {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+
+.course-code-display .code-label {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.course-code-display .code-value {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.1em;
+}
+
+.course-code-display .code-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
 }
 
 @media (max-width: 900px) {

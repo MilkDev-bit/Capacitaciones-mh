@@ -65,7 +65,19 @@ func (s *CursosService) ListMisCapacitaciones(ctx context.Context, userID string
 	if err != nil {
 		return nil, err
 	}
-	return toProtoSlice(cursos), nil
+	
+	protos := toProtoSlice(cursos)
+	// Para los cursos que son videollamadas, adjuntar su ticket_codigo en codigo_acceso
+	for _, p := range protos {
+		if p.Type == "videocall" {
+			ticket, _ := s.repo.GetTicketForUserAndCourse(ctx, userID, p.Id)
+			if ticket != nil {
+				p.CodigoAcceso = ticket.Codigo
+			}
+		}
+	}
+	
+	return protos, nil
 }
 
 func (s *CursosService) GetCurso(ctx context.Context, cursoID, userID string) (*cursospb.CursoResponse, error) {
@@ -336,6 +348,22 @@ func (s *CursosService) WebhookEnroll(ctx context.Context, req *cursospb.Webhook
 			Status: "booked",
 		})
 	}
+
+	// Fix B2C: Si es un curso en vivo, generar su ticket personal si no tiene licencia
+	if err == nil && req.LicenciaId == "" {
+		curso, errC := s.repo.FindByID(ctx, req.CapacitacionId)
+		if errC == nil && curso.Type == "videocall" {
+			var schID *string
+			if req.ScheduleId != "" {
+				schID = &req.ScheduleId
+			}
+			tickets, errT := s.repo.CreateVideocallTickets(ctx, req.CapacitacionId, nil, schID, 1)
+			if errT == nil && len(tickets) > 0 {
+				_ = s.repo.AssignTicketToUser(ctx, tickets[0].ID, req.UserId)
+			}
+		}
+	}
+
 	return &cursospb.EmptyResponse{}, err
 }
 
@@ -539,7 +567,11 @@ func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursos
 	
 	// Si es videollamada, generar N tickets únicos en lugar de usar un solo código de licencia
 	if curso.Type == "videocall" {
-		_, err = s.repo.CreateVideocallTickets(ctx, req.CursoId, &lic.ID, int(req.Cantidad))
+		var schID *string
+		if req.ScheduleId != "" {
+			schID = &req.ScheduleId
+		}
+		_, err = s.repo.CreateVideocallTickets(ctx, req.CursoId, &lic.ID, schID, int(req.Cantidad))
 		if err != nil {
 			return nil, err
 		}

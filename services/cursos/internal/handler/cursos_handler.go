@@ -314,6 +314,22 @@ func (h *CursosHandler) EndVideocall(ctx context.Context, req *cursospb.CursoIDR
 	return &cursospb.EmptyResponse{}, nil
 }
 
+func (h *CursosHandler) GetMyVideocallTicket(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.VideocallTicketResponse, error) {
+	resp, err := h.svc.GetMyVideocallTicket(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+func (h *CursosHandler) InstructorGetCurrentRoom(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.CurrentRoomResponse, error) {
+	resp, err := h.svc.InstructorGetCurrentRoom(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
 // ── Horarios Instructores ────────────────────────────────────────────────
 
 func (h *CursosHandler) ListPublicSchedules(ctx context.Context, req *cursospb.ListPublicSchedulesRequest) (*cursospb.ListPublicSchedulesResponse, error) {

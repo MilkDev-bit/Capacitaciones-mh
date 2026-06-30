@@ -180,6 +180,8 @@ func runMigrations(db *sqlx.DB) error {
 		)`,
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`,
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS videocall_status VARCHAR(20) DEFAULT 'pending'`,
+		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS schedule_id UUID REFERENCES instructor_schedules(id) ON DELETE CASCADE`,
+		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS owner_id UUID`,
 		`CREATE TABLE IF NOT EXISTS videocall_tickets (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,

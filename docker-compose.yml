@@ -212,8 +212,6 @@ services:
       R2_PUBLIC_URL:  ${R2_PUBLIC_URL:-}
 
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-
       GIN_MODE:       ${GIN_MODE:-release}
       LOG_LEVEL:      ${LOG_LEVEL:-info}
     ports:

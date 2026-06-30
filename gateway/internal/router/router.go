@@ -110,6 +110,8 @@ func New(d Deps) *gin.Engine {
 			// Cursos y capacitaciones
 			auth.GET("/mis-capacitaciones", d.CursosH.ListMisCapacitaciones)
 			auth.GET("/capacitaciones/:id", d.CursosH.GetCurso)
+			auth.POST("/cursos/:id/comprar-b2b", d.CursosH.ComprarB2BDirect)
+			auth.GET("/cursos/:id/videocall/ticket", d.CursosH.GetMyVideocallTicket)
 			auth.POST("/cursos/:id/inscripciones", d.CursosH.Inscribirse)
 			auth.POST("/inscripciones", d.CursosH.UnirseConCodigo)
 			auth.POST("/inscripciones-licencia", d.CursosH.UnirseConLicencia)
@@ -178,6 +180,7 @@ func New(d Deps) *gin.Engine {
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
+				inst.GET("/capacitaciones/:id/current-room", d.CursosH.InstructorGetCurrentRoom)
 				inst.POST("/videocalls/:id/end", d.CursosH.EndVideocall)
 
 				inst.GET("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorListPreguntasIntermedias)

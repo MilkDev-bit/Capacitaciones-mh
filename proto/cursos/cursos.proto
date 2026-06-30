@@ -57,6 +57,8 @@ service CursosService {
   rpc JoinVideocall(JoinVideocallRequest) returns (JoinVideocallResponse);
   rpc LeaveVideocall(LeaveVideocallRequest) returns (EmptyResponse);
   rpc EndVideocall(CursoIDRequest) returns (EmptyResponse);
+  rpc GetMyVideocallTicket(CursoIDRequest) returns (VideocallTicketResponse);
+  rpc InstructorGetCurrentRoom(CursoIDRequest) returns (CurrentRoomResponse);
 
   rpc AdminListSchedules(UserRequest) returns (ListSchedulesResponse);
   rpc AdminCreateSchedule(CreateScheduleRequest) returns (InstructorSchedule);
@@ -73,7 +75,11 @@ service CursosService {
 
 message EmptyRequest  {}
 message UserRequest   { string user_id = 1; }
-message CursoIDRequest { string curso_id = 1; string user_id = 2; }
+message CursoIDRequest { 
+  string curso_id = 1; 
+  string user_id = 2; 
+  string schedule_id = 3; 
+}
 message CodigoRequest { string codigo = 1; }
 message AsignacionIDRequest { string asignacion_id = 1; }
 
@@ -366,4 +372,15 @@ message ListPublicSchedulesRequest {
 
 message ListPublicSchedulesResponse {
   repeated InstructorSchedule schedules = 1;
+}
+
+message VideocallTicketResponse {
+  string id = 1;
+  string codigo = 2;
+  string schedule_id = 3;
+}
+
+message CurrentRoomResponse {
+  string room_name = 1;
+  string schedule_id = 2;
 }

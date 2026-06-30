@@ -105,6 +105,7 @@ type CursoIDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CursoId       string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ScheduleId    string                 `protobuf:"bytes,3,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,6 +150,13 @@ func (x *CursoIDRequest) GetCursoId() string {
 func (x *CursoIDRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
+	}
+	return ""
+}
+
+func (x *CursoIDRequest) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
 	}
 	return ""
 }
@@ -3053,6 +3061,118 @@ func (x *ListPublicSchedulesResponse) GetSchedules() []*InstructorSchedule {
 	return nil
 }
 
+type VideocallTicketResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Codigo        string                 `protobuf:"bytes,2,opt,name=codigo,proto3" json:"codigo,omitempty"`
+	ScheduleId    string                 `protobuf:"bytes,3,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VideocallTicketResponse) Reset() {
+	*x = VideocallTicketResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VideocallTicketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VideocallTicketResponse) ProtoMessage() {}
+
+func (x *VideocallTicketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VideocallTicketResponse.ProtoReflect.Descriptor instead.
+func (*VideocallTicketResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *VideocallTicketResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *VideocallTicketResponse) GetCodigo() string {
+	if x != nil {
+		return x.Codigo
+	}
+	return ""
+}
+
+func (x *VideocallTicketResponse) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
+type CurrentRoomResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RoomName      string                 `protobuf:"bytes,1,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
+	ScheduleId    string                 `protobuf:"bytes,2,opt,name=schedule_id,json=scheduleId,proto3" json:"schedule_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CurrentRoomResponse) Reset() {
+	*x = CurrentRoomResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CurrentRoomResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CurrentRoomResponse) ProtoMessage() {}
+
+func (x *CurrentRoomResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CurrentRoomResponse.ProtoReflect.Descriptor instead.
+func (*CurrentRoomResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *CurrentRoomResponse) GetRoomName() string {
+	if x != nil {
+		return x.RoomName
+	}
+	return ""
+}
+
+func (x *CurrentRoomResponse) GetScheduleId() string {
+	if x != nil {
+		return x.ScheduleId
+	}
+	return ""
+}
+
 var File_cursos_cursos_proto protoreflect.FileDescriptor
 
 const file_cursos_cursos_proto_rawDesc = "" +
@@ -3060,10 +3180,12 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x13cursos/cursos.proto\x12\x06cursos\"\x0e\n" +
 	"\fEmptyRequest\"&\n" +
 	"\vUserRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"D\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"e\n" +
 	"\x0eCursoIDRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"'\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1f\n" +
+	"\vschedule_id\x18\x03 \x01(\tR\n" +
+	"scheduleId\"'\n" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
@@ -3305,7 +3427,16 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x1aListPublicSchedulesRequest\x12#\n" +
 	"\rinstructor_id\x18\x01 \x01(\tR\finstructorId\"W\n" +
 	"\x1bListPublicSchedulesResponse\x128\n" +
-	"\tschedules\x18\x01 \x03(\v2\x1a.cursos.InstructorScheduleR\tschedules2\xb2\x1b\n" +
+	"\tschedules\x18\x01 \x03(\v2\x1a.cursos.InstructorScheduleR\tschedules\"b\n" +
+	"\x17VideocallTicketResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06codigo\x18\x02 \x01(\tR\x06codigo\x12\x1f\n" +
+	"\vschedule_id\x18\x03 \x01(\tR\n" +
+	"scheduleId\"S\n" +
+	"\x13CurrentRoomResponse\x12\x1b\n" +
+	"\troom_name\x18\x01 \x01(\tR\broomName\x12\x1f\n" +
+	"\vschedule_id\x18\x02 \x01(\tR\n" +
+	"scheduleId2\xd4\x1c\n" +
 	"\rCursosService\x12<\n" +
 	"\fPreviewCurso\x12\x15.cursos.CodigoRequest\x1a\x15.cursos.CursoResponse\x12@\n" +
 	"\x0fGetCursoPublico\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12F\n" +
@@ -3345,7 +3476,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x0fAdminDesAsignar\x12\x1b.cursos.AsignacionIDRequest\x1a\x15.cursos.EmptyResponse\x12L\n" +
 	"\rJoinVideocall\x12\x1c.cursos.JoinVideocallRequest\x1a\x1d.cursos.JoinVideocallResponse\x12F\n" +
 	"\x0eLeaveVideocall\x12\x1d.cursos.LeaveVideocallRequest\x1a\x15.cursos.EmptyResponse\x12=\n" +
-	"\fEndVideocall\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.EmptyResponse\x12H\n" +
+	"\fEndVideocall\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.EmptyResponse\x12O\n" +
+	"\x14GetMyVideocallTicket\x12\x16.cursos.CursoIDRequest\x1a\x1f.cursos.VideocallTicketResponse\x12O\n" +
+	"\x18InstructorGetCurrentRoom\x12\x16.cursos.CursoIDRequest\x1a\x1b.cursos.CurrentRoomResponse\x12H\n" +
 	"\x12AdminListSchedules\x12\x13.cursos.UserRequest\x1a\x1d.cursos.ListSchedulesResponse\x12P\n" +
 	"\x13AdminCreateSchedule\x12\x1d.cursos.CreateScheduleRequest\x1a\x1a.cursos.InstructorSchedule\x12P\n" +
 	"\x13AdminUpdateSchedule\x12\x1d.cursos.UpdateScheduleRequest\x1a\x1a.cursos.InstructorSchedule\x12G\n" +
@@ -3365,7 +3498,7 @@ func file_cursos_cursos_proto_rawDescGZIP() []byte {
 	return file_cursos_cursos_proto_rawDescData
 }
 
-var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_cursos_cursos_proto_goTypes = []any{
 	(*EmptyRequest)(nil),                          // 0: cursos.EmptyRequest
 	(*UserRequest)(nil),                           // 1: cursos.UserRequest
@@ -3413,6 +3546,8 @@ var file_cursos_cursos_proto_goTypes = []any{
 	(*VideocallTicket)(nil),                       // 43: cursos.VideocallTicket
 	(*ListPublicSchedulesRequest)(nil),            // 44: cursos.ListPublicSchedulesRequest
 	(*ListPublicSchedulesResponse)(nil),           // 45: cursos.ListPublicSchedulesResponse
+	(*VideocallTicketResponse)(nil),               // 46: cursos.VideocallTicketResponse
+	(*CurrentRoomResponse)(nil),                   // 47: cursos.CurrentRoomResponse
 }
 var file_cursos_cursos_proto_depIdxs = []int32{
 	10, // 0: cursos.ListCursosResponse.cursos:type_name -> cursos.CursoResponse
@@ -3462,59 +3597,63 @@ var file_cursos_cursos_proto_depIdxs = []int32{
 	40, // 44: cursos.CursosService.JoinVideocall:input_type -> cursos.JoinVideocallRequest
 	42, // 45: cursos.CursosService.LeaveVideocall:input_type -> cursos.LeaveVideocallRequest
 	2,  // 46: cursos.CursosService.EndVideocall:input_type -> cursos.CursoIDRequest
-	1,  // 47: cursos.CursosService.AdminListSchedules:input_type -> cursos.UserRequest
-	38, // 48: cursos.CursosService.AdminCreateSchedule:input_type -> cursos.CreateScheduleRequest
-	39, // 49: cursos.CursosService.AdminUpdateSchedule:input_type -> cursos.UpdateScheduleRequest
-	36, // 50: cursos.CursosService.AdminDeleteSchedule:input_type -> cursos.ScheduleIDRequest
-	44, // 51: cursos.CursosService.ListPublicSchedules:input_type -> cursos.ListPublicSchedulesRequest
-	0,  // 52: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
-	10, // 53: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
-	10, // 54: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
-	11, // 55: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
-	11, // 56: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 57: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
-	16, // 58: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
-	16, // 59: cursos.CursosService.UnirseConCodigo:output_type -> cursos.EmptyResponse
-	16, // 60: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
-	16, // 61: cursos.CursosService.WebhookEnroll:output_type -> cursos.EmptyResponse
-	16, // 62: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
-	16, // 63: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.EmptyResponse
-	30, // 64: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
-	30, // 65: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
-	30, // 66: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
-	23, // 67: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
-	18, // 68: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
-	23, // 69: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
-	34, // 70: cursos.CursosService.ListLicenciaTickets:output_type -> cursos.ListLicenciaTicketsResponse
-	11, // 71: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 72: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 73: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 74: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 75: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
-	10, // 76: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
-	13, // 77: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
-	16, // 78: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
-	17, // 79: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
-	17, // 80: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
-	16, // 81: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
-	11, // 82: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 83: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 84: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 85: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	15, // 86: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
-	16, // 87: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
-	16, // 88: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
-	41, // 89: cursos.CursosService.JoinVideocall:output_type -> cursos.JoinVideocallResponse
-	16, // 90: cursos.CursosService.LeaveVideocall:output_type -> cursos.EmptyResponse
-	16, // 91: cursos.CursosService.EndVideocall:output_type -> cursos.EmptyResponse
-	37, // 92: cursos.CursosService.AdminListSchedules:output_type -> cursos.ListSchedulesResponse
-	35, // 93: cursos.CursosService.AdminCreateSchedule:output_type -> cursos.InstructorSchedule
-	35, // 94: cursos.CursosService.AdminUpdateSchedule:output_type -> cursos.InstructorSchedule
-	16, // 95: cursos.CursosService.AdminDeleteSchedule:output_type -> cursos.EmptyResponse
-	45, // 96: cursos.CursosService.ListPublicSchedules:output_type -> cursos.ListPublicSchedulesResponse
-	31, // 97: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
-	53, // [53:98] is the sub-list for method output_type
-	8,  // [8:53] is the sub-list for method input_type
+	2,  // 47: cursos.CursosService.GetMyVideocallTicket:input_type -> cursos.CursoIDRequest
+	2,  // 48: cursos.CursosService.InstructorGetCurrentRoom:input_type -> cursos.CursoIDRequest
+	1,  // 49: cursos.CursosService.AdminListSchedules:input_type -> cursos.UserRequest
+	38, // 50: cursos.CursosService.AdminCreateSchedule:input_type -> cursos.CreateScheduleRequest
+	39, // 51: cursos.CursosService.AdminUpdateSchedule:input_type -> cursos.UpdateScheduleRequest
+	36, // 52: cursos.CursosService.AdminDeleteSchedule:input_type -> cursos.ScheduleIDRequest
+	44, // 53: cursos.CursosService.ListPublicSchedules:input_type -> cursos.ListPublicSchedulesRequest
+	0,  // 54: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
+	10, // 55: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
+	10, // 56: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
+	11, // 57: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
+	11, // 58: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 59: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
+	16, // 60: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
+	16, // 61: cursos.CursosService.UnirseConCodigo:output_type -> cursos.EmptyResponse
+	16, // 62: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
+	16, // 63: cursos.CursosService.WebhookEnroll:output_type -> cursos.EmptyResponse
+	16, // 64: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
+	16, // 65: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.EmptyResponse
+	30, // 66: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
+	30, // 67: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
+	30, // 68: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
+	23, // 69: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
+	18, // 70: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
+	23, // 71: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
+	34, // 72: cursos.CursosService.ListLicenciaTickets:output_type -> cursos.ListLicenciaTicketsResponse
+	11, // 73: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 74: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 75: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 76: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 77: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
+	10, // 78: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
+	13, // 79: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
+	16, // 80: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
+	17, // 81: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
+	17, // 82: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
+	16, // 83: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
+	11, // 84: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 85: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 86: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 87: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	15, // 88: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
+	16, // 89: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
+	16, // 90: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
+	41, // 91: cursos.CursosService.JoinVideocall:output_type -> cursos.JoinVideocallResponse
+	16, // 92: cursos.CursosService.LeaveVideocall:output_type -> cursos.EmptyResponse
+	16, // 93: cursos.CursosService.EndVideocall:output_type -> cursos.EmptyResponse
+	46, // 94: cursos.CursosService.GetMyVideocallTicket:output_type -> cursos.VideocallTicketResponse
+	47, // 95: cursos.CursosService.InstructorGetCurrentRoom:output_type -> cursos.CurrentRoomResponse
+	37, // 96: cursos.CursosService.AdminListSchedules:output_type -> cursos.ListSchedulesResponse
+	35, // 97: cursos.CursosService.AdminCreateSchedule:output_type -> cursos.InstructorSchedule
+	35, // 98: cursos.CursosService.AdminUpdateSchedule:output_type -> cursos.InstructorSchedule
+	16, // 99: cursos.CursosService.AdminDeleteSchedule:output_type -> cursos.EmptyResponse
+	45, // 100: cursos.CursosService.ListPublicSchedules:output_type -> cursos.ListPublicSchedulesResponse
+	31, // 101: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
+	55, // [55:102] is the sub-list for method output_type
+	8,  // [8:55] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -3531,7 +3670,7 @@ func file_cursos_cursos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cursos_cursos_proto_rawDesc), len(file_cursos_cursos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   46,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

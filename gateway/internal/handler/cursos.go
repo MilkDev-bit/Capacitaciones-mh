@@ -322,7 +322,8 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 			if len(parts) == 4 {
 				scheduleID = parts[3]
 			}
-			_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
+			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
+			_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
 				UserId:         userID,
 				CapacitacionId: capID,
 				LicenciaId:     "", // no hay licencia, es directo
@@ -333,7 +334,8 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 			// Formato: licencia||userID||licenciaID
 			userID := parts[1]
 			licID := parts[2]
-			_, _ = h.c.Cursos.WebhookComprarLicencia(c.Request.Context(), &cursospb.WebhookComprarLicenciaRequest{
+			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
+			_, _ = h.c.Cursos.WebhookComprarLicencia(grpcCtx, &cursospb.WebhookComprarLicenciaRequest{
 				UserId:     userID,
 				LicenciaId: licID,
 			})
@@ -348,7 +350,8 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 			if len(parts) == 5 {
 				scheduleID = parts[4]
 			}
-			_, _ = h.c.Cursos.WebhookComprarB2BDirect(c.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
+			_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
 				UserId:     userID,
 				CursoId:    cursoID,
 				Cantidad:   int32(cantidad),
@@ -988,10 +991,40 @@ func (h *CursosHandler) LeaveVideocall(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Has salido de la videollamada"})
 }
 
-func (h *CursosHandler) EndVideocall(ctx *gin.Context) {
-	_, err := h.c.Cursos.EndVideocall(ctx.Request.Context(), &cursospb.CursoIDRequest{
+// GET /api/instructor/capacitaciones/:id/current-room
+func (h *CursosHandler) InstructorGetCurrentRoom(ctx *gin.Context) {
+	// Llamamos al servicio para encontrar la sala activa
+	resp, err := h.c.Cursos.InstructorGetCurrentRoom(ctx.Request.Context(), &cursospb.CursoIDRequest{
 		CursoId: ctx.Param("id"),
 		UserId:  ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// GET /api/cursos/:id/videocall/ticket
+func (h *CursosHandler) GetMyVideocallTicket(ctx *gin.Context) {
+	resp, err := h.c.Cursos.GetMyVideocallTicket(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+		UserId:  ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// POST /api/instructor/videocalls/:id/end
+func (h *CursosHandler) EndVideocall(ctx *gin.Context) {
+	scheduleID := ctx.Query("schedule_id")
+	_, err := h.c.Cursos.EndVideocall(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId:    ctx.Param("id"),
+		UserId:     ctx.GetString(middleware.CtxUserID),
+		ScheduleId: scheduleID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

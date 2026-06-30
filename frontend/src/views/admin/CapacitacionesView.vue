@@ -38,6 +38,7 @@ const form = ref({
   is_public: false,
   color: '#f97316',
   thumbnail_preview: '',
+  duration: 0,
 })
 
 const file = ref<File | null>(null)

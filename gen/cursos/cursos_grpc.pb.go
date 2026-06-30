@@ -58,6 +58,8 @@ const (
 	CursosService_JoinVideocall_FullMethodName                  = "/cursos.CursosService/JoinVideocall"
 	CursosService_LeaveVideocall_FullMethodName                 = "/cursos.CursosService/LeaveVideocall"
 	CursosService_EndVideocall_FullMethodName                   = "/cursos.CursosService/EndVideocall"
+	CursosService_GetMyVideocallTicket_FullMethodName           = "/cursos.CursosService/GetMyVideocallTicket"
+	CursosService_InstructorGetCurrentRoom_FullMethodName       = "/cursos.CursosService/InstructorGetCurrentRoom"
 	CursosService_AdminListSchedules_FullMethodName             = "/cursos.CursosService/AdminListSchedules"
 	CursosService_AdminCreateSchedule_FullMethodName            = "/cursos.CursosService/AdminCreateSchedule"
 	CursosService_AdminUpdateSchedule_FullMethodName            = "/cursos.CursosService/AdminUpdateSchedule"
@@ -118,6 +120,8 @@ type CursosServiceClient interface {
 	JoinVideocall(ctx context.Context, in *JoinVideocallRequest, opts ...grpc.CallOption) (*JoinVideocallResponse, error)
 	LeaveVideocall(ctx context.Context, in *LeaveVideocallRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	EndVideocall(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	GetMyVideocallTicket(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*VideocallTicketResponse, error)
+	InstructorGetCurrentRoom(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CurrentRoomResponse, error)
 	AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error)
 	AdminCreateSchedule(ctx context.Context, in *CreateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
 	AdminUpdateSchedule(ctx context.Context, in *UpdateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
@@ -525,6 +529,26 @@ func (c *cursosServiceClient) EndVideocall(ctx context.Context, in *CursoIDReque
 	return out, nil
 }
 
+func (c *cursosServiceClient) GetMyVideocallTicket(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*VideocallTicketResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VideocallTicketResponse)
+	err := c.cc.Invoke(ctx, CursosService_GetMyVideocallTicket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) InstructorGetCurrentRoom(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CurrentRoomResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CurrentRoomResponse)
+	err := c.cc.Invoke(ctx, CursosService_InstructorGetCurrentRoom_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListSchedulesResponse)
@@ -637,6 +661,8 @@ type CursosServiceServer interface {
 	JoinVideocall(context.Context, *JoinVideocallRequest) (*JoinVideocallResponse, error)
 	LeaveVideocall(context.Context, *LeaveVideocallRequest) (*EmptyResponse, error)
 	EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error)
+	GetMyVideocallTicket(context.Context, *CursoIDRequest) (*VideocallTicketResponse, error)
+	InstructorGetCurrentRoom(context.Context, *CursoIDRequest) (*CurrentRoomResponse, error)
 	AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error)
 	AdminCreateSchedule(context.Context, *CreateScheduleRequest) (*InstructorSchedule, error)
 	AdminUpdateSchedule(context.Context, *UpdateScheduleRequest) (*InstructorSchedule, error)
@@ -770,6 +796,12 @@ func (UnimplementedCursosServiceServer) LeaveVideocall(context.Context, *LeaveVi
 }
 func (UnimplementedCursosServiceServer) EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EndVideocall not implemented")
+}
+func (UnimplementedCursosServiceServer) GetMyVideocallTicket(context.Context, *CursoIDRequest) (*VideocallTicketResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMyVideocallTicket not implemented")
+}
+func (UnimplementedCursosServiceServer) InstructorGetCurrentRoom(context.Context, *CursoIDRequest) (*CurrentRoomResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorGetCurrentRoom not implemented")
 }
 func (UnimplementedCursosServiceServer) AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminListSchedules not implemented")
@@ -1512,6 +1544,42 @@ func _CursosService_EndVideocall_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_GetMyVideocallTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetMyVideocallTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetMyVideocallTicket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetMyVideocallTicket(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_InstructorGetCurrentRoom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).InstructorGetCurrentRoom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_InstructorGetCurrentRoom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).InstructorGetCurrentRoom(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_AdminListSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserRequest)
 	if err := dec(in); err != nil {
@@ -1782,6 +1850,14 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EndVideocall",
 			Handler:    _CursosService_EndVideocall_Handler,
+		},
+		{
+			MethodName: "GetMyVideocallTicket",
+			Handler:    _CursosService_GetMyVideocallTicket_Handler,
+		},
+		{
+			MethodName: "InstructorGetCurrentRoom",
+			Handler:    _CursosService_InstructorGetCurrentRoom_Handler,
 		},
 		{
 			MethodName: "AdminListSchedules",

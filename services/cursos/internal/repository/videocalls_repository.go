@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
+	"fmt"
+	"regexp"
+	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
 
@@ -70,7 +72,7 @@ func (r *postgresCursosRepository) DeleteSchedule(ctx context.Context, scheduleI
 }
 
 // CreateVideocallTickets crea N códigos únicos para acceso a videollamada
-func (r *postgresCursosRepository) CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, count int) ([]*VideocallTicket, error) {
+func (r *postgresCursosRepository) CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, scheduleID *string, count int) ([]*VideocallTicket, error) {
 	var tickets []*VideocallTicket
 	
 	// Generar 'count' tickets en una sola transacción o batch
@@ -81,16 +83,22 @@ func (r *postgresCursosRepository) CreateVideocallTickets(ctx context.Context, c
 	defer tx.Rollback()
 
 	query := `
-		INSERT INTO videocall_tickets (capacitacion_id, licencia_id, codigo)
-		VALUES ($1, $2, $3)
-		RETURNING id, capacitacion_id, licencia_id, codigo, in_use_by_user_id, is_valid, created_at
+		INSERT INTO videocall_tickets (capacitacion_id, licencia_id, schedule_id, codigo)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, capacitacion_id, licencia_id, schedule_id, codigo, in_use_by_user_id, is_valid, created_at
 	`
 	
 	for i := 0; i < count; i++ {
 		// Generar un código único corto, ej. VC-UUID[:8]
-		code := "VC-" + strings.ToUpper(uuid.New().String()[:8])
+		codigo := fmt.Sprintf("VC-%s", uuid.New().String()[:8])
+		
 		var t VideocallTicket
-		if err := tx.QueryRowxContext(ctx, query, capacitacionID, licenciaID, code).StructScan(&t); err != nil {
+		var schID interface{}
+		if scheduleID != nil && *scheduleID != "" {
+			schID = *scheduleID
+		}
+		
+		if err := tx.QueryRowxContext(ctx, query, capacitacionID, licenciaID, schID, codigo).StructScan(&t); err != nil {
 			return nil, err
 		}
 		tickets = append(tickets, &t)
@@ -130,10 +138,35 @@ func (r *postgresCursosRepository) JoinVideocall(ctx context.Context, codigo, us
 	}
 
 	// Verificar estado de la videollamada
-	var roomName string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM capacitaciones WHERE id = $1`, t.CapacitacionID).Scan(&roomName)
+	var cursoTitle string
+	err = tx.QueryRowContext(ctx, `SELECT title FROM capacitaciones WHERE id = $1`, t.CapacitacionID).Scan(&cursoTitle)
 	if err != nil {
 		return "", err
+	}
+	
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	safeTitle := re.ReplaceAllString(cursoTitle, "")
+	if len(safeTitle) > 30 {
+		safeTitle = safeTitle[:30]
+	}
+
+	var roomName string
+	if t.ScheduleID != nil && *t.ScheduleID != "" {
+		var status string
+		var endTime time.Time
+		err = tx.QueryRowContext(ctx, `SELECT status, end_time FROM instructor_schedules WHERE id = $1`, *t.ScheduleID).Scan(&status, &endTime)
+		if err != nil {
+			return "", err
+		}
+		
+		if status == "finished" || time.Now().After(endTime.Add(2*time.Hour)) {
+			tx.ExecContext(ctx, `UPDATE videocall_tickets SET is_valid = false WHERE id = $1`, t.ID)
+			return "", errors.New("esta sesión de videollamada ya ha finalizado")
+		}
+		
+		roomName = fmt.Sprintf("%s-%s", safeTitle, (*t.ScheduleID)[:8])
+	} else {
+		roomName = fmt.Sprintf("%s-%s", safeTitle, t.CapacitacionID[:8])
 	}
 
 	_, err = tx.ExecContext(ctx, `UPDATE videocall_tickets SET in_use_by_user_id = $1 WHERE id = $2`, userID, t.ID)
@@ -163,21 +196,32 @@ func (r *postgresCursosRepository) LeaveVideocall(ctx context.Context, codigo, u
 }
 
 // EndVideocall invalida todos los códigos y la videollamada
-func (r *postgresCursosRepository) EndVideocall(ctx context.Context, cursoID string) error {
+func (r *postgresCursosRepository) EndVideocall(ctx context.Context, cursoID string, scheduleID *string) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, `UPDATE capacitaciones SET videocall_status = 'finished' WHERE id = $1`, cursoID)
-	if err != nil {
-		return err
-	}
+	if scheduleID != nil && *scheduleID != "" {
+		_, err = tx.ExecContext(ctx, `UPDATE videocall_tickets SET is_valid = false, in_use_by_user_id = NULL WHERE capacitacion_id = $1 AND schedule_id = $2`, cursoID, *scheduleID)
+		if err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE instructor_schedules SET status = 'finished' WHERE id = $1`, *scheduleID)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = tx.ExecContext(ctx, `UPDATE capacitaciones SET videocall_status = 'finished' WHERE id = $1`, cursoID)
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.ExecContext(ctx, `UPDATE videocall_tickets SET is_valid = false, in_use_by_user_id = NULL WHERE capacitacion_id = $1`, cursoID)
-	if err != nil {
-		return err
+		_, err = tx.ExecContext(ctx, `UPDATE videocall_tickets SET is_valid = false, in_use_by_user_id = NULL WHERE capacitacion_id = $1`, cursoID)
+		if err != nil {
+			return err
+		}
 	}
 	
 	// Aquí podríamos agregar lógica para marcar inscripciones/progreso, 
@@ -196,11 +240,48 @@ func (r *postgresCursosRepository) EndVideocall(ctx context.Context, cursoID str
 // ListTicketsByLicencia obtiene todos los tickets de una licencia B2B
 func (r *postgresCursosRepository) ListTicketsByLicencia(ctx context.Context, licenciaID string) ([]*VideocallTicket, error) {
 	var tickets []*VideocallTicket
-	query := `SELECT id, capacitacion_id, licencia_id, codigo, in_use_by_user_id, is_valid, created_at 
+	query := `SELECT id, capacitacion_id, licencia_id, schedule_id, owner_id, codigo, in_use_by_user_id, is_valid, created_at 
 	          FROM videocall_tickets WHERE licencia_id = $1`
 	err := r.db.SelectContext(ctx, &tickets, query, licenciaID)
+	return tickets, err
+}
+
+func (r *postgresCursosRepository) AssignTicketToUser(ctx context.Context, ticketID, userID string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE videocall_tickets SET owner_id = $1 WHERE id = $2`, userID, ticketID)
+	return err
+}
+
+func (r *postgresCursosRepository) GetTicketForUserAndCourse(ctx context.Context, userID, cursoID string) (*VideocallTicket, error) {
+	var t VideocallTicket
+	query := `SELECT id, capacitacion_id, licencia_id, schedule_id, owner_id, codigo, in_use_by_user_id, is_valid, created_at 
+	          FROM videocall_tickets WHERE owner_id = $1 AND capacitacion_id = $2 AND is_valid = true LIMIT 1`
+	err := r.db.GetContext(ctx, &t, query, userID, cursoID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Not found
+		}
 		return nil, err
 	}
-	return tickets, nil
+	return &t, nil
+}
+
+func (r *postgresCursosRepository) GetCurrentScheduleForInstructor(ctx context.Context, instructorID, cursoID string) (*string, error) {
+	var scheduleID string
+	// Find the most recently created active/booked schedule for this instructor
+	// We don't link schedules to courses in the DB directly, wait!
+	// Oh! `instructor_schedules` doesn't have `curso_id`! It's just an instructor schedule!
+	// But `videocall_tickets` links `schedule_id` to `capacitacion_id`.
+	query := `SELECT s.id FROM instructor_schedules s
+	          JOIN videocall_tickets t ON t.schedule_id = s.id
+	          WHERE s.instructor_id = $1 AND t.capacitacion_id = $2 
+			  AND (s.status = 'booked' OR s.status = 'active')
+	          ORDER BY s.created_at DESC LIMIT 1`
+	err := r.db.GetContext(ctx, &scheduleID, query, instructorID, cursoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Not found
+		}
+		return nil, err
+	}
+	return &scheduleID, nil
 }

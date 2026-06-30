@@ -14,6 +14,7 @@ const cursoId = route.params.id as string
 const jitsiContainer = ref<HTMLElement | null>(null)
 let jitsiApi: any = null
 const loading = ref(true)
+let scheduleId = ''
 
 onMounted(async () => {
   if (!cursoId) {
@@ -22,9 +23,17 @@ onMounted(async () => {
     return
   }
 
+  let actualRoomName = cursoId
   try {
     // Validar acceso al curso antes de unirse a Jitsi
     await api.get(`/cursos/${cursoId}`)
+    
+    // Obtener la sala activa actual (schedule_id) si existe
+    const roomRes = await api.get(`/instructor/capacitaciones/${cursoId}/current-room`)
+    if (roomRes.data && roomRes.data.room_name) {
+      actualRoomName = roomRes.data.room_name
+      scheduleId = roomRes.data.schedule_id || ''
+    }
   } catch (e: any) {
     iziToast.error({ title: 'Error', message: 'No tienes permisos de instructor para esta sala.' })
     router.push('/instructor/capacitaciones')
@@ -35,7 +44,7 @@ onMounted(async () => {
   
   const domain = 'meet.jit.si'
   const options = {
-    roomName: cursoId,
+    roomName: actualRoomName,
     width: '100%',
     height: '100%',
     parentNode: jitsiContainer.value,
@@ -76,17 +85,20 @@ onMounted(async () => {
   }
 })
 
-async function terminarLlamada() {
+async function endCall() {
   try {
-    await api.post(`/videocalls/${cursoId}/end`)
-    iziToast.success({ title: 'Éxito', message: 'Llamada finalizada. Los códigos ya no son válidos.' })
-    if (jitsiApi) {
-      jitsiApi.dispose()
-      jitsiApi = null
+    if (!confirm('¿Estás seguro de que deseas finalizar la clase? Esto desconectará a todos los estudiantes.')) return
+    
+    let url = `/instructor/videocall/${cursoId}/end`
+    if (scheduleId) {
+      url += `?schedule_id=${scheduleId}`
     }
+    await api.post(url)
+    
+    iziToast.success({ title: 'Éxito', message: 'La videollamada ha sido finalizada.' })
     router.push('/instructor/capacitaciones')
-  } catch (e) {
-    console.error('Error al finalizar la llamada', e)
+  } catch (e: any) {
+    iziToast.error({ title: 'Error', message: e.response?.data?.error || 'No se pudo finalizar la videollamada.' })
   }
 }
 
@@ -112,7 +124,7 @@ const handleVideoConferenceLeft = () => {
       <h2>Panel del Instructor - Videollamada</h2>
       <div class="actions">
         <button class="btn btn-outline" @click="router.push('/instructor/capacitaciones')">Salir (sin finalizar)</button>
-        <button class="btn btn-danger" @click="terminarLlamada">Finalizar Videollamada para todos</button>
+        <button class="btn btn-danger" @click="endCall">Finalizar Videollamada para todos</button>
       </div>
     </div>
     <div v-if="loading" class="loading-overlay">

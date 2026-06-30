@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
@@ -47,7 +49,63 @@ func (s *CursosService) EndVideocall(ctx context.Context, req *cursospb.CursoIDR
 		return ErrForbidden
 	}
 
-	return s.repo.EndVideocall(ctx, req.CursoId)
+	var schID *string
+	if req.ScheduleId != "" {
+		schID = &req.ScheduleId
+	}
+	return s.repo.EndVideocall(ctx, req.CursoId, schID)
+}
+
+func (s *CursosService) GetMyVideocallTicket(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.VideocallTicketResponse, error) {
+	ticket, err := s.repo.GetTicketForUserAndCourse(ctx, req.UserId, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	if ticket == nil {
+		return nil, errors.New("no ticket found")
+	}
+	resp := &cursospb.VideocallTicketResponse{
+		Id:     ticket.ID,
+		Codigo: ticket.Codigo,
+	}
+	if ticket.ScheduleID != nil {
+		resp.ScheduleId = *ticket.ScheduleID
+	}
+	return resp, nil
+}
+
+func (s *CursosService) InstructorGetCurrentRoom(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.CurrentRoomResponse, error) {
+	schID, err := s.repo.GetCurrentScheduleForInstructor(ctx, req.UserId, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	
+	curso, err := s.repo.FindByID(ctx, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Create safe title for room
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	safeTitle := re.ReplaceAllString(curso.Title, "")
+	if len(safeTitle) > 30 {
+		safeTitle = safeTitle[:30]
+	}
+	
+	var roomName string
+	if schID != nil {
+		roomName = fmt.Sprintf("%s-%s", safeTitle, (*schID)[:8])
+		return &cursospb.CurrentRoomResponse{
+			RoomName: roomName,
+			ScheduleId: *schID,
+		}, nil
+	}
+	
+	// Fallback to cursoId if no active schedule found
+	roomName = fmt.Sprintf("%s-%s", safeTitle, req.CursoId[:8])
+	return &cursospb.CurrentRoomResponse{
+		RoomName: roomName,
+	}, nil
 }
 
 // AdminListSchedules lista horarios

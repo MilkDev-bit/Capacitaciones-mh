@@ -17,8 +17,8 @@ let jitsiApi: any = null
 
 onMounted(async () => {
   if (!roomName || !codigo) {
-    iziToast.warning({ title: 'Aviso', message: 'Falta la sala o el código de acceso.' })
-    router.push('/usuario/dashboard')
+    iziToast.warning({ title: 'Aviso', message: 'Falta la sala o el código de acceso. Ingresa tu código.' })
+    router.push('/join')
     return
   }
 
@@ -27,7 +27,7 @@ onMounted(async () => {
     await api.post('/videocalls/join', { codigo })
   } catch (e: any) {
     iziToast.error({ title: 'Error', message: e.response?.data?.error || 'No tienes acceso a esta videollamada.' })
-    router.push('/usuario/dashboard')
+    router.push('/join')
     return
   }
   
