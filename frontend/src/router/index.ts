@@ -8,6 +8,7 @@ const router = createRouter({
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/reset-password', component: () => import('../views/ResetPasswordView.vue') },
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
+    { path: '/invitacion/:id', component: () => import('../views/InvitacionVideollamada.vue') },
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },

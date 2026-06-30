@@ -62,12 +62,14 @@ async function openDetails(lic: any) {
   try {
     const res = await api.get(`/licencias/${lic.id}/tickets`)
     selectedTickets.value = res.data || []
-  } catch(e) {
-    console.error('Error fetching tickets', e)
+  } catch {
+    selectedTickets.value = []
   } finally {
     loadingTickets.value = false
   }
 }
+
+const baseOrigin = ref(window.location.origin)
 
 function closeModal() {
   selectedLic.value = null
@@ -90,7 +92,17 @@ async function downloadInvoice(lic: any) {
     invoiceLoading.value = false
   }
 }
-function copyCode(codigo: string) {
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success('Copiado al portapapeles')
+  } catch (err) {
+    toast.error('Error al copiar')
+  }
+}
+
+async function copyCode(codigo: string) {
   navigator.clipboard.writeText(codigo)
   toast.success('Código copiado al portapapeles')
 }
@@ -187,6 +199,15 @@ function copyCode(codigo: string) {
               </span></div>
 
               <div v-if="selectedTickets && selectedTickets.length > 0" class="tickets-section">
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-color);">Enlace de Invitación</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Comparte este enlace junto con los códigos a tus participantes.</p>
+                <div class="invite-link-box">
+                  <span class="mono link-text">{{ baseOrigin }}/invitacion/{{ selectedLic.capacitacion_id }}</span>
+                  <button class="btn-copy-small" @click="copyText(`${baseOrigin}/invitacion/${selectedLic.capacitacion_id}`)" title="Copiar enlace">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  </button>
+                </div>
+
                 <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-color);">Códigos Únicos para Videollamada</h4>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Envía un código distinto a cada participante de la videollamada.</p>
                 <div v-if="loadingTickets" class="loading" style="font-size: 0.9rem;">Cargando códigos...</div>
@@ -539,13 +560,17 @@ function copyCode(codigo: string) {
   margin-top: 1.5rem;
 }
 
+.invite-link-box {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; margin-bottom: 1rem;
+}
+.link-text {
+  font-size: 0.85rem; color: var(--brand); word-break: break-all; padding-right: 10px;
+}
+
 .tickets-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 250px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
+  display: flex; flex-direction: column; gap: 8px;
 }
 
 .ticket-item {
