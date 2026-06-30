@@ -456,6 +456,40 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 			CursoId:  cursoID,
 			Cantidad: int32(cantidad),
 		})
+	} else if len(parts) >= 2 && parts[0] == "cart" {
+		for k, v := range sess.Metadata {
+			if strings.HasPrefix(k, "item_") {
+				itemParts := strings.Split(v, "||")
+				if len(itemParts) >= 2 {
+					if itemParts[0] == "b2c" {
+						cursoID := itemParts[1]
+						scheduleID := ""
+						if len(itemParts) == 3 {
+							scheduleID = itemParts[2]
+						}
+						_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
+							UserId:         userID,
+							CapacitacionId: cursoID,
+							ScheduleId:     scheduleID,
+						})
+					} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
+						cursoID := itemParts[1]
+						cantidadStr := itemParts[2]
+						cantidad, _ := strconv.Atoi(cantidadStr)
+						scheduleID := ""
+						if len(itemParts) == 4 {
+							scheduleID = itemParts[3]
+						}
+						_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
+							UserId:     userID,
+							CursoId:    cursoID,
+							Cantidad:   int32(cantidad),
+							ScheduleId: scheduleID,
+						})
+					}
+				}
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"ok": true})

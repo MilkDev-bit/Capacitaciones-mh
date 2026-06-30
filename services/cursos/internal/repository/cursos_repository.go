@@ -466,10 +466,22 @@ func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, 
 	}
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id, stripe_product_id)
-		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		 SELECT $1,$2,$3,$4,$5,$6,$7
+		 WHERE NOT EXISTS (
+		    SELECT 1 FROM curso_licencias WHERE stripe_product_id = $7 AND $7 IS NOT NULL
+		 )
+		 RETURNING id`,
 		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId, stripeSessionID,
 	).Scan(&id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			// Ya se insertó por el webhook o la sesión, simplemente la buscamos y la retornamos
+			err2 := r.db.QueryRowContext(ctx, `SELECT id FROM curso_licencias WHERE stripe_product_id = $1 LIMIT 1`, stripeSessionID).Scan(&id)
+			if err2 != nil {
+				return nil, fmt.Errorf("licencia duplicada detectada pero no se pudo recuperar: %w", err2)
+			}
+			return r.FindLicenciaByID(ctx, id)
+		}
 		return nil, err
 	}
 	return r.FindLicenciaByID(ctx, id)
