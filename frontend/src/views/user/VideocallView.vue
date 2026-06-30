@@ -15,9 +15,18 @@ const codigo = route.query.codigo as string
 const jitsiContainer = ref<HTMLElement | null>(null)
 let jitsiApi: any = null
 
-onMounted(() => {
-  if (!roomName) {
-    iziToast.warning({ title: 'Aviso', message: 'Falta la sala.' })
+onMounted(async () => {
+  if (!roomName || !codigo) {
+    iziToast.warning({ title: 'Aviso', message: 'Falta la sala o el código de acceso.' })
+    router.push('/usuario/dashboard')
+    return
+  }
+
+  try {
+    // Validar el código con el backend ANTES de unirse a Jitsi
+    await api.post('/videocalls/join', { codigo })
+  } catch (e: any) {
+    iziToast.error({ title: 'Error', message: e.response?.data?.error || 'No tienes acceso a esta videollamada.' })
     router.push('/usuario/dashboard')
     return
   }

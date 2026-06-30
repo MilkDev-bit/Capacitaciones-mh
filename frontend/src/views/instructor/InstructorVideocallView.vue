@@ -14,10 +14,19 @@ const cursoId = route.params.id as string
 const jitsiContainer = ref<HTMLElement | null>(null)
 let jitsiApi: any = null
 
-onMounted(() => {
+onMounted(async () => {
   if (!cursoId) {
     iziToast.warning({ title: 'Aviso', message: 'Falta el curso.' })
-    router.push('/instructor/dashboard')
+    router.push('/instructor/capacitaciones')
+    return
+  }
+
+  try {
+    // Validar acceso al curso antes de unirse a Jitsi
+    await api.get(`/cursos/${cursoId}`)
+  } catch (e: any) {
+    iziToast.error({ title: 'Error', message: 'No tienes permisos de instructor para esta sala.' })
+    router.push('/instructor/capacitaciones')
     return
   }
   

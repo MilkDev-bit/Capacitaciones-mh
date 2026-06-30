@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
 	"Prueba-Go/services/cursos/internal/repository"
@@ -11,6 +13,15 @@ import (
 func (s *CursosService) JoinVideocall(ctx context.Context, req *cursospb.JoinVideocallRequest) (*cursospb.JoinVideocallResponse, error) {
 	roomName, err := s.repo.JoinVideocall(ctx, req.Codigo, req.UserId)
 	if err != nil {
+		if strings.Contains(err.Error(), "código no válido") {
+			return nil, fmt.Errorf("%w: código no válido", ErrNotFound)
+		}
+		if strings.Contains(err.Error(), "ya no es válido") {
+			return nil, fmt.Errorf("%w: este código ya no es válido o la llamada terminó", ErrForbidden)
+		}
+		if strings.Contains(err.Error(), "usado por otra persona") {
+			return nil, fmt.Errorf("%w: el código está siendo usado por otra persona", ErrConflict)
+		}
 		return nil, err
 	}
 
