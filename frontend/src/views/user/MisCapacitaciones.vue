@@ -140,7 +140,12 @@ onMounted(() => {
 })
 
 function openCourse(id: string) {
-  router.push('/usuario/capacitaciones/' + id)
+  const course = capacitaciones.value.find(c => c.id === id)
+  if (course && course.type === 'videocall') {
+    router.push(`/usuario/videocall/${id}`)
+  } else {
+    router.push('/usuario/capacitaciones/' + id)
+  }
 }
 
 async function inscribirse(id: string) {

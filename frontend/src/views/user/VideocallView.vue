@@ -16,8 +16,8 @@ const jitsiContainer = ref<HTMLElement | null>(null)
 let jitsiApi: any = null
 
 onMounted(() => {
-  if (!roomName || !codigo) {
-    iziToast.warning({ title: 'Aviso', message: 'Falta la sala o el código de acceso.' })
+  if (!roomName) {
+    iziToast.warning({ title: 'Aviso', message: 'Falta la sala.' })
     router.push('/usuario/dashboard')
     return
   }
