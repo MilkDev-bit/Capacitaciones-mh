@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import EmptyState from '../../components/EmptyState.vue'
+import { toast } from '../../utils/toast'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const capacitaciones = ref<any[]>([])
 const cursosPublicos = ref<any[]>([])
@@ -134,7 +136,25 @@ async function loadPublicos() {
   }
 }
 
-onMounted(() => {
+async function verifySession(sessionId: string) {
+  try {
+    await api.post('/verify-checkout-session', { session_id: sessionId })
+    toast.success('¡Compra procesada correctamente!')
+  } catch (e: any) {
+    const msg = e.response?.data?.error || ''
+    if (!msg.includes('ya existe') && !msg.includes('conflict')) {
+      console.warn('verify-checkout-session:', msg)
+    }
+  } finally {
+    router.replace({ path: '/usuario/capacitaciones' })
+  }
+}
+
+onMounted(async () => {
+  const sessionId = route.query.session_id as string | undefined
+  if (sessionId) {
+    await verifySession(sessionId)
+  }
   loadMis()
   loadPublicos()
 })
