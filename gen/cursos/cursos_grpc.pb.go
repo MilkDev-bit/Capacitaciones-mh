@@ -32,6 +32,7 @@ const (
 	CursosService_WebhookComprarB2BDirect_FullMethodName        = "/cursos.CursosService/WebhookComprarB2BDirect"
 	CursosService_CreateCheckoutSession_FullMethodName          = "/cursos.CursosService/CreateCheckoutSession"
 	CursosService_CreateCheckoutSessionB2BDirect_FullMethodName = "/cursos.CursosService/CreateCheckoutSessionB2BDirect"
+	CursosService_CreateCheckoutSessionCart_FullMethodName      = "/cursos.CursosService/CreateCheckoutSessionCart"
 	CursosService_ListLicencias_FullMethodName                  = "/cursos.CursosService/ListLicencias"
 	CursosService_GetLicenciaPublica_FullMethodName             = "/cursos.CursosService/GetLicenciaPublica"
 	CursosService_ListLicenciasCompradas_FullMethodName         = "/cursos.CursosService/ListLicenciasCompradas"
@@ -88,6 +89,7 @@ type CursosServiceClient interface {
 	WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionB2BDirect(ctx context.Context, in *CreateCheckoutSessionB2BDirectRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
+	CreateCheckoutSessionCart(ctx context.Context, in *CheckoutCartRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
@@ -257,6 +259,16 @@ func (c *cursosServiceClient) CreateCheckoutSessionB2BDirect(ctx context.Context
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CheckoutSessionResponse)
 	err := c.cc.Invoke(ctx, CursosService_CreateCheckoutSessionB2BDirect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) CreateCheckoutSessionCart(ctx context.Context, in *CheckoutCartRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutSessionResponse)
+	err := c.cc.Invoke(ctx, CursosService_CreateCheckoutSessionCart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -596,6 +608,7 @@ type CursosServiceServer interface {
 	WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*EmptyResponse, error)
 	CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionB2BDirect(context.Context, *CreateCheckoutSessionB2BDirectRequest) (*CheckoutSessionResponse, error)
+	CreateCheckoutSessionCart(context.Context, *CheckoutCartRequest) (*CheckoutSessionResponse, error)
 	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(context.Context, *LicenciaIDRequest) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error)
@@ -679,6 +692,9 @@ func (UnimplementedCursosServiceServer) CreateCheckoutSession(context.Context, *
 }
 func (UnimplementedCursosServiceServer) CreateCheckoutSessionB2BDirect(context.Context, *CreateCheckoutSessionB2BDirectRequest) (*CheckoutSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSessionB2BDirect not implemented")
+}
+func (UnimplementedCursosServiceServer) CreateCheckoutSessionCart(context.Context, *CheckoutCartRequest) (*CheckoutSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSessionCart not implemented")
 }
 func (UnimplementedCursosServiceServer) ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLicencias not implemented")
@@ -1024,6 +1040,24 @@ func _CursosService_CreateCheckoutSessionB2BDirect_Handler(srv interface{}, ctx 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).CreateCheckoutSessionB2BDirect(ctx, req.(*CreateCheckoutSessionB2BDirectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_CreateCheckoutSessionCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckoutCartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).CreateCheckoutSessionCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_CreateCheckoutSessionCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).CreateCheckoutSessionCart(ctx, req.(*CheckoutCartRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1644,6 +1678,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCheckoutSessionB2BDirect",
 			Handler:    _CursosService_CreateCheckoutSessionB2BDirect_Handler,
+		},
+		{
+			MethodName: "CreateCheckoutSessionCart",
+			Handler:    _CursosService_CreateCheckoutSessionCart_Handler,
 		},
 		{
 			MethodName: "ListLicencias",

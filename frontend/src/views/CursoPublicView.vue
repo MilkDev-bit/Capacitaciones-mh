@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useCartStore } from '../stores/cart'
 import { toast } from '../utils/toast'
 import logoSrc from '../assets/logo-capacitaciones.png'
 import SchedulePicker from '../components/SchedulePicker.vue'
@@ -10,6 +11,7 @@ import SchedulePicker from '../components/SchedulePicker.vue'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const cart = useCartStore()
 
 const id = route.params.id as string
 const curso = ref<any>(null)
@@ -103,62 +105,36 @@ async function enrollFree() {
   }
 }
 
-async function buyCourse() {
+function buyCourse() {
   if (!curso.value) return
-  buying.value = true
-  try {
-    const payload: any = {
-      curso_id: curso.value.id,
-      success_url: window.location.origin + '/usuario/capacitaciones?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: window.location.href,
-    }
-    if (curso.value.type === 'videocall') {
-      payload.schedule_id = selectedScheduleId.value
-    }
-    const res = await api.post('/checkout-session', payload)
-    if (res.data?.url) {
-      window.location.href = res.data.url
-    } else {
-      toast.error('No se pudo obtener el enlace de pago')
-    }
-  } catch (e: any) {
-    const msg = e.response?.data?.error || ''
-    if (e.response?.status === 500 || !msg) {
-      toast.error('El servicio de pagos no está disponible en este momento.')
-    } else {
-      toast.error(msg)
-    }
-  } finally {
-    buying.value = false
-  }
+  cart.addItem({
+    curso_id: curso.value.id,
+    title: curso.value.title,
+    thumbnail: curso.value.thumbnail_url,
+    precio: curso.value.precio,
+    cantidad: 1,
+    type: 'b2c',
+    schedule_id: curso.value.type === 'videocall' ? selectedScheduleId.value : undefined
+  })
+  cart.openDrawer()
 }
 
-async function buyVideocall() {
+function buyVideocall() {
   if (!curso.value || !selectedScheduleId.value || videocallAttendees.value < 1) return
   if (videocallAttendees.value === 1) {
-    await buyCourse()
+    buyCourse()
     return
   }
-  buying.value = true
-  try {
-    const res = await api.post('/checkout-session-b2b-direct', {
-      curso_id: curso.value.id,
-      cantidad: videocallAttendees.value,
-      success_url: window.location.origin + '/usuario/licencias?session_id={CHECKOUT_SESSION_ID}&tipo=b2b',
-      cancel_url: window.location.href,
-      schedule_id: selectedScheduleId.value
-    })
-    if (res.data?.url) {
-      window.location.href = res.data.url
-    } else {
-      toast.error('No se pudo obtener el enlace de pago para grupo')
-    }
-  } catch (e: any) {
-    const msg = e.response?.data?.error || ''
-    toast.error(msg || 'Error al conectar con pagos')
-  } finally {
-    buying.value = false
-  }
+  cart.addItem({
+    curso_id: curso.value.id,
+    title: curso.value.title,
+    thumbnail: curso.value.thumbnail_url,
+    precio: curso.value.precio,
+    cantidad: videocallAttendees.value,
+    type: 'b2b_direct',
+    schedule_id: selectedScheduleId.value
+  })
+  cart.openDrawer()
 }
 
 async function unirseConCodigo() {
@@ -199,32 +175,19 @@ function openB2BModal() {
   showB2BModal.value = true
 }
 
-async function buyB2B() {
+function buyB2B() {
   if (!curso.value) return
-  buyingB2B.value = true
-  try {
-    const res = await api.post('/checkout-session-b2b-direct', {
-      curso_id: curso.value.id,
-      cantidad: b2bCantidad.value,
-      success_url: window.location.origin + '/usuario/licencias?session_id={CHECKOUT_SESSION_ID}&tipo=b2b',
-      cancel_url: window.location.href,
-      schedule_id: selectedScheduleId.value || undefined
-    })
-    if (res.data?.url) {
-      window.location.href = res.data.url
-    } else {
-      toast.error('No se pudo obtener el enlace de pago corporativo')
-    }
-  } catch (e: any) {
-    const msg = e.response?.data?.error || ''
-    if (e.response?.status === 500 || !msg) {
-      toast.error('El servicio de pagos no está disponible en este momento.')
-    } else {
-      toast.error(msg)
-    }
-  } finally {
-    buyingB2B.value = false
-  }
+  cart.addItem({
+    curso_id: curso.value.id,
+    title: curso.value.title,
+    thumbnail: curso.value.thumbnail_url,
+    precio: curso.value.precio,
+    cantidad: b2bCantidad.value,
+    type: 'b2b_direct',
+    schedule_id: selectedScheduleId.value || undefined
+  })
+  showB2BModal.value = false
+  cart.openDrawer()
 }
 </script>
 
@@ -247,11 +210,17 @@ async function buyB2B() {
             ← Catálogo
           </button>
           <template v-if="auth.isLoggedIn">
+            <button class="cpv-nav-btn ghost" @click="cart.openDrawer">
+              🛒 Carrito ({{ cart.totalItems }})
+            </button>
             <button class="cpv-nav-btn primary" @click="router.push(auth.user?.role === 'instructor' ? '/instructor' : '/usuario')">
               Mi Panel
             </button>
           </template>
           <template v-else>
+            <button class="cpv-nav-btn ghost" @click="cart.openDrawer">
+              🛒 Carrito ({{ cart.totalItems }})
+            </button>
             <button class="cpv-nav-btn ghost" @click="router.push('/login')">Iniciar sesión</button>
             <button class="cpv-nav-btn primary" @click="router.push('/login')">Registrarse</button>
           </template>

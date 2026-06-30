@@ -25,7 +25,7 @@ const availableDates = computed(() => Object.keys(groupedSchedules.value))
 
 watch(availableDates, (newDates) => {
   if (newDates.length > 0 && !selectedDate.value) {
-    selectedDate.value = newDates[0]
+    selectedDate.value = newDates[0] || ''
   }
 }, { immediate: true })
 

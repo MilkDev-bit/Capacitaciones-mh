@@ -557,3 +557,90 @@ func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursos
 func (s *CursosService) GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error) {
 	return s.repo.GetAdminDashboardStats(ctx)
 }
+
+func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *cursospb.CheckoutCartRequest) (*cursospb.CheckoutSessionResponse, error) {
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
+	if len(req.Items) == 0 {
+		return nil, errors.New("el carrito está vacío")
+	}
+
+	var lineItems []*stripe.CheckoutSessionLineItemParams
+	metadataMap := make(map[string]string)
+
+	for i, item := range req.Items {
+		curso, err := s.repo.FindByID(ctx, item.CursoId)
+		if err != nil {
+			return nil, fmt.Errorf("curso no encontrado: %s", item.CursoId)
+		}
+		if curso.Precio <= 0 {
+			return nil, fmt.Errorf("el curso %s no tiene precio", curso.Title)
+		}
+
+		var productName string
+		var amount int64
+		var itemMeta string
+
+		if item.Type == "b2c" {
+			productName = curso.Title
+			amount = int64(curso.Precio * 100)
+			itemMeta = fmt.Sprintf("b2c||%s||%s", curso.ID, item.ScheduleId)
+		} else if item.Type == "b2b_direct" {
+			productName = "Licencias Corporativas: " + curso.Title
+			amount = int64(curso.Precio * float64(item.Cantidad) * 100)
+			itemMeta = fmt.Sprintf("b2b_direct||%s||%d||%s", curso.ID, item.Cantidad, item.ScheduleId)
+		} else {
+			return nil, fmt.Errorf("tipo de ítem no válido: %s", item.Type)
+		}
+
+		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("mxn"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String(productName),
+				},
+				UnitAmount: stripe.Int64(amount),
+			},
+			Quantity: stripe.Int64(1),
+		})
+
+		// Stripe metadata limit is 50 keys
+		metadataMap[fmt.Sprintf("item_%d", i)] = itemMeta
+	}
+
+	clientRef := "cart||" + req.UserId
+
+	params := &stripe.CheckoutSessionParams{
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		LineItems:          lineItems,
+		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:         stripe.String(req.SuccessUrl),
+		CancelURL:          stripe.String(req.CancelUrl),
+		ClientReferenceID:  stripe.String(clientRef),
+		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
+			Enabled: stripe.Bool(true),
+		},
+		BillingAddressCollection: stripe.String(string(stripe.CheckoutSessionBillingAddressCollectionAuto)),
+		TaxIDCollection: &stripe.CheckoutSessionTaxIDCollectionParams{
+			Enabled: stripe.Bool(true),
+		},
+	}
+
+	for k, v := range metadataMap {
+		params.AddMetadata(k, v)
+	}
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
+			params.CustomerEmail = stripe.String(vals[0])
+		}
+	}
+
+	sess, err := session.New(params)
+	if err != nil {
+		log.Printf("Error de Stripe al crear sesión de carrito: %v", err)
+		return nil, fmt.Errorf("error al conectar con Stripe: %v", err)
+	}
+
+	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
+}

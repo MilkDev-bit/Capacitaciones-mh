@@ -24,6 +24,7 @@ service CursosService {
   rpc WebhookComprarB2BDirect(WebhookComprarB2BDirectRequest) returns (EmptyResponse);
   rpc CreateCheckoutSession(CheckoutSessionRequest) returns (CheckoutSessionResponse);
   rpc CreateCheckoutSessionB2BDirect(CreateCheckoutSessionB2BDirectRequest) returns (CheckoutSessionResponse);
+  rpc CreateCheckoutSessionCart(CheckoutCartRequest) returns (CheckoutSessionResponse);
   rpc ListLicencias(ListLicenciasRequest) returns (ListLicenciasResponse);
   rpc GetLicenciaPublica(LicenciaIDRequest) returns (LicenciaPublicaResponse);
   rpc ListLicenciasCompradas(UserRequest) returns (ListLicenciasResponse);
@@ -241,6 +242,20 @@ message WebhookEnrollRequest {
   string capacitacion_id = 2;
   string licencia_id = 3;
   string schedule_id = 4;
+}
+
+message CartItem {
+  string curso_id = 1;
+  int32 cantidad = 2;
+  string type = 3; // "b2c" | "b2b_direct"
+  string schedule_id = 4;
+}
+
+message CheckoutCartRequest {
+  string user_id = 1;
+  repeated CartItem items = 2;
+  string success_url = 3;
+  string cancel_url = 4;
 }
 
 message WebhookComprarLicenciaRequest {

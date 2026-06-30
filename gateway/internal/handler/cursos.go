@@ -246,6 +246,46 @@ func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"url": resp.Url})
 }
 
+// POST /api/checkout-session-cart
+func (h *CursosHandler) CreateCheckoutSessionCart(ctx *gin.Context) {
+	var req struct {
+		Items []struct {
+			CursoID    string `json:"curso_id"`
+			Cantidad   int32  `json:"cantidad"`
+			Type       string `json:"type"`
+			ScheduleID string `json:"schedule_id"`
+		} `json:"items" binding:"required"`
+		SuccessUrl string `json:"success_url" binding:"required"`
+		CancelUrl  string `json:"cancel_url" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var protoItems []*cursospb.CartItem
+	for _, it := range req.Items {
+		protoItems = append(protoItems, &cursospb.CartItem{
+			CursoId:    it.CursoID,
+			Cantidad:   it.Cantidad,
+			Type:       it.Type,
+			ScheduleId: it.ScheduleID,
+		})
+	}
+
+	resp, err := h.c.Cursos.CreateCheckoutSessionCart(genMetadata(ctx), &cursospb.CheckoutCartRequest{
+		UserId:     ctx.GetString(middleware.CtxUserID),
+		Items:      protoItems,
+		SuccessUrl: req.SuccessUrl,
+		CancelUrl:  req.CancelUrl,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"url": resp.Url})
+}
+
 // POST /api/webhooks/stripe
 func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
@@ -314,6 +354,41 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 				Cantidad:   int32(cantidad),
 				ScheduleId: scheduleID,
 			})
+		} else if len(parts) >= 2 && parts[0] == "cart" {
+			userID := parts[1]
+			for k, v := range session.Metadata {
+				if strings.HasPrefix(k, "item_") {
+					itemParts := strings.Split(v, "||")
+					if len(itemParts) >= 2 {
+						if itemParts[0] == "b2c" {
+							cursoID := itemParts[1]
+							scheduleID := ""
+							if len(itemParts) == 3 {
+								scheduleID = itemParts[2]
+							}
+							_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
+								UserId:         userID,
+								CapacitacionId: cursoID,
+								ScheduleId:     scheduleID,
+							})
+						} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
+							cursoID := itemParts[1]
+							cantidadStr := itemParts[2]
+							cantidad, _ := strconv.Atoi(cantidadStr)
+							scheduleID := ""
+							if len(itemParts) == 4 {
+								scheduleID = itemParts[3]
+							}
+							_, _ = h.c.Cursos.WebhookComprarB2BDirect(c.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+								UserId:     userID,
+								CursoId:    cursoID,
+								Cantidad:   int32(cantidad),
+								ScheduleId: scheduleID,
+							})
+						}
+					}
+				}
+			}
 		}
 	}
 	c.Status(http.StatusOK)

@@ -2,10 +2,14 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
+import { useAuthStore } from '../../stores/auth'
+import { useCartStore } from '../../stores/cart'
 import heroBg from '../../assets/store-hero-bg.png'
 import logoSrc from '../../assets/logo-capacitaciones.png'
 
 const router = useRouter()
+const auth = useAuthStore()
+const cart = useCartStore()
 
 // ── Scroll-based nav opacity ──────────────────────────────
 const scrolled = ref(false)
@@ -165,8 +169,21 @@ function onCardMove(e: MouseEvent) {
           <span class="brand-name">MH <span class="brand-accent">Capacitaciones</span></span>
         </button>
         <div class="nav-actions">
-          <button class="nav-btn ghost" @click="router.push('/login')">Iniciar sesión</button>
-          <button class="nav-btn primary" @click="router.push('/login')">Registrarse</button>
+          <template v-if="auth.isLoggedIn">
+            <button class="nav-btn ghost" @click="cart.openDrawer">
+              🛒 Carrito ({{ cart.totalItems }})
+            </button>
+            <button class="nav-btn primary" @click="router.push(auth.user?.role === 'instructor' ? '/instructor' : '/usuario')">
+              Mi Panel
+            </button>
+          </template>
+          <template v-else>
+            <button class="nav-btn ghost" @click="cart.openDrawer">
+              🛒 Carrito ({{ cart.totalItems }})
+            </button>
+            <button class="nav-btn ghost" @click="router.push('/login')">Iniciar sesión</button>
+            <button class="nav-btn primary" @click="router.push('/login')">Registrarse</button>
+          </template>
         </div>
       </div>
     </nav>

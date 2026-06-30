@@ -115,6 +115,7 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/inscripciones-licencia", d.CursosH.UnirseConLicencia)
 			auth.POST("/checkout-session", d.CursosH.CreateCheckoutSession)
 			auth.POST("/checkout-session-b2b-direct", d.CursosH.CreateCheckoutSessionB2BDirect)
+			auth.POST("/checkout-session-cart", d.CursosH.CreateCheckoutSessionCart)
 			auth.POST("/verify-checkout-session", d.CursosH.VerifyCheckoutSession)
 			auth.GET("/licencias-compradas", d.CursosH.ListLicenciasCompradas)
 			auth.GET("/licencias/:id/invoice", d.CursosH.GetLicenciaInvoicePDF)

@@ -112,6 +112,15 @@ func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb
 	return resp, nil
 }
 
+func (h *CursosHandler) CreateCheckoutSessionCart(ctx context.Context, req *cursospb.CheckoutCartRequest) (*cursospb.CheckoutSessionResponse, error) {
+	resp, err := h.svc.CreateCheckoutSessionCart(ctx, req)
+	if err != nil {
+		slog.Error("CreateCheckoutSessionCart error", "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return resp, nil
+}
+
 func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx context.Context, req *cursospb.CreateCheckoutSessionB2BDirectRequest) (*cursospb.CheckoutSessionResponse, error) {
 	resp, err := h.svc.CreateCheckoutSessionB2BDirect(ctx, req)
 	if err != nil {
