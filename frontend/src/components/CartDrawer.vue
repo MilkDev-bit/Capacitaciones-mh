@@ -111,7 +111,7 @@ async function checkout() {
 
   loading.value = true
   try {
-    const res = await api.post('/create-checkout-session-cart', {
+    const res = await api.post('/checkout-session-cart', {
       items: cart.items.map(i => ({
         curso_id: i.curso_id,
         cantidad: i.cantidad,
