@@ -542,6 +542,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		ThumbnailURL   string  `json:"thumbnail_url"`
 		Color          string  `json:"color"`
 		Precio         float64 `json:"precio"`
+		Duration       int32   `json:"duration"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -558,6 +559,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
 		Precio:         body.Precio,
+		Duration:       body.Duration,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -578,6 +580,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		ThumbnailURL   string  `json:"thumbnail_url"`
 		Color          string  `json:"color"`
 		Precio         float64 `json:"precio"`
+		Duration       int32   `json:"duration"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -595,6 +598,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
 		Precio:         body.Precio,
+		Duration:       body.Duration,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
