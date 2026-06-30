@@ -130,6 +130,8 @@ func runMigrations(db *sqlx.DB) error {
 			stripe_price_id VARCHAR(100),
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		)`,
+		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS stripe_product_id VARCHAR(100)`,
+		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS stripe_price_id VARCHAR(100)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS comprador_id UUID`,
 		`CREATE TABLE IF NOT EXISTS inscripciones (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

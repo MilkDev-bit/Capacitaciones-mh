@@ -500,7 +500,7 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 							ScheduleId: scheduleID,
 						})
 						if err != nil {
-							slog.Error("WebhookComprarB2BDirect failed in verify", "error", err, "item", v)
+							slog.Error("WebhookComprarB2BDirect failed in verify: " + err.Error(), "item", v)
 						}
 					}
 				}
