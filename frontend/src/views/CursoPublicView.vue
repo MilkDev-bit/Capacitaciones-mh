@@ -5,6 +5,7 @@ import api from '../api'
 import { useAuthStore } from '../stores/auth'
 import { toast } from '../utils/toast'
 import logoSrc from '../assets/logo-capacitaciones.png'
+import SchedulePicker from '../components/SchedulePicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -364,11 +365,7 @@ async function buyB2B() {
 
               <div v-if="curso.type === 'videocall'" class="schedule-selector" style="margin-top: 15px; margin-bottom: 10px;">
                 <label style="display:block; margin-bottom:8px; font-weight:600; font-size:0.9rem; color:var(--text-color);">Selecciona un horario:</label>
-                <select v-model="selectedScheduleId" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-color);">
-                  <option value="" disabled>-- Horarios disponibles --</option>
-                  <option v-for="s in schedules" :key="s.id" :value="s.id">{{ formatSchedule(s) }}</option>
-                </select>
-                <div v-if="schedules.length === 0" style="color:var(--danger); font-size:0.8rem; margin-top:4px;">No hay horarios disponibles por el momento.</div>
+                <SchedulePicker :schedules="schedules" v-model="selectedScheduleId" />
               </div>
 
               <button class="cpv-btn-buy w-full mt-4" @click="buyCourse" :disabled="buying || (curso.type === 'videocall' && !selectedScheduleId)">

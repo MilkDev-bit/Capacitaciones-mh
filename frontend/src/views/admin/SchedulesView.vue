@@ -49,27 +49,19 @@ function openCreate() {
   formData.value = {
     id: '',
     instructor_id: '',
-    start_time: '',
-    end_time: '',
+    start_time: new Date(),
+    end_time: new Date(),
     status: 'available'
   }
   showModal.value = true
 }
 
 function openEdit(s: any) {
-  // Convert timestamps to datetime-local format YYYY-MM-DDThh:mm
-  const toLocal = (iso: string) => {
-    if (!iso) return ''
-    const d = new Date(iso)
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-    return d.toISOString().slice(0,16)
-  }
-
   formData.value = {
     id: s.id,
     instructor_id: s.instructor_id,
-    start_time: toLocal(s.start_time),
-    end_time: toLocal(s.end_time),
+    start_time: s.start_time ? new Date(s.start_time) : new Date(),
+    end_time: s.end_time ? new Date(s.end_time) : new Date(),
     status: s.status
   }
   showModal.value = true
@@ -165,12 +157,12 @@ async function remove(id: string) {
 
         <div class="form-group">
           <label>Inicio</label>
-          <input type="datetime-local" v-model="formData.start_time" class="input" />
+          <VueDatePicker v-model="formData.start_time" :is-24="false" teleport="body" />
         </div>
 
         <div class="form-group">
           <label>Fin</label>
-          <input type="datetime-local" v-model="formData.end_time" class="input" />
+          <VueDatePicker v-model="formData.end_time" :is-24="false" teleport="body" />
         </div>
 
         <div class="form-group" v-if="formData.id">
