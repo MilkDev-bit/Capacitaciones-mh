@@ -579,15 +579,18 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 		var productName string
 		var amount int64
+		var quantity int64
 		var itemMeta string
 
 		if item.Type == "b2c" {
 			productName = curso.Title
 			amount = int64(curso.Precio * 100)
+			quantity = 1
 			itemMeta = fmt.Sprintf("b2c||%s||%s", curso.ID, item.ScheduleId)
 		} else if item.Type == "b2b_direct" {
-			productName = "Licencias Corporativas: " + curso.Title
-			amount = int64(curso.Precio * float64(item.Cantidad) * 100)
+			productName = "Licencia Corporativa: " + curso.Title
+			amount = int64(curso.Precio * 100)
+			quantity = int64(item.Cantidad)
 			itemMeta = fmt.Sprintf("b2b_direct||%s||%d||%s", curso.ID, item.Cantidad, item.ScheduleId)
 		} else {
 			return nil, fmt.Errorf("tipo de ítem no válido: %s", item.Type)
@@ -601,7 +604,7 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 				},
 				UnitAmount: stripe.Int64(amount),
 			},
-			Quantity: stripe.Int64(1),
+			Quantity: stripe.Int64(quantity),
 		})
 
 		// Stripe metadata limit is 50 keys
