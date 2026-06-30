@@ -537,7 +537,13 @@ func (h *CursosHandler) GetLicenciaInvoicePDF(ctx *gin.Context) {
 	}
 
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-	s, err := stripeSession.Get(sessionID, nil)
+	
+	cleanSessionID := sessionID
+	if idx := strings.Index(cleanSessionID, "_item_"); idx != -1 {
+		cleanSessionID = cleanSessionID[:idx]
+	}
+	
+	s, err := stripeSession.Get(cleanSessionID, nil)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener datos de Stripe", "details": err.Error()})
 		return
