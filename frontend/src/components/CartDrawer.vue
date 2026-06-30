@@ -85,12 +85,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
+import { toast } from '../utils/toast'
 import api from '../api'
 
 const cart = useCartStore()
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 const loading = ref(false)
+
+function checkOpenCart() {
+  if (route.query.open_cart === '1') {
+    cart.openDrawer()
+    const query = { ...route.query }
+    delete query.open_cart
+    router.replace({ query })
+  }
+}
+
+onMounted(() => {
+  checkOpenCart()
+})
+
+watch(() => route.query.open_cart, (val) => {
+  if (val === '1') checkOpenCart()
+})
 
 function fileUrl(path: string) {
   if (!path) return ''
@@ -104,6 +127,15 @@ function formatPrice(val: number) {
 
 async function checkout() {
   if (cart.items.length === 0) return
+  if (!auth.isLoggedIn) {
+    cart.closeDrawer()
+    toast.info('Por favor, inicia sesión o crea una cuenta para continuar con tu compra.')
+    router.push({
+      path: '/login',
+      query: { redirect: route.fullPath.includes('?') ? `${route.fullPath}&open_cart=1` : `${route.fullPath}?open_cart=1` }
+    })
+    return
+  }
   loading.value = true
   try {
     const payload = {
