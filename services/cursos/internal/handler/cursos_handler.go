@@ -293,7 +293,11 @@ func (h *CursosHandler) AdminDesAsignar(ctx context.Context, req *cursospb.Asign
 // ── Videocalls ────────────────────────────────────────────────────────────
 
 func (h *CursosHandler) JoinVideocall(ctx context.Context, req *cursospb.JoinVideocallRequest) (*cursospb.JoinVideocallResponse, error) {
-	return h.svc.JoinVideocall(ctx, req)
+	res, err := h.svc.JoinVideocall(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return res, nil
 }
 
 func (h *CursosHandler) LeaveVideocall(ctx context.Context, req *cursospb.LeaveVideocallRequest) (*cursospb.EmptyResponse, error) {

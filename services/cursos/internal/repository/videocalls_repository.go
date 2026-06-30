@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
 
@@ -86,8 +87,8 @@ func (r *postgresCursosRepository) CreateVideocallTickets(ctx context.Context, c
 	`
 	
 	for i := 0; i < count; i++ {
-		// Generar un código único corto, ej. VC-uuid[:8]
-		code := "VC-" + uuid.New().String()[:8]
+		// Generar un código único corto, ej. VC-UUID[:8]
+		code := "VC-" + strings.ToUpper(uuid.New().String()[:8])
 		var t VideocallTicket
 		if err := tx.QueryRowxContext(ctx, query, capacitacionID, licenciaID, code).StructScan(&t); err != nil {
 			return nil, err
@@ -112,7 +113,7 @@ func (r *postgresCursosRepository) JoinVideocall(ctx context.Context, codigo, us
 
 	var t VideocallTicket
 	// Bloquear fila
-	err = tx.QueryRowxContext(ctx, `SELECT * FROM videocall_tickets WHERE codigo = $1 FOR UPDATE`, codigo).StructScan(&t)
+	err = tx.QueryRowxContext(ctx, `SELECT * FROM videocall_tickets WHERE UPPER(codigo) = UPPER($1) FOR UPDATE`, codigo).StructScan(&t)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", errors.New("código no válido")
@@ -150,7 +151,7 @@ func (r *postgresCursosRepository) JoinVideocall(ctx context.Context, codigo, us
 
 // LeaveVideocall libera el uso del código
 func (r *postgresCursosRepository) LeaveVideocall(ctx context.Context, codigo, userID string) error {
-	res, err := r.db.ExecContext(ctx, `UPDATE videocall_tickets SET in_use_by_user_id = NULL WHERE codigo = $1 AND in_use_by_user_id = $2`, codigo, userID)
+	res, err := r.db.ExecContext(ctx, `UPDATE videocall_tickets SET in_use_by_user_id = NULL WHERE UPPER(codigo) = UPPER($1) AND in_use_by_user_id = $2`, codigo, userID)
 	if err != nil {
 		return err
 	}
