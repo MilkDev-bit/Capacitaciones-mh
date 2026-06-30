@@ -85,6 +85,8 @@ type Licencia struct {
 	StripePriceID   *string   `db:"stripe_price_id"`
 	CompradorID     *string   `db:"comprador_id"`
 	CreatedAt       time.Time `db:"created_at"`
+	CursoType       *string   `db:"curso_type"`
+	CursoDuracion   *int32    `db:"curso_duracion"`
 }
 
 func (l *Licencia) ToProto() *cursospb.Licencia {
@@ -96,6 +98,12 @@ func (l *Licencia) ToProto() *cursospb.Licencia {
 		CapacidadMaxima: l.CapacidadMaxima,
 		Usadas:          l.Usadas,
 		CreatedAt:       l.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if l.CursoType != nil {
+		r.CursoType = *l.CursoType
+	}
+	if l.CursoDuracion != nil {
+		r.CursoDuracion = *l.CursoDuracion
 	}
 	if l.CodigoAcceso != nil {
 		r.CodigoAcceso = *l.CodigoAcceso
@@ -522,10 +530,11 @@ func (r *postgresCursosRepository) InscribirseConLicencia(ctx context.Context, u
 func (r *postgresCursosRepository) ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error) {
 	var lics []*Licencia
 	return lics, r.db.SelectContext(ctx, &lics,
-		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at 
-		 FROM curso_licencias 
-		 WHERE comprador_id=$1 
-		 ORDER BY created_at DESC`, userID)
+		`SELECT l.id, l.capacitacion_id, l.nombre, l.precio, l.capacidad_maxima, l.usadas, l.codigo_acceso, l.stripe_product_id, l.stripe_price_id, l.comprador_id, l.created_at, c.type as curso_type, c.duration as curso_duracion
+		 FROM curso_licencias l
+		 LEFT JOIN capacitaciones c ON c.id = l.capacitacion_id
+		 WHERE l.comprador_id=$1 
+		 ORDER BY l.created_at DESC`, userID)
 }
 
 func (r *postgresCursosRepository) AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error {

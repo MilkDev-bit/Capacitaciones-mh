@@ -192,6 +192,8 @@ message Licencia {
   string stripe_price_id = 9;
   string comprador_id = 10;
   string created_at = 11;
+  string curso_type = 12;
+  int32 curso_duracion = 13;
 }
 
 message LicenciaPublicaResponse {

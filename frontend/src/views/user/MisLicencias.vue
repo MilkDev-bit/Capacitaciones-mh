@@ -139,7 +139,11 @@ function copyCode(codigo: string) {
             </div>
           </div>
 
-          <div class="code-section">
+          <div class="code-section" v-if="lic.curso_type === 'videocall'">
+            <p class="code-instruction">Esta es una capacitación por <strong>Videollamada</strong> ({{ lic.curso_duracion }} min). En lugar de un solo código, se generaron códigos únicos para cada participante.</p>
+            <p class="code-instruction" style="margin-top: 8px;">Abre los detalles para ver y copiar los códigos individuales.</p>
+          </div>
+          <div class="code-section" v-else>
             <p class="code-instruction">Envía este código a tu equipo para que puedan acceder al curso:</p>
             <div class="code-box" @click="copyCode(lic.codigo_acceso)">
               {{ lic.codigo_acceso }}

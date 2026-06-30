@@ -1214,6 +1214,8 @@ type Licencia struct {
 	StripePriceId   string                 `protobuf:"bytes,9,opt,name=stripe_price_id,json=stripePriceId,proto3" json:"stripe_price_id,omitempty"`
 	CompradorId     string                 `protobuf:"bytes,10,opt,name=comprador_id,json=compradorId,proto3" json:"comprador_id,omitempty"`
 	CreatedAt       string                 `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CursoType       string                 `protobuf:"bytes,12,opt,name=curso_type,json=cursoType,proto3" json:"curso_type,omitempty"`
+	CursoDuracion   int32                  `protobuf:"varint,13,opt,name=curso_duracion,json=cursoDuracion,proto3" json:"curso_duracion,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1323,6 +1325,20 @@ func (x *Licencia) GetCreatedAt() string {
 		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *Licencia) GetCursoType() string {
+	if x != nil {
+		return x.CursoType
+	}
+	return ""
+}
+
+func (x *Licencia) GetCursoDuracion() int32 {
+	if x != nil {
+		return x.CursoDuracion
+	}
+	return 0
 }
 
 type LicenciaPublicaResponse struct {
@@ -3135,7 +3151,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"assignedAt\"V\n" +
 	"\x18ListAsignacionesResponse\x12:\n" +
 	"\fasignaciones\x18\x01 \x03(\v2\x16.cursos.AsignacionInfoR\fasignaciones\"\x0f\n" +
-	"\rEmptyResponse\"\xf1\x02\n" +
+	"\rEmptyResponse\"\xb7\x03\n" +
 	"\bLicencia\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x16\n" +
@@ -3149,7 +3165,10 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\fcomprador_id\x18\n" +
 	" \x01(\tR\vcompradorId\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\tR\tcreatedAt\"\x95\x02\n" +
+	"created_at\x18\v \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"curso_type\x18\f \x01(\tR\tcursoType\x12%\n" +
+	"\x0ecurso_duracion\x18\r \x01(\x05R\rcursoDuracion\"\x95\x02\n" +
 	"\x17LicenciaPublicaResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12\x16\n" +
