@@ -193,6 +193,7 @@ services:
       PORT:           "8080"
       JWT_SECRET:     ${JWT_SECRET}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:5173}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
 
       # Direcciones internas de los microservicios (resolución DNS de Docker)
       AUTH_ADDR:      auth-service:50051
