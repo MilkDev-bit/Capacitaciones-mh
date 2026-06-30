@@ -196,10 +196,10 @@ async function unirseConCodigo() {
   try {
     if (code.startsWith('VC-')) {
       const res = await api.post('/videocalls/join', { codigo: code })
-      codigoSuccess.value = 'Uniéndose a la videollamada...'
-      setTimeout(() => {
-        router.push(`/usuario/videocall/${res.data.roomName}?codigo=${code}`)
-      }, 1000)
+      if (res.data && res.data.token) {
+        toast.success('Uniéndose a la videollamada...')
+        router.push(`/usuario/videocall/${res.data.room_name}?codigo=${code}`)
+      }
     } else {
       const res = await api.post('/inscripciones', { codigo: code })
       codigoSuccess.value = `Te uniste a "${res.data.title}"`

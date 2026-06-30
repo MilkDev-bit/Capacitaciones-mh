@@ -50,7 +50,7 @@ async function unirse() {
     const res = await api.post('/videocalls/join', { codigo: code })
     toast.success('Uniéndose a la videollamada...')
     setTimeout(() => {
-      router.push(`/usuario/videocall/${res.data.roomName}?codigo=${code}`)
+      router.push(`/usuario/videocall/${res.data.room_name}?codigo=${code}`)
     }, 1000)
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al unirse a la videollamada')
