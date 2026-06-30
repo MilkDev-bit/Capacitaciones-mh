@@ -3,7 +3,9 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { toast } from '../../utils/toast'
+import { useCartStore } from '../../stores/cart'
 
+const cartStore = useCartStore()
 const licencias = ref<any[]>([])
 const loading = ref(true)
 const verifying = ref(false)
@@ -15,6 +17,7 @@ async function verifySession(sessionId: string) {
   try {
     await api.post('/verify-checkout-session', { session_id: sessionId })
     toast.success('¡Licencias generadas correctamente!')
+    cartStore.clearCart()
   } catch (e: any) {
     // Si ya fue procesado antes (duplicate), no es un error real
     const msg = e.response?.data?.error || ''

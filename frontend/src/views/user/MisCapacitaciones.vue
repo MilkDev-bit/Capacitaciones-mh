@@ -5,8 +5,10 @@ import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
+import { useCartStore } from '../../stores/cart'
 
 const auth = useAuthStore()
+const cartStore = useCartStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -140,6 +142,7 @@ async function verifySession(sessionId: string) {
   try {
     await api.post('/verify-checkout-session', { session_id: sessionId })
     toast.success('¡Compra procesada correctamente!')
+    cartStore.clearCart()
   } catch (e: any) {
     const msg = e.response?.data?.error || ''
     if (!msg.includes('ya existe') && !msg.includes('conflict')) {
