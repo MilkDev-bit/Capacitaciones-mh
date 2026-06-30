@@ -759,6 +759,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage string `json:"welcome_message"`
 		ThumbnailURL   string `json:"thumbnail_url"`
 		Color          string `json:"color"`
+		Duration       int32  `json:"duration"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -774,6 +775,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage: body.WelcomeMessage,
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
+		Duration:       body.Duration,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -793,6 +795,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage string `json:"welcome_message"`
 		ThumbnailURL   string `json:"thumbnail_url"`
 		Color          string `json:"color"`
+		Duration       int32  `json:"duration"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -809,6 +812,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		WelcomeMessage: body.WelcomeMessage,
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
+		Duration:       body.Duration,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

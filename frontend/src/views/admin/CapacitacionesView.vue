@@ -71,7 +71,7 @@ function openCreate() {
   editingId.value = null
   form.value = {
     title: '', description: '', type: 'video', content: '',
-    welcome_message: '', is_public: false, color: '#f97316', thumbnail_preview: '',
+    welcome_message: '', is_public: false, color: '#f97316', thumbnail_preview: '', duration: 0,
   }
   file.value = null
   thumbnailFile.value = null
@@ -89,6 +89,7 @@ function openEdit(c: any) {
     is_public: !!c.is_public,
     color: c.color || '#f97316',
     thumbnail_preview: c.thumbnail_url || '',
+    duration: c.duration || 0,
   }
   file.value = null
   thumbnailFile.value = null
@@ -115,6 +116,7 @@ async function guardar() {
       is_public: form.value.is_public,
       color: form.value.color,
       thumbnail_url: form.value.thumbnail_preview || '',
+      duration: Number(form.value.duration),
     }
     if (file.value) {
       const prefix = form.value.type === 'video' ? 'videos' : 'documents'
@@ -147,7 +149,7 @@ async function eliminar(id: string) {
 }
 
 function typeLabel(t: string) {
-  return { video: 'Video', document: 'Documento', text: 'Texto' }[t] || t
+  return { video: 'Video', document: 'Documento', text: 'Texto', videocall: 'Videollamada' }[t] || t
 }
 
 function fileUrl(path: string) {
@@ -198,6 +200,7 @@ function cardColor(c: any) {
             <span class="ac-card-icon">
               <svg v-if="c.type === 'video'" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <svg v-else-if="c.type === 'document'" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <svg v-else-if="c.type === 'videocall'" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
               <svg v-else width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7"/></svg>
             </span>
           </template>
@@ -307,9 +310,19 @@ function cardColor(c: any) {
                     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7"/></svg>
                     <span>Texto</span>
                   </label>
+                  <label :class="['type-opt', form.type === 'videocall' && 'type-opt-active']">
+                    <input type="radio" v-model="form.type" value="videocall" />
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <span>Videollamada</span>
+                  </label>
                 </div>
               </div>
-              <div v-if="form.type !== 'text'" class="dfield dfield-full">
+              <div v-if="form.type === 'videocall'" class="dfield dfield-full">
+                <label>Duración (Minutos) <span class="req">*</span></label>
+                <input class="field-input" type="number" v-model="form.duration" min="0" placeholder="Ej: 60" />
+                <span class="dfield-hint">La duración en minutos de la videollamada.</span>
+              </div>
+              <div v-if="form.type === 'video' || form.type === 'document'" class="dfield dfield-full">
                 <label>Archivo principal</label>
                 <DragDropUpload
                   v-model="file"
