@@ -468,9 +468,9 @@ func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, 
 	}
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id, stripe_product_id)
-		 SELECT $1,$2,$3,$4,$5,$6,$7
+		 SELECT $1,$2,$3,$4,$5,$6, CAST($7 AS VARCHAR)
 		 WHERE NOT EXISTS (
-		    SELECT 1 FROM curso_licencias WHERE stripe_product_id = $7 AND $7 IS NOT NULL
+		    SELECT 1 FROM curso_licencias WHERE stripe_product_id = CAST($7 AS VARCHAR) AND $7 IS NOT NULL
 		 )
 		 RETURNING id`,
 		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId, stripeSessionID,
