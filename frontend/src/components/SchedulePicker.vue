@@ -105,8 +105,8 @@ function selectTime(id: string) {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px;
 }
@@ -119,22 +119,23 @@ function selectTime(id: string) {
 .date-btn {
   white-space: nowrap;
   padding: 8px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
-  background: var(--bg-color);
-  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 .date-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--brand, #fb923c);
+  color: var(--brand, #fb923c);
+  background: rgba(251, 146, 60, 0.1);
 }
 .date-btn.active {
-  background: var(--primary);
+  background: var(--brand, #fb923c);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--brand, #fb923c);
 }
 .times-list {
   display: grid;
@@ -143,10 +144,10 @@ function selectTime(id: string) {
 }
 .time-btn {
   padding: 12px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  background: var(--bg-color);
-  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -154,15 +155,16 @@ function selectTime(id: string) {
   text-align: center;
 }
 .time-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--brand, #fb923c);
+  color: var(--brand, #fb923c);
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  background: rgba(251, 146, 60, 0.1);
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.2);
 }
 .time-btn.selected {
-  background: var(--primary);
+  background: var(--brand, #fb923c);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--brand, #fb923c);
 }
 
 /* Custom Scrollbar for dates */
@@ -173,7 +175,7 @@ function selectTime(id: string) {
   background: transparent;
 }
 .dates-list::-webkit-scrollbar-thumb {
-  background-color: var(--border);
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
 </style>
