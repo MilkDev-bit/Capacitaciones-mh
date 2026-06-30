@@ -22,6 +22,7 @@ const joiningCodigo = ref(false)
 const showB2BModal = ref(false)
 const b2bCantidad = ref(5)
 const buyingB2B = ref(false)
+const videocallAttendees = ref(1)
 
 const schedules = ref<any[]>([])
 const selectedScheduleId = ref('')
