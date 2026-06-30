@@ -29,15 +29,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function addItem(newItem: CartItem) {
-    // Si ya existe un item idéntico, sumamos cantidad
-    const existing = items.value.find(
-      (i) => i.curso_id === newItem.curso_id && i.type === newItem.type && i.schedule_id === newItem.schedule_id
-    )
-    if (existing) {
-      existing.cantidad += newItem.cantidad
-    } else {
-      items.value.push(newItem)
-    }
+    items.value.push(newItem)
     saveToStorage()
   }
 

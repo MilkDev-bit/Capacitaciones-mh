@@ -366,11 +366,15 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 							if len(itemParts) == 3 {
 								scheduleID = itemParts[2]
 							}
-							_, _ = h.c.Cursos.WebhookEnroll(c.Request.Context(), &cursospb.WebhookEnrollRequest{
+							grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID+"_"+k))
+							_, err := h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
 								UserId:         userID,
 								CapacitacionId: cursoID,
 								ScheduleId:     scheduleID,
 							})
+							if err != nil {
+								slog.Error("WebhookEnroll failed in webhook", "error", err, "item", v)
+							}
 						} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
 							cursoID := itemParts[1]
 							cantidadStr := itemParts[2]
@@ -379,12 +383,16 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 							if len(itemParts) == 4 {
 								scheduleID = itemParts[3]
 							}
-							_, _ = h.c.Cursos.WebhookComprarB2BDirect(c.Request.Context(), &cursospb.WebhookComprarB2BDirectRequest{
+							grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID+"_"+k))
+							_, err := h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
 								UserId:     userID,
 								CursoId:    cursoID,
 								Cantidad:   int32(cantidad),
 								ScheduleId: scheduleID,
 							})
+							if err != nil {
+								slog.Error("WebhookComprarB2BDirect failed in webhook", "error", err, "item", v)
+							}
 						}
 					}
 				}
@@ -467,11 +475,15 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 						if len(itemParts) == 3 {
 							scheduleID = itemParts[2]
 						}
-						_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
+						grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs("x-stripe-session-id", sess.ID+"_"+k))
+						_, err := h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
 							UserId:         userID,
 							CapacitacionId: cursoID,
 							ScheduleId:     scheduleID,
 						})
+						if err != nil {
+							slog.Error("WebhookEnroll failed in verify", "error", err, "item", v)
+						}
 					} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
 						cursoID := itemParts[1]
 						cantidadStr := itemParts[2]
@@ -480,12 +492,16 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 						if len(itemParts) == 4 {
 							scheduleID = itemParts[3]
 						}
-						_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
+						grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs("x-stripe-session-id", sess.ID+"_"+k))
+						_, err := h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
 							UserId:     userID,
 							CursoId:    cursoID,
 							Cantidad:   int32(cantidad),
 							ScheduleId: scheduleID,
 						})
+						if err != nil {
+							slog.Error("WebhookComprarB2BDirect failed in verify", "error", err, "item", v)
+						}
 					}
 				}
 			}
