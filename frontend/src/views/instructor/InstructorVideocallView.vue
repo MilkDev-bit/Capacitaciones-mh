@@ -13,6 +13,7 @@ const cursoId = route.params.id as string
 
 const jitsiContainer = ref<HTMLElement | null>(null)
 let jitsiApi: any = null
+const loading = ref(true)
 
 onMounted(async () => {
   if (!cursoId) {
@@ -28,6 +29,8 @@ onMounted(async () => {
     iziToast.error({ title: 'Error', message: 'No tienes permisos de instructor para esta sala.' })
     router.push('/instructor/capacitaciones')
     return
+  } finally {
+    loading.value = false
   }
   
   const domain = 'meet.jit.si'
@@ -112,6 +115,10 @@ const handleVideoConferenceLeft = () => {
         <button class="btn btn-danger" @click="terminarLlamada">Finalizar Videollamada para todos</button>
       </div>
     </div>
+    <div v-if="loading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Validando sala y conectando...</p>
+    </div>
     <div ref="jitsiContainer" class="jitsi-wrapper"></div>
   </div>
 </template>
@@ -155,5 +162,25 @@ const handleVideoConferenceLeft = () => {
 }
 .jitsi-wrapper {
   flex: 1;
+}
+.loading-overlay {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

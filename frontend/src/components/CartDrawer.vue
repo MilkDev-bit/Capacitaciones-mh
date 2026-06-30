@@ -105,7 +105,7 @@ async function checkout() {
   if (!auth.isLoggedIn) {
     cart.closeDrawer()
     toast.info('Inicia sesión o regístrate para continuar con la compra.')
-    router.push('/login')
+    router.push({ path: '/login', query: { redirect: route.fullPath, opencart: '1' } })
     return
   }
 

@@ -369,10 +369,6 @@ func mapErr(err error) error {
 	}
 }
 
-func (h *CursosHandler) ListLicencias(ctx context.Context, req *cursospb.ListLicenciasRequest) (*cursospb.ListLicenciasResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "obsolete")
-}
-
 func (h *CursosHandler) GetLicenciaPublica(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.LicenciaPublicaResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "obsolete")
 }
