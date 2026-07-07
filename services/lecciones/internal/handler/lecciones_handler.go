@@ -19,6 +19,90 @@ func NewLeccionesHandler(svc *service.LeccionesService) *LeccionesHandler {
 	return &LeccionesHandler{svc: svc}
 }
 
+// ── Árbol del curso ───────────────────────────────────────────────────────────
+
+func (h *LeccionesHandler) GetCursoTree(ctx context.Context, req *leccionespb.CursoUserRequest) (*leccionespb.CursoTreeResponse, error) {
+	tree, err := h.svc.GetCursoTree(ctx, req.CursoId, req.UserId)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return tree, nil
+}
+
+func (h *LeccionesHandler) InstructorGetCursoTree(ctx context.Context, req *leccionespb.CursoRequest) (*leccionespb.CursoTreeResponse, error) {
+	tree, err := h.svc.GetCursoTree(ctx, req.CursoId, "") // sin userID → completada=false
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return tree, nil
+}
+
+// ── Módulos ───────────────────────────────────────────────────────────────────
+
+func (h *LeccionesHandler) InstructorCreateModulo(ctx context.Context, req *leccionespb.CreateModuloRequest) (*leccionespb.ModuloResponse, error) {
+	m, err := h.svc.CreateModulo(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return m, nil
+}
+
+func (h *LeccionesHandler) InstructorUpdateModulo(ctx context.Context, req *leccionespb.UpdateModuloRequest) (*leccionespb.ModuloResponse, error) {
+	m, err := h.svc.UpdateModulo(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return m, nil
+}
+
+func (h *LeccionesHandler) InstructorDeleteModulo(ctx context.Context, req *leccionespb.ModuloIDRequest) (*leccionespb.EmptyResponse, error) {
+	if err := h.svc.DeleteModulo(ctx, req.ModuloId); err != nil {
+		return nil, toGRPC(err)
+	}
+	return &leccionespb.EmptyResponse{}, nil
+}
+
+func (h *LeccionesHandler) InstructorReorderModulos(ctx context.Context, req *leccionespb.ReorderModulosRequest) (*leccionespb.EmptyResponse, error) {
+	if err := h.svc.ReorderModulos(ctx, req.CursoId, req.ModuloIds); err != nil {
+		return nil, toGRPC(err)
+	}
+	return &leccionespb.EmptyResponse{}, nil
+}
+
+// ── Submódulos ────────────────────────────────────────────────────────────────
+
+func (h *LeccionesHandler) InstructorCreateSubmodulo(ctx context.Context, req *leccionespb.CreateSubmoduloRequest) (*leccionespb.SubmoduloResponse, error) {
+	sub, err := h.svc.CreateSubmodulo(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return sub, nil
+}
+
+func (h *LeccionesHandler) InstructorUpdateSubmodulo(ctx context.Context, req *leccionespb.UpdateSubmoduloRequest) (*leccionespb.SubmoduloResponse, error) {
+	sub, err := h.svc.UpdateSubmodulo(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return sub, nil
+}
+
+func (h *LeccionesHandler) InstructorDeleteSubmodulo(ctx context.Context, req *leccionespb.SubmoduloIDRequest) (*leccionespb.EmptyResponse, error) {
+	if err := h.svc.DeleteSubmodulo(ctx, req.SubmoduloId); err != nil {
+		return nil, toGRPC(err)
+	}
+	return &leccionespb.EmptyResponse{}, nil
+}
+
+func (h *LeccionesHandler) InstructorReorderSubmodulos(ctx context.Context, req *leccionespb.ReorderSubmodulosRequest) (*leccionespb.EmptyResponse, error) {
+	if err := h.svc.ReorderSubmodulos(ctx, req.ModuloId, req.SubmoduloIds); err != nil {
+		return nil, toGRPC(err)
+	}
+	return &leccionespb.EmptyResponse{}, nil
+}
+
+// ── Lecciones ─────────────────────────────────────────────────────────────────
+
 func (h *LeccionesHandler) GetLeccionesConProgreso(ctx context.Context, req *leccionespb.CursoUserRequest) (*leccionespb.ListLeccionesResponse, error) {
 	list, err := h.svc.GetLeccionesConProgreso(ctx, req.CursoId, req.UserId)
 	if err != nil {
@@ -27,11 +111,12 @@ func (h *LeccionesHandler) GetLeccionesConProgreso(ctx context.Context, req *lec
 	return &leccionespb.ListLeccionesResponse{Lecciones: list}, nil
 }
 
-func (h *LeccionesHandler) MarcarLeccionCompleta(ctx context.Context, req *leccionespb.MarcarRequest) (*leccionespb.EmptyResponse, error) {
-	if err := h.svc.MarcarCompleta(ctx, req.LeccionId, req.UserId); err != nil {
+func (h *LeccionesHandler) MarcarLeccionCompleta(ctx context.Context, req *leccionespb.MarcarRequest) (*leccionespb.MarcarLeccionResponse, error) {
+	resp, err := h.svc.MarcarCompleta(ctx, req.LeccionId, req.UserId)
+	if err != nil {
 		return nil, toGRPC(err)
 	}
-	return &leccionespb.EmptyResponse{}, nil
+	return resp, nil
 }
 
 func (h *LeccionesHandler) GetPreguntasIntermedias(ctx context.Context, req *leccionespb.CursoUserRequest) (*leccionespb.ListIntermediasResponse, error) {
@@ -49,8 +134,6 @@ func (h *LeccionesHandler) SubmitPreguntasIntermedias(ctx context.Context, req *
 	}
 	return &leccionespb.SubmitIntermediasResponse{Correctas: correctas, Total: total}, nil
 }
-
-// ── Instructor ────────────────────────────────────────────────────────────────
 
 func (h *LeccionesHandler) InstructorListLecciones(ctx context.Context, req *leccionespb.CursoRequest) (*leccionespb.ListLeccionesResponse, error) {
 	list, err := h.svc.InstructorListLecciones(ctx, req.CursoId)
@@ -112,6 +195,34 @@ func (h *LeccionesHandler) InstructorDeletePreguntaIntermedia(ctx context.Contex
 	}
 	return &leccionespb.EmptyResponse{}, nil
 }
+
+// ── Gamificación ──────────────────────────────────────────────────────────────
+
+func (h *LeccionesHandler) SubmitGameScore(ctx context.Context, req *leccionespb.SubmitGameScoreRequest) (*leccionespb.SubmitGameScoreResponse, error) {
+	resp, err := h.svc.SubmitGameScore(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
+func (h *LeccionesHandler) GetCursoLeaderboard(ctx context.Context, req *leccionespb.LeaderboardRequest) (*leccionespb.LeaderboardResponse, error) {
+	resp, err := h.svc.GetCursoLeaderboard(ctx, req.CursoId, req.TopN)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
+func (h *LeccionesHandler) GetUserPoints(ctx context.Context, req *leccionespb.UserRequest) (*leccionespb.UserPointsResponse, error) {
+	resp, err := h.svc.GetUserPoints(ctx, req.UserId)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
+// ── Error helper ──────────────────────────────────────────────────────────────
 
 func toGRPC(err error) error {
 	return status.Error(codes.Internal, err.Error())

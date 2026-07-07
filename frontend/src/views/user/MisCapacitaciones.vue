@@ -171,6 +171,14 @@ async function openCourse(id: string) {
   }
 }
 
+function tramitarDC3(c: any) {
+  const nombreCurso = c.title || ''
+  const duracion = Math.ceil((c.duration || 60) / 60)
+  const area = c.area_tematica || '6000'
+  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=${encodeURIComponent(area)}`
+  window.open(url, '_blank')
+}
+
 async function inscribirse(id: string) {
   inscribiendose.value = id
   try {
@@ -357,6 +365,16 @@ async function unirseConCodigo() {
               <span class="code-label">Tu código de acceso:</span>
               <div class="code-value">{{ c.codigo_acceso || 'Generando...' }}</div>
               <span class="code-hint">Deberás ingresarlo en la sala.</span>
+            </div>
+
+            <div v-if="courseProgress(c) === 100 && c.type !== 'videocall'" style="margin-top: 12px; margin-bottom: -4px;">
+              <button
+                class="btn btn-secondary btn-sm"
+                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;"
+                @click.stop="tramitarDC3(c)"
+              >
+                📋 Tramitar Constancia DC-3
+              </button>
             </div>
 
             <div class="course-cta">

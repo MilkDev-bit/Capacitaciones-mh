@@ -10,6 +10,26 @@ const router = useRouter()
 const capacitaciones = ref<any[]>([])
 const examenes = ref<any[]>([])
 const loading = ref(true)
+const userXP = ref(0)
+const selectedLeaderboardCurso = ref<string>('')
+const leaderboardList = ref<any[]>([])
+const loadingLeaderboard = ref(false)
+
+async function loadLeaderboard(cursoId: string) {
+  if (!cursoId) {
+    leaderboardList.value = []
+    return
+  }
+  loadingLeaderboard.value = true
+  try {
+    const res = await api.get(`/capacitaciones/${cursoId}/leaderboard?top=5`)
+    leaderboardList.value = res.data?.entries || res.data || []
+  } catch {
+    leaderboardList.value = []
+  } finally {
+    loadingLeaderboard.value = false
+  }
+}
 
 const firstName = computed(() => {
   return auth.user?.name?.split(' ')[0] ?? 'Estudiante'
@@ -47,12 +67,18 @@ const inProgress = computed(() =>
 async function loadData() {
   loading.value = true
   try {
-    const [cursosRes, exRes] = await Promise.all([
+    const [cursosRes, exRes, xpRes] = await Promise.all([
       api.get('/mis-capacitaciones'),
       api.get('/mis-examenes').catch(() => ({ data: [] })),
+      api.get('/gamificacion/mis-puntos').catch(() => ({ data: { total_points: 0 } })),
     ])
     capacitaciones.value = cursosRes.data || []
     examenes.value = exRes.data || []
+    userXP.value = xpRes.data?.total_points || xpRes.data?.points || 0
+    if (capacitaciones.value.length > 0 && capacitaciones.value[0]?.id) {
+      selectedLeaderboardCurso.value = capacitaciones.value[0].id
+      loadLeaderboard(selectedLeaderboardCurso.value)
+    }
   } finally {
     loading.value = false
   }
@@ -84,6 +110,12 @@ const statCards = computed(() => [
     value: `${stats.value.avgProgress}%`,
     icon: 'chart',
     bgClass: 'bg-orange',
+  },
+  {
+    label: 'Puntos de experiencia',
+    value: `${userXP.value} XP`,
+    icon: 'star',
+    bgClass: 'bg-amber',
   },
 ])
 
@@ -121,6 +153,7 @@ function courseProgress(curso: any) {
             <svg v-else-if="stat.icon === 'check'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <svg v-else-if="stat.icon === 'clipboard'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             <svg v-else-if="stat.icon === 'chart'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            <svg v-else-if="stat.icon === 'star'" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
           </div>
           <div class="dash-stat-info">
             <strong>{{ stat.value }}</strong>
@@ -179,6 +212,35 @@ function courseProgress(curso: any) {
           <button class="btn btn-primary" @click="router.push('/usuario/capacitaciones')">Ir a mis cursos</button>
         </div>
       </template>
+    </section>
+
+    <!-- Tabla de Líderes por Curso -->
+    <section v-if="capacitaciones.length" class="dash-section">
+      <div class="dash-section-head">
+        <h2>🏆 Salón de la Fama (Top 5)</h2>
+        <select v-model="selectedLeaderboardCurso" @change="loadLeaderboard(selectedLeaderboardCurso)" class="lb-select">
+          <option v-for="c in capacitaciones" :key="c.id" :value="c.id">{{ c.title }}</option>
+        </select>
+      </div>
+
+      <div class="lb-card">
+        <div v-if="loadingLeaderboard" class="lb-loading">Cargando tabla de clasificación...</div>
+        <div v-else-if="!leaderboardList.length" class="lb-empty">Aún no hay puntajes registrados en este curso. ¡Juega y sé el número 1!</div>
+        <div v-else class="lb-list">
+          <div v-for="(entry, idx) in leaderboardList" :key="idx" :class="['lb-item', idx === 0 ? 'lb-first' : idx === 1 ? 'lb-second' : idx === 2 ? 'lb-third' : '']">
+            <span class="lb-rank">
+              <span v-if="idx === 0">🥇</span>
+              <span v-else-if="idx === 1">🥈</span>
+              <span v-else-if="idx === 2">🥉</span>
+              <span v-else>#{{ idx + 1 }}</span>
+            </span>
+            <div class="lb-user">
+              <strong>{{ entry.name || entry.user_name || entry.userName || 'Estudiante Anónimo' }}</strong>
+            </div>
+            <span class="lb-pts">{{ entry.points || entry.puntaje || entry.totalPoints || 0 }} XP</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Acciones rápidas -->
@@ -282,6 +344,8 @@ function courseProgress(curso: any) {
 .bg-emerald .dash-stat-icon { background: #d1fae5; color: #059669; }
 .bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
 .bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
+.bg-amber .dash-stat-icon   { background: #fef3c7; color: #d97706; }
+.bg-amber { border-top-color: #f59e0b; }
 .dash-stat-info { min-width: 0; flex: 1; overflow: hidden; }
 .dash-stat-info strong { display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark); }
 .dash-stat-info span {
@@ -383,6 +447,19 @@ function courseProgress(curso: any) {
   .dash-course-item { flex-wrap: wrap; }
   .dash-course-cta { width: 100%; justify-content: center; margin-top: 4px; }
 }
+/* ── Leaderboard Widget ──────────────────────────────── */
+.lb-select { padding: 6px 14px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--dark); font-weight: 600; font-size: 0.88rem; outline: none; }
+.lb-card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-sm); }
+.lb-loading, .lb-empty { text-align: center; color: var(--muted); padding: 20px 0; font-size: 0.9rem; }
+.lb-list { display: flex; flex-direction: column; gap: 8px; }
+.lb-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface-soft); border: 1px solid transparent; }
+.lb-first { background: linear-gradient(90deg, #fffbeb, #fef3c7); border-color: #fde68a; }
+.lb-second { background: linear-gradient(90deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
+.lb-third { background: linear-gradient(90deg, #fff7ed, #ffedd5); border-color: #fed7aa; }
+.lb-rank { font-size: 1.1rem; font-weight: 800; width: 40px; display: inline-block; }
+.lb-user strong { font-size: 0.94rem; color: var(--dark); }
+.lb-pts { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
+
 @media (max-width: 400px) {
   .dash-stat-card { padding: 12px; gap: 8px; }
   .dash-stat-icon { width: 38px; height: 38px; flex-shrink: 0; }

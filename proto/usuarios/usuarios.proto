@@ -5,7 +5,7 @@ package usuarios;
 option go_package = "Prueba-Go/gen/usuarios;usuariospb";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UsuariosService: gestión de perfiles y administración de usuarios.
+// UsuariosService: gestión de perfiles, administración y gamificación.
 // ─────────────────────────────────────────────────────────────────────────────
 service UsuariosService {
   // Devuelve el perfil del usuario autenticado.
@@ -39,8 +39,14 @@ service UsuariosService {
   rpc AdminUpdateRole(AdminUpdateRoleRequest) returns (PerfilResponse);
 
   // Notificaciones
-  rpc ListNotificaciones(UserIDRequest) returns (ListNotificacionesResponse);
+  rpc ListNotificaciones(UserIDRequest)              returns (ListNotificacionesResponse);
   rpc MarkNotificacionesRead(MarkNotificacionesReadRequest) returns (EmptyResponse);
+
+  // ── Gamificación: Insignias ───────────────────────────────────────────────
+  // Devuelve todas las insignias desbloqueadas de un usuario.
+  rpc GetUserBadges(UserIDRequest) returns (UserBadgesResponse);
+  // Interno: otorga una insignia a un usuario (llamado desde lecciones-service).
+  rpc AwardBadge(AwardBadgeRequest) returns (EmptyResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -63,9 +69,9 @@ message UpdateMediaURLRequest {
 }
 
 message AdminUpdateRoleRequest {
-  string admin_id = 1;
+  string admin_id       = 1;
   string target_user_id = 2;
-  string new_role = 3;
+  string new_role       = 3;
 }
 
 message UserIDRequest {
@@ -85,23 +91,33 @@ message SearchUsersRequest {
 }
 
 message MarkNotificacionesReadRequest {
-  string user_id = 1;
-  repeated string ids = 2;
+  string          user_id = 1;
+  repeated string ids     = 2;
+}
+
+// ── Requests de Gamificación ──────────────────────────────────────────────────
+
+message AwardBadgeRequest {
+  string user_id   = 1;
+  // Identificador canónico de la insignia (ej. "memorama_master", "first_lesson").
+  string badge_slug = 2;
 }
 
 // ── Responses ────────────────────────────────────────────────────────────────
 
 message PerfilResponse {
-  string id         = 1;
-  string name       = 2;
-  string email      = 3;
-  string role       = 4;
-  string bio        = 5;
-  string avatar_url = 6;
-  string cover_url  = 7;
-  string phone      = 8;
-  string specialty  = 9;
-  string created_at = 10;
+  string id           = 1;
+  string name         = 2;
+  string email        = 3;
+  string role         = 4;
+  string bio          = 5;
+  string avatar_url   = 6;
+  string cover_url    = 7;
+  string phone        = 8;
+  string specialty    = 9;
+  string created_at   = 10;
+  // Gamificación: puntos acumulados globales del usuario.
+  int32  points_total = 11;
 }
 
 message ListUsersResponse {
@@ -135,6 +151,24 @@ message Notificacion {
 
 message ListNotificacionesResponse {
   repeated Notificacion notificaciones = 1;
+}
+
+// ── Responses de Gamificación ─────────────────────────────────────────────────
+
+// Catálogo de insignias disponibles (metadata para el frontend).
+message Badge {
+  string slug        = 1; // identificador único, ej. "memorama_master"
+  string name        = 2; // nombre legible: "Maestro del Memorama"
+  string description = 3;
+  string icon_url    = 4; // imagen de la insignia
+  string color       = 5; // color de acento en hex, ej. "#f59e0b"
+  // Cuándo se desbloqueó (vacío si no está desbloqueada para este usuario).
+  string unlocked_at = 6;
+}
+
+message UserBadgesResponse {
+  string         user_id = 1;
+  repeated Badge badges  = 2;
 }
 
 message EmptyResponse {}

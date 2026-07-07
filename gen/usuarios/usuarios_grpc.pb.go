@@ -31,6 +31,8 @@ const (
 	UsuariosService_AdminUpdateRole_FullMethodName        = "/usuarios.UsuariosService/AdminUpdateRole"
 	UsuariosService_ListNotificaciones_FullMethodName     = "/usuarios.UsuariosService/ListNotificaciones"
 	UsuariosService_MarkNotificacionesRead_FullMethodName = "/usuarios.UsuariosService/MarkNotificacionesRead"
+	UsuariosService_GetUserBadges_FullMethodName          = "/usuarios.UsuariosService/GetUserBadges"
+	UsuariosService_AwardBadge_FullMethodName             = "/usuarios.UsuariosService/AwardBadge"
 )
 
 // UsuariosServiceClient is the client API for UsuariosService service.
@@ -38,7 +40,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// UsuariosService: gestión de perfiles y administración de usuarios.
+// UsuariosService: gestión de perfiles, administración y gamificación.
 // ─────────────────────────────────────────────────────────────────────────────
 type UsuariosServiceClient interface {
 	// Devuelve el perfil del usuario autenticado.
@@ -64,6 +66,11 @@ type UsuariosServiceClient interface {
 	// Notificaciones
 	ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(ctx context.Context, in *MarkNotificacionesReadRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Gamificación: Insignias ───────────────────────────────────────────────
+	// Devuelve todas las insignias desbloqueadas de un usuario.
+	GetUserBadges(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*UserBadgesResponse, error)
+	// Interno: otorga una insignia a un usuario (llamado desde lecciones-service).
+	AwardBadge(ctx context.Context, in *AwardBadgeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type usuariosServiceClient struct {
@@ -194,12 +201,32 @@ func (c *usuariosServiceClient) MarkNotificacionesRead(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *usuariosServiceClient) GetUserBadges(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*UserBadgesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserBadgesResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_GetUserBadges_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usuariosServiceClient) AwardBadge(ctx context.Context, in *AwardBadgeRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_AwardBadge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsuariosServiceServer is the server API for UsuariosService service.
 // All implementations must embed UnimplementedUsuariosServiceServer
 // for forward compatibility.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// UsuariosService: gestión de perfiles y administración de usuarios.
+// UsuariosService: gestión de perfiles, administración y gamificación.
 // ─────────────────────────────────────────────────────────────────────────────
 type UsuariosServiceServer interface {
 	// Devuelve el perfil del usuario autenticado.
@@ -225,6 +252,11 @@ type UsuariosServiceServer interface {
 	// Notificaciones
 	ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error)
+	// ── Gamificación: Insignias ───────────────────────────────────────────────
+	// Devuelve todas las insignias desbloqueadas de un usuario.
+	GetUserBadges(context.Context, *UserIDRequest) (*UserBadgesResponse, error)
+	// Interno: otorga una insignia a un usuario (llamado desde lecciones-service).
+	AwardBadge(context.Context, *AwardBadgeRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedUsuariosServiceServer()
 }
 
@@ -270,6 +302,12 @@ func (UnimplementedUsuariosServiceServer) ListNotificaciones(context.Context, *U
 }
 func (UnimplementedUsuariosServiceServer) MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkNotificacionesRead not implemented")
+}
+func (UnimplementedUsuariosServiceServer) GetUserBadges(context.Context, *UserIDRequest) (*UserBadgesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserBadges not implemented")
+}
+func (UnimplementedUsuariosServiceServer) AwardBadge(context.Context, *AwardBadgeRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AwardBadge not implemented")
 }
 func (UnimplementedUsuariosServiceServer) mustEmbedUnimplementedUsuariosServiceServer() {}
 func (UnimplementedUsuariosServiceServer) testEmbeddedByValue()                         {}
@@ -508,6 +546,42 @@ func _UsuariosService_MarkNotificacionesRead_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsuariosService_GetUserBadges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).GetUserBadges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_GetUserBadges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).GetUserBadges(ctx, req.(*UserIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsuariosService_AwardBadge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AwardBadgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).AwardBadge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_AwardBadge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).AwardBadge(ctx, req.(*AwardBadgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UsuariosService_ServiceDesc is the grpc.ServiceDesc for UsuariosService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -562,6 +636,14 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkNotificacionesRead",
 			Handler:    _UsuariosService_MarkNotificacionesRead_Handler,
+		},
+		{
+			MethodName: "GetUserBadges",
+			Handler:    _UsuariosService_GetUserBadges_Handler,
+		},
+		{
+			MethodName: "AwardBadge",
+			Handler:    _UsuariosService_AwardBadge_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

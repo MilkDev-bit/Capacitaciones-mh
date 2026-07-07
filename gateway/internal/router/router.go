@@ -124,11 +124,19 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/videocalls/join", d.CursosH.JoinVideocall)
 			auth.POST("/videocalls/leave", d.CursosH.LeaveVideocall)
 
-			// Lecciones
+			// Lecciones — lista plana (compatibilidad)
 			auth.GET("/capacitaciones/:id/lecciones", d.LeccionesH.GetLeccionesConProgreso)
+			// Árbol completo Módulo → Submódulo → Lección
+			auth.GET("/capacitaciones/:id/tree", d.LeccionesH.GetCursoTree)
 			auth.POST("/lecciones/:leccion_id/completar", d.LeccionesH.MarcarLeccionCompleta)
 			auth.GET("/capacitaciones/:id/intermedias", d.LeccionesH.GetPreguntasIntermedias)
 			auth.POST("/capacitaciones/:id/intermedias/submit", d.LeccionesH.SubmitPreguntasIntermedias)
+
+			// Gamificación
+			auth.POST("/lecciones/:leccion_id/game-score", d.LeccionesH.SubmitGameScore)
+			auth.GET("/capacitaciones/:id/leaderboard", d.LeccionesH.GetLeaderboard)
+			auth.GET("/gamificacion/mis-puntos", d.LeccionesH.GetMisPuntos)
+			auth.GET("/gamificacion/insignias", d.LeccionesH.GetMisInsignias)
 
 			// Exámenes
 			auth.GET("/mis-examenes", d.ExamenesH.ListMisExamenes)
@@ -169,11 +177,25 @@ func New(d Deps) *gin.Engine {
 				inst.PUT("/capacitaciones/:id", d.CursosH.InstructorUpdateCapacitacion)
 				inst.DELETE("/capacitaciones/:id", d.CursosH.InstructorDeleteCapacitacion)
 
+				// Lecciones — instructor
+				inst.GET("/capacitaciones/:id/tree", d.LeccionesH.InstructorGetCursoTree)
 				inst.GET("/capacitaciones/:id/lecciones", d.LeccionesH.InstructorListLecciones)
 				inst.POST("/capacitaciones/:id/lecciones", d.LeccionesH.InstructorCreateLeccion)
 				inst.PUT("/capacitaciones/:id/lecciones/:leccion_id", d.LeccionesH.InstructorUpdateLeccion)
 				inst.DELETE("/capacitaciones/:id/lecciones/:leccion_id", d.LeccionesH.InstructorDeleteLeccion)
 				inst.PUT("/capacitaciones/:id/lecciones/reorder", d.LeccionesH.InstructorReorderLecciones)
+
+				// Módulos — instructor
+				inst.POST("/capacitaciones/:id/modulos", d.LeccionesH.InstructorCreateModulo)
+				inst.PUT("/capacitaciones/:id/modulos/:modulo_id", d.LeccionesH.InstructorUpdateModulo)
+				inst.DELETE("/capacitaciones/:id/modulos/:modulo_id", d.LeccionesH.InstructorDeleteModulo)
+				inst.PUT("/capacitaciones/:id/modulos/reorder", d.LeccionesH.InstructorReorderModulos)
+
+				// Submódulos — instructor
+				inst.POST("/capacitaciones/:id/modulos/:modulo_id/submodulos", d.LeccionesH.InstructorCreateSubmodulo)
+				inst.PUT("/capacitaciones/:id/modulos/:modulo_id/submodulos/:submodulo_id", d.LeccionesH.InstructorUpdateSubmodulo)
+				inst.DELETE("/capacitaciones/:id/modulos/:modulo_id/submodulos/:submodulo_id", d.LeccionesH.InstructorDeleteSubmodulo)
+				inst.PUT("/capacitaciones/:id/modulos/:modulo_id/submodulos/reorder", d.LeccionesH.InstructorReorderSubmodulos)
 
 				inst.PATCH("/capacitaciones/:id/toggle-public", d.CursosH.InstructorTogglePublic)
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)

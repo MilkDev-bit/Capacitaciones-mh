@@ -5,67 +5,177 @@ package lecciones;
 option go_package = "Prueba-Go/gen/lecciones;leccionespb";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LeccionesService: gestión de lecciones, progreso y preguntas intermedias.
+// LeccionesService: gestión de la jerarquía Módulo → Submódulo → Lección,
+// progreso, preguntas intermedias y gamificación (minijuegos + leaderboard).
 // ─────────────────────────────────────────────────────────────────────────────
 service LeccionesService {
-  // ── Usuario autenticado ───────────────────────────────────────────────────
+
+  // ── Árbol del curso (Módulos > Submódulos > Lecciones) ───────────────────
+  // Devuelve el árbol completo con el progreso del usuario incrustado.
+  rpc GetCursoTree(CursoUserRequest)          returns (CursoTreeResponse);
+  // Versión para el instructor/admin (sin datos de progreso de usuario).
+  rpc InstructorGetCursoTree(CursoRequest)    returns (CursoTreeResponse);
+
+  // ── Módulos ───────────────────────────────────────────────────────────────
+  rpc InstructorCreateModulo(CreateModuloRequest)   returns (ModuloResponse);
+  rpc InstructorUpdateModulo(UpdateModuloRequest)   returns (ModuloResponse);
+  rpc InstructorDeleteModulo(ModuloIDRequest)       returns (EmptyResponse);
+  rpc InstructorReorderModulos(ReorderModulosRequest) returns (EmptyResponse);
+
+  // ── Submódulos ────────────────────────────────────────────────────────────
+  rpc InstructorCreateSubmodulo(CreateSubmoduloRequest)   returns (SubmoduloResponse);
+  rpc InstructorUpdateSubmodulo(UpdateSubmoduloRequest)   returns (SubmoduloResponse);
+  rpc InstructorDeleteSubmodulo(SubmoduloIDRequest)       returns (EmptyResponse);
+  rpc InstructorReorderSubmodulos(ReorderSubmodulosRequest) returns (EmptyResponse);
+
+  // ── Lecciones ─────────────────────────────────────────────────────────────
+  // Compatibilidad: devuelve lista plana (útil para progreso rápido).
   rpc GetLeccionesConProgreso(CursoUserRequest) returns (ListLeccionesResponse);
-  rpc MarcarLeccionCompleta(MarcarRequest) returns (EmptyResponse);
+  rpc MarcarLeccionCompleta(MarcarRequest)      returns (MarcarLeccionResponse);
 
-  rpc GetPreguntasIntermedias(CursoUserRequest) returns (ListIntermediasResponse);
-  rpc SubmitPreguntasIntermedias(SubmitIntermediasRequest) returns (SubmitIntermediasResponse);
+  rpc InstructorListLecciones(CursoRequest)            returns (ListLeccionesResponse);
+  rpc InstructorCreateLeccion(CreateLeccionRequest)    returns (LeccionResponse);
+  rpc InstructorUpdateLeccion(UpdateLeccionRequest)    returns (LeccionResponse);
+  rpc InstructorDeleteLeccion(LeccionRequest)          returns (EmptyResponse);
+  rpc InstructorReorderLecciones(ReorderRequest)       returns (EmptyResponse);
 
-  // ── Instructor ────────────────────────────────────────────────────────────
-  rpc InstructorListLecciones(CursoRequest) returns (ListLeccionesResponse);
-  rpc InstructorCreateLeccion(CreateLeccionRequest) returns (LeccionResponse);
-  rpc InstructorUpdateLeccion(UpdateLeccionRequest) returns (LeccionResponse);
-  rpc InstructorDeleteLeccion(LeccionRequest) returns (EmptyResponse);
-  rpc InstructorReorderLecciones(ReorderRequest) returns (EmptyResponse);
+  // ── Preguntas intermedias ─────────────────────────────────────────────────
+  rpc GetPreguntasIntermedias(CursoUserRequest)                              returns (ListIntermediasResponse);
+  rpc SubmitPreguntasIntermedias(SubmitIntermediasRequest)                   returns (SubmitIntermediasResponse);
+  rpc InstructorListPreguntasIntermedias(CursoRequest)                       returns (ListIntermediasResponse);
+  rpc InstructorCreatePreguntaIntermedia(CreateIntermediaRequest)            returns (IntermediaResponse);
+  rpc InstructorDeletePreguntaIntermedia(IntermediaIDRequest)                returns (EmptyResponse);
 
-  rpc InstructorListPreguntasIntermedias(CursoRequest) returns (ListIntermediasResponse);
-  rpc InstructorCreatePreguntaIntermedia(CreateIntermediaRequest) returns (IntermediaResponse);
-  rpc InstructorDeletePreguntaIntermedia(IntermediaIDRequest) returns (EmptyResponse);
+  // ── Gamificación (Minijuegos) ─────────────────────────────────────────────
+  // Registra el resultado de un minijuego y devuelve los puntos acumulados.
+  rpc SubmitGameScore(SubmitGameScoreRequest)    returns (SubmitGameScoreResponse);
+  // Top-N jugadores de un curso.
+  rpc GetCursoLeaderboard(LeaderboardRequest)   returns (LeaderboardResponse);
+  // Puntos totales del usuario en todos los cursos (para el perfil).
+  rpc GetUserPoints(UserRequest)                returns (UserPointsResponse);
 }
 
-// ── Requests ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Enum: tipo de lección
+// ─────────────────────────────────────────────────────────────────────────────
+enum LessonType {
+  LESSON_TYPE_UNSPECIFIED = 0;
+  LESSON_TYPE_VIDEO       = 1;  // lección en video
+  LESSON_TYPE_TEXT        = 2;  // lectura/HTML
+  LESSON_TYPE_PDF         = 3;  // documento PDF
+  LESSON_TYPE_QUIZ        = 4;  // quiz de opción múltiple (las preguntas intermedias existentes)
+  LESSON_TYPE_GAME_MEMORY = 5;  // minijuego: memorama de pares
+  LESSON_TYPE_GAME_DRAGDROP = 6; // minijuego: arrastrar y soltar
+  LESSON_TYPE_GAME_WORDSEARCH = 7; // minijuego: sopa de letras
+  LESSON_TYPE_GAME_FILLBLANK  = 8; // minijuego: completar el espacio
+  LESSON_TYPE_GAME_ORDER      = 9; // minijuego: ordenar secuencia
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Requests
+// ─────────────────────────────────────────────────────────────────────────────
+
+message UserRequest       { string user_id  = 1; }
 message CursoRequest      { string curso_id = 1; }
 message CursoUserRequest  { string curso_id = 1; string user_id = 2; }
 message LeccionRequest    { string curso_id = 1; string leccion_id = 2; }
 message IntermediaIDRequest { string pregunta_id = 1; string curso_id = 2; }
+message ModuloIDRequest   { string modulo_id = 1; string curso_id = 2; }
+message SubmoduloIDRequest { string submodulo_id = 1; string modulo_id = 2; }
 
 message MarcarRequest {
   string leccion_id = 1;
   string user_id    = 2;
 }
 
-message CreateLeccionRequest {
+// ── Requests de Módulos ───────────────────────────────────────────────────────
+
+message CreateModuloRequest {
   string curso_id     = 1;
   string title        = 2;
   string description  = 3;
-  string type         = 4;
-  string file_path    = 5;
-  string content      = 6;
-  int32  orden        = 7;
-  int32  duracion_min = 8;
+  int32  orden        = 4;
 }
 
-message UpdateLeccionRequest {
-  string leccion_id   = 1;
+message UpdateModuloRequest {
+  string modulo_id    = 1;
   string curso_id     = 2;
   string title        = 3;
   string description  = 4;
-  string type         = 5;
-  string file_path    = 6;
-  string content      = 7;
-  int32  orden        = 8;
-  int32  duracion_min = 9;
+  int32  orden        = 5;
+}
+
+message ReorderModulosRequest {
+  string          curso_id   = 1;
+  repeated string modulo_ids = 2; // nuevo orden
+}
+
+// ── Requests de Submódulos ────────────────────────────────────────────────────
+
+message CreateSubmoduloRequest {
+  string modulo_id    = 1;
+  string curso_id     = 2; // denormalizado para validaciones
+  string title        = 3;
+  string description  = 4;
+  int32  orden        = 5;
+}
+
+message UpdateSubmoduloRequest {
+  string submodulo_id = 1;
+  string modulo_id    = 2;
+  string title        = 3;
+  string description  = 4;
+  int32  orden        = 5;
+}
+
+message ReorderSubmodulosRequest {
+  string          modulo_id      = 1;
+  repeated string submodulo_ids  = 2;
+}
+
+// ── Requests de Lecciones ─────────────────────────────────────────────────────
+
+message CreateLeccionRequest {
+  string     curso_id        = 1;
+  string     title           = 2;
+  string     description     = 3;
+  LessonType lesson_type     = 4;  // ← reemplaza el antiguo "type" string
+  string     file_path       = 5;
+  string     content         = 6;
+  int32      orden           = 7;
+  int32      duracion_min    = 8;
+  // FK opcionales para la jerarquía (si ambos son vacíos → lección suelta en el curso)
+  string     modulo_id       = 9;
+  string     submodulo_id    = 10;
+  // Configuración del minijuego en formato JSON.
+  // Ejemplo: {"pairs":[{"front":"HTTP","back":"Protocolo de transferencia"},...]}
+  string     game_config_json = 11;
+  // Puntos que otorga completar esta lección/juego.
+  int32      points_reward    = 12;
+}
+
+message UpdateLeccionRequest {
+  string     leccion_id      = 1;
+  string     curso_id        = 2;
+  string     title           = 3;
+  string     description     = 4;
+  LessonType lesson_type     = 5;
+  string     file_path       = 6;
+  string     content         = 7;
+  int32      orden           = 8;
+  int32      duracion_min    = 9;
+  string     modulo_id       = 10;
+  string     submodulo_id    = 11;
+  string     game_config_json = 12;
+  int32      points_reward    = 13;
 }
 
 message ReorderRequest {
-  string         curso_id   = 1;
-  repeated string leccion_ids = 2; // orden nuevo (slice de IDs)
+  string          curso_id    = 1;
+  repeated string leccion_ids = 2;
 }
+
+// ── Requests de Preguntas Intermedias ─────────────────────────────────────────
 
 message CreateIntermediaRequest {
   string                 curso_id             = 1;
@@ -93,25 +203,100 @@ message OpcionInput {
   bool   es_correcta = 2;
 }
 
-// ── Responses ────────────────────────────────────────────────────────────────
+// ── Requests de Gamificación ──────────────────────────────────────────────────
+
+message SubmitGameScoreRequest {
+  string user_id    = 1;
+  string leccion_id = 2;
+  string curso_id   = 3;
+  // Puntos brutos obtenidos en el minijuego (0..points_reward de la lección).
+  int32  points     = 4;
+  // Tiempo en segundos que tardó el usuario (para desempate en leaderboard).
+  int32  time_secs  = 5;
+}
+
+message LeaderboardRequest {
+  string curso_id = 1;
+  int32  top_n    = 2; // cuántos puestos retornar (default: 5)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Responses
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Árbol del curso ───────────────────────────────────────────────────────────
+
+message CursoTreeResponse {
+  string curso_id          = 1;
+  repeated ModuloResponse  modulos   = 2;
+  // Lecciones "sueltas" que no pertenecen a ningún módulo (compatibilidad).
+  repeated LeccionResponse lecciones = 3;
+}
+
+// ── Módulo ────────────────────────────────────────────────────────────────────
+
+message ModuloResponse {
+  string id          = 1;
+  string curso_id    = 2;
+  string title       = 3;
+  string description = 4;
+  int32  orden       = 5;
+  string created_at  = 6;
+  repeated SubmoduloResponse submodulos = 7;
+  // Lecciones que pertenecen al módulo directamente (sin submodulo).
+  repeated LeccionResponse   lecciones  = 8;
+}
+
+// ── Submódulo ─────────────────────────────────────────────────────────────────
+
+message SubmoduloResponse {
+  string id          = 1;
+  string modulo_id   = 2;
+  string title       = 3;
+  string description = 4;
+  int32  orden       = 5;
+  string created_at  = 6;
+  repeated LeccionResponse lecciones = 7;
+}
+
+// ── Lección ───────────────────────────────────────────────────────────────────
 
 message LeccionResponse {
-  string id           = 1;
-  string curso_id     = 2;
-  string title        = 3;
-  string description  = 4;
-  string type         = 5;
-  string file_path    = 6;
-  string content      = 7;
-  int32  orden        = 8;
-  int32  duracion_min = 9;
-  bool   completada   = 10;
-  string created_at   = 11;
+  string     id              = 1;
+  string     curso_id        = 2;
+  string     title           = 3;
+  string     description     = 4;
+  LessonType lesson_type     = 5;
+  string     file_path       = 6;
+  string     content         = 7;
+  int32      orden           = 8;
+  int32      duracion_min    = 9;
+  bool       completada      = 10;
+  string     created_at      = 11;
+  // Jerarquía (vacíos si la lección es "suelta")
+  string     modulo_id       = 12;
+  string     submodulo_id    = 13;
+  // Gamificación
+  string     game_config_json = 14;
+  int32      points_reward    = 15;
 }
 
 message ListLeccionesResponse {
   repeated LeccionResponse lecciones = 1;
 }
+
+// ── Marcar lección completa ───────────────────────────────────────────────────
+
+message MarcarLeccionResponse {
+  // Puntos ganados en esta lección (0 si ya la había completado antes).
+  int32  points_earned   = 1;
+  // Puntos totales del usuario en el curso.
+  int32  total_points    = 2;
+  // Nueva insignia desbloqueada (vacía si ninguna).
+  string badge_unlocked  = 3;
+}
+
+// ── Preguntas intermedias ─────────────────────────────────────────────────────
 
 message IntermediaResponse {
   string id                    = 1;
@@ -136,6 +321,47 @@ message ListIntermediasResponse {
 message SubmitIntermediasResponse {
   int32 correctas = 1;
   int32 total     = 2;
+}
+
+// ── Gamificación ──────────────────────────────────────────────────────────────
+
+message SubmitGameScoreResponse {
+  int32  points_earned  = 1; // puntos de esta sesión
+  int32  total_points   = 2; // acumulado del usuario en el curso
+  string badge_unlocked = 3; // slug de la insignia si se desbloqueó (ej. "memorama_master")
+  bool   is_new_record  = 4; // true si superó su propio record en esta lección
+}
+
+message LeaderboardEntry {
+  int32  rank        = 1;
+  string user_id     = 2;
+  string user_name   = 3;
+  string avatar_url  = 4;
+  int32  points      = 5;
+}
+
+message LeaderboardResponse {
+  string curso_id                    = 1;
+  repeated LeaderboardEntry entries  = 2;
+  // Posición del usuario que hizo la solicitud (puede ser > top_n).
+  LeaderboardEntry my_entry          = 3;
+}
+
+message Badge {
+  string slug        = 1;
+  string name        = 2;
+  string description = 3;
+  string icon_url    = 4;
+  string color       = 5;
+  string unlocked_at = 6;
+}
+
+message UserPointsResponse {
+  string user_id       = 1;
+  int32  total_points  = 2;
+  // Mapa: curso_id → puntos (serializado como JSON string por simplicidad de proto3).
+  string points_by_course_json = 3;
+  repeated Badge badges = 4;
 }
 
 message EmptyResponse {}

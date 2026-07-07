@@ -13,6 +13,7 @@ import (
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
 	cursospb "Prueba-Go/gen/cursos"
+	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v78"
@@ -1021,8 +1022,9 @@ func (h *CursosHandler) GetMyVideocallTicket(ctx *gin.Context) {
 // POST /api/instructor/videocalls/:id/end
 func (h *CursosHandler) EndVideocall(ctx *gin.Context) {
 	scheduleID := ctx.Query("schedule_id")
+	cursoID := ctx.Param("id")
 	_, err := h.c.Cursos.EndVideocall(ctx.Request.Context(), &cursospb.CursoIDRequest{
-		CursoId:    ctx.Param("id"),
+		CursoId:    cursoID,
 		UserId:     ctx.GetString(middleware.CtxUserID),
 		ScheduleId: scheduleID,
 	})
@@ -1030,6 +1032,43 @@ func (h *CursosHandler) EndVideocall(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	// Notificar asíncronamente al representante legal (comprador de las licencias) con el enlace DC-3
+	go func(cId string) {
+		bgCtx := context.Background()
+		curso, errC := h.c.Cursos.GetCurso(bgCtx, &cursospb.CursoIDRequest{CursoId: cId})
+		if errC != nil || curso == nil {
+			slog.Error("EndVideocall email: error obteniendo curso", "error", errC)
+			return
+		}
+
+		licsResp, errL := h.c.Cursos.ListLicencias(bgCtx, &cursospb.ListLicenciasRequest{
+			CapacitacionId: cId,
+		})
+		if errL != nil || licsResp == nil {
+			slog.Error("EndVideocall email: error listando licencias", "error", errL)
+			return
+		}
+
+		notified := make(map[string]bool)
+		for _, lic := range licsResp.Licencias {
+			if lic.CompradorId != "" && !notified[lic.CompradorId] {
+				notified[lic.CompradorId] = true
+				userPerfil, errU := h.c.Usuarios.GetPublicPerfil(bgCtx, &usuariospb.UserIDRequest{
+					UserId: lic.CompradorId,
+				})
+				if errU == nil && userPerfil != nil && userPerfil.Email != "" {
+					slog.Info("Enviando correo DC-3 a representante", "email", userPerfil.Email, "curso", curso.Title)
+					if errSend := sendDC3RepresentativeEmail(userPerfil.Email, userPerfil.Name, curso.Title, int(curso.Duration)); errSend != nil {
+						slog.Error("Error enviando correo DC-3", "email", userPerfil.Email, "error", errSend)
+					}
+				} else {
+					slog.Warn("No se pudo obtener perfil o email para comprador_id", "comprador_id", lic.CompradorId, "error", errU)
+				}
+			}
+		}
+	}(cursoID)
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "Videollamada finalizada para todos"})
 }
 

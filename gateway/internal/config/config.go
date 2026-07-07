@@ -33,6 +33,15 @@ type Config struct {
 	R2SecretKey string
 	R2PublicURL string
 
+	// SMTP / Email
+	SMTPHost string
+	SMTPPort string
+	SMTPUser string
+	SMTPPass string
+	SMTPFrom string
+	AppURL   string
+	AppName  string
+
 	// Entorno
 	GinMode            string
 	RailwayEnvironment string
@@ -61,6 +70,14 @@ func Load() *Config {
 		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
 		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
 		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
+
+		SMTPHost: os.Getenv("SMTP_HOST"),
+		SMTPPort: getEnvOr("SMTP_PORT", "587"),
+		SMTPUser: os.Getenv("SMTP_USER"),
+		SMTPPass: os.Getenv("SMTP_PASS"),
+		SMTPFrom: os.Getenv("SMTP_FROM"),
+		AppURL:   getEnvOr("APP_URL", "http://localhost:8080"),
+		AppName:  getEnvOr("APP_NAME", "Capacitaciones MH"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),

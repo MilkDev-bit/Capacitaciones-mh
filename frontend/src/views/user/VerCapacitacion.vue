@@ -6,6 +6,8 @@ import { useAuthStore } from '../../stores/auth'
 import { toast } from '../../utils/toast'
 import { uploadToR2 } from '../../utils/upload'
 import VideoPlayer from '../../components/VideoPlayer.vue'
+import CourseSidebar from '../../components/CourseSidebar.vue'
+import InteractiveActivity from '../../components/InteractiveActivity.vue'
 
 const videoProgressKey = (lecId: string) => `vp_${cursoId}_${lecId}`
 function savedVideoTime(lecId: string): number {
@@ -23,7 +25,17 @@ const authStore = useAuthStore()
 const currentUser = computed(() => authStore.user)
 
 const curso = ref<any>(null)
-const lecciones = ref<any[]>([])
+// Árbol jerárquico (Módulo → Submódulo → Lección)
+const tree = ref<any>({ modulos: [], lecciones: [] })
+// Lista plana derivada del árbol para la lógica de navegación (anterior/siguiente)
+const lecciones = computed<any[]>(() => {
+  const all: any[] = [...(tree.value?.lecciones ?? [])]
+  tree.value?.modulos?.forEach((m: any) => {
+    all.push(...(m.lecciones ?? []))
+    m.submodulos?.forEach((s: any) => all.push(...(s.lecciones ?? [])))
+  })
+  return all
+})
 const selectedLeccion = ref<any | null>(null)
 const loading = ref(true)
 const loadError = ref('')
@@ -101,12 +113,12 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    const [cRes, lRes] = await Promise.all([
+    const [cRes, tRes] = await Promise.all([
       api.get(`/capacitaciones/${cursoId}`),
-      api.get(`/capacitaciones/${cursoId}/lecciones`)
+      api.get(`/capacitaciones/${cursoId}/tree`),    // ← árbol jerárquico
     ])
     curso.value = cRes.data
-    lecciones.value = lRes.data || []
+    tree.value = tRes.data || { modulos: [], lecciones: [] }
     // Si el curso ya estaba completado al entrar, mostrar el examen si lo hay
     if (progreso.value === 100) await cargarExamenFinal()
   } catch (e: any) {
@@ -118,7 +130,7 @@ async function load() {
 
 function startCourse() {
   if (lecciones.value.length > 0) {
-    const firstPending = lecciones.value.find(l => !l.completada)
+    const firstPending = lecciones.value.find((l: any) => !l.completada)
     selectLeccion(firstPending || lecciones.value[0])
   }
 }
@@ -172,8 +184,13 @@ async function marcarCompleta() {
       showIntermedias.value = true
     }
   } catch {
-    toast.error('Error al marcar la lección')
+    toast.error('Error al marcar lección')
   }
+}
+
+function onGameCompleted() {
+  if (!selectedLeccion.value || selectedLeccion.value.completada) return
+  marcarCompleta()
 }
 
 async function loadPreguntas(leccionId: string) {
@@ -214,7 +231,7 @@ async function cargarExamenFinal() {
     const res = await api.get('/usuario/examenes')
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
-      (e: any) => e.capacitacion_id === cursoId && !e.ya_respondido && !e.bloqueado
+      (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70) && !e.bloqueado
     ) ?? null
   } catch { /* ignorar silenciosamente */ }
 }
@@ -459,14 +476,26 @@ function isEmbeddableLink(url: string): boolean {
   return !!(url.match(/(?:youtube\.com\/watch|youtu\.be\/)/) || url.match(/vimeo\.com\/\d+/))
 }
 
-function typeLabel(t: string) {
-  const map: Record<string, string> = { video: 'Video', document: 'PDF / Documento', text: 'Lectura', link: 'Enlace / Video' }
-  return map[t] || t
+function typeLabel(t: any) {
+  const map: Record<string, string> = {
+    video: 'Video', '1': 'Video',
+    document: 'PDF / Documento', '3': 'PDF / Documento',
+    text: 'Lectura', '2': 'Lectura',
+    link: 'Enlace', '4': 'Quiz',
+    '5': 'Memorama', '6': 'Clasificar', '7': 'Sopa de Letras', '8': 'Completar', '9': 'Secuencia'
+  }
+  return map[String(t)] || String(t)
 }
 
-function typeIcon(t: string) {
-  const map: Record<string, string> = { video: 'V', document: 'D', text: 'L', link: 'YT' }
-  return map[t] || '?'
+function typeIcon(t: any) {
+  const map: Record<string, string> = {
+    video: '🎬', '1': '🎬',
+    document: '📄', '3': '📄',
+    text: '📝', '2': '📝',
+    link: '🔗', '4': '❓',
+    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊'
+  }
+  return map[String(t)] || '📄'
 }
 
 function isNextPending(lec: any) {
@@ -508,6 +537,14 @@ function iniciarConversacionPrivada(userId: string, userName: string) {
 
 function goBack() {
   router.push('/usuario/capacitaciones')
+}
+
+function tramitarDC3() {
+  const nombreCurso = curso.value?.title || ''
+  const duracion = Math.ceil((curso.value?.duration || 60) / 60)
+  const area = curso.value?.area_tematica || '6000'
+  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=${encodeURIComponent(area)}`
+  window.open(url, '_blank')
 }
 </script>
 
@@ -567,46 +604,21 @@ function goBack() {
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Mis cursos
           </button>
-          <h2 class="ver-curso-nombre">{{ curso?.title }}</h2>
-          <div class="ver-course-meta">
-            <span class="ver-meta-chip">
-              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              {{ leccionesCompletadas }}/{{ lecciones.length }} lecciones
-            </span>
-            <span v-if="duracionTotal" class="ver-meta-chip">
-              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              {{ duracionTotal }} min
-            </span>
-          </div>
-          <div class="ver-progress-wrap">
-            <div class="ver-progress-top">
-              <span>Tu progreso</span>
-              <span class="ver-progress-pct">{{ progreso }}%</span>
-            </div>
-            <div class="ver-progress-bg">
-              <div class="ver-progress-fill" :style="`width:${progreso}%`" />
-            </div>
+          <div v-if="progreso === 100" style="margin-top: 12px;">
+            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;" @click="tramitarDC3">
+              📋 Tramitar Constancia DC-3
+            </button>
           </div>
         </div>
-        <nav class="ver-nav">
-          <p class="ver-nav-section-label">Contenido del curso</p>
-          <button v-for="(lec, idx) in lecciones" :key="lec.id"
-            @click="selectLeccion(lec)"
-            :class="['ver-nav-item', selectedLeccion?.id === lec.id ? 'active' : '', lec.completada ? 'done' : '', isNextPending(lec) ? 'next-pending' : '']"
-            :aria-current="selectedLeccion?.id === lec.id ? 'page' : undefined">
-            <div class="ver-nav-icon-grid">
-              <svg v-if="lec.completada" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span v-else class="ver-nav-num-text">{{ idx + 1 }}</span>
-            </div>
-            <div class="ver-nav-info">
-              <p class="ver-nav-title">{{ lec.title }}</p>
-              <p class="ver-nav-meta"><span :class="['ver-type-dot', lec.type]"></span>{{ typeLabel(lec.type) }}<span v-if="lec.duracion_min"> · {{ lec.duracion_min }} min</span></p>
-            </div>
-            <span v-if="isNextPending(lec)" class="ver-next-badge">Siguiente</span>
-          </button>
-          <div v-if="lecciones.length === 0" class="ver-nav-empty">Sin lecciones</div>
-        </nav>
+        <!-- Árbol jerárquico de navegación -->
+        <CourseSidebar
+          :tree="tree"
+          :selected-id="selectedLeccion?.id ?? null"
+          :curso-title="curso?.title"
+          @select="selectLeccion"
+        />
       </aside>
+
 
       <!-- Contenido principal -->
       <main class="ver-main">
@@ -740,7 +752,7 @@ function goBack() {
             <!-- Reproductor / contenido -->
             <section class="ver-content-card">
               <!-- Video subido -->
-              <div v-if="selectedLeccion.type === 'video'" class="ver-media-frame ver-media-video">
+              <div v-if="['video', '1'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="ver-media-frame ver-media-video">
                 <VideoPlayer
                   v-if="selectedLeccion.file_path"
                   :src="fileUrl(selectedLeccion.file_path)"
@@ -751,7 +763,7 @@ function goBack() {
               </div>
 
               <!-- PDF / Documento embebido -->
-              <div v-else-if="selectedLeccion.type === 'document'">
+              <div v-else-if="['document', '3'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
                 <div v-if="selectedLeccion.file_path">
                   <iframe :src="fileUrl(selectedLeccion.file_path)" class="ver-doc-frame" />
                   <div class="ver-resource-footer">
@@ -763,12 +775,12 @@ function goBack() {
               </div>
 
               <!-- Texto / lectura -->
-              <div v-else-if="selectedLeccion.type === 'text'" class="ver-reading">
+              <div v-else-if="['text', '2'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="ver-reading">
                 <div class="ver-reading-content">{{ selectedLeccion.content }}</div>
               </div>
 
               <!-- Enlace externo: YouTube, Vimeo, otro -->
-              <div v-else-if="selectedLeccion.type === 'link'">
+              <div v-else-if="['link', '4', '99'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
                 <div v-if="selectedLeccion.content">
                   <!-- YouTube / Vimeo: incrustar en iframe -->
                   <div v-if="isEmbeddableLink(selectedLeccion.content)" class="ver-media-frame">
@@ -792,13 +804,22 @@ function goBack() {
                 </div>
                 <p v-else class="ver-media-empty ver-media-empty-light">Sin enlace configurado</p>
               </div>
+
+              <!-- Minijuegos Interactivos -->
+              <div v-else-if="['5','6','7','8','9'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
+                <InteractiveActivity
+                  :lesson="selectedLeccion"
+                  :curso-id="cursoId"
+                  @completed="onGameCompleted"
+                />
+              </div>
             </section>
 
             <div class="ver-lesson-actions">
               <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
                 ← Anterior
               </button>
-              <button v-if="!selectedLeccion.completada" class="btn btn-primary" @click="marcarCompleta">
+              <button v-if="!selectedLeccion.completada && !['5','6','7','8','9'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="btn btn-primary" @click="marcarCompleta">
                 ✓ Marcar completada
               </button>
               <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
@@ -1190,6 +1211,12 @@ function goBack() {
           </div>
           <h2>¡Felicidades!</h2>
           <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
+          <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+            <button class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
+              📋 Tramitar Constancia DC-3
+            </button>
+            <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>
+          </div>
         </div>
       </div>
     </Transition>

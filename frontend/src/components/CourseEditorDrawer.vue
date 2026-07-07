@@ -6,7 +6,7 @@ import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import ContentTypeSelector from './ContentTypeSelector.vue'
-import LessonList from './LessonList.vue'
+import CourseTreeEditor from './CourseTreeEditor.vue'
 
 const props = defineProps<{
   show: boolean
@@ -165,7 +165,7 @@ async function saveInfo() {
         </div>
 
         <div v-if="activeTab === 'lessons'" class="tab-pane slide-down-enter-active">
-          <LessonList v-if="form.id" :capId="form.id" />
+          <CourseTreeEditor v-if="form.id" :capId="form.id" />
         </div>
       </div>
     </div>
@@ -176,7 +176,7 @@ async function saveInfo() {
 .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
-.drawer-content { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 500px; background: var(--surface); box-shadow: -4px 0 24px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+.drawer-content { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 850px; background: var(--surface); box-shadow: -4px 0 24px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
 .drawer-content.open { transform: translateX(0); }
 
 .drawer-header { padding: 24px; border-bottom: 1px solid var(--border-light); display: flex; align-items: flex-start; justify-content: space-between; }

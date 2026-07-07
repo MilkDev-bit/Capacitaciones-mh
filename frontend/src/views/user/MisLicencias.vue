@@ -106,6 +106,13 @@ async function copyCode(codigo: string) {
   navigator.clipboard.writeText(codigo)
   toast.success('Código copiado al portapapeles')
 }
+
+function tramitarDC3Licencia(lic: any) {
+  const nombreCurso = lic.nombre && lic.nombre !== 'Licencia Corporativa' ? lic.nombre : 'Capacitación'
+  const duracion = Math.ceil((lic.curso_duracion || 60) / 60)
+  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=6000`
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
@@ -166,10 +173,15 @@ async function copyCode(codigo: string) {
             </div>
           </div>
 
-          <button class="btn-details" @click="openDetails(lic)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            Ver Detalles y Factura
-          </button>
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button class="btn-details" style="margin-top: 0; flex: 1;" @click="openDetails(lic)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              Ver Detalles
+            </button>
+            <button class="btn-details" style="margin-top: 0; flex: 1; background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);" @click="tramitarDC3Licencia(lic)">
+              📋 Tramitar DC-3
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -226,12 +238,15 @@ async function copyCode(codigo: string) {
               </div>
             </div>
             <div class="modal-footer">
-              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 18px; font-size: 0.9rem; font-weight: 600; cursor: pointer; flex: 1; opacity: 1 !important; visibility: visible !important;" class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
-                <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span v-if="invoiceLoading">Buscando documento...</span>
-                <span v-else>Descargar Recibo</span>
+              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #10b981; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;" @click="tramitarDC3Licencia(selectedLic)">
+                📋 Tramitar DC-3
               </button>
-              <button class="btn-secondary" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
+              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;" class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+                <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span v-if="invoiceLoading">Buscando...</span>
+                <span v-else>Recibo</span>
+              </button>
+              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
             </div>
           </div>
         </div>

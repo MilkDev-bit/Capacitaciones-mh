@@ -19,18 +19,31 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	LeccionesService_GetCursoTree_FullMethodName                       = "/lecciones.LeccionesService/GetCursoTree"
+	LeccionesService_InstructorGetCursoTree_FullMethodName             = "/lecciones.LeccionesService/InstructorGetCursoTree"
+	LeccionesService_InstructorCreateModulo_FullMethodName             = "/lecciones.LeccionesService/InstructorCreateModulo"
+	LeccionesService_InstructorUpdateModulo_FullMethodName             = "/lecciones.LeccionesService/InstructorUpdateModulo"
+	LeccionesService_InstructorDeleteModulo_FullMethodName             = "/lecciones.LeccionesService/InstructorDeleteModulo"
+	LeccionesService_InstructorReorderModulos_FullMethodName           = "/lecciones.LeccionesService/InstructorReorderModulos"
+	LeccionesService_InstructorCreateSubmodulo_FullMethodName          = "/lecciones.LeccionesService/InstructorCreateSubmodulo"
+	LeccionesService_InstructorUpdateSubmodulo_FullMethodName          = "/lecciones.LeccionesService/InstructorUpdateSubmodulo"
+	LeccionesService_InstructorDeleteSubmodulo_FullMethodName          = "/lecciones.LeccionesService/InstructorDeleteSubmodulo"
+	LeccionesService_InstructorReorderSubmodulos_FullMethodName        = "/lecciones.LeccionesService/InstructorReorderSubmodulos"
 	LeccionesService_GetLeccionesConProgreso_FullMethodName            = "/lecciones.LeccionesService/GetLeccionesConProgreso"
 	LeccionesService_MarcarLeccionCompleta_FullMethodName              = "/lecciones.LeccionesService/MarcarLeccionCompleta"
-	LeccionesService_GetPreguntasIntermedias_FullMethodName            = "/lecciones.LeccionesService/GetPreguntasIntermedias"
-	LeccionesService_SubmitPreguntasIntermedias_FullMethodName         = "/lecciones.LeccionesService/SubmitPreguntasIntermedias"
 	LeccionesService_InstructorListLecciones_FullMethodName            = "/lecciones.LeccionesService/InstructorListLecciones"
 	LeccionesService_InstructorCreateLeccion_FullMethodName            = "/lecciones.LeccionesService/InstructorCreateLeccion"
 	LeccionesService_InstructorUpdateLeccion_FullMethodName            = "/lecciones.LeccionesService/InstructorUpdateLeccion"
 	LeccionesService_InstructorDeleteLeccion_FullMethodName            = "/lecciones.LeccionesService/InstructorDeleteLeccion"
 	LeccionesService_InstructorReorderLecciones_FullMethodName         = "/lecciones.LeccionesService/InstructorReorderLecciones"
+	LeccionesService_GetPreguntasIntermedias_FullMethodName            = "/lecciones.LeccionesService/GetPreguntasIntermedias"
+	LeccionesService_SubmitPreguntasIntermedias_FullMethodName         = "/lecciones.LeccionesService/SubmitPreguntasIntermedias"
 	LeccionesService_InstructorListPreguntasIntermedias_FullMethodName = "/lecciones.LeccionesService/InstructorListPreguntasIntermedias"
 	LeccionesService_InstructorCreatePreguntaIntermedia_FullMethodName = "/lecciones.LeccionesService/InstructorCreatePreguntaIntermedia"
 	LeccionesService_InstructorDeletePreguntaIntermedia_FullMethodName = "/lecciones.LeccionesService/InstructorDeletePreguntaIntermedia"
+	LeccionesService_SubmitGameScore_FullMethodName                    = "/lecciones.LeccionesService/SubmitGameScore"
+	LeccionesService_GetCursoLeaderboard_FullMethodName                = "/lecciones.LeccionesService/GetCursoLeaderboard"
+	LeccionesService_GetUserPoints_FullMethodName                      = "/lecciones.LeccionesService/GetUserPoints"
 )
 
 // LeccionesServiceClient is the client API for LeccionesService service.
@@ -38,23 +51,47 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// LeccionesService: gestión de lecciones, progreso y preguntas intermedias.
+// LeccionesService: gestión de la jerarquía Módulo → Submódulo → Lección,
+// progreso, preguntas intermedias y gamificación (minijuegos + leaderboard).
 // ─────────────────────────────────────────────────────────────────────────────
 type LeccionesServiceClient interface {
-	// ── Usuario autenticado ───────────────────────────────────────────────────
+	// ── Árbol del curso (Módulos > Submódulos > Lecciones) ───────────────────
+	// Devuelve el árbol completo con el progreso del usuario incrustado.
+	GetCursoTree(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*CursoTreeResponse, error)
+	// Versión para el instructor/admin (sin datos de progreso de usuario).
+	InstructorGetCursoTree(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*CursoTreeResponse, error)
+	// ── Módulos ───────────────────────────────────────────────────────────────
+	InstructorCreateModulo(ctx context.Context, in *CreateModuloRequest, opts ...grpc.CallOption) (*ModuloResponse, error)
+	InstructorUpdateModulo(ctx context.Context, in *UpdateModuloRequest, opts ...grpc.CallOption) (*ModuloResponse, error)
+	InstructorDeleteModulo(ctx context.Context, in *ModuloIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	InstructorReorderModulos(ctx context.Context, in *ReorderModulosRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Submódulos ────────────────────────────────────────────────────────────
+	InstructorCreateSubmodulo(ctx context.Context, in *CreateSubmoduloRequest, opts ...grpc.CallOption) (*SubmoduloResponse, error)
+	InstructorUpdateSubmodulo(ctx context.Context, in *UpdateSubmoduloRequest, opts ...grpc.CallOption) (*SubmoduloResponse, error)
+	InstructorDeleteSubmodulo(ctx context.Context, in *SubmoduloIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	InstructorReorderSubmodulos(ctx context.Context, in *ReorderSubmodulosRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Lecciones ─────────────────────────────────────────────────────────────
+	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
-	MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	GetPreguntasIntermedias(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error)
-	SubmitPreguntasIntermedias(ctx context.Context, in *SubmitIntermediasRequest, opts ...grpc.CallOption) (*SubmitIntermediasResponse, error)
-	// ── Instructor ────────────────────────────────────────────────────────────
+	MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*MarcarLeccionResponse, error)
 	InstructorListLecciones(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
 	InstructorCreateLeccion(ctx context.Context, in *CreateLeccionRequest, opts ...grpc.CallOption) (*LeccionResponse, error)
 	InstructorUpdateLeccion(ctx context.Context, in *UpdateLeccionRequest, opts ...grpc.CallOption) (*LeccionResponse, error)
 	InstructorDeleteLeccion(ctx context.Context, in *LeccionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	InstructorReorderLecciones(ctx context.Context, in *ReorderRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Preguntas intermedias ─────────────────────────────────────────────────
+	GetPreguntasIntermedias(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error)
+	SubmitPreguntasIntermedias(ctx context.Context, in *SubmitIntermediasRequest, opts ...grpc.CallOption) (*SubmitIntermediasResponse, error)
 	InstructorListPreguntasIntermedias(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error)
 	InstructorCreatePreguntaIntermedia(ctx context.Context, in *CreateIntermediaRequest, opts ...grpc.CallOption) (*IntermediaResponse, error)
 	InstructorDeletePreguntaIntermedia(ctx context.Context, in *IntermediaIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Gamificación (Minijuegos) ─────────────────────────────────────────────
+	// Registra el resultado de un minijuego y devuelve los puntos acumulados.
+	SubmitGameScore(ctx context.Context, in *SubmitGameScoreRequest, opts ...grpc.CallOption) (*SubmitGameScoreResponse, error)
+	// Top-N jugadores de un curso.
+	GetCursoLeaderboard(ctx context.Context, in *LeaderboardRequest, opts ...grpc.CallOption) (*LeaderboardResponse, error)
+	// Puntos totales del usuario en todos los cursos (para el perfil).
+	GetUserPoints(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*UserPointsResponse, error)
 }
 
 type leccionesServiceClient struct {
@@ -63,6 +100,106 @@ type leccionesServiceClient struct {
 
 func NewLeccionesServiceClient(cc grpc.ClientConnInterface) LeccionesServiceClient {
 	return &leccionesServiceClient{cc}
+}
+
+func (c *leccionesServiceClient) GetCursoTree(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*CursoTreeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CursoTreeResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GetCursoTree_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorGetCursoTree(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*CursoTreeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CursoTreeResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorGetCursoTree_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorCreateModulo(ctx context.Context, in *CreateModuloRequest, opts ...grpc.CallOption) (*ModuloResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModuloResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorCreateModulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorUpdateModulo(ctx context.Context, in *UpdateModuloRequest, opts ...grpc.CallOption) (*ModuloResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModuloResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorUpdateModulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorDeleteModulo(ctx context.Context, in *ModuloIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorDeleteModulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorReorderModulos(ctx context.Context, in *ReorderModulosRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorReorderModulos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorCreateSubmodulo(ctx context.Context, in *CreateSubmoduloRequest, opts ...grpc.CallOption) (*SubmoduloResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmoduloResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorCreateSubmodulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorUpdateSubmodulo(ctx context.Context, in *UpdateSubmoduloRequest, opts ...grpc.CallOption) (*SubmoduloResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmoduloResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorUpdateSubmodulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorDeleteSubmodulo(ctx context.Context, in *SubmoduloIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorDeleteSubmodulo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorReorderSubmodulos(ctx context.Context, in *ReorderSubmodulosRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorReorderSubmodulos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *leccionesServiceClient) GetLeccionesConProgreso(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error) {
@@ -75,30 +212,10 @@ func (c *leccionesServiceClient) GetLeccionesConProgreso(ctx context.Context, in
 	return out, nil
 }
 
-func (c *leccionesServiceClient) MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *leccionesServiceClient) MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*MarcarLeccionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(MarcarLeccionResponse)
 	err := c.cc.Invoke(ctx, LeccionesService_MarcarLeccionCompleta_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *leccionesServiceClient) GetPreguntasIntermedias(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListIntermediasResponse)
-	err := c.cc.Invoke(ctx, LeccionesService_GetPreguntasIntermedias_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *leccionesServiceClient) SubmitPreguntasIntermedias(ctx context.Context, in *SubmitIntermediasRequest, opts ...grpc.CallOption) (*SubmitIntermediasResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SubmitIntermediasResponse)
-	err := c.cc.Invoke(ctx, LeccionesService_SubmitPreguntasIntermedias_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +272,26 @@ func (c *leccionesServiceClient) InstructorReorderLecciones(ctx context.Context,
 	return out, nil
 }
 
+func (c *leccionesServiceClient) GetPreguntasIntermedias(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIntermediasResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GetPreguntasIntermedias_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) SubmitPreguntasIntermedias(ctx context.Context, in *SubmitIntermediasRequest, opts ...grpc.CallOption) (*SubmitIntermediasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitIntermediasResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_SubmitPreguntasIntermedias_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *leccionesServiceClient) InstructorListPreguntasIntermedias(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*ListIntermediasResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListIntermediasResponse)
@@ -185,28 +322,82 @@ func (c *leccionesServiceClient) InstructorDeletePreguntaIntermedia(ctx context.
 	return out, nil
 }
 
+func (c *leccionesServiceClient) SubmitGameScore(ctx context.Context, in *SubmitGameScoreRequest, opts ...grpc.CallOption) (*SubmitGameScoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitGameScoreResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_SubmitGameScore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) GetCursoLeaderboard(ctx context.Context, in *LeaderboardRequest, opts ...grpc.CallOption) (*LeaderboardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LeaderboardResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GetCursoLeaderboard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) GetUserPoints(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*UserPointsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserPointsResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GetUserPoints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LeccionesServiceServer is the server API for LeccionesService service.
 // All implementations must embed UnimplementedLeccionesServiceServer
 // for forward compatibility.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// LeccionesService: gestión de lecciones, progreso y preguntas intermedias.
+// LeccionesService: gestión de la jerarquía Módulo → Submódulo → Lección,
+// progreso, preguntas intermedias y gamificación (minijuegos + leaderboard).
 // ─────────────────────────────────────────────────────────────────────────────
 type LeccionesServiceServer interface {
-	// ── Usuario autenticado ───────────────────────────────────────────────────
+	// ── Árbol del curso (Módulos > Submódulos > Lecciones) ───────────────────
+	// Devuelve el árbol completo con el progreso del usuario incrustado.
+	GetCursoTree(context.Context, *CursoUserRequest) (*CursoTreeResponse, error)
+	// Versión para el instructor/admin (sin datos de progreso de usuario).
+	InstructorGetCursoTree(context.Context, *CursoRequest) (*CursoTreeResponse, error)
+	// ── Módulos ───────────────────────────────────────────────────────────────
+	InstructorCreateModulo(context.Context, *CreateModuloRequest) (*ModuloResponse, error)
+	InstructorUpdateModulo(context.Context, *UpdateModuloRequest) (*ModuloResponse, error)
+	InstructorDeleteModulo(context.Context, *ModuloIDRequest) (*EmptyResponse, error)
+	InstructorReorderModulos(context.Context, *ReorderModulosRequest) (*EmptyResponse, error)
+	// ── Submódulos ────────────────────────────────────────────────────────────
+	InstructorCreateSubmodulo(context.Context, *CreateSubmoduloRequest) (*SubmoduloResponse, error)
+	InstructorUpdateSubmodulo(context.Context, *UpdateSubmoduloRequest) (*SubmoduloResponse, error)
+	InstructorDeleteSubmodulo(context.Context, *SubmoduloIDRequest) (*EmptyResponse, error)
+	InstructorReorderSubmodulos(context.Context, *ReorderSubmodulosRequest) (*EmptyResponse, error)
+	// ── Lecciones ─────────────────────────────────────────────────────────────
+	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(context.Context, *CursoUserRequest) (*ListLeccionesResponse, error)
-	MarcarLeccionCompleta(context.Context, *MarcarRequest) (*EmptyResponse, error)
-	GetPreguntasIntermedias(context.Context, *CursoUserRequest) (*ListIntermediasResponse, error)
-	SubmitPreguntasIntermedias(context.Context, *SubmitIntermediasRequest) (*SubmitIntermediasResponse, error)
-	// ── Instructor ────────────────────────────────────────────────────────────
+	MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error)
 	InstructorListLecciones(context.Context, *CursoRequest) (*ListLeccionesResponse, error)
 	InstructorCreateLeccion(context.Context, *CreateLeccionRequest) (*LeccionResponse, error)
 	InstructorUpdateLeccion(context.Context, *UpdateLeccionRequest) (*LeccionResponse, error)
 	InstructorDeleteLeccion(context.Context, *LeccionRequest) (*EmptyResponse, error)
 	InstructorReorderLecciones(context.Context, *ReorderRequest) (*EmptyResponse, error)
+	// ── Preguntas intermedias ─────────────────────────────────────────────────
+	GetPreguntasIntermedias(context.Context, *CursoUserRequest) (*ListIntermediasResponse, error)
+	SubmitPreguntasIntermedias(context.Context, *SubmitIntermediasRequest) (*SubmitIntermediasResponse, error)
 	InstructorListPreguntasIntermedias(context.Context, *CursoRequest) (*ListIntermediasResponse, error)
 	InstructorCreatePreguntaIntermedia(context.Context, *CreateIntermediaRequest) (*IntermediaResponse, error)
 	InstructorDeletePreguntaIntermedia(context.Context, *IntermediaIDRequest) (*EmptyResponse, error)
+	// ── Gamificación (Minijuegos) ─────────────────────────────────────────────
+	// Registra el resultado de un minijuego y devuelve los puntos acumulados.
+	SubmitGameScore(context.Context, *SubmitGameScoreRequest) (*SubmitGameScoreResponse, error)
+	// Top-N jugadores de un curso.
+	GetCursoLeaderboard(context.Context, *LeaderboardRequest) (*LeaderboardResponse, error)
+	// Puntos totales del usuario en todos los cursos (para el perfil).
+	GetUserPoints(context.Context, *UserRequest) (*UserPointsResponse, error)
 	mustEmbedUnimplementedLeccionesServiceServer()
 }
 
@@ -217,17 +408,41 @@ type LeccionesServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLeccionesServiceServer struct{}
 
+func (UnimplementedLeccionesServiceServer) GetCursoTree(context.Context, *CursoUserRequest) (*CursoTreeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCursoTree not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorGetCursoTree(context.Context, *CursoRequest) (*CursoTreeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorGetCursoTree not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorCreateModulo(context.Context, *CreateModuloRequest) (*ModuloResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorCreateModulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorUpdateModulo(context.Context, *UpdateModuloRequest) (*ModuloResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorUpdateModulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorDeleteModulo(context.Context, *ModuloIDRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorDeleteModulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorReorderModulos(context.Context, *ReorderModulosRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorReorderModulos not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorCreateSubmodulo(context.Context, *CreateSubmoduloRequest) (*SubmoduloResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorCreateSubmodulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorUpdateSubmodulo(context.Context, *UpdateSubmoduloRequest) (*SubmoduloResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorUpdateSubmodulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorDeleteSubmodulo(context.Context, *SubmoduloIDRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorDeleteSubmodulo not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorReorderSubmodulos(context.Context, *ReorderSubmodulosRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorReorderSubmodulos not implemented")
+}
 func (UnimplementedLeccionesServiceServer) GetLeccionesConProgreso(context.Context, *CursoUserRequest) (*ListLeccionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLeccionesConProgreso not implemented")
 }
-func (UnimplementedLeccionesServiceServer) MarcarLeccionCompleta(context.Context, *MarcarRequest) (*EmptyResponse, error) {
+func (UnimplementedLeccionesServiceServer) MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarcarLeccionCompleta not implemented")
-}
-func (UnimplementedLeccionesServiceServer) GetPreguntasIntermedias(context.Context, *CursoUserRequest) (*ListIntermediasResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetPreguntasIntermedias not implemented")
-}
-func (UnimplementedLeccionesServiceServer) SubmitPreguntasIntermedias(context.Context, *SubmitIntermediasRequest) (*SubmitIntermediasResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SubmitPreguntasIntermedias not implemented")
 }
 func (UnimplementedLeccionesServiceServer) InstructorListLecciones(context.Context, *CursoRequest) (*ListLeccionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListLecciones not implemented")
@@ -244,6 +459,12 @@ func (UnimplementedLeccionesServiceServer) InstructorDeleteLeccion(context.Conte
 func (UnimplementedLeccionesServiceServer) InstructorReorderLecciones(context.Context, *ReorderRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorReorderLecciones not implemented")
 }
+func (UnimplementedLeccionesServiceServer) GetPreguntasIntermedias(context.Context, *CursoUserRequest) (*ListIntermediasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPreguntasIntermedias not implemented")
+}
+func (UnimplementedLeccionesServiceServer) SubmitPreguntasIntermedias(context.Context, *SubmitIntermediasRequest) (*SubmitIntermediasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitPreguntasIntermedias not implemented")
+}
 func (UnimplementedLeccionesServiceServer) InstructorListPreguntasIntermedias(context.Context, *CursoRequest) (*ListIntermediasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListPreguntasIntermedias not implemented")
 }
@@ -252,6 +473,15 @@ func (UnimplementedLeccionesServiceServer) InstructorCreatePreguntaIntermedia(co
 }
 func (UnimplementedLeccionesServiceServer) InstructorDeletePreguntaIntermedia(context.Context, *IntermediaIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorDeletePreguntaIntermedia not implemented")
+}
+func (UnimplementedLeccionesServiceServer) SubmitGameScore(context.Context, *SubmitGameScoreRequest) (*SubmitGameScoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitGameScore not implemented")
+}
+func (UnimplementedLeccionesServiceServer) GetCursoLeaderboard(context.Context, *LeaderboardRequest) (*LeaderboardResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCursoLeaderboard not implemented")
+}
+func (UnimplementedLeccionesServiceServer) GetUserPoints(context.Context, *UserRequest) (*UserPointsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserPoints not implemented")
 }
 func (UnimplementedLeccionesServiceServer) mustEmbedUnimplementedLeccionesServiceServer() {}
 func (UnimplementedLeccionesServiceServer) testEmbeddedByValue()                          {}
@@ -272,6 +502,186 @@ func RegisterLeccionesServiceServer(s grpc.ServiceRegistrar, srv LeccionesServic
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&LeccionesService_ServiceDesc, srv)
+}
+
+func _LeccionesService_GetCursoTree_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GetCursoTree(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GetCursoTree_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GetCursoTree(ctx, req.(*CursoUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorGetCursoTree_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorGetCursoTree(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorGetCursoTree_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorGetCursoTree(ctx, req.(*CursoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorCreateModulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateModuloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorCreateModulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorCreateModulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorCreateModulo(ctx, req.(*CreateModuloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorUpdateModulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateModuloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorUpdateModulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorUpdateModulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorUpdateModulo(ctx, req.(*UpdateModuloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorDeleteModulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModuloIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorDeleteModulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorDeleteModulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorDeleteModulo(ctx, req.(*ModuloIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorReorderModulos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReorderModulosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorReorderModulos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorReorderModulos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorReorderModulos(ctx, req.(*ReorderModulosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorCreateSubmodulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSubmoduloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorCreateSubmodulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorCreateSubmodulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorCreateSubmodulo(ctx, req.(*CreateSubmoduloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorUpdateSubmodulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSubmoduloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorUpdateSubmodulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorUpdateSubmodulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorUpdateSubmodulo(ctx, req.(*UpdateSubmoduloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorDeleteSubmodulo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmoduloIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorDeleteSubmodulo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorDeleteSubmodulo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorDeleteSubmodulo(ctx, req.(*SubmoduloIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorReorderSubmodulos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReorderSubmodulosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorReorderSubmodulos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorReorderSubmodulos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorReorderSubmodulos(ctx, req.(*ReorderSubmodulosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _LeccionesService_GetLeccionesConProgreso_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -306,42 +716,6 @@ func _LeccionesService_MarcarLeccionCompleta_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LeccionesServiceServer).MarcarLeccionCompleta(ctx, req.(*MarcarRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _LeccionesService_GetPreguntasIntermedias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CursoUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LeccionesServiceServer).GetPreguntasIntermedias(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LeccionesService_GetPreguntasIntermedias_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LeccionesServiceServer).GetPreguntasIntermedias(ctx, req.(*CursoUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _LeccionesService_SubmitPreguntasIntermedias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubmitIntermediasRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LeccionesServiceServer).SubmitPreguntasIntermedias(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LeccionesService_SubmitPreguntasIntermedias_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LeccionesServiceServer).SubmitPreguntasIntermedias(ctx, req.(*SubmitIntermediasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -436,6 +810,42 @@ func _LeccionesService_InstructorReorderLecciones_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LeccionesService_GetPreguntasIntermedias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GetPreguntasIntermedias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GetPreguntasIntermedias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GetPreguntasIntermedias(ctx, req.(*CursoUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_SubmitPreguntasIntermedias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitIntermediasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).SubmitPreguntasIntermedias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_SubmitPreguntasIntermedias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).SubmitPreguntasIntermedias(ctx, req.(*SubmitIntermediasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LeccionesService_InstructorListPreguntasIntermedias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CursoRequest)
 	if err := dec(in); err != nil {
@@ -490,6 +900,60 @@ func _LeccionesService_InstructorDeletePreguntaIntermedia_Handler(srv interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LeccionesService_SubmitGameScore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitGameScoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).SubmitGameScore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_SubmitGameScore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).SubmitGameScore(ctx, req.(*SubmitGameScoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_GetCursoLeaderboard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LeaderboardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GetCursoLeaderboard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GetCursoLeaderboard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GetCursoLeaderboard(ctx, req.(*LeaderboardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_GetUserPoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GetUserPoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GetUserPoints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GetUserPoints(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LeccionesService_ServiceDesc is the grpc.ServiceDesc for LeccionesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -498,20 +962,52 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LeccionesServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetCursoTree",
+			Handler:    _LeccionesService_GetCursoTree_Handler,
+		},
+		{
+			MethodName: "InstructorGetCursoTree",
+			Handler:    _LeccionesService_InstructorGetCursoTree_Handler,
+		},
+		{
+			MethodName: "InstructorCreateModulo",
+			Handler:    _LeccionesService_InstructorCreateModulo_Handler,
+		},
+		{
+			MethodName: "InstructorUpdateModulo",
+			Handler:    _LeccionesService_InstructorUpdateModulo_Handler,
+		},
+		{
+			MethodName: "InstructorDeleteModulo",
+			Handler:    _LeccionesService_InstructorDeleteModulo_Handler,
+		},
+		{
+			MethodName: "InstructorReorderModulos",
+			Handler:    _LeccionesService_InstructorReorderModulos_Handler,
+		},
+		{
+			MethodName: "InstructorCreateSubmodulo",
+			Handler:    _LeccionesService_InstructorCreateSubmodulo_Handler,
+		},
+		{
+			MethodName: "InstructorUpdateSubmodulo",
+			Handler:    _LeccionesService_InstructorUpdateSubmodulo_Handler,
+		},
+		{
+			MethodName: "InstructorDeleteSubmodulo",
+			Handler:    _LeccionesService_InstructorDeleteSubmodulo_Handler,
+		},
+		{
+			MethodName: "InstructorReorderSubmodulos",
+			Handler:    _LeccionesService_InstructorReorderSubmodulos_Handler,
+		},
+		{
 			MethodName: "GetLeccionesConProgreso",
 			Handler:    _LeccionesService_GetLeccionesConProgreso_Handler,
 		},
 		{
 			MethodName: "MarcarLeccionCompleta",
 			Handler:    _LeccionesService_MarcarLeccionCompleta_Handler,
-		},
-		{
-			MethodName: "GetPreguntasIntermedias",
-			Handler:    _LeccionesService_GetPreguntasIntermedias_Handler,
-		},
-		{
-			MethodName: "SubmitPreguntasIntermedias",
-			Handler:    _LeccionesService_SubmitPreguntasIntermedias_Handler,
 		},
 		{
 			MethodName: "InstructorListLecciones",
@@ -534,6 +1030,14 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LeccionesService_InstructorReorderLecciones_Handler,
 		},
 		{
+			MethodName: "GetPreguntasIntermedias",
+			Handler:    _LeccionesService_GetPreguntasIntermedias_Handler,
+		},
+		{
+			MethodName: "SubmitPreguntasIntermedias",
+			Handler:    _LeccionesService_SubmitPreguntasIntermedias_Handler,
+		},
+		{
 			MethodName: "InstructorListPreguntasIntermedias",
 			Handler:    _LeccionesService_InstructorListPreguntasIntermedias_Handler,
 		},
@@ -544,6 +1048,18 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstructorDeletePreguntaIntermedia",
 			Handler:    _LeccionesService_InstructorDeletePreguntaIntermedia_Handler,
+		},
+		{
+			MethodName: "SubmitGameScore",
+			Handler:    _LeccionesService_SubmitGameScore_Handler,
+		},
+		{
+			MethodName: "GetCursoLeaderboard",
+			Handler:    _LeccionesService_GetCursoLeaderboard_Handler,
+		},
+		{
+			MethodName: "GetUserPoints",
+			Handler:    _LeccionesService_GetUserPoints_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

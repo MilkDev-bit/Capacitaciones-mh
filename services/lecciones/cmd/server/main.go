@@ -64,7 +64,8 @@ func getEnvOr(k, fb string) string {
 }
 
 func runMigrations(db *sqlx.DB) error {
-	stmts := []string{
+	// ── Tablas base (idempotentes con IF NOT EXISTS) ──────────────────────────
+	tables := []string{
 		`CREATE TABLE IF NOT EXISTS lecciones (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			capacitacion_id UUID NOT NULL,
@@ -109,21 +110,102 @@ func runMigrations(db *sqlx.DB) error {
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(user_id, pregunta_id)
 		)`,
+
+		// ── Feature A: Módulos ───────────────────────────────────────────────
+		`CREATE TABLE IF NOT EXISTS modulos (
+			id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL,
+			title       VARCHAR(200) NOT NULL,
+			description TEXT DEFAULT '',
+			orden       INT NOT NULL DEFAULT 0,
+			deleted_at  TIMESTAMPTZ,
+			created_at  TIMESTAMPTZ DEFAULT NOW()
+		)`,
+
+		// ── Feature A: Submódulos ────────────────────────────────────────────
+		`CREATE TABLE IF NOT EXISTS submodulos (
+			id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			modulo_id  UUID NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
+			title      VARCHAR(200) NOT NULL,
+			description TEXT DEFAULT '',
+			orden      INT NOT NULL DEFAULT 0,
+			deleted_at TIMESTAMPTZ,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+
+		// ── Feature B: Puntos por minijuego ──────────────────────────────────
+		// Un registro por intento; para el leaderboard se agrupa con SUM.
+		`CREATE TABLE IF NOT EXISTS game_scores (
+			id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id     UUID NOT NULL,
+			leccion_id  UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			capacitacion_id UUID NOT NULL,
+			points      INT NOT NULL DEFAULT 0,
+			time_secs   INT NOT NULL DEFAULT 0,
+			scored_at   TIMESTAMPTZ DEFAULT NOW()
+		)`,
+
+		// ── Feature B: Insignias ─────────────────────────────────────────────
+		`CREATE TABLE IF NOT EXISTS user_badges (
+			id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id     UUID NOT NULL,
+			badge_slug  VARCHAR(80) NOT NULL,
+			unlocked_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, badge_slug)
+		)`,
 	}
-	for _, s := range stmts {
+
+	for _, s := range tables {
 		if _, err := db.Exec(s); err != nil {
-			return fmt.Errorf("migración fallida: %w", err)
+			return fmt.Errorf("migración (create table) fallida: %w", err)
 		}
 	}
-	// Columnas que pueden faltar en BDs existentes
+
+	// ── ALTER TABLE: columnas nuevas sobre tablas existentes ──────────────────
 	alters := []string{
+		// Soft-delete y gamificación en lecciones
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+
+		// Feature A: FK jerárquicas en lecciones (nullable → lección "suelta" si ambas son NULL)
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS modulo_id    UUID REFERENCES modulos(id)    ON DELETE SET NULL`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS submodulo_id UUID REFERENCES submodulos(id) ON DELETE SET NULL`,
+
+		// Feature B: tipo de lección y configuración del minijuego
+		// Cambiamos type de VARCHAR(20) a TEXT para acomodar los nuevos slugs del enum
+		`ALTER TABLE lecciones ALTER COLUMN type TYPE TEXT`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS game_config_json TEXT DEFAULT ''`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS points_reward    INT  NOT NULL DEFAULT 0`,
+
+		// Feature B: puntos globales del usuario (cache desnormalizado para el perfil)
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_total INT NOT NULL DEFAULT 0`,
 	}
+
 	for _, s := range alters {
 		if _, err := db.Exec(s); err != nil {
-			return fmt.Errorf("migración alter fallida: %w", err)
+			return fmt.Errorf("migración (alter) fallida: %w", err)
 		}
 	}
+
+	// ── Índices ───────────────────────────────────────────────────────────────
+	indexes := []string{
+		`CREATE INDEX IF NOT EXISTS idx_modulos_capacitacion    ON modulos(capacitacion_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_submodulos_modulo       ON submodulos(modulo_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_lecciones_modulo        ON lecciones(modulo_id)       WHERE modulo_id IS NOT NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_lecciones_submodulo     ON lecciones(submodulo_id)    WHERE submodulo_id IS NOT NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_game_scores_user        ON game_scores(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_game_scores_leccion     ON game_scores(leccion_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_game_scores_capacitacion ON game_scores(capacitacion_id)`,
+		// Índice de leaderboard: por curso → suma de puntos descendente
+		`CREATE INDEX IF NOT EXISTS idx_game_scores_lb          ON game_scores(capacitacion_id, user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_user_badges_user        ON user_badges(user_id)`,
+	}
+
+	for _, s := range indexes {
+		if _, err := db.Exec(s); err != nil {
+			return fmt.Errorf("migración (index) fallida: %w", err)
+		}
+	}
+
 	slog.Info("lecciones: migraciones aplicadas")
 	return nil
 }
