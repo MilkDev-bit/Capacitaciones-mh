@@ -153,6 +153,13 @@ func runMigrations(db *sqlx.DB) error {
 			unlocked_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(user_id, badge_slug)
 		)`,
+
+		// ── Feature B: Puntos globales del usuario (tabla propia del microservicio)
+		`CREATE TABLE IF NOT EXISTS user_points (
+			user_id      UUID PRIMARY KEY,
+			points_total INT NOT NULL DEFAULT 0,
+			updated_at   TIMESTAMPTZ DEFAULT NOW()
+		)`,
 	}
 
 	for _, s := range tables {
@@ -175,9 +182,6 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE lecciones ALTER COLUMN type TYPE TEXT`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS game_config_json TEXT DEFAULT ''`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS points_reward    INT  NOT NULL DEFAULT 0`,
-
-		// Feature B: puntos globales del usuario (cache desnormalizado para el perfil)
-		`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_total INT NOT NULL DEFAULT 0`,
 	}
 
 	for _, s := range alters {

@@ -605,7 +605,11 @@ func (r *postgresLeccionesRepository) GetUserTotalPoints(ctx context.Context, us
 
 func (r *postgresLeccionesRepository) UpdateUserTotalPoints(ctx context.Context, userID string, total int32) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE users SET points_total=$1 WHERE id=$2`, total, userID)
+		`INSERT INTO user_points (user_id, points_total, updated_at)
+		 VALUES ($2, $1, NOW())
+		 ON CONFLICT (user_id) DO UPDATE
+		 SET points_total = EXCLUDED.points_total, updated_at = NOW()`, total, userID)
+	_, _ = r.db.ExecContext(ctx, `UPDATE users SET points_total=$1 WHERE id=$2`, total, userID)
 	return err
 }
 
