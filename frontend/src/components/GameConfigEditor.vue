@@ -18,7 +18,7 @@ const emit = defineEmits<{
 }>()
 
 // ── Tipado de schemas ──────────────────────────────────────────────────────────
-interface MemoryPair { front: string; back: string; image_url?: string }
+interface MemoryPair { front: string; back: string; front_img?: string; back_img?: string; image_url?: string }
 interface MemoryConfig { instruction: string; pairs: MemoryPair[]; max_time_secs: number; show_labels: boolean }
 
 interface DragItem { text: string; correct_category: string; image_url?: string }
@@ -79,8 +79,25 @@ function emitJson() {
 // ── Helpers de edición ─────────────────────────────────────────────────────────
 
 // MEMORY
-function addPair() { memory.value.pairs.push({ front: '', back: '' }); emitJson() }
+function addPair() { memory.value.pairs.push({ front: '', back: '', front_img: '', back_img: '' }); emitJson() }
 function removePair(i: number) { memory.value.pairs.splice(i, 1); emitJson() }
+function onUploadPairImg(e: Event, index: number, field: 'front_img' | 'back_img') {
+  const input = e.target as HTMLInputElement
+  if (!input.files || !input.files[0]) return
+  const file = input.files[0]
+  if (file.size > 2 * 1024 * 1024) {
+    alert('La imagen no debe superar los 2 MB para las tarjetas de memorama.')
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    if (reader.result && memory.value.pairs[index]) {
+      memory.value.pairs[index][field] = String(reader.result)
+      emitJson()
+    }
+  }
+  reader.readAsDataURL(file)
+}
 
 // DRAG & DROP
 function addCategory() { drag.value.categories.push(`Categoría ${drag.value.categories.length + 1}`); emitJson() }
@@ -186,13 +203,50 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
       </div>
 
       <div class="gce-section-title">Pares de tarjetas <span class="gce-count">{{ memory.pairs.length }}/24</span></div>
+      <p class="gce-hint-sm">Puedes escribir texto, añadir imagen (por URL o subiendo archivo local), o ambos en cada tarjeta.</p>
       <div class="gce-pairs-list">
-        <div v-for="(pair, i) in memory.pairs" :key="i" class="gce-pair-row">
-          <span class="gce-pair-num">{{ i + 1 }}</span>
-          <input v-model="pair.front" @input="emitJson" class="gce-input" placeholder="Cara A (concepto)" />
-          <div class="gce-pair-sep">↔</div>
-          <input v-model="pair.back" @input="emitJson" class="gce-input" placeholder="Cara B (definición)" />
-          <button class="gce-remove" @click="removePair(i)" :disabled="memory.pairs.length <= 2" title="Eliminar par">✕</button>
+        <div v-for="(pair, i) in memory.pairs" :key="i" class="gce-pair-block">
+          <div class="gce-pair-header">
+            <span class="gce-pair-title">Par #{{ i + 1 }}</span>
+            <button class="gce-remove-sm" @click="removePair(i)" :disabled="memory.pairs.length <= 2" title="Eliminar par">✕ Eliminar par</button>
+          </div>
+          <div class="gce-pair-cols">
+            <!-- Cara A -->
+            <div class="gce-pair-col">
+              <label class="gce-sublabel">🎴 Cara A (Concepto / Imagen)</label>
+              <input v-model="pair.front" @input="emitJson" class="gce-input" placeholder="Texto Cara A (opcional si hay imagen)" />
+              <div class="gce-img-picker">
+                <input v-model="pair.front_img" @input="emitJson" class="gce-input-xs" placeholder="URL de imagen o DataURL..." />
+                <label class="gce-btn-upload" title="Subir imagen desde tu equipo">
+                  <span>📁 Subir</span>
+                  <input type="file" accept="image/*" class="hidden-file" @change="e => onUploadPairImg(e, i, 'front_img')" />
+                </label>
+              </div>
+              <div v-if="pair.front_img" class="gce-img-preview">
+                <img :src="pair.front_img" alt="Preview Cara A" />
+                <button class="gce-remove-preview" @click="pair.front_img = ''; emitJson()" title="Quitar imagen">✕</button>
+              </div>
+            </div>
+
+            <div class="gce-pair-sep">↔</div>
+
+            <!-- Cara B -->
+            <div class="gce-pair-col">
+              <label class="gce-sublabel">🎴 Cara B (Pareja / Definición)</label>
+              <input v-model="pair.back" @input="emitJson" class="gce-input" placeholder="Texto Cara B (opcional si hay imagen)" />
+              <div class="gce-img-picker">
+                <input v-model="pair.back_img" @input="emitJson" class="gce-input-xs" placeholder="URL de imagen o DataURL..." />
+                <label class="gce-btn-upload" title="Subir imagen desde tu equipo">
+                  <span>📁 Subir</span>
+                  <input type="file" accept="image/*" class="hidden-file" @change="e => onUploadPairImg(e, i, 'back_img')" />
+                </label>
+              </div>
+              <div v-if="pair.back_img" class="gce-img-preview">
+                <img :src="pair.back_img" alt="Preview Cara B" />
+                <button class="gce-remove-preview" @click="pair.back_img = ''; emitJson()" title="Quitar imagen">✕</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <button class="gce-add-btn" @click="addPair" :disabled="memory.pairs.length >= 24">
@@ -416,6 +470,24 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 .gce-pair-sep { color: var(--muted); font-size: 1.1rem; }
 .gce-words-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .gce-word-row { flex-direction: row; }
+
+/* Advanced Memorama Pair Blocks */
+.gce-pair-block {
+  padding: 14px; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-md); display: flex; flex-direction: column; gap: 10px;
+}
+.gce-pair-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
+.gce-pair-title { font-size: 0.85rem; font-weight: 800; color: var(--brand); }
+.gce-pair-cols { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.gce-pair-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+.gce-img-picker { display: flex; gap: 6px; align-items: center; }
+.gce-input-xs { flex: 1; padding: 6px 10px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; color: var(--dark); }
+.gce-btn-upload { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--brand-light); color: var(--brand); font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; border: 1px solid rgba(99,102,241,0.2); transition: all 0.15s; white-space: nowrap; }
+.gce-btn-upload:hover { background: var(--brand); color: white; }
+.hidden-file { display: none; }
+.gce-img-preview { position: relative; width: fit-content; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 4px; background: var(--surface-soft); margin-top: 2px; }
+.gce-img-preview img { max-height: 80px; max-width: 160px; object-fit: contain; border-radius: 4px; display: block; }
+.gce-remove-preview { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 0.7rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
 /* Sentences */
 .gce-sentence-block {

@@ -124,15 +124,19 @@ function initMemo() {
   memoFlipped.value = []
   memoMatched.value = new Set()
   const pairs = config.value?.pairs || [
-    { text_a: 'HTML', text_b: 'Estructura web' },
-    { text_a: 'CSS', text_b: 'Estilos y diseño' },
-    { text_a: 'JS', text_b: 'Interactividad' },
-    { text_a: 'Vue', text_b: 'Framework reactivo' },
+    { front: 'HTML', back: 'Estructura web' },
+    { front: 'CSS', back: 'Estilos y diseño' },
+    { front: 'JS', back: 'Interactividad' },
+    { front: 'Vue', back: 'Framework reactivo' },
   ]
   const deck: any[] = []
   pairs.forEach((p: any, idx: number) => {
-    deck.push({ id: idx * 2, pairId: idx, text: p.text_a, type: 'A' })
-    deck.push({ id: idx * 2 + 1, pairId: idx, text: p.text_b, type: 'B' })
+    const textA = p.front || p.text_a || ''
+    const imgA = p.front_img || p.image_url || p.img_a || ''
+    const textB = p.back || p.text_b || ''
+    const imgB = p.back_img || p.img_b || ''
+    deck.push({ id: idx * 2, pairId: idx, text: textA, img: imgA, type: 'A' })
+    deck.push({ id: idx * 2 + 1, pairId: idx, text: textB, img: imgB, type: 'B' })
   })
   // Mezclar
   memoCards.value = deck.sort(() => Math.random() - 0.5)
@@ -415,7 +419,10 @@ function initSpecificGame() {
         >
           <div class="card-inner">
             <div class="card-front">❓</div>
-            <div class="card-back">{{ card.text }}</div>
+            <div class="card-back">
+              <img v-if="card.img" :src="card.img" class="card-img-content" :alt="card.text || 'Imagen'" />
+              <span v-if="card.text" class="card-text-content">{{ card.text }}</span>
+            </div>
           </div>
         </button>
       </div>
@@ -572,14 +579,16 @@ function initSpecificGame() {
 .win-info p { margin: 0; font-size: 0.92rem; opacity: 0.9; }
 
 /* Memorama */
-.memo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
-.memo-card { background: none; border: none; padding: 0; height: 110px; cursor: pointer; perspective: 600px; }
+.memo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 14px; }
+.memo-card { background: none; border: none; padding: 0; height: 130px; cursor: pointer; perspective: 600px; }
 .card-inner { width: 100%; height: 100%; position: relative; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
 .memo-card.flipped .card-inner, .memo-card.matched .card-inner { transform: rotateY(180deg); }
-.card-front, .card-back { position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; padding: 10px; font-weight: 700; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.card-front { background: linear-gradient(135deg, var(--brand), #ea580c); color: white; font-size: 2rem; border: 2px solid rgba(255,255,255,0.2); }
+.card-front, .card-back { position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--r-md); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; font-weight: 700; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); gap: 4px; overflow: hidden; }
+.card-front { background: linear-gradient(135deg, var(--brand), #ea580c); color: white; font-size: 2.2rem; border: 2px solid rgba(255,255,255,0.2); }
 .card-back { background: var(--surface); border: 2px solid var(--brand); color: var(--dark); font-size: 0.88rem; transform: rotateY(180deg); }
 .memo-card.matched .card-back { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+.card-img-content { max-width: 95%; max-height: 75px; object-fit: contain; border-radius: 4px; flex-shrink: 0; }
+.card-text-content { font-size: 0.82rem; line-height: 1.15; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Drag / Clasificar */
 .drag-items-pool { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px; background: var(--surface-soft); border-radius: var(--r-lg); border: 1.5px dashed var(--border); }
