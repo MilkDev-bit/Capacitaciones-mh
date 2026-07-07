@@ -91,7 +91,7 @@ function loadGame() {
   startTimer()
 }
 
-watch(() => props.lesson?.id, loadGame, { immediate: true })
+watch(() => [props.lesson?.id, props.lesson?.game_config_json, props.lesson?.lesson_type, props.lesson?.type], loadGame, { immediate: true })
 
 async function handleGameWin() {
   isCompleted.value = true
@@ -219,20 +219,33 @@ const selectedCells = ref<string[]>([]) // "r,c"
 function initWordSearch() {
   foundWords.value = new Set()
   selectedCells.value = []
-  wordsToFind.value = (config.value?.words || ['VUE', 'GOLANG', 'GRPC', 'STRIPE', 'CLOUD']).map((w: string) => w.toUpperCase())
   
-  const size = 10
+  let rawWords: any[] = ['VUE', 'GOLANG', 'GRPC', 'STRIPE', 'CLOUD']
+  if (config.value && Array.isArray(config.value.words) && config.value.words.length > 0) {
+    rawWords = config.value.words
+  } else if (config.value && typeof config.value.words === 'string') {
+    rawWords = String(config.value.words).split(',')
+  }
+  
+  const validWords = rawWords
+    .map((w: any) => String(w || '').trim().replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ]/g, '').toUpperCase())
+    .filter((w: string) => w.length >= 2)
+  
+  wordsToFind.value = validWords.length > 0 ? validWords : ['VUE', 'GOLANG', 'GRPC', 'STRIPE', 'CLOUD']
+  
+  const maxWordLen = Math.max(...wordsToFind.value.map(w => w.length), 8)
+  const size = Math.max(Number(config.value?.grid_size) || 12, maxWordLen + 1)
   const grid: string[][] = Array(size).fill(0).map(() => Array(size).fill(''))
   
   // Colocar palabras en horizontal/vertical simple
   wordsToFind.value.forEach(word => {
     let placed = false
     let attempts = 0
-    while (!placed && attempts < 50) {
+    while (!placed && attempts < 150) {
       attempts++
       const dir = Math.random() > 0.5 ? 'H' : 'V'
-      const r = Math.floor(Math.random() * (dir === 'V' ? size - word.length : size))
-      const c = Math.floor(Math.random() * (dir === 'H' ? size - word.length : size))
+      const r = Math.floor(Math.random() * (dir === 'V' ? size - word.length + 1 : size))
+      const c = Math.floor(Math.random() * (dir === 'H' ? size - word.length + 1 : size))
       
       let canPlace = true
       for (let i = 0; i < word.length; i++) {
@@ -278,7 +291,7 @@ function toggleCell(r: number, c: number) {
 }
 
 function checkWordMatch() {
-  if (selectedCells.value.length < 3) return
+  if (selectedCells.value.length < 2) return
   // Obtener letras seleccionadas en orden
   const chars = selectedCells.value.map(k => {
     const [r = 0, c = 0] = k.split(',').map(Number)

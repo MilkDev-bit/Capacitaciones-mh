@@ -725,7 +725,7 @@ function tramitarDC3() {
                 <h1 class="ver-lec-title">{{ selectedLeccion.title }}</h1>
                 <div class="ver-lec-meta-row">
                   <span>{{ currentIndex + 1 }} / {{ lecciones.length }}</span>
-                  <span>{{ typeLabel(selectedLeccion.type) }}</span>
+                  <span>{{ typeLabel(selectedLeccion.lesson_type ?? selectedLeccion.type) }}</span>
                   <span v-if="selectedLeccion.duracion_min">{{ selectedLeccion.duracion_min }} min</span>
                 </div>
                 <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
