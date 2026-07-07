@@ -390,16 +390,23 @@ function initSpecificGame() {
     <!-- Header del juego -->
     <div class="game-header">
       <div class="game-title-wrap">
-        <span class="game-badge">🎮 Actividad Interactiva</span>
+        <span class="game-badge glass-badge-glow">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4m-2-2v4"/><circle cx="17" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/></svg>
+          Actividad Interactiva
+        </span>
         <h2 class="game-title">{{ lesson?.title }}</h2>
       </div>
       <div class="game-stats">
-        <div class="stat-chip">
-          <span class="stat-icon">⏱️</span>
+        <div class="stat-chip glass-chip">
+          <span class="stat-icon-glass">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
           <span class="stat-val">{{ elapsedSecs }}s</span>
         </div>
-        <div class="stat-chip stat-pts">
-          <span class="stat-icon">⭐</span>
+        <div class="stat-chip glass-chip stat-pts">
+          <span class="stat-icon-glass star-glow">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
           <span class="stat-val">+{{ lesson?.points_reward || 100 }} pts</span>
         </div>
       </div>
@@ -410,13 +417,25 @@ function initSpecificGame() {
 
     <!-- Estado Completado (Victoria) -->
     <div v-if="isCompleted" class="game-win-banner slide-down">
-      <div class="win-icon">🏆</div>
+      <div class="win-icon glass-trophy-box">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="url(#gold-gradient)" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <defs>
+            <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fef08a" />
+              <stop offset="50%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#b45309" />
+            </linearGradient>
+          </defs>
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+        </svg>
+      </div>
       <div class="win-info">
         <h3>¡Reto Superado con Éxito!</h3>
         <p>Has completado esta actividad en <strong>{{ elapsedSecs }} segundos</strong> y obtuviste <strong>+{{ pointsEarned }} puntos</strong> de experiencia.</p>
       </div>
-      <button class="btn btn-primary" @click="initSpecificGame(); isCompleted = false">
-        🔄 Jugar de nuevo
+      <button class="btn btn-primary glass-btn-action" @click="initSpecificGame(); isCompleted = false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Jugar de nuevo
       </button>
     </div>
 
@@ -431,7 +450,11 @@ function initSpecificGame() {
           @click="flipCard(card)"
         >
           <div class="card-inner">
-            <div class="card-front">❓</div>
+            <div class="card-front glass-card-front">
+              <div class="glass-logo-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              </div>
+            </div>
             <div class="card-back">
               <img v-if="card.img" :src="card.img" class="card-img-content" :alt="card.text || 'Imagen'" />
               <span v-if="card.text" class="card-text-content">{{ card.text }}</span>
@@ -466,7 +489,12 @@ function initSpecificGame() {
           class="category-box"
           @click="assignCategory(cat)"
         >
-          <h4 class="cat-title">📁 {{ cat }}</h4>
+          <h4 class="cat-title glass-cat-header">
+            <span class="glass-icon-circle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            {{ cat }}
+          </h4>
           <div class="cat-items-list">
             <div
               v-for="it in dragItems.filter(i => dragAssignments[i.id] === cat)"
@@ -482,7 +510,10 @@ function initSpecificGame() {
       </div>
       
       <div class="game-actions">
-        <button class="btn btn-primary btn-lg" @click="checkDragWin">✅ Verificar Clasificación</button>
+        <button class="btn btn-primary btn-lg glass-action-btn" @click="checkDragWin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="20 6 9 17 4 12"/></svg>
+          Verificar Clasificación
+        </button>
       </div>
     </div>
 
@@ -505,10 +536,18 @@ function initSpecificGame() {
           </div>
         </div>
         <div class="ws-sidebar">
-          <h4>🔍 Palabras a encontrar:</h4>
+          <h4 class="ws-sidebar-title glass-subhead">
+            <span class="glass-icon-circle">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            Palabras a encontrar:
+          </h4>
           <ul class="ws-word-list">
             <li v-for="w in wordsToFind" :key="w" :class="{ found: foundWords.has(w) }">
-              <span class="word-chk">{{ foundWords.has(w) ? '☑️' : '◻️' }}</span>
+              <span class="word-chk">
+                <svg v-if="foundWords.has(w)" class="chk-svg found-chk" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="5" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981"/><polyline points="8 12 11 15 16 9" stroke="#10B981"/></svg>
+                <svg v-else class="chk-svg empty-chk" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5" fill="rgba(255, 255, 255, 0.05)" stroke="currentColor" stroke-opacity="0.3"/></svg>
+              </span>
               <span class="word-txt">{{ w }}</span>
             </li>
           </ul>
@@ -538,7 +577,10 @@ function initSpecificGame() {
         </div>
       </div>
       <div class="game-actions">
-        <button class="btn btn-primary btn-lg" @click="checkFillBlank">✅ Validar Respuestas</button>
+        <button class="btn btn-primary btn-lg glass-action-btn" @click="checkFillBlank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="20 6 9 17 4 12"/></svg>
+          Validar Respuestas
+        </button>
       </div>
     </div>
 
@@ -550,13 +592,20 @@ function initSpecificGame() {
           <span class="order-pos">{{ idx + 1 }}</span>
           <span class="order-text">{{ it.text }}</span>
           <div class="order-controls">
-            <button class="btn-order-move" :disabled="idx === 0" @click="moveOrderItem(idx, -1)" title="Subir">▲</button>
-            <button class="btn-order-move" :disabled="idx === orderItems.length - 1" @click="moveOrderItem(idx, 1)" title="Bajar">▼</button>
+            <button class="btn-order-move" :disabled="idx === 0" @click="moveOrderItem(idx, -1)" title="Subir">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+            </button>
+            <button class="btn-order-move" :disabled="idx === orderItems.length - 1" @click="moveOrderItem(idx, 1)" title="Bajar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
         </div>
       </div>
       <div class="game-actions">
-        <button class="btn btn-primary btn-lg" @click="checkOrder">✅ Verificar Orden</button>
+        <button class="btn btn-primary btn-lg glass-action-btn" @click="checkOrder">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="20 6 9 17 4 12"/></svg>
+          Verificar Orden
+        </button>
       </div>
     </div>
   </div>
@@ -663,4 +712,50 @@ function initSpecificGame() {
 
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 .slide-down { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Glassmorphism Icons & Badges */
+.glass-badge-glow {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #fff; background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9)); padding: 6px 14px; border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.glass-chip {
+  display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.8);
+  padding: 8px 14px; border-radius: 999px; font-weight: 700; color: var(--dark); font-size: 0.9rem;
+  backdrop-filter: blur(12px); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+.stat-icon-glass { display: inline-flex; align-items: center; justify-content: center; color: var(--brand); }
+.star-glow { color: #f59e0b; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5)); }
+.glass-trophy-box {
+  width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, rgba(254, 240, 138, 0.4), rgba(245, 158, 11, 0.2));
+  border: 1px solid rgba(254, 240, 138, 0.8); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+  backdrop-filter: blur(10px);
+}
+.glass-btn-action {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, var(--brand), #ea580c);
+  border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3); transition: all 0.2s;
+}
+.glass-btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4); }
+.glass-card-front {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(234, 88, 12, 0.95));
+  border: 1.5px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px);
+}
+.glass-logo-circle {
+  width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.glass-cat-header, .glass-subhead {
+  display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 800; color: var(--dark); margin: 0 0 12px 0; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;
+}
+.glass-icon-circle {
+  width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; color: var(--brand);
+}
+.glass-action-btn {
+  display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); transition: all 0.2s;
+}
+.glass-action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(16, 185, 129, 0.4); }
+.chk-svg { flex-shrink: 0; }
+.found-chk { filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.3)); }
 </style>

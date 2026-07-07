@@ -65,7 +65,16 @@ function typesByGroup(g: string) { return types.filter(t => t.group === g); }
 <template>
   <div class="cts-root">
     <div v-for="group in groups" :key="group" class="cts-group">
-      <p class="cts-group-label">{{ group === 'Minijuego' ? '🎮 Minijuegos (Gamificación)' : '📚 Contenido estático' }}</p>
+      <div class="cts-group-label">
+        <span v-if="group === 'Minijuego'" class="cts-badge glass-badge-purple">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4m-2-2v4"/><circle cx="17" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/></svg>
+          Minijuegos (Gamificación)
+        </span>
+        <span v-else class="cts-badge glass-badge-blue">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0-5H20"/></svg>
+          Contenido estático
+        </span>
+      </div>
       <div class="cts-grid">
         <label
           v-for="t in typesByGroup(group)"
@@ -100,12 +109,32 @@ function typesByGroup(g: string) { return types.filter(t => t.group === g); }
 <style scoped>
 .cts-root { display: flex; flex-direction: column; gap: 20px; }
 .cts-group-label {
+  margin: 0 0 12px 0;
+}
+.cts-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0 0 10px 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.glass-badge-purple {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.15));
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.3);
+}
+.glass-badge-blue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.3);
 }
 .cts-grid {
   display: grid;

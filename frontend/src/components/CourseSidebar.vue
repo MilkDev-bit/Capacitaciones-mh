@@ -75,8 +75,18 @@ const allLecciones = computed<Leccion[]>(() => {
 const totalProgress = computed(() => sectionProgress(allLecciones.value))
 
 // Íconos
-const ICONS: Record<number, string> = { 1:'🎬',2:'📝',3:'📄',4:'❓',5:'🃏',6:'🎯',7:'🔤',8:'📋',9:'📊' }
-function icon(t: number) { return ICONS[t] ?? '📄' }
+const ICONS: Record<number, string> = {
+  1: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>',
+  2: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  3: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  4: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  5: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="7" rx="1"/><rect x="13" y="3" width="9" height="7" rx="1"/><rect x="2" y="14" width="9" height="7" rx="1"/><rect x="13" y="14" width="9" height="7" rx="1"/></svg>',
+  6: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4 4 4-4M5 15l4 4 4-4M17 9l2 2 2-2M17 15l2 2 2-2"/></svg>',
+  7: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h2M11 7h2M15 7h2M7 11h2M11 11h2M15 11h2M7 15h2M11 15h2M15 15h2"/></svg>',
+  8: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h8"/></svg>',
+  9: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h14M3 18h10"/><path d="M19 9l3 3-3 3M17 12h5"/></svg>'
+}
+function icon(t: number) { return ICONS[t] ?? ICONS[3] }
 function isGame(t: number) { return t >= 5 && t <= 9 }
 </script>
 
@@ -131,10 +141,12 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
             :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
             @click="emit('select', lec)"
           >
-            <span class="csb-lesson-icon">{{ icon(lec.lesson_type) }}</span>
+            <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
             <span class="csb-lesson-title">{{ lec.title }}</span>
             <span v-if="lec.completada" class="csb-check">✓</span>
-            <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">⭐</span>
+            <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
           </button>
 
           <!-- ── SUBMÓDULOS ────────────────────────────────── -->
@@ -159,10 +171,13 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
                 :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
                 @click="emit('select', lec)"
               >
-                <span class="csb-lesson-icon">{{ icon(lec.lesson_type) }}</span>
+                <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
                 <span class="csb-lesson-title">{{ lec.title }}</span>
                 <span v-if="lec.completada" class="csb-check">✓</span>
-                <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">⭐{{ lec.points_reward }}</span>
+                <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  {{ lec.points_reward }}
+                </span>
               </button>
               <div v-if="!sub.lecciones?.length" class="csb-empty">Submódulo sin lecciones</div>
             </div>
@@ -179,10 +194,13 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
         :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
         @click="emit('select', lec)"
       >
-        <span class="csb-lesson-icon">{{ icon(lec.lesson_type) }}</span>
+        <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
         <span class="csb-lesson-title">{{ lec.title }}</span>
         <span v-if="lec.completada" class="csb-check">✓</span>
-        <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">⭐{{ lec.points_reward }}</span>
+        <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {{ lec.points_reward }}
+        </span>
       </button>
 
       <div v-if="!tree.modulos?.length && !tree.lecciones?.length" class="csb-empty csb-empty-root">

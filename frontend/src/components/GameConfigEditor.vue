@@ -155,14 +155,20 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
   <div class="gce-root" v-if="['5','6','7','8','9'].includes(lessonType)">
     <!-- Header del editor -->
     <div class="gce-header">
-      <span class="gce-badge">🎮 {{ gameName }}</span>
+      <span class="gce-badge glass-badge-editor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4m-2-2v4"/><circle cx="17" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/></svg>
+        {{ gameName }}
+      </span>
       <span class="gce-hint">Configura el minijuego que verán los alumnos</span>
     </div>
 
     <!-- Puntos de recompensa (común a todos) -->
     <div class="gce-field">
-      <label class="gce-label">
-        ⭐ Puntos de recompensa
+      <label class="gce-label gce-label-icon">
+        <span class="glass-icon-xs star-glow">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </span>
+        Puntos de recompensa
         <span class="gce-sublabel">Los alumnos ganan estos puntos al completar el juego</span>
       </label>
       <div class="gce-points-row">
@@ -213,12 +219,16 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
           <div class="gce-pair-cols">
             <!-- Cara A -->
             <div class="gce-pair-col">
-              <label class="gce-sublabel">🎴 Cara A (Concepto / Imagen)</label>
+              <label class="gce-sublabel gce-icon-sublabel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Cara A (Concepto / Imagen)
+              </label>
               <input v-model="pair.front" @input="emitJson" class="gce-input" placeholder="Texto Cara A (opcional si hay imagen)" />
               <div class="gce-img-picker">
                 <input v-model="pair.front_img" @input="emitJson" class="gce-input-xs" placeholder="URL de imagen o DataURL..." />
                 <label class="gce-btn-upload" title="Subir imagen desde tu equipo">
-                  <span>📁 Subir</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Subir</span>
                   <input type="file" accept="image/*" class="hidden-file" @change="e => onUploadPairImg(e, i, 'front_img')" />
                 </label>
               </div>
@@ -232,12 +242,16 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 
             <!-- Cara B -->
             <div class="gce-pair-col">
-              <label class="gce-sublabel">🎴 Cara B (Pareja / Definición)</label>
+              <label class="gce-sublabel gce-icon-sublabel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Cara B (Pareja / Definición)
+              </label>
               <input v-model="pair.back" @input="emitJson" class="gce-input" placeholder="Texto Cara B (opcional si hay imagen)" />
               <div class="gce-img-picker">
                 <input v-model="pair.back_img" @input="emitJson" class="gce-input-xs" placeholder="URL de imagen o DataURL..." />
                 <label class="gce-btn-upload" title="Subir imagen desde tu equipo">
-                  <span>📁 Subir</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Subir</span>
                   <input type="file" accept="image/*" class="hidden-file" @change="e => onUploadPairImg(e, i, 'back_img')" />
                 </label>
               </div>
@@ -344,11 +358,17 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
         <div class="gce-radio-group">
           <label class="gce-radio-opt" :class="{ active: fb.mode === 'select' }">
             <input type="radio" value="select" v-model="fb.mode" @change="emitJson" />
-            <span>🔘 Selección múltiple</span>
+            <span class="gce-opt-span">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+              Selección múltiple
+            </span>
           </label>
           <label class="gce-radio-opt" :class="{ active: fb.mode === 'type' }">
             <input type="radio" value="type" v-model="fb.mode" @change="emitJson" />
-            <span>⌨️ Escribir respuesta</span>
+            <span class="gce-opt-span">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="10.01" y2="12"/><line x1="14" y1="12" x2="14.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+              Escribir respuesta
+            </span>
           </label>
         </div>
       </div>
@@ -404,9 +424,13 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
       <div class="gce-order-list">
         <div v-for="(item, i) in order.items" :key="i" class="gce-order-row">
           <div class="gce-order-controls">
-            <button class="gce-arrow" @click="moveOrderItem(i, -1)" :disabled="i === 0">▲</button>
+            <button class="gce-arrow" @click="moveOrderItem(i, -1)" :disabled="i === 0">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+            </button>
             <span class="gce-order-pos">{{ i + 1 }}</span>
-            <button class="gce-arrow" @click="moveOrderItem(i, 1)" :disabled="i === order.items.length - 1">▼</button>
+            <button class="gce-arrow" @click="moveOrderItem(i, 1)" :disabled="i === order.items.length - 1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
           <input v-model="item.text" @input="emitJson" class="gce-input" :placeholder="`Paso ${i + 1}`" />
           <button class="gce-remove" @click="removeOrderItem(i)" :disabled="order.items.length <= 2">✕</button>
@@ -543,4 +567,17 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 }
 .gce-remove:hover:not(:disabled) { color: var(--danger); background: var(--danger-bg); }
 .gce-remove:disabled { opacity: 0.2; cursor: not-allowed; }
+
+/* Glassmorphism Editor Styles */
+.glass-badge-editor {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700;
+  color: white; background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9));
+  padding: 6px 14px; border-radius: 999px; backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25); border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.gce-label-icon { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.gce-icon-sublabel { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--dark); }
+.gce-opt-span { display: flex; align-items: center; gap: 6px; }
+.glass-icon-xs { display: inline-flex; align-items: center; justify-content: center; }
+.star-glow { color: #f59e0b; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4)); }
 </style>

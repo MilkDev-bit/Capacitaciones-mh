@@ -198,15 +198,22 @@ function toggleCollapse(id: string) {
 }
 
 const LESSON_TYPE_ICONS: Record<string, string> = {
-  '1': '🎬', '2': '📝', '3': '📄', '4': '❓',
-  '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊',
+  '1': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>',
+  '2': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  '3': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  '4': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  '5': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="7" rx="1"/><rect x="13" y="3" width="9" height="7" rx="1"/><rect x="2" y="14" width="9" height="7" rx="1"/><rect x="13" y="14" width="9" height="7" rx="1"/></svg>',
+  '6': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4 4 4-4M5 15l4 4 4-4M17 9l2 2 2-2M17 15l2 2 2-2"/></svg>',
+  '7': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h2M11 7h2M15 7h2M7 11h2M11 11h2M15 11h2M7 15h2M11 15h2M15 15h2"/></svg>',
+  '8': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h8"/></svg>',
+  '9': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h14M3 18h10"/><path d="M19 9l3 3-3 3M17 12h5"/></svg>',
 }
 const LESSON_TYPE_NAMES: Record<string, string> = {
   '1': 'Video', '2': 'Texto', '3': 'PDF', '4': 'Quiz',
   '5': 'Memorama', '6': 'Arrastrar', '7': 'Sopa letras',
   '8': 'Completar', '9': 'Ordenar',
 }
-function lessonIcon(t: any) { return LESSON_TYPE_ICONS[String(t ?? '1')] ?? '📄' }
+function lessonIcon(t: any) { return LESSON_TYPE_ICONS[String(t ?? '1')] ?? LESSON_TYPE_ICONS['3'] }
 function lessonTypeName(t: any) { return LESSON_TYPE_NAMES[String(t ?? '1')] ?? 'Lección' }
 
 // Mover módulo arriba/abajo y sincronizar orden
@@ -289,8 +296,12 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
         <!-- Cabecera del módulo -->
         <div class="cte-module-header">
           <div class="cte-reorder">
-            <button class="cte-arr" :disabled="mi === 0" @click="moveModule(tree.modulos, mi, -1)">▲</button>
-            <button class="cte-arr" :disabled="mi === tree.modulos.length - 1" @click="moveModule(tree.modulos, mi, 1)">▼</button>
+            <button class="cte-arr" :disabled="mi === 0" @click="moveModule(tree.modulos, mi, -1)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+            </button>
+            <button class="cte-arr" :disabled="mi === tree.modulos.length - 1" @click="moveModule(tree.modulos, mi, 1)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
           <button class="cte-collapse-btn" @click="toggleCollapse(mod.id)">
             <span class="cte-chevron" :class="{ open: !collapsed.has(mod.id) }">›</span>
@@ -309,9 +320,11 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
               <span>Lección</span>
             </button>
             <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-module', { moduloId: mod.id }, { title: mod.title, description: mod.description })" title="Editar">
-              ✏️
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
             </button>
-            <button class="cte-icon-btn cte-icon-del" @click="deleteModule(mod.id)" title="Eliminar">🗑️</button>
+            <button class="cte-icon-btn cte-icon-del" @click="deleteModule(mod.id)" title="Eliminar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
           </div>
         </div>
 
@@ -326,8 +339,12 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
           >
             <div class="cte-sub-header">
               <div class="cte-reorder cte-reorder-sm">
-                <button class="cte-arr-sm" :disabled="si === 0" @click="moveSub(mod.submodulos, mod.id, si, -1)">▲</button>
-                <button class="cte-arr-sm" :disabled="si === mod.submodulos.length - 1" @click="moveSub(mod.submodulos, mod.id, si, 1)">▼</button>
+                <button class="cte-arr-sm" :disabled="si === 0" @click="moveSub(mod.submodulos, mod.id, si, -1)">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+                </button>
+                <button class="cte-arr-sm" :disabled="si === mod.submodulos.length - 1" @click="moveSub(mod.submodulos, mod.id, si, 1)">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
               </div>
               <button class="cte-collapse-btn" @click="toggleCollapse(sub.id)">
                 <span class="cte-chevron" :class="{ open: !collapsed.has(sub.id) }">›</span>
@@ -341,8 +358,12 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
                   <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                   <span>Lección</span>
                 </button>
-                <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-sub', { moduloId: mod.id, submoduloId: sub.id }, { title: sub.title, description: sub.description })">✏️</button>
-                <button class="cte-icon-btn cte-icon-del" @click="deleteSub(mod.id, sub.id)">🗑️</button>
+                <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-sub', { moduloId: mod.id, submoduloId: sub.id }, { title: sub.title, description: sub.description })" title="Editar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </button>
+                <button class="cte-icon-btn cte-icon-del" @click="deleteSub(mod.id, sub.id)" title="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
               </div>
             </div>
 
@@ -354,17 +375,25 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
                 class="cte-lesson"
               >
                 <div class="cte-lesson-reorder">
-                  <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(sub.lecciones, capId, li, -1)">▲</button>
-                  <button class="cte-arr-sm" :disabled="li === sub.lecciones.length - 1" @click="moveLeccion(sub.lecciones, capId, li, 1)">▼</button>
+                  <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(sub.lecciones, capId, li, -1)">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+                  </button>
+                  <button class="cte-arr-sm" :disabled="li === sub.lecciones.length - 1" @click="moveLeccion(sub.lecciones, capId, li, 1)">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
                 </div>
-                <span class="cte-lesson-icon">{{ lessonIcon(lec.lesson_type) }}</span>
+                <span class="cte-lesson-icon" v-html="lessonIcon(lec.lesson_type)"></span>
                 <div class="cte-lesson-info">
                   <span class="cte-lesson-title">{{ lec.title }}</span>
-                  <span class="cte-lesson-meta">{{ lessonTypeName(lec.lesson_type) }} · {{ lec.duracion_min }}min<span v-if="lec.points_reward" class="cte-pts"> · ⭐ {{ lec.points_reward }}pts</span></span>
+                  <span class="cte-lesson-meta">{{ lessonTypeName(lec.lesson_type) }} · {{ lec.duracion_min }}min<span v-if="lec.points_reward" class="cte-pts"> · <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" style="display:inline;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> {{ lec.points_reward }}pts</span></span>
                 </div>
                 <div class="cte-lesson-actions">
-                  <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { moduloId: mod.id, submoduloId: sub.id, leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })">✏️</button>
-                  <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)">🗑️</button>
+                  <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { moduloId: mod.id, submoduloId: sub.id, leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })" title="Editar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                  <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
                 </div>
               </div>
               <div v-if="!sub.lecciones?.length" class="cte-empty-sub">No hay lecciones — agrega una arriba ↑</div>
@@ -378,17 +407,25 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
             class="cte-lesson cte-lesson-direct"
           >
             <div class="cte-lesson-reorder">
-              <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(mod.lecciones, capId, li, -1)">▲</button>
-              <button class="cte-arr-sm" :disabled="li === mod.lecciones.length - 1" @click="moveLeccion(mod.lecciones, capId, li, 1)">▼</button>
+              <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(mod.lecciones, capId, li, -1)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+              </button>
+              <button class="cte-arr-sm" :disabled="li === mod.lecciones.length - 1" @click="moveLeccion(mod.lecciones, capId, li, 1)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
             </div>
-            <span class="cte-lesson-icon">{{ lessonIcon(lec.lesson_type) }}</span>
+            <span class="cte-lesson-icon" v-html="lessonIcon(lec.lesson_type)"></span>
             <div class="cte-lesson-info">
               <span class="cte-lesson-title">{{ lec.title }}</span>
-              <span class="cte-lesson-meta">{{ lessonTypeName(lec.lesson_type) }} · {{ lec.duracion_min }}min<span v-if="lec.points_reward" class="cte-pts"> · ⭐ {{ lec.points_reward }}pts</span></span>
+              <span class="cte-lesson-meta">{{ lessonTypeName(lec.lesson_type) }} · {{ lec.duracion_min }}min<span v-if="lec.points_reward" class="cte-pts"> · <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" style="display:inline;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> {{ lec.points_reward }}pts</span></span>
             </div>
             <div class="cte-lesson-actions">
-              <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { moduloId: mod.id, leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })">✏️</button>
-              <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)">🗑️</button>
+              <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { moduloId: mod.id, leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </button>
+              <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)" title="Eliminar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
             </div>
           </div>
 
@@ -409,24 +446,34 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
         <div class="cte-module-body">
           <div v-for="(lec, li) in tree.lecciones" :key="lec.id" class="cte-lesson">
             <div class="cte-lesson-reorder">
-              <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(tree.lecciones, capId, li, -1)">▲</button>
-              <button class="cte-arr-sm" :disabled="li === tree.lecciones.length - 1" @click="moveLeccion(tree.lecciones, capId, li, 1)">▼</button>
+              <button class="cte-arr-sm" :disabled="li === 0" @click="moveLeccion(tree.lecciones, capId, li, -1)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+              </button>
+              <button class="cte-arr-sm" :disabled="li === tree.lecciones.length - 1" @click="moveLeccion(tree.lecciones, capId, li, 1)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
             </div>
-            <span class="cte-lesson-icon">{{ lessonIcon(lec.lesson_type) }}</span>
+            <span class="cte-lesson-icon" v-html="lessonIcon(lec.lesson_type)"></span>
             <div class="cte-lesson-info">
               <span class="cte-lesson-title">{{ lec.title }}</span>
               <span class="cte-lesson-meta">{{ lessonTypeName(lec.lesson_type) }} · {{ lec.duracion_min }}min</span>
             </div>
             <div class="cte-lesson-actions">
-              <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })">✏️</button>
-              <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)">🗑️</button>
+              <button class="cte-icon-btn cte-icon-edit" @click="openPanel('edit-lesson', { leccionId: lec.id }, { ...lec, lesson_type: String(lec.lesson_type ?? '1') })" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </button>
+              <button class="cte-icon-btn cte-icon-del" @click="deleteLesson(lec.id)" title="Eliminar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div v-if="!tree.modulos?.length && !tree.lecciones?.length" class="cte-empty-root">
-        <div class="cte-empty-icon">📂</div>
+        <div class="cte-empty-icon">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--brand);margin:0 auto 10px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
         <p>Este curso está vacío</p>
         <p>Agrega un módulo o una lección suelta para comenzar</p>
       </div>
