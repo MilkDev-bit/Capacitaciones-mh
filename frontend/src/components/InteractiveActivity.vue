@@ -576,7 +576,13 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
     <div class="ia-header">
       <div class="ia-header-left">
         <div class="ia-badge" :style="{ background: meta.gradient }">
-          <span class="ia-badge-icon">{{ meta.icon }}</span>
+          <span class="ia-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </span>
           <span>{{ meta.label }}</span>
         </div>
         <h2 class="ia-title">{{ lesson?.title }}</h2>
@@ -636,16 +642,46 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
           @click="flipCard(card)"
         >
           <div class="card-inner">
-            <!-- Dorso -->
+            <!-- Dorso Naipe Glassmorphism -->
             <div class="card-front" :style="{ background: meta.gradient }">
-              <span class="card-front-icon">{{ meta.icon }}</span>
+              <div class="naipe-frame"></div>
+              <div class="naipe-corner top-left">
+                <span>MH</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+              </div>
+              <div class="naipe-center-emblem">
+                <div class="glass-emblem-circle">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="rgba(255,255,255,0.22)"/>
+                    <path d="M2 17L12 22L22 17"/>
+                    <path d="M2 12L12 17L22 12"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="naipe-corner bottom-right">
+                <span>MH</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+              </div>
               <div class="card-shine" />
             </div>
-            <!-- Cara -->
-            <div class="card-back" :style="memoMatched.includes(card.pairId) ? { background: card.color + '18', borderColor: card.color } : {}">
-              <div v-if="memoMatched.includes(card.pairId)" class="card-match-mark" :style="{ background: card.color }">✓</div>
+            <!-- Cara Naipe Glassmorphism -->
+            <div class="card-back" :style="memoMatched.includes(card.pairId)
+              ? { background: 'rgba(255, 255, 255, 0.94)', borderColor: card.color, boxShadow: `0 14px 35px ${card.color}35, inset 0 0 18px ${card.color}20` }
+              : {}">
+              <div class="card-face-corner top-left" :style="{ color: card.color }">
+                <div class="corner-dot" :style="{ background: card.color }"></div>
+              </div>
+
+              <div v-if="memoMatched.includes(card.pairId)" class="card-match-mark" :style="{ background: card.color }">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
               <img v-if="card.img" :src="card.img" class="card-img" :alt="card.text" />
               <span class="card-txt" :style="memoMatched.includes(card.pairId) ? { color: card.color } : {}">{{ card.text }}</span>
+
+              <div class="card-face-corner bottom-right" :style="{ color: card.color }">
+                <div class="corner-dot" :style="{ background: card.color }"></div>
+              </div>
             </div>
           </div>
         </button>
@@ -1054,63 +1090,124 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 ══════════════════════════════════════════════════════════════════ */
 .memo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 22px;
 }
 .memo-card {
-  height: 230px; cursor: pointer; border: none; background: transparent; padding: 0;
-  perspective: 1000px;
-  transition: transform 0.15s;
+  height: 285px; cursor: pointer; border: none; background: transparent; padding: 0;
+  perspective: 1200px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.memo-card:not(.matched):hover { transform: scale(1.03) translateY(-3px); }
+.memo-card:not(.matched):hover { transform: scale(1.04) translateY(-6px); }
 .memo-card:not(.matched):active { transform: scale(0.98); }
 .memo-card.bounce { animation: cardBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-@keyframes cardBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.1)} 60%{transform:scale(0.96)} }
+@keyframes cardBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.08)} 60%{transform:scale(0.96)} }
 
 .card-inner {
   position: relative; width: 100%; height: 100%;
-  transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.25,0.8,0.25,1);
-  border-radius: 16px;
+  transform-style: preserve-3d; transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 20px;
 }
 .memo-card.flipped .card-inner { transform: rotateY(180deg); }
 
 .card-front, .card-back {
   position: absolute; inset: 0; backface-visibility: hidden;
-  border-radius: 16px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px;
-  border: 2px solid transparent;
+  border-radius: 20px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
 }
 .card-front {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.22), inset 0 1px 2px rgba(255,255,255,0.65);
   position: relative;
   overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.card-front-icon { font-size: 3rem; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.25)); }
+.naipe-frame {
+  position: absolute;
+  inset: 12px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  pointer-events: none;
+}
+.naipe-corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+.naipe-corner.top-left { top: 16px; left: 16px; }
+.naipe-corner.bottom-right { bottom: 16px; right: 16px; transform: rotate(180deg); }
+.naipe-center-emblem {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.glass-emblem-circle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.52);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 0 18px rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
 .card-shine {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.32) 0%, transparent 55%);
   pointer-events: none;
 }
 .card-back {
-  background: var(--surface, #fff);
-  border-color: var(--border, #e2e8f0);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
   transform: rotateY(180deg);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  transition: background 0.3s, border-color 0.3s;
-  padding: 14px 12px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.14), inset 0 1px 2px rgba(255,255,255,0.9);
+  transition: all 0.35s ease;
+  padding: 22px 18px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(148,163,184,0.4) transparent;
 }
+.card-face-corner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.card-face-corner.top-left { top: 12px; left: 12px; }
+.card-face-corner.bottom-right { bottom: 12px; right: 12px; }
+.corner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
 .card-match-mark {
-  position: absolute; top: 8px; right: 8px; z-index: 5;
-  width: 24px; height: 24px; border-radius: 50%;
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 26px; height: 26px; border-radius: 50%;
   color: white; font-size: 0.8rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.22);
 }
 .card-img {
-  max-width: 95%; max-height: 135px; width: auto; height: auto;
+  max-width: 95%; max-height: 145px; width: auto; height: auto;
   object-fit: contain; border-radius: 8px; flex-shrink: 0; margin: auto;
 }
 .card-txt {
@@ -1124,41 +1221,51 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
    6: CLASIFICAR
 ══════════════════════════════════════════════════════════════════ */
 .drag-pool {
-  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;
-  padding: 16px; background: var(--surface-soft, #f8fafc);
-  border-radius: 16px; border: 1.5px dashed var(--border, #e2e8f0);
-  min-height: 64px;
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(248, 250, 252, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20px; border: 1.5px dashed rgba(226, 232, 240, 0.85);
+  min-height: 76px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
 }
 .drag-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 16px; border-radius: 30px;
-  border: 1.5px solid var(--border, #e2e8f0); background: white;
-  font-size: 0.88rem; font-weight: 600; color: var(--dark, #0f172a);
-  cursor: grab; transition: all 0.18s; position: relative;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 20px; border-radius: 30px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 0.94rem; font-weight: 700; color: var(--dark, #0f172a);
+  cursor: grab; transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1); position: relative;
   user-select: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 .drag-item:active { cursor: grabbing; }
-.drag-item:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.drag-item.picked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, white); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); transform: scale(1.04); }
+.drag-item:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+.drag-item.picked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, white); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); transform: scale(1.04); }
 .drag-item.done { opacity: 0.55; }
 .drag-item.shake { animation: shake 0.5s; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
-.drag-item-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
-.drag-item-tag { font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+.drag-item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; box-shadow: 0 0 6px currentColor; }
+.drag-item-tag { font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 10px; }
 
 .drag-cats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
 }
 .drag-cat {
-  border-radius: 20px;
-  border: 2px solid color-mix(in srgb, var(--cat-color) 40%, transparent);
-  background: color-mix(in srgb, var(--cat-color) 6%, white);
+  border-radius: 24px;
+  border: 2px solid color-mix(in srgb, var(--cat-color) 45%, rgba(255,255,255,0.7));
+  background: color-mix(in srgb, var(--cat-color) 8%, rgba(255, 255, 255, 0.72));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06), inset 0 1px 2px rgba(255,255,255,0.85);
 }
 .drag-cat.droppable {
   border-color: var(--cat-color);
@@ -1168,39 +1275,41 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 .drag-cat.droppable:hover { transform: scale(1.015); }
 .drag-cat.drag-over {
   border-color: var(--cat-color) !important;
-  background: color-mix(in srgb, var(--cat-color) 16%, white) !important;
+  background: color-mix(in srgb, var(--cat-color) 18%, rgba(255,255,255,0.9)) !important;
   box-shadow: 0 0 0 8px color-mix(in srgb, var(--cat-color) 35%, transparent) !important;
   transform: scale(1.025);
 }
 
 .cat-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--cat-color) 15%, transparent);
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--cat-color) 18%, transparent);
 }
 .cat-dot {
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--cat-color); flex-shrink: 0;
-  box-shadow: 0 0 8px var(--cat-color);
+  box-shadow: 0 0 10px var(--cat-color);
 }
-.cat-name { flex: 1; font-size: 1.1rem; font-weight: 800; color: var(--dark, #0f172a); }
+.cat-name { flex: 1; font-size: 1.15rem; font-weight: 800; color: var(--dark, #0f172a); }
 .cat-count {
-  font-size: 0.85rem; font-weight: 800;
+  font-size: 0.88rem; font-weight: 800;
   color: var(--cat-color);
   background: color-mix(in srgb, var(--cat-color) 18%, white);
-  padding: 4px 12px; border-radius: 20px;
+  padding: 4px 14px; border-radius: 20px;
 }
 .cat-body {
-  padding: 16px 18px 18px;
-  display: flex; flex-direction: column; gap: 10px;
-  min-height: 160px;
+  padding: 18px 20px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+  min-height: 175px;
   flex: 1;
 }
 .cat-chip {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 14px; background: white; border-radius: 12px;
-  font-size: 0.95rem; font-weight: 600; color: var(--dark, #0f172a);
-  border: 1.5px solid color-mix(in srgb, var(--cat-color) 30%, transparent);
+  padding: 12px 16px; background: rgba(255, 255, 255, 0.88); border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 0.95rem; font-weight: 700; color: var(--dark, #0f172a);
+  border: 1.5px solid color-mix(in srgb, var(--cat-color) 35%, rgba(255,255,255,0.8));
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   animation: chipIn 0.25s;
 }
