@@ -195,13 +195,13 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS owner_id UUID`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,
-	}i, s := range stmts {
+	}
+	for i, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
 			slog.Error("migración fallida", "index", i, "error", err, "stmt", s[:100])
 			return fmt.Errorf("migración %d fallida: %w", i, err)
 		}
 	}
-	slog.Info("cursos: migraciones aplicadas correctamente
-	slog.Info("cursos: migraciones aplicadas")
+	slog.Info("cursos: migraciones aplicadas correctamente")
 	return nil
 }
