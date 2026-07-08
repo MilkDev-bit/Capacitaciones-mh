@@ -103,7 +103,6 @@ function loadGame() {
   config.value = parsed || {}
   initSpecificGame(); startTimer()
 }
-watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, props.lesson?.game_config_json], loadGame, { immediate: true })
 
 async function handleWin() {
   if (isCompleted.value) return
@@ -370,6 +369,9 @@ function initSpecificGame() {
 }
 
 const fmt = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${s%60}s`
+
+// Cargar juego al final del setup cuando todas las refs ya están inicializadas
+watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, props.lesson?.game_config_json], loadGame, { immediate: true })
 </script>
 
 <template>
