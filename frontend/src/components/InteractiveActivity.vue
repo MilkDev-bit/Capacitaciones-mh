@@ -13,16 +13,17 @@ const emit = defineEmits<{ (e: 'completed', data: { points: number; timeSecs: nu
 
 // ── Tipo del juego ──────────────────────────────────────────────────────────
 const gameType = computed(() => {
-  const lt = props.lesson?.lesson_type
-  const t  = props.lesson?.type
-  if (lt !== undefined && lt !== null) return String(lt)
-  if (t) {
+  const raw = props.lesson?.lesson_type ?? props.lesson?.type
+  if (raw !== undefined && raw !== null) {
+    const s = String(raw).trim().toLowerCase()
     const MAP: Record<string, string> = {
-      LESSON_TYPE_GAME_MEMORY: '5', LESSON_TYPE_GAME_DRAGDROP: '6',
-      LESSON_TYPE_GAME_WORDSEARCH: '7', LESSON_TYPE_GAME_FILLBLANK: '8',
-      LESSON_TYPE_GAME_ORDER: '9',
+      '5': '5', 'memory': '5', 'memorama': '5', 'lesson_type_game_memory': '5',
+      '6': '6', 'dragdrop': '6', 'clasificar': '6', 'lesson_type_game_dragdrop': '6',
+      '7': '7', 'wordsearch': '7', 'sopa': '7', 'lesson_type_game_wordsearch': '7',
+      '8': '8', 'fillblank': '8', 'completar': '8', 'lesson_type_game_fillblank': '8',
+      '9': '9', 'order': '9', 'ordenar': '9', 'lesson_type_game_order': '9'
     }
-    return MAP[t] ?? String(t)
+    return MAP[s] ?? String(raw)
   }
   return '1'
 })

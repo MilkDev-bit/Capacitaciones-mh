@@ -9,6 +9,12 @@ import VideoPlayer from '../../components/VideoPlayer.vue'
 import CourseSidebar from '../../components/CourseSidebar.vue'
 import InteractiveActivity from '../../components/InteractiveActivity.vue'
 
+const route = useRoute()
+const router = useRouter()
+const cursoId = route.params.id as string
+const authStore = useAuthStore()
+const currentUser = computed(() => authStore.user)
+
 const videoProgressKey = (lecId: string) => `vp_${cursoId}_${lecId}`
 function savedVideoTime(lecId: string): number {
   return Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
@@ -17,12 +23,6 @@ function onVideoTimeUpdate(seconds: number) {
   if (selectedLeccion.value)
     localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
 }
-
-const route = useRoute()
-const router = useRouter()
-const cursoId = route.params.id as string
-const authStore = useAuthStore()
-const currentUser = computed(() => authStore.user)
 
 const curso = ref<any>(null)
 // Árbol jerárquico (Módulo → Submódulo → Lección)
