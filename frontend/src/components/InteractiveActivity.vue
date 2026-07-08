@@ -603,43 +603,45 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
       </div>
     </div>
 
-    <!-- ── Menú Superior de Estado: Juego Completado ─────────────────────── -->
-    <transition name="pop">
-      <div v-if="isCompleted" class="ia-completed-menu">
-        <div class="completed-topbar">
-          <div class="completed-status-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Juego Completado · Progreso Guardado</span>
+    <!-- ── Overlay Translúcido por Delante del Juego: Estado Completado ── -->
+    <transition name="fade">
+      <div v-if="isCompleted" class="ia-completed-overlay">
+        <div class="ia-completed-card-glass">
+          <div class="completed-topbar">
+            <div class="completed-status-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>Juego Completado · Progreso Guardado</span>
+            </div>
+            <span class="completed-pts-pill">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
           </div>
-          <span class="completed-pts-pill">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
-        </div>
 
-        <div class="completed-content">
-          <p class="completed-info-text">
-            ¡Excelente trabajo! Tu progreso y tu puntaje ya han sido registrados exitosamente en el sistema. <strong>No necesitas repetirlo</strong> para conservar tu avance, pero puedes volver a jugar por práctica si lo deseas.
-          </p>
+          <div class="completed-content">
+            <p class="completed-info-text">
+              ¡Excelente trabajo! Tu progreso y tu puntaje ya han sido registrados exitosamente en el sistema. <strong>No necesitas repetirlo</strong> para conservar tu avance, pero puedes volver a jugar por práctica si lo deseas.
+            </p>
 
-          <div class="completed-metrics">
-            <div class="metric-box">
-              <span class="metric-title">Estado del reto</span>
-              <span class="metric-value status-saved">✓ Guardado</span>
-            </div>
-            <div class="metric-box">
-              <span class="metric-title">Puntaje obtenido</span>
-              <span class="metric-value">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
-            </div>
-            <div class="metric-box" v-if="elapsedSecs > 0">
-              <span class="metric-title">Tiempo realizado</span>
-              <span class="metric-value">{{ fmt(elapsedSecs) }}</span>
+            <div class="completed-metrics">
+              <div class="metric-box">
+                <span class="metric-title">Estado del reto</span>
+                <span class="metric-value status-saved">✓ Guardado</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-title">Puntaje obtenido</span>
+                <span class="metric-value">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
+              </div>
+              <div class="metric-box" v-if="elapsedSecs > 0">
+                <span class="metric-title">Tiempo realizado</span>
+                <span class="metric-value">{{ fmt(elapsedSecs) }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="completed-footer">
-          <button class="btn-completed-replay" @click="restartGame">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            Jugar de nuevo (Practicar)
-          </button>
+          <div class="completed-footer">
+            <button class="btn-completed-replay" @click="restartGame">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Jugar de nuevo por práctica
+            </button>
+          </div>
         </div>
       </div>
     </transition>
@@ -1021,6 +1023,7 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 
 /* ─── Raíz del componente ───────────────────────────────────────────────── */
 .ia-root {
+  position: relative;
   background: var(--surface, #fff);
   border-radius: 20px;
   border: 1px solid var(--border, #e2e8f0);
@@ -1056,24 +1059,37 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 .ia-stat-pts { background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b; }
 .ia-stat-pts svg { color: #d97706; }
 
-/* ─── Menú Superior de Estado: Juego Completado (Glassmorphism) ──────────── */
-.ia-completed-menu {
-  margin: 24px 28px 8px;
-  background: rgba(240, 253, 244, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 2px solid rgba(16, 185, 129, 0.45);
-  border-radius: 24px;
-  padding: 24px 28px;
-  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+/* ─── Overlay Translúcido por Delante del Juego (Glassmorphism) ──────────── */
+.ia-completed-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.ia-completed-card-glass {
+  width: 100%;
+  max-width: 620px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 2px solid rgba(16, 185, 129, 0.55);
+  border-radius: 28px;
+  padding: 28px 32px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  animation: completedPulseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 20px;
+  animation: overlayCardPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes completedPulseIn {
-  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes overlayCardPop {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 .completed-topbar {
   display: flex;
