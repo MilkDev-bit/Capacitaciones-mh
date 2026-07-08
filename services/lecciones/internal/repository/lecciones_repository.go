@@ -621,8 +621,12 @@ func (r *postgresLeccionesRepository) InsertGameScore(ctx context.Context, score
 func (r *postgresLeccionesRepository) GetUserCoursePoints(ctx context.Context, userID, cursoID string) (int32, error) {
 	var total int32
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(SUM(points),0) FROM game_scores
-		 WHERE user_id=$1 AND capacitacion_id=$2`,
+		`SELECT COALESCE(SUM(max_points),0) FROM (
+             SELECT MAX(points) as max_points
+             FROM game_scores
+             WHERE user_id=$1 AND capacitacion_id=$2
+             GROUP BY leccion_id
+         ) sub`,
 		userID, cursoID).Scan(&total)
 	return total, err
 }
@@ -630,7 +634,12 @@ func (r *postgresLeccionesRepository) GetUserCoursePoints(ctx context.Context, u
 func (r *postgresLeccionesRepository) GetUserTotalPoints(ctx context.Context, userID string) (int32, error) {
 	var total int32
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(SUM(points),0) FROM game_scores WHERE user_id=$1`,
+		`SELECT COALESCE(SUM(max_points),0) FROM (
+             SELECT MAX(points) as max_points
+             FROM game_scores
+             WHERE user_id=$1
+             GROUP BY leccion_id
+         ) sub`,
 		userID).Scan(&total)
 	return total, err
 }
@@ -650,15 +659,20 @@ func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoI
 		topN = 5
 	}
 	query := `
+		WITH best_scores AS (
+			SELECT user_id, leccion_id, MAX(points) AS max_points, MIN(scored_at) AS first_scored
+			FROM game_scores
+			WHERE capacitacion_id = $1
+			GROUP BY user_id, leccion_id
+		)
 		SELECT
-			gs.user_id,
+			user_id,
 			'' AS user_name,
 			'' AS avatar_url,
-			SUM(gs.points)::INT AS points
-		FROM game_scores gs
-		WHERE gs.capacitacion_id = $1
-		GROUP BY gs.user_id
-		ORDER BY points DESC, MIN(gs.scored_at) ASC
+			SUM(max_points)::INT AS points
+		FROM best_scores
+		GROUP BY user_id
+		ORDER BY points DESC, MIN(first_scored) ASC
 		LIMIT $2`
 	var rows []*LeaderboardRow
 	return rows, r.db.SelectContext(ctx, &rows, query, cursoID, topN)

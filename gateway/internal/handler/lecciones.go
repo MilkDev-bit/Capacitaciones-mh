@@ -338,13 +338,13 @@ func (h *LeccionesHandler) GetLeaderboard(ctx *gin.Context) {
 	}
 	for _, entry := range resp.Entries {
 		if (entry.UserName == "" || entry.UserName == "Anónimo") && entry.UserId != "" && h.c.Usuarios != nil {
-			uResp, err := h.c.Usuarios.GetUser(ctx.Request.Context(), &usuariospb.GetUserRequest{Id: entry.UserId})
-			if err == nil && uResp.User != nil {
-				entry.UserName = uResp.User.Name
+			uResp, err := h.c.Usuarios.GetPublicPerfil(ctx.Request.Context(), &usuariospb.UserIDRequest{UserId: entry.UserId})
+			if err == nil && uResp != nil {
+				entry.UserName = uResp.Name
 				if entry.UserName == "" {
-					entry.UserName = uResp.User.Email
+					entry.UserName = uResp.Email
 				}
-				entry.AvatarUrl = uResp.User.AvatarUrl
+				entry.AvatarUrl = uResp.AvatarUrl
 			}
 		}
 	}

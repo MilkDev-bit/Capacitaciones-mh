@@ -177,10 +177,8 @@ async function handleWin() {
   const pts = Number(props.lesson?.points_reward || 100); pointsEarned.value = pts
   await nextTick(); launchConfetti()
   try {
-    if (!props.lesson?.completada) {
-      await api.post(`/lecciones/${props.lesson.id}/game-score`, { curso_id: props.cursoId, points: pts, time_secs: elapsedSecs.value })
-      toast.success(`¡+${pts} puntos ganados!`)
-    }
+    await api.post(`/lecciones/${props.lesson.id}/game-score`, { curso_id: props.cursoId, points: pts, time_secs: elapsedSecs.value })
+    toast.success(`¡+${pts} puntos ganados!`)
   } catch {}
   emit('completed', { points: pts, timeSecs: elapsedSecs.value })
 }

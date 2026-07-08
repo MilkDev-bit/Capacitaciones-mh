@@ -62,9 +62,9 @@ const panelTitle = computed(() => ((({
 
 const isGameType = computed(() => {
   const t = String(panelForm.value.lesson_type ?? panelForm.value.type ?? '').toLowerCase()
-  return ['5','6','7','8','9',
-          'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order',
-          'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order'].includes(t)
+  return ['5','6','7','8','9','10',
+          'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order', 'lesson_type_game_hangman',
+          'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order', 'ahorcado', 'hangman'].includes(t)
 })
 
 // ── Módulos ────────────────────────────────────────────────────────────────────
