@@ -53,6 +53,14 @@ func main() {
 		)`,
 		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_total INT NOT NULL DEFAULT 0`,
+		`CREATE TABLE IF NOT EXISTS inscripciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			capacitacion_id UUID NOT NULL,
+			licencia_id UUID,
+			inscrito_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, capacitacion_id)
+		)`,
 		`ALTER TABLE inscripciones ADD COLUMN IF NOT EXISTS licencia_id UUID`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
 	}

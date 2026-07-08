@@ -112,6 +112,14 @@ func runMigrations(db *sqlx.DB) error {
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(comentario_id, user_id, emoji)
 		)`,
+		`CREATE TABLE IF NOT EXISTS inscripciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			capacitacion_id UUID NOT NULL,
+			licencia_id UUID,
+			inscrito_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, capacitacion_id)
+		)`,
 		`ALTER TABLE inscripciones ADD COLUMN IF NOT EXISTS licencia_id UUID`,
 	}
 	for _, s := range stmts {
