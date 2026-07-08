@@ -89,10 +89,17 @@ function loadGame() {
   isCompleted.value = false; pointsEarned.value = 0; stopTimer()
   let parsed: any = {}
   try {
-    const raw = props.lesson?.game_config_json
-    if (raw) parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    let raw = props.lesson?.game_config_json
+    while (typeof raw === 'string' && (raw.trim().startsWith('{') || raw.trim().startsWith('"'))) {
+      try {
+        const next = JSON.parse(raw)
+        if (next === raw) break
+        raw = next
+      } catch { break }
+    }
+    if (raw && typeof raw === 'object') parsed = raw
   } catch {}
-  config.value = parsed
+  config.value = parsed || {}
   initSpecificGame(); startTimer()
 }
 watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, props.lesson?.game_config_json], loadGame, { immediate: true })

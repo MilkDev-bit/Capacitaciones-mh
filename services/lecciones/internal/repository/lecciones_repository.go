@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	leccionespb "Prueba-Go/gen/lecciones"
@@ -73,13 +75,43 @@ type Leccion struct {
 	PointsReward   int32  `db:"points_reward"`
 }
 
+func parseLessonType(t string) leccionespb.LessonType {
+	if val, ok := leccionespb.LessonType_value[t]; ok {
+		return leccionespb.LessonType(val)
+	}
+	if n, err := strconv.Atoi(t); err == nil {
+		return leccionespb.LessonType(n)
+	}
+	switch strings.ToLower(t) {
+	case "video":
+		return leccionespb.LessonType_LESSON_TYPE_VIDEO
+	case "text", "texto":
+		return leccionespb.LessonType_LESSON_TYPE_TEXT
+	case "pdf":
+		return leccionespb.LessonType_LESSON_TYPE_PDF
+	case "quiz":
+		return leccionespb.LessonType_LESSON_TYPE_QUIZ
+	case "memory", "memorama", "5":
+		return leccionespb.LessonType_LESSON_TYPE_GAME_MEMORY
+	case "dragdrop", "clasificar", "6":
+		return leccionespb.LessonType_LESSON_TYPE_GAME_DRAGDROP
+	case "wordsearch", "sopa", "7":
+		return leccionespb.LessonType_LESSON_TYPE_GAME_WORDSEARCH
+	case "fillblank", "completar", "8":
+		return leccionespb.LessonType_LESSON_TYPE_GAME_FILLBLANK
+	case "order", "ordenar", "9":
+		return leccionespb.LessonType_LESSON_TYPE_GAME_ORDER
+	}
+	return leccionespb.LessonType_LESSON_TYPE_UNSPECIFIED
+}
+
 func (l *Leccion) ToProto() *leccionespb.LeccionResponse {
 	resp := &leccionespb.LeccionResponse{
 		Id:             l.ID,
 		CursoId:        l.CapacitacionID,
 		Title:          l.Title,
 		Description:    l.Description,
-		LessonType:     leccionespb.LessonType(leccionespb.LessonType_value[l.Type]),
+		LessonType:     parseLessonType(l.Type),
 		FilePath:       l.FilePath,
 		Content:        l.Content,
 		Orden:          l.Orden,

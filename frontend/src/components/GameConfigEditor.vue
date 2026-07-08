@@ -61,6 +61,7 @@ watch([() => props.modelValue, () => props.lessonType], ([json, type]) => {
   if (type === '7') ws.value     = { ...defaultsFor('7') as WSConfig,    ...parsed }
   if (type === '8') fb.value     = { ...defaultsFor('8') as FBConfig,    ...parsed }
   if (type === '9') order.value  = { ...defaultsFor('9') as OrderConfig, ...parsed }
+  if (!json) emitJson()
 }, { immediate: true })
 
 // Emitir JSON al padre cada vez que cambie el estado
@@ -69,7 +70,13 @@ function emitJson() {
   let obj: any
   if (t === '5') obj = memory.value
   else if (t === '6') obj = drag.value
-  else if (t === '7') obj = ws.value
+  else if (t === '7') {
+    const validWords = ws.value.words.map(w => w.trim().toUpperCase()).filter(w => w.length >= 2)
+    obj = {
+      ...ws.value,
+      words: validWords.length > 0 ? validWords : ['CAPACITACION', 'SOPA', 'LETRA']
+    }
+  }
   else if (t === '8') obj = fb.value
   else if (t === '9') obj = order.value
   else return

@@ -162,6 +162,14 @@ function guardarNota() {
   }
 }
 
+function isGameLesson(lec: any): boolean {
+  if (!lec) return false
+  const t = String(lec.lesson_type ?? lec.type ?? '').toLowerCase()
+  return ['5','6','7','8','9',
+          'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order',
+          'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order'].includes(t)
+}
+
 const showConfetti = ref(false)
 
 async function marcarCompleta() {
@@ -806,7 +814,7 @@ function tramitarDC3() {
               </div>
 
               <!-- Minijuegos Interactivos -->
-              <div v-else-if="['5','6','7','8','9'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
+              <div v-else-if="isGameLesson(selectedLeccion)">
                 <InteractiveActivity
                   :lesson="selectedLeccion"
                   :curso-id="cursoId"
@@ -819,7 +827,7 @@ function tramitarDC3() {
               <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
                 ← Anterior
               </button>
-              <button v-if="!selectedLeccion.completada && !['5','6','7','8','9'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="btn btn-primary" @click="marcarCompleta">
+              <button v-if="!selectedLeccion.completada && !isGameLesson(selectedLeccion)" class="btn btn-primary" @click="marcarCompleta">
                 ✓ Marcar completada
               </button>
               <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">

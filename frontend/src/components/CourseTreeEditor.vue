@@ -61,8 +61,10 @@ const panelTitle = computed(() => ((({
 } as Record<string, string>)[panelMode.value ?? ''] ?? '')))
 
 const isGameType = computed(() => {
-  const t = String(panelForm.value.lesson_type ?? panelForm.value.type ?? '')
-  return ['5','6','7','8','9'].includes(t)
+  const t = String(panelForm.value.lesson_type ?? panelForm.value.type ?? '').toLowerCase()
+  return ['5','6','7','8','9',
+          'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order',
+          'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order'].includes(t)
 })
 
 // ── Módulos ────────────────────────────────────────────────────────────────────
@@ -149,6 +151,15 @@ async function saveLesson() {
   // link es tipo externo — no aplica a enums numéricos
   if (type === '99' && !isValidUrl(form.content || '')) return toast.error('URL inválida')
 
+  let finalConfigJson = form.game_config_json ?? ''
+  if (isGameType.value && !finalConfigJson) {
+    if (type === '5') finalConfigJson = JSON.stringify({ instruction: 'Encuentra los pares ocultos', pairs: [{ front: 'Vue', back: 'Framework progresivo' }, { front: 'Go', back: 'Lenguaje rápido' }], max_time_secs: 120, show_labels: true })
+    if (type === '6') finalConfigJson = JSON.stringify({ instruction: 'Clasifica cada elemento en su categoría', categories: ['Frontend', 'Backend'], items: [{ text: 'Vue', correct_category: 'Frontend' }, { text: 'Go', correct_category: 'Backend' }] })
+    if (type === '7') finalConfigJson = JSON.stringify({ instruction: 'Encuentra las palabras en la cuadrícula', words: ['CAPACITACION', 'SOPA', 'LETRA', 'JUEGO', 'CURSO'], grid_size: 12, difficulty: 'medium', show_word_list: true })
+    if (type === '8') finalConfigJson = JSON.stringify({ instruction: 'Completa la oración', mode: 'select', sentences: [{ text: 'Vue es un framework de ___', answer: 'JavaScript', options: ['JavaScript', 'Python'] }] })
+    if (type === '9') finalConfigJson = JSON.stringify({ instruction: 'Ordena correctamente los pasos', items: [{ text: 'Primer paso', correct_order: 1 }, { text: 'Segundo paso', correct_order: 2 }], show_numbers: false })
+  }
+
   const payload: Record<string, any> = {
     title: form.title,
     description: form.description ?? '',
@@ -158,7 +169,7 @@ async function saveLesson() {
     file_path: form.file_path || '',
     modulo_id: panelCtx.value.moduloId ?? '',
     submodulo_id: panelCtx.value.submoduloId ?? '',
-    game_config_json: form.game_config_json ?? '',
+    game_config_json: finalConfigJson,
     points_reward: Number(form.points_reward || 0),
   }
 
