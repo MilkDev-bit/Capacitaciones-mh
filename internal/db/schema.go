@@ -287,6 +287,47 @@ CREATE INDEX IF NOT EXISTS idx_lecciones_deleted_at      ON lecciones(deleted_at
 
 -- Revocación de JWT: token_version permite invalidar tokens activos al cambiar contraseña o al banear usuario
 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1;
+
+-- Capacitaciones: precio, duración, videollamadas
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS precio NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS duration INT NOT NULL DEFAULT 0;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS videocall_status VARCHAR(20) DEFAULT NULL;
+
+-- Asignaciones: información del usuario
+ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_name VARCHAR(120) DEFAULT '';
+ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_email VARCHAR(200) DEFAULT '';
+
+-- Licencias: información del curso asociado
+ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20) DEFAULT NULL;
+ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT DEFAULT NULL;
+
+-- Horarios disponibles de instructores para videollamadas
+CREATE TABLE IF NOT EXISTS instructor_schedules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    instructor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_instructor_schedules_instructor_id ON instructor_schedules(instructor_id);
+
+-- Tickets de acceso a videollamadas (códigos únicos para participantes)
+CREATE TABLE IF NOT EXISTS videocall_tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    licencia_id UUID REFERENCES curso_licencias(id) ON DELETE SET NULL,
+    schedule_id UUID REFERENCES instructor_schedules(id) ON DELETE SET NULL,
+    codigo VARCHAR(50) UNIQUE NOT NULL,
+    in_use_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    is_valid BOOLEAN NOT NULL DEFAULT true,
+    owner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_videocall_tickets_capacitacion_id ON videocall_tickets(capacitacion_id);
+CREATE INDEX IF NOT EXISTS idx_videocall_tickets_licencia_id ON videocall_tickets(licencia_id);
+CREATE INDEX IF NOT EXISTS idx_videocall_tickets_codigo ON videocall_tickets(codigo);
 `
 
 func Migrate() {
