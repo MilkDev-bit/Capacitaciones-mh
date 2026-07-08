@@ -154,7 +154,7 @@ function launchConfetti() {
 
 // ── loadGame ────────────────────────────────────────────────────────────────
 function loadGame() {
-  isCompleted.value = false; pointsEarned.value = 0; stopTimer()
+  isCompleted.value = !!props.lesson?.completada; pointsEarned.value = props.lesson?.completada ? (props.lesson?.points_reward || 100) : 0; stopTimer()
   let parsed: any = {}
   try {
     let raw = props.lesson?.game_config_json
@@ -603,18 +603,44 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
       </div>
     </div>
 
-    <!-- ── Win Banner ────────────────────────────────────────────────────── -->
+    <!-- ── Menú Superior de Estado: Juego Completado ─────────────────────── -->
     <transition name="pop">
-      <div v-if="isCompleted" class="ia-win">
-        <div class="win-trophy">🏆</div>
-        <div class="win-body">
-          <h3>¡Reto Superado!</h3>
-          <p>Completado en <strong>{{ fmt(elapsedSecs) }}</strong> · ganaste <strong>+{{ pointsEarned }} pts</strong></p>
+      <div v-if="isCompleted" class="ia-completed-menu">
+        <div class="completed-topbar">
+          <div class="completed-status-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>Juego Completado · Progreso Guardado</span>
+          </div>
+          <span class="completed-pts-pill">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
         </div>
-        <button class="ia-btn-replay" @click="restartGame">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Jugar de nuevo
-        </button>
+
+        <div class="completed-content">
+          <p class="completed-info-text">
+            ¡Excelente trabajo! Tu progreso y tu puntaje ya han sido registrados exitosamente en el sistema. <strong>No necesitas repetirlo</strong> para conservar tu avance, pero puedes volver a jugar por práctica si lo deseas.
+          </p>
+
+          <div class="completed-metrics">
+            <div class="metric-box">
+              <span class="metric-title">Estado del reto</span>
+              <span class="metric-value status-saved">✓ Guardado</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-title">Puntaje obtenido</span>
+              <span class="metric-value">+{{ pointsEarned || lesson?.points_reward || 100 }} pts</span>
+            </div>
+            <div class="metric-box" v-if="elapsedSecs > 0">
+              <span class="metric-title">Tiempo realizado</span>
+              <span class="metric-value">{{ fmt(elapsedSecs) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="completed-footer">
+          <button class="btn-completed-replay" @click="restartGame">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Jugar de nuevo (Practicar)
+          </button>
+        </div>
       </div>
     </transition>
 
@@ -1030,28 +1056,115 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 .ia-stat-pts { background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b; }
 .ia-stat-pts svg { color: #d97706; }
 
-/* ─── Win Banner ────────────────────────────────────────────────────────── */
-.ia-win {
-  margin: 20px 28px 0;
-  background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(99,102,241,0.1));
-  border: 2px solid rgba(16,185,129,0.35);
-  border-radius: 16px; padding: 20px 24px;
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+/* ─── Menú Superior de Estado: Juego Completado (Glassmorphism) ──────────── */
+.ia-completed-menu {
+  margin: 24px 28px 8px;
+  background: rgba(240, 253, 244, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid rgba(16, 185, 129, 0.45);
+  border-radius: 24px;
+  padding: 24px 28px;
+  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: completedPulseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.win-trophy { font-size: 2.5rem; filter: drop-shadow(0 4px 8px rgba(245,158,11,0.4)); animation: trophyPulse 1.5s ease-in-out infinite; }
-@keyframes trophyPulse { 0%,100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.1) rotate(5deg); } }
-.win-body { flex: 1; }
-.win-body h3 { font-size: 1.15rem; font-weight: 900; color: var(--dark, #0f172a); margin: 0 0 4px; }
-.win-body p  { font-size: 0.9rem; color: var(--muted, #64748b); margin: 0; }
-.win-body strong { color: var(--dark, #0f172a); }
-.ia-btn-replay {
+@keyframes completedPulseIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.completed-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+  padding-bottom: 14px;
+}
+.completed-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #059669;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+.completed-pts-pill {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-size: 0.92rem;
+  font-weight: 900;
+  padding: 6px 16px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.completed-info-text {
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: #1e293b;
+  margin: 0;
+}
+.completed-info-text strong {
+  color: #047857;
+}
+.completed-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 4px;
+}
+.metric-box {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 130px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.metric-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.metric-value {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+.metric-value.status-saved {
+  color: #059669;
+}
+.completed-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+.btn-completed-replay {
   display: flex; align-items: center; gap: 8px;
-  background: var(--game-gradient, linear-gradient(135deg,#6366f1,#8b5cf6));
-  color: white; border: none; border-radius: 12px; padding: 10px 20px;
-  font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: opacity 0.2s, transform 0.15s;
-  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+  background: rgba(255, 255, 255, 0.9);
+  color: #047857;
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
+  border-radius: 14px; padding: 11px 22px;
+  font-weight: 800; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
 }
-.ia-btn-replay:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-completed-replay:hover {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
 
 /* ─── Game Wrapper ──────────────────────────────────────────────────────── */
 .game-wrap { padding: 20px 28px 28px; }
