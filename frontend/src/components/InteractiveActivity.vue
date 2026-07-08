@@ -321,7 +321,7 @@ function buildGrid() {
   const size = Math.max(Number(config.value?.grid_size) || 12, maxLen + 2, 10)
   const grid: string[][] = Array.from({ length: size }, () => Array(size).fill(''))
 
-  const DIRS = [
+  const DIRS: [number, number][] = [
     [0, 1],   // →
     [1, 0],   // ↓
     [1, 1],   // ↘
@@ -335,7 +335,9 @@ function buildGrid() {
   words.forEach(word => {
     let placed = false
     for (let attempt = 0; attempt < 300 && !placed; attempt++) {
-      const [dr, dc] = DIRS[Math.floor(Math.random() * DIRS.length)]!
+      const dir = DIRS[Math.floor(Math.random() * DIRS.length)]!
+      const dr = dir[0]
+      const dc = dir[1]
       const r = Math.floor(Math.random() * size)
       const c = Math.floor(Math.random() * size)
       const endR = r + dr * (word.length - 1)
