@@ -32,12 +32,16 @@ interface FBConfig { instruction: string; mode: string; sentences: FBItem[] }
 interface OrderItem { text: string; correct_order: number; image_url?: string }
 interface OrderConfig { instruction: string; items: OrderItem[]; show_numbers: boolean }
 
+interface HangmanItem { word: string; hint: string }
+interface HangmanConfig { instruction: string; max_errors: number; items: HangmanItem[] }
+
 // ── Estado local ───────────────────────────────────────────────────────────────
-const memory = ref<MemoryConfig>({ instruction: '', pairs: [{ front: '', back: '' }], max_time_secs: 120, show_labels: true })
-const drag   = ref<DragConfig>({ instruction: '', categories: ['Categoría A', 'Categoría B'], items: [{ text: '', correct_category: 'Categoría A' }] })
-const ws     = ref<WSConfig>({ instruction: '', words: [''], grid_size: 12, difficulty: 'medium', show_word_list: true })
-const fb     = ref<FBConfig>({ instruction: '', mode: 'select', sentences: [{ text: '', answer: '', options: ['', ''] }] })
-const order  = ref<OrderConfig>({ instruction: '', items: [{ text: '', correct_order: 1 }, { text: '', correct_order: 2 }], show_numbers: false })
+const memory  = ref<MemoryConfig>({ instruction: '', pairs: [{ front: '', back: '' }], max_time_secs: 120, show_labels: true })
+const drag    = ref<DragConfig>({ instruction: '', categories: ['Categoría A', 'Categoría B'], items: [{ text: '', correct_category: 'Categoría A' }] })
+const ws      = ref<WSConfig>({ instruction: '', words: [''], grid_size: 12, difficulty: 'medium', show_word_list: true })
+const fb      = ref<FBConfig>({ instruction: '', mode: 'select', sentences: [{ text: '', answer: '', options: ['', ''] }] })
+const order   = ref<OrderConfig>({ instruction: '', items: [{ text: '', correct_order: 1 }, { text: '', correct_order: 2 }], show_numbers: false })
+const hangman = ref<HangmanConfig>({ instruction: '', max_errors: 6, items: [{ word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico' }, { word: 'SEGURIDAD', hint: 'Protección de sistemas' }] })
 
 function defaultsFor(type: string) {
   if (type === '5') return { instruction: '', pairs: [{ front: '', back: '' }], max_time_secs: 120, show_labels: true }
@@ -45,6 +49,7 @@ function defaultsFor(type: string) {
   if (type === '7') return { instruction: '', words: [''], grid_size: 12, difficulty: 'medium', show_word_list: true }
   if (type === '8') return { instruction: '', mode: 'select', sentences: [{ text: '', answer: '', options: ['', ''] }] }
   if (type === '9') return { instruction: '', items: [{ text: '', correct_order: 1 }, { text: '', correct_order: 2 }], show_numbers: false }
+  if (type === '10') return { instruction: '', max_errors: 6, items: [{ word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico' }, { word: 'SEGURIDAD', hint: 'Protección de sistemas' }] }
   return {}
 }
 
@@ -61,6 +66,7 @@ watch([() => props.modelValue, () => props.lessonType], ([json, type]) => {
   if (type === '7') ws.value     = { ...defaultsFor('7') as WSConfig,    ...parsed }
   if (type === '8') fb.value     = { ...defaultsFor('8') as FBConfig,    ...parsed }
   if (type === '9') order.value  = { ...defaultsFor('9') as OrderConfig, ...parsed }
+  if (type === '10') hangman.value = { ...defaultsFor('10') as HangmanConfig, ...parsed }
   if (!json) emitJson()
 }, { immediate: true })
 
@@ -79,9 +85,13 @@ function emitJson() {
   }
   else if (t === '8') obj = fb.value
   else if (t === '9') obj = order.value
+  else if (t === '10') obj = hangman.value
   else return
   emit('update:modelValue', JSON.stringify(obj, null, 2))
 }
+
+function addHangmanItem() { hangman.value.items.push({ word: '', hint: '' }); emitJson() }
+function removeHangmanItem(i: number) { hangman.value.items.splice(i, 1); emitJson() }
 
 // ── Helpers de edición ─────────────────────────────────────────────────────────
 
@@ -153,13 +163,13 @@ function onPointsChange() { emit('update:pointsReward', localPoints.value); emit
 
 const gameNames: Record<string, string> = {
   '5': 'Memorama', '6': 'Arrastrar y Soltar', '7': 'Sopa de Letras',
-  '8': 'Completar Espacios', '9': 'Ordenar Secuencia',
+  '8': 'Completar Espacios', '9': 'Ordenar Secuencia', '10': 'Ahorcado',
 }
 const gameName = computed(() => gameNames[props.lessonType] ?? '')
 </script>
 
 <template>
-  <div class="gce-root" v-if="['5','6','7','8','9'].includes(lessonType)">
+  <div class="gce-root" v-if="['5','6','7','8','9','10'].includes(lessonType)">
     <!-- Header del editor -->
     <div class="gce-header">
       <span class="gce-badge glass-badge-editor">
@@ -444,6 +454,29 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
         </div>
       </div>
       <button class="gce-add-btn" @click="addOrderItem">+ Agregar paso</button>
+    </template>
+
+    <!-- ─────────────── AHORCADO ─────────────── -->
+    <template v-if="lessonType === '10'">
+      <div class="gce-field">
+        <label class="gce-label">Instrucción del Ahorcado</label>
+        <input v-model="hangman.instruction" @input="emitJson" class="gce-input" placeholder="Ej: Adivina la palabra oculta antes de perder tus vidas" />
+      </div>
+      <div class="gce-field">
+        <label class="gce-label">Límite de errores permitidos</label>
+        <input type="number" v-model.number="hangman.max_errors" @input="emitJson" class="gce-input-sm" min="3" max="10" />
+      </div>
+      <div class="gce-field">
+        <label class="gce-label">Palabras y pistas</label>
+        <div class="gce-list">
+          <div v-for="(item, i) in hangman.items" :key="i" class="gce-item-row">
+            <input v-model="item.word" @input="emitJson" class="gce-input" placeholder="Palabra (Ej: KUBERNETES)" />
+            <input v-model="item.hint" @input="emitJson" class="gce-input" placeholder="Pista (Ej: Orquestador de contenedores)" />
+            <button class="gce-remove" @click="removeHangmanItem(i)" :disabled="hangman.items.length <= 1">✕</button>
+          </div>
+        </div>
+      </div>
+      <button class="gce-add-btn" @click="addHangmanItem">+ Agregar palabra</button>
     </template>
 
   </div>

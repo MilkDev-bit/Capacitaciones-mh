@@ -21,7 +21,8 @@ const gameType = computed(() => {
       '6': '6', 'dragdrop': '6', 'clasificar': '6', 'lesson_type_game_dragdrop': '6',
       '7': '7', 'wordsearch': '7', 'sopa': '7', 'lesson_type_game_wordsearch': '7',
       '8': '8', 'fillblank': '8', 'completar': '8', 'lesson_type_game_fillblank': '8',
-      '9': '9', 'order': '9', 'ordenar': '9', 'lesson_type_game_order': '9'
+      '9': '9', 'order': '9', 'ordenar': '9', 'lesson_type_game_order': '9',
+      '10': '10', 'hangman': '10', 'ahorcado': '10', 'lesson_type_game_hangman': '10'
     }
     return MAP[s] ?? String(raw)
   }
@@ -34,6 +35,7 @@ const GAME_META: Record<string, { label: string; icon: string; gradient: string;
   '7': { label: 'Sopa de Letras',     icon: '🔤', gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', accent: '#f97316' },
   '8': { label: 'Completar Espacios', icon: '✍️', gradient: 'linear-gradient(135deg,#10b981,#059669)', accent: '#10b981' },
   '9': { label: 'Ordenar',            icon: '🔢', gradient: 'linear-gradient(135deg,#ec4899,#f43f5e)', accent: '#ec4899' },
+  '10': { label: 'Ahorcado Cibernético', icon: '🎯', gradient: 'linear-gradient(135deg,#f43f5e,#e11d48)', accent: '#f43f5e' },
 }
 const meta = computed(() => GAME_META[gameType.value] ?? { label: 'Juego', icon: '🎮', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', accent: '#6366f1' })
 
@@ -68,6 +70,71 @@ function beep(freq = 520, type: OscillatorType = 'sine', dur = 0.15) {
 const soundOk  = () => { beep(660,'sine',0.1); setTimeout(() => beep(880,'triangle',0.2), 100) }
 const soundBad = () => { beep(220,'sawtooth',0.2) }
 const soundWin = () => { soundOk(); setTimeout(() => beep(990,'triangle',0.3),250); setTimeout(() => beep(1320,'sine',0.5),450) }
+
+// Sonido de burla divertida / risa juguetona descendente cuando fallas una letra en Ahorcado
+function soundTaunt() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const notes = [320, 280, 240, 180]
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = i === 3 ? 'sawtooth' : 'triangle'
+        osc.frequency.setValueAtTime(freq, ctx.currentTime)
+        if (i === 3) osc.frequency.linearRampToValueAtTime(110, ctx.currentTime + 0.4)
+        gain.gain.setValueAtTime(0.14, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i === 3 ? 0.45 : 0.16))
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.start(); osc.stop(ctx.currentTime + (i === 3 ? 0.45 : 0.16))
+      }, i * 160)
+    })
+  } catch {}
+}
+
+function soundChuckle() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const pitches = [520, 470, 540, 440]
+    pitches.forEach((freq, i) => {
+      setTimeout(() => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(freq, ctx.currentTime)
+        gain.gain.setValueAtTime(0.09, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08)
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.start(); osc.stop(ctx.currentTime + 0.08)
+      }, i * 95)
+    })
+  } catch {}
+}
+
+// Reproductor de música retro Arcade sintetizado
+const isMusicOn = ref(false)
+let musicInterval: ReturnType<typeof setInterval> | null = null
+
+function toggleMusic() {
+  isMusicOn.value = !isMusicOn.value
+  if (isMusicOn.value) {
+    playArcadeNote()
+    musicInterval = setInterval(playArcadeNote, 1600)
+  } else {
+    stopMusic()
+  }
+}
+function stopMusic() {
+  isMusicOn.value = false
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null }
+}
+function playArcadeNote() {
+  if (!isMusicOn.value) return
+  const melody = [523.25, 659.25, 783.99, 1046.50, 783.99, 659.25]
+  const idx = Math.floor(Math.random() * melody.length)
+  beep(melody[idx]!, 'sine', 0.18)
+}
+onUnmounted(() => stopMusic())
 
 // ── Confetti ────────────────────────────────────────────────────────────────
 const confettiPieces = ref<{ id: number; x: number; color: string; delay: number; size: number; dur: number }[]>([])
@@ -358,6 +425,92 @@ function checkOrder() {
   if (ok) { handleWin() } else { soundBad(); toast.error('El orden no es correcto aún') }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  10: AHORCADO CIBERNÉTICO
+// ═══════════════════════════════════════════════════════════════════════════
+const hmItems = ref<{ word: string; hint: string }[]>([])
+const hmCurrentIdx = ref(0)
+const hmWord = ref('')
+const hmHint = ref('')
+const hmGuessed = ref<string[]>([])
+const hmErrors = ref(0)
+const hmMaxErrors = ref(6)
+const hmTauntMessage = ref('')
+const HM_ALPHABET = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','Ñ','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+function initHangman() {
+  hmGuessed.value = []
+  hmErrors.value = 0
+  hmCurrentIdx.value = 0
+  hmTauntMessage.value = ''
+  let items: { word: string; hint: string }[] = []
+  if (config.value?.items && Array.isArray(config.value.items) && config.value.items.length > 0) {
+    items = config.value.items.map((it: any) => ({
+      word: String(it.word || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z]/g,'').toUpperCase(),
+      hint: String(it.hint || 'Adivina la palabra oculta')
+    })).filter((it: any) => it.word.length >= 2)
+  }
+  if (!items.length) {
+    items = [
+      { word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico y moderno' },
+      { word: 'CIBERSEGURIDAD', hint: 'Protección de sistemas contra intrusos' },
+      { word: 'MICROSERVICIOS', hint: 'Arquitectura modular distribuida en la nube' },
+      { word: 'DOCKER', hint: 'Plataforma para contenerizar aplicaciones' }
+    ]
+  }
+  hmItems.value = items
+  hmMaxErrors.value = Math.max(Number(config.value?.max_errors) || 6, 3)
+  loadHangmanWord()
+}
+
+function loadHangmanWord() {
+  const current = hmItems.value[hmCurrentIdx.value] || hmItems.value[0]
+  if (!current) return
+  hmWord.value = current.word
+  hmHint.value = current.hint
+  hmGuessed.value = []
+  hmErrors.value = 0
+  hmTauntMessage.value = ''
+}
+
+function hmGuessLetter(letter: string) {
+  if (isCompleted.value || hmGuessed.value.includes(letter)) return
+  hmGuessed.value.push(letter)
+  if (hmWord.value.includes(letter)) {
+    soundOk()
+    const allFound = hmWord.value.split('').every(ch => hmGuessed.value.includes(ch))
+    if (allFound) {
+      if (hmCurrentIdx.value < hmItems.value.length - 1) {
+        toast.success(`¡Excelente! "${hmWord.value}" completada. Pasando a la siguiente...`)
+        setTimeout(() => {
+          hmCurrentIdx.value++
+          loadHangmanWord()
+        }, 1200)
+      } else {
+        handleWin()
+      }
+    }
+  } else {
+    hmErrors.value++
+    const taunts = [
+      '¡Uy, ni cerca! 😏',
+      '¡Esa letra no existe en este servidor! 🤖',
+      '¡Cuidado con el cortocircuito! ⚡',
+      '¡Una pieza más al androide! HAHAHA 😂',
+      '¡Estás sudando frío! 😅',
+      '¡PELIGRO DE REINICIO! 🚨'
+    ]
+    hmTauntMessage.value = taunts[hmErrors.value % taunts.length]!
+    soundTaunt()
+    if (hmErrors.value >= hmMaxErrors.value) {
+      toast.error(`¡Sistemas caídos! La palabra era "${hmWord.value}". Intentemos de nuevo.`)
+      setTimeout(() => {
+        loadHangmanWord()
+      }, 2000)
+    }
+  }
+}
+
 // ── Dispatcher ──────────────────────────────────────────────────────────────
 function initSpecificGame() {
   const t = gameType.value
@@ -366,6 +519,7 @@ function initSpecificGame() {
   else if (t==='7') initWordSearch()
   else if (t==='8') initFillBlank()
   else if (t==='9') initOrder()
+  else if (t==='10') initHangman()
 }
 
 const fmt = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${s%60}s`
@@ -399,6 +553,9 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
         <p v-if="lesson?.description" class="ia-desc">{{ lesson.description }}</p>
       </div>
       <div class="ia-stats">
+        <button class="ia-music-btn" @click="toggleMusic" :class="{ 'ia-music-on': isMusicOn }">
+          <span>{{ isMusicOn ? '🎵 Música ON' : '🔇 Música OFF' }}</span>
+        </button>
         <div class="ia-stat">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span>{{ fmt(elapsedSecs) }}</span>
@@ -638,6 +795,98 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
         <button class="ia-btn-primary" @click="checkOrder" :disabled="isCompleted">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           Verificar Orden
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 10: AHORCADO CIBERNÉTICO ═══════════════ -->
+    <div v-else-if="gameType === '10'" class="game-wrap">
+      <!-- Barra superior de estado -->
+      <div class="hm-header-bar">
+        <div class="hm-progress">
+          <span class="hm-pill">Palabra {{ hmCurrentIdx + 1 }} de {{ hmItems.length }}</span>
+        </div>
+        <div class="hm-lives">
+          <span class="hm-lives-label">Energía del Sistema:</span>
+          <div class="hm-hearts">
+            <span v-for="n in hmMaxErrors" :key="n" class="hm-heart" :class="{ 'hm-heart-lost': n <= hmErrors }">
+              ⚡
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hm-stage">
+        <!-- Visualizador SVG Ciber-Ahorcado -->
+        <div class="hm-visualizer glass-badge-editor">
+          <svg viewBox="0 0 200 220" class="hm-svg">
+            <!-- Plataforma y Horca -->
+            <line x1="20" y1="200" x2="180" y2="200" stroke="#475569" stroke-width="6" stroke-linecap="round" />
+            <line x1="60" y1="200" x2="60" y2="20" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+            <line x1="60" y1="20" x2="130" y2="20" stroke="#64748b" stroke-width="6" stroke-linecap="round" />
+            <line x1="130" y1="20" x2="130" y2="50" stroke="#f43f5e" stroke-width="4" stroke-dasharray="4,4" />
+
+            <!-- 1. Cabeza Holográmica -->
+            <g v-if="hmErrors >= 1" class="hm-part">
+              <circle cx="130" cy="70" r="18" fill="rgba(244,63,94,0.15)" stroke="#f43f5e" stroke-width="3" />
+              <!-- Ojos -->
+              <text x="122" y="74" font-size="10" fill="#f43f5e" font-weight="bold">{{ hmErrors >= hmMaxErrors ? 'X' : '•' }}</text>
+              <text x="133" y="74" font-size="10" fill="#f43f5e" font-weight="bold">{{ hmErrors >= hmMaxErrors ? 'X' : '•' }}</text>
+            </g>
+
+            <!-- 2. Cuerpo Core -->
+            <line v-if="hmErrors >= 2" x1="130" y1="88" x2="130" y2="135" stroke="#f43f5e" stroke-width="4" stroke-linecap="round" class="hm-part" />
+
+            <!-- 3. Brazo Izquierdo -->
+            <line v-if="hmErrors >= 3" x1="130" y1="100" x2="105" y2="120" stroke="#f43f5e" stroke-width="4" stroke-linecap="round" class="hm-part" />
+
+            <!-- 4. Brazo Derecho -->
+            <line v-if="hmErrors >= 4" x1="130" y1="100" x2="155" y2="120" stroke="#f43f5e" stroke-width="4" stroke-linecap="round" class="hm-part" />
+
+            <!-- 5. Pierna Izquierda -->
+            <line v-if="hmErrors >= 5" x1="130" y1="135" x2="110" y2="170" stroke="#f43f5e" stroke-width="4" stroke-linecap="round" class="hm-part" />
+
+            <!-- 6. Pierna Derecha -->
+            <line v-if="hmErrors >= 6" x1="130" y1="135" x2="150" y2="170" stroke="#f43f5e" stroke-width="4" stroke-linecap="round" class="hm-part" />
+          </svg>
+
+          <!-- Globo de burla cuando falla -->
+          <transition name="fade">
+            <div v-if="hmTauntMessage" class="hm-taunt-bubble">
+              {{ hmTauntMessage }}
+            </div>
+          </transition>
+        </div>
+
+        <!-- Pista de la palabra -->
+        <div class="hm-hint-box">
+          <span class="hm-hint-tag">PISTA:</span>
+          <p class="hm-hint-text">{{ hmHint }}</p>
+        </div>
+      </div>
+
+      <!-- Palabra Oculta -->
+      <div class="hm-word-container">
+        <div v-for="(char, idx) in hmWord.split('')" :key="idx" class="hm-letter-slot" :class="{ 'hm-letter-revealed': hmGuessed.includes(char) || isCompleted }">
+          <span v-if="hmGuessed.includes(char) || isCompleted">{{ char }}</span>
+          <span v-else class="hm-mystery">?</span>
+        </div>
+      </div>
+
+      <!-- Teclado en pantalla -->
+      <div class="hm-keyboard">
+        <button
+          v-for="char in HM_ALPHABET"
+          :key="char"
+          class="hm-key"
+          :class="{
+            'hm-key-ok': hmGuessed.includes(char) && hmWord.includes(char),
+            'hm-key-bad': hmGuessed.includes(char) && !hmWord.includes(char)
+          }"
+          :disabled="hmGuessed.includes(char) || isCompleted"
+          @click="hmGuessLetter(char)"
+        >
+          {{ char }}
         </button>
       </div>
     </div>
@@ -977,6 +1226,147 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 
 /* order-move transition */
 .order-move-move { transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1); }
+
+/* ─── Botón de Música Arcade ─────────────────────────────────────────────── */
+.ia-music-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--border, #e2e8f0);
+  font-size: 0.85rem; font-weight: 800; color: var(--dark, #0f172a);
+  cursor: pointer; transition: all 0.25s ease;
+}
+.ia-music-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.ia-music-on {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white; border-color: #059669;
+  box-shadow: 0 0 14px rgba(16,185,129,0.4);
+}
+
+/* ─── 10: AHORCADO CIBERNÉTICO (Glassmorphism + Cyber Neon) ──────────────── */
+.hm-header-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+}
+.hm-pill {
+  background: rgba(244,63,94,0.1); color: #e11d48;
+  padding: 6px 16px; border-radius: 20px; font-weight: 800; font-size: 0.85rem;
+  border: 1px solid rgba(244,63,94,0.3);
+}
+.hm-lives {
+  display: flex; align-items: center; gap: 8px;
+}
+.hm-lives-label { font-size: 0.85rem; font-weight: 700; color: var(--dark); }
+.hm-hearts { display: flex; gap: 4px; }
+.hm-heart {
+  font-size: 1.2rem; filter: drop-shadow(0 0 4px rgba(245,158,11,0.8));
+  transition: all 0.3s ease;
+}
+.hm-heart-lost {
+  opacity: 0.2; filter: grayscale(1); transform: scale(0.8);
+}
+
+.hm-stage {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+}
+.hm-visualizer {
+  position: relative; width: 220px; height: 230px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(14px);
+  border-radius: 24px; border: 1.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px;
+}
+.hm-svg { width: 100%; height: 100%; overflow: visible; }
+.hm-part {
+  animation: partAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes partAppear {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.hm-taunt-bubble {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  width: 90%; text-align: center;
+  background: rgba(244, 63, 94, 0.95); color: white;
+  padding: 8px 12px; border-radius: 14px;
+  font-size: 0.78rem; font-weight: 800;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.hm-hint-box {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(244,63,94,0.06); border: 1px dashed rgba(244,63,94,0.35);
+  padding: 10px 20px; border-radius: 16px; max-width: 500px;
+}
+.hm-hint-tag {
+  font-weight: 900; font-size: 0.75rem; color: #e11d48;
+  background: rgba(244,63,94,0.15); padding: 3px 8px; border-radius: 8px;
+}
+.hm-hint-text { margin: 0; font-size: 0.92rem; font-weight: 600; color: var(--dark); }
+
+.hm-word-container {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  margin-bottom: 28px;
+}
+.hm-letter-slot {
+  width: 44px; height: 54px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 900; color: var(--dark);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hm-letter-revealed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.25));
+  border-color: #10b981; color: #065f46;
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+}
+.hm-mystery {
+  color: var(--muted); opacity: 0.4;
+}
+
+.hm-keyboard {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  max-width: 680px; margin: 0 auto;
+}
+.hm-key {
+  width: 44px; height: 46px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--border);
+  font-size: 0.95rem; font-weight: 800; color: var(--dark);
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+.hm-key:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.08);
+  border-color: #f43f5e; color: #f43f5e;
+  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.25);
+}
+.hm-key-ok {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important; border-color: #059669 !important;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.4) !important;
+}
+.hm-key-bad {
+  background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+  color: white !important; border-color: #e11d48 !important;
+  opacity: 0.4; cursor: not-allowed;
+}
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {

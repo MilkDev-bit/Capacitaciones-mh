@@ -490,7 +490,7 @@ function typeLabel(t: any) {
     document: 'PDF / Documento', '3': 'PDF / Documento',
     text: 'Lectura', '2': 'Lectura',
     link: 'Enlace', '4': 'Quiz',
-    '5': 'Memorama', '6': 'Clasificar', '7': 'Sopa de Letras', '8': 'Completar', '9': 'Secuencia'
+    '5': 'Memorama', '6': 'Clasificar', '7': 'Sopa de Letras', '8': 'Completar', '9': 'Secuencia', '10': 'Ahorcado'
   }
   return map[String(t)] || String(t)
 }
@@ -501,7 +501,7 @@ function typeIcon(t: any) {
     document: '📄', '3': '📄',
     text: '📝', '2': '📝',
     link: '🔗', '4': '❓',
-    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊'
+    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊', '10': '🎯'
   }
   return map[String(t)] || '📄'
 }
