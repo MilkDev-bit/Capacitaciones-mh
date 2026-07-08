@@ -260,7 +260,8 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
 	COALESCE(color,'#f97316') color, precio, scheduled_at, duration, videocall_status, created_at,
-	(SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = capacitaciones.id AND l.deleted_at IS NULL) as total_lecciones
+	(SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = capacitaciones.id AND l.deleted_at IS NULL) as total_lecciones,
+	0 as lecciones_completadas
 	FROM capacitaciones`
 
 func (r *postgresCursosRepository) List(ctx context.Context) ([]*Curso, error) {
