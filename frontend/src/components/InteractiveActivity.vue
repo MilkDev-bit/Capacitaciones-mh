@@ -244,6 +244,7 @@ const dragCategories = ref<string[]>([])
 const dragItems      = ref<any[]>([])
 const dragAssignments = reactive<Record<string, string>>({})
 const selectedDrag   = ref<string | null>(null)
+const dragOverCat    = ref<string | null>(null)
 const shakeItems     = ref<string[]>([])
 
 function initDrag() {
@@ -255,6 +256,7 @@ function initDrag() {
   dragItems.value = raw.map((it: any, i: number) => ({ ...it, id: String(it.id ?? i), category: it.correct_category || it.category || dragCategories.value[0] })).sort(() => Math.random() - 0.5)
   Object.keys(dragAssignments).forEach(k => delete dragAssignments[k])
   selectedDrag.value = null
+  dragOverCat.value = null
 }
 
 function pickItem(id: string) { if (!isCompleted.value) { selectedDrag.value = selectedDrag.value === id ? null : id; beep(500,'sine',0.05) } }
@@ -263,6 +265,36 @@ function dropInCategory(cat: string) {
   dragAssignments[selectedDrag.value] = cat; selectedDrag.value = null; beep(580,'sine',0.1)
 }
 function removeAssignment(id: string) { delete dragAssignments[id] }
+
+function handleDragStart(e: DragEvent, id: string) {
+  if (isCompleted.value) return
+  selectedDrag.value = id
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', id)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+}
+function handleDragOver(e: DragEvent, cat: string) {
+  if (isCompleted.value) return
+  dragOverCat.value = cat
+}
+function handleDragLeave(cat: string) {
+  if (dragOverCat.value === cat) {
+    dragOverCat.value = null
+  }
+}
+function handleDrop(e: DragEvent, cat: string) {
+  dragOverCat.value = null
+  if (isCompleted.value) return
+  let id = selectedDrag.value
+  if (!id && e.dataTransfer) {
+    id = e.dataTransfer.getData('text/plain')
+  }
+  if (id) {
+    selectedDrag.value = id
+    dropInCategory(cat)
+  }
+}
 
 function catColor(catName: string | undefined): string {
   if (!catName) return '#6366f1'
@@ -624,7 +656,7 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
          6: CLASIFICAR
     ═════════════════════════════════════════════════════════════════════ -->
     <div v-else-if="gameType === '6'" class="game-wrap">
-      <p class="game-hint">Selecciona un elemento y luego la categoría donde pertenece</p>
+      <p class="game-hint">Arrastra y suelta cada elemento hacia su categoría, o haz clic en un elemento y luego en la categoría donde pertenece</p>
 
       <!-- Pool de items -->
       <div class="drag-pool">
@@ -635,6 +667,8 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
             dragAssignments[it.id] ? 'done' : '',
             shakeItems.includes(it.id) ? 'shake' : '']"
           :disabled="isCompleted"
+          draggable="true"
+          @dragstart="handleDragStart($event, it.id)"
           @click="pickItem(it.id)"
         >
           <span class="drag-item-dot" :style="{ background: dragAssignments[it.id]
@@ -651,8 +685,12 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
       <div class="drag-cats">
         <div
           v-for="(cat, ci) in dragCategories" :key="cat"
-          :class="['drag-cat', selectedDrag ? 'droppable' : '']"
+          :class="['drag-cat', selectedDrag ? 'droppable' : '', dragOverCat === cat ? 'drag-over' : '']"
           :style="{ '--cat-color': CAT_COLORS[ci % CAT_COLORS.length] }"
+          @dragover.prevent="handleDragOver($event, cat)"
+          @dragenter.prevent="handleDragOver($event, cat)"
+          @dragleave="handleDragLeave(cat)"
+          @drop.prevent="handleDrop($event, cat)"
           @click="dropInCategory(cat)"
         >
           <div class="cat-header">
@@ -664,12 +702,15 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
             <div
               v-for="it in dragItems.filter(i => dragAssignments[i.id] === cat)" :key="it.id"
               class="cat-chip"
+              draggable="true"
+              @dragstart="handleDragStart($event, it.id)"
+              @click.stop="pickItem(it.id)"
             >
               {{ it.text }}
               <button @click.stop="removeAssignment(it.id)" class="cat-chip-del">✕</button>
             </div>
             <span v-if="!dragItems.some(i => dragAssignments[i.id] === cat)" class="cat-empty">
-              {{ selectedDrag ? '← Haz clic para asignar aquí' : 'Sin elementos' }}
+              {{ selectedDrag ? '← Haz clic o suelta aquí' : 'Arrastra o haz clic para asignar aquí' }}
             </span>
           </div>
         </div>
@@ -1093,8 +1134,10 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
   padding: 9px 16px; border-radius: 30px;
   border: 1.5px solid var(--border, #e2e8f0); background: white;
   font-size: 0.88rem; font-weight: 600; color: var(--dark, #0f172a);
-  cursor: pointer; transition: all 0.18s; position: relative;
+  cursor: grab; transition: all 0.18s; position: relative;
+  user-select: none;
 }
+.drag-item:active { cursor: grabbing; }
 .drag-item:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .drag-item.picked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, white); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); transform: scale(1.04); }
 .drag-item.done { opacity: 0.55; }
@@ -1123,6 +1166,12 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--cat-color) 20%, transparent);
 }
 .drag-cat.droppable:hover { transform: scale(1.015); }
+.drag-cat.drag-over {
+  border-color: var(--cat-color) !important;
+  background: color-mix(in srgb, var(--cat-color) 16%, white) !important;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--cat-color) 35%, transparent) !important;
+  transform: scale(1.025);
+}
 
 .cat-header {
   display: flex; align-items: center; gap: 10px;
