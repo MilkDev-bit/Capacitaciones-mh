@@ -99,6 +99,26 @@ func runMigrations(db *sqlx.DB) error {
 			deleted_at TIMESTAMPTZ,
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		)`,
+		`CREATE TABLE IF NOT EXISTS lecciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			title VARCHAR(200) NOT NULL,
+			description TEXT DEFAULT '',
+			type VARCHAR(20) NOT NULL DEFAULT 'video',
+			file_path TEXT DEFAULT '',
+			content TEXT DEFAULT '',
+			orden INT NOT NULL DEFAULT 0,
+			duracion_min INT DEFAULT 0,
+			deleted_at TIMESTAMPTZ,
+			created_at TIMESTAMPTZ DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS progreso_lecciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL,
+			leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			completado_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(user_id, leccion_id)
+		)`,
 		`CREATE TABLE IF NOT EXISTS asignaciones (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			user_id UUID NOT NULL,
