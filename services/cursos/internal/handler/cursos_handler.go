@@ -43,6 +43,7 @@ func (h *CursosHandler) GetCursoPublico(ctx context.Context, req *cursospb.Curso
 func (h *CursosHandler) ListCursosPublicos(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.ListCursosResponse, error) {
 	list, err := h.svc.ListPublicos(ctx)
 	if err != nil {
+		slog.Error("ListCursosPublicos error", "error", err)
 		return nil, mapErr(err)
 	}
 	return &cursospb.ListCursosResponse{Cursos: list}, nil
@@ -53,6 +54,7 @@ func (h *CursosHandler) ListCursosPublicos(ctx context.Context, _ *cursospb.Empt
 func (h *CursosHandler) ListMisCapacitaciones(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListCursosResponse, error) {
 	list, err := h.svc.ListMisCapacitaciones(ctx, req.UserId)
 	if err != nil {
+		slog.Error("ListMisCapacitaciones error", "error", err, "userId", req.UserId)
 		return nil, mapErr(err)
 	}
 	return &cursospb.ListCursosResponse{Cursos: list}, nil

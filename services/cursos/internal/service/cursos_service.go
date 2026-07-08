@@ -36,8 +36,10 @@ func NewCursosService(repo repository.CursosRepository, mensajes mensajespb.Mens
 func (s *CursosService) ListPublicos(ctx context.Context) ([]*cursospb.CursoResponse, error) {
 	cursos, err := s.repo.ListPublicos(ctx)
 	if err != nil {
+		slog.Error("ListPublicos repo error", "error", err)
 		return nil, err
 	}
+	slog.Info("ListPublicos success", "count", len(cursos))
 	return toProtoSlice(cursos), nil
 }
 
@@ -63,9 +65,11 @@ func (s *CursosService) GetCursoPublico(ctx context.Context, cursoID string) (*c
 func (s *CursosService) ListMisCapacitaciones(ctx context.Context, userID string) ([]*cursospb.CursoResponse, error) {
 	cursos, err := s.repo.ListByUser(ctx, userID)
 	if err != nil {
+		slog.Error("ListMisCapacitaciones repo error", "error", err, "userId", userID)
 		return nil, err
 	}
 	
+	slog.Info("ListMisCapacitaciones success", "count", len(cursos), "userId", userID)
 	protos := toProtoSlice(cursos)
 	// Para los cursos que son videollamadas, adjuntar su ticket_codigo en codigo_acceso
 	for _, p := range protos {

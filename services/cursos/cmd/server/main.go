@@ -80,6 +80,7 @@ func getEnvOr(k, fb string) string {
 }
 
 func runMigrations(db *sqlx.DB) error {
+	slog.Info("cursos: iniciando migraciones...")
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS capacitaciones (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -194,12 +195,13 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS owner_id UUID`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,
-	}
-	for _, s := range stmts {
+	}i, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
-			return fmt.Errorf("migración fallida: %w", err)
+			slog.Error("migración fallida", "index", i, "error", err, "stmt", s[:100])
+			return fmt.Errorf("migración %d fallida: %w", i, err)
 		}
 	}
+	slog.Info("cursos: migraciones aplicadas correctamente
 	slog.Info("cursos: migraciones aplicadas")
 	return nil
 }
