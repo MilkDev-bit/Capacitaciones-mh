@@ -168,7 +168,12 @@ function loadGame() {
     if (raw && typeof raw === 'object') parsed = raw
   } catch {}
   config.value = parsed || {}
-  initSpecificGame(); startTimer()
+  initSpecificGame()
+  if (!isCompleted.value) {
+    startTimer()
+  } else {
+    stopTimer()
+  }
 }
 
 async function handleWin() {
