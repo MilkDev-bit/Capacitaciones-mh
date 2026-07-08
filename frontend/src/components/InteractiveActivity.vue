@@ -1103,25 +1103,73 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 .drag-item-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
 .drag-item-tag { font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
 
-.drag-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-.drag-cat {
-  border-radius: 16px; border: 2px solid color-mix(in srgb, var(--cat-color) 30%, transparent);
-  background: color-mix(in srgb, var(--cat-color) 5%, white);
-  transition: all 0.2s; overflow: hidden;
+.drag-cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
 }
-.drag-cat.droppable { border-color: var(--cat-color); cursor: pointer; box-shadow: 0 0 0 4px color-mix(in srgb, var(--cat-color) 15%, transparent); }
-.drag-cat.droppable:hover { transform: scale(1.02); }
+.drag-cat {
+  border-radius: 20px;
+  border: 2px solid color-mix(in srgb, var(--cat-color) 40%, transparent);
+  background: color-mix(in srgb, var(--cat-color) 6%, white);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+.drag-cat.droppable {
+  border-color: var(--cat-color);
+  cursor: pointer;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--cat-color) 20%, transparent);
+}
+.drag-cat.droppable:hover { transform: scale(1.015); }
 
-.cat-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px 8px; }
-.cat-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--cat-color); flex-shrink: 0; }
-.cat-name { flex: 1; font-size: 0.9rem; font-weight: 800; color: var(--dark, #0f172a); }
-.cat-count { font-size: 0.75rem; font-weight: 700; color: var(--cat-color); background: color-mix(in srgb, var(--cat-color) 15%, transparent); padding: 2px 8px; border-radius: 10px; }
-.cat-body { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 6px; min-height: 50px; }
-.cat-chip { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: white; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: var(--dark, #0f172a); border: 1px solid color-mix(in srgb, var(--cat-color) 20%, transparent); animation: chipIn 0.25s; }
+.cat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--cat-color) 15%, transparent);
+}
+.cat-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--cat-color); flex-shrink: 0;
+  box-shadow: 0 0 8px var(--cat-color);
+}
+.cat-name { flex: 1; font-size: 1.1rem; font-weight: 800; color: var(--dark, #0f172a); }
+.cat-count {
+  font-size: 0.85rem; font-weight: 800;
+  color: var(--cat-color);
+  background: color-mix(in srgb, var(--cat-color) 18%, white);
+  padding: 4px 12px; border-radius: 20px;
+}
+.cat-body {
+  padding: 16px 18px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 160px;
+  flex: 1;
+}
+.cat-chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; background: white; border-radius: 12px;
+  font-size: 0.95rem; font-weight: 600; color: var(--dark, #0f172a);
+  border: 1.5px solid color-mix(in srgb, var(--cat-color) 30%, transparent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  animation: chipIn 0.25s;
+}
 @keyframes chipIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
-.cat-chip-del { border: none; background: transparent; cursor: pointer; color: var(--muted, #94a3b8); font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; }
+.cat-chip-del {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--muted, #94a3b8); font-size: 0.8rem; padding: 4px 6px; border-radius: 6px;
+}
 .cat-chip-del:hover { background: #fee2e2; color: #ef4444; }
-.cat-empty { font-size: 0.8rem; color: var(--muted, #94a3b8); font-style: italic; }
+.cat-empty {
+  font-size: 0.95rem; color: var(--muted, #94a3b8); font-style: italic;
+  display: flex; align-items: center; justify-content: center;
+  flex: 1; min-height: 100px;
+  border: 2px dashed color-mix(in srgb, var(--cat-color) 25%, #e2e8f0);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cat-color) 3%, white);
+  padding: 12px; text-align: center;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    7: SOPA DE LETRAS
@@ -1387,7 +1435,7 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
   .card-txt   { font-size: 0.88rem; }
   .ws-cell    { width: 26px; height: 26px; font-size: 0.72rem; }
   .ws-panel   { width: 100%; }
-  .drag-cats  { grid-template-columns: 1fr 1fr; }
+  .drag-cats  { grid-template-columns: 1fr; }
   .ia-title   { font-size: 1.1rem; }
 }
 </style>
