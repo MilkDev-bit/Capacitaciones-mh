@@ -53,6 +53,7 @@ func main() {
 		)`,
 		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_total INT NOT NULL DEFAULT 0`,
+		`ALTER TABLE inscripciones ADD COLUMN IF NOT EXISTS licencia_id UUID`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
 	}
 	for _, m := range migrations {

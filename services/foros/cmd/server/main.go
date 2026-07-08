@@ -112,6 +112,7 @@ func runMigrations(db *sqlx.DB) error {
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(comentario_id, user_id, emoji)
 		)`,
+		`ALTER TABLE inscripciones ADD COLUMN IF NOT EXISTS licencia_id UUID`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

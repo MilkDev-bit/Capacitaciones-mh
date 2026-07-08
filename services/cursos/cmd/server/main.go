@@ -141,6 +141,7 @@ func runMigrations(db *sqlx.DB) error {
 			inscrito_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(user_id, capacitacion_id)
 		)`,
+		`ALTER TABLE inscripciones ADD COLUMN IF NOT EXISTS licencia_id UUID REFERENCES curso_licencias(id) ON DELETE SET NULL`,
 		`CREATE TABLE IF NOT EXISTS notificaciones (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			user_id UUID NOT NULL,
