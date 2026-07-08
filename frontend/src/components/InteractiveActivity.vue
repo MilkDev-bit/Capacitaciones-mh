@@ -192,6 +192,12 @@ function dropInCategory(cat: string) {
 }
 function removeAssignment(id: string) { delete dragAssignments[id] }
 
+function catColor(catName: string | undefined): string {
+  if (!catName) return '#6366f1'
+  const idx = dragCategories.value.indexOf(catName)
+  return CAT_COLORS[idx % CAT_COLORS.length] ?? '#6366f1'
+}
+
 function checkDrag() {
   if (Object.keys(dragAssignments).length < dragItems.value.length) { toast.error('Falta clasificar algunos elementos'); return }
   const wrong = dragItems.value.filter(it => dragAssignments[it.id] !== (it.correct_category || it.category))
@@ -467,10 +473,10 @@ const fmt = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${s%60}s`
           @click="pickItem(it.id)"
         >
           <span class="drag-item-dot" :style="{ background: dragAssignments[it.id]
-            ? CAT_COLORS[dragCategories.indexOf(dragAssignments[it.id]) % CAT_COLORS.length]
+            ? catColor(dragAssignments[it.id])
             : selectedDrag === it.id ? 'var(--game-accent)' : '#cbd5e1' }" />
           {{ it.text }}
-          <span v-if="dragAssignments[it.id]" class="drag-item-tag" :style="{ background: CAT_COLORS[dragCategories.indexOf(dragAssignments[it.id]) % CAT_COLORS.length] + '22', color: CAT_COLORS[dragCategories.indexOf(dragAssignments[it.id]) % CAT_COLORS.length] }">
+          <span v-if="dragAssignments[it.id]" class="drag-item-tag" :style="{ background: catColor(dragAssignments[it.id]) + '22', color: catColor(dragAssignments[it.id]) }">
             {{ dragAssignments[it.id] }}
           </span>
         </button>
