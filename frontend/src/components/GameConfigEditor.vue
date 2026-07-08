@@ -483,11 +483,12 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 </template>
 
 <style scoped>
+* { box-sizing: border-box; }
 .gce-root {
   display: flex; flex-direction: column; gap: 16px;
   padding: 20px; background: var(--surface-soft);
   border-radius: var(--r-lg); border: 1px solid var(--border);
-  margin-top: 8px;
+  margin-top: 8px; width: 100%; max-width: 100%; box-sizing: border-box;
 }
 .gce-header {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -499,22 +500,22 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
   font-size: 0.8rem; font-weight: 700;
 }
 .gce-hint { font-size: 0.82rem; color: var(--muted); }
-.gce-field { display: flex; flex-direction: column; gap: 6px; }
+.gce-field { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 100%; box-sizing: border-box; }
 .gce-label { font-size: 0.85rem; font-weight: 700; color: var(--dark); }
 .gce-sublabel { font-size: 0.78rem; color: var(--muted); }
 .gce-input {
-  width: 100%; padding: 9px 12px;
+  width: 100%; max-width: 100%; padding: 9px 12px;
   background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s; box-sizing: border-box;
 }
 .gce-input:focus { outline: none; border-color: var(--brand); }
-.gce-input-sm { width: 100px; padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); }
+.gce-input-sm { width: 100px; max-width: 100%; padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); box-sizing: border-box; }
 .gce-input-sm:focus { outline: none; border-color: var(--brand); }
-.gce-select { padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); cursor: pointer; }
+.gce-select { padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); cursor: pointer; max-width: 100%; }
 .gce-unit { font-size: 0.85rem; color: var(--muted); align-self: center; }
-.gce-points-row, .gce-row { display: flex; align-items: center; gap: 10px; }
-.gce-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gce-points-row, .gce-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; }
+.gce-row-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; width: 100%; }
 .gce-section-title {
   font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--muted);
@@ -526,12 +527,12 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 .gce-code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 0.82rem; }
 
 /* Pairs */
-.gce-pairs-list, .gce-items-list, .gce-tags-list, .gce-words-grid { display: flex; flex-direction: column; gap: 8px; }
+.gce-pairs-list, .gce-items-list, .gce-tags-list, .gce-words-grid { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 100%; box-sizing: border-box; }
 .gce-pair-row, .gce-item-row, .gce-tag-row, .gce-word-row, .gce-option-row {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; max-width: 100%; box-sizing: border-box;
 }
 .gce-pair-num { font-size: 0.78rem; color: var(--muted); min-width: 20px; text-align: right; }
-.gce-pair-sep { color: var(--muted); font-size: 1.1rem; }
+.gce-pair-sep { display: none; }
 .gce-words-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .gce-word-row { flex-direction: row; }
 
@@ -539,14 +540,21 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 .gce-pair-block {
   padding: 14px; background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--r-md); display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;
 }
 .gce-pair-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
 .gce-pair-title { font-size: 0.85rem; font-weight: 800; color: var(--brand); }
-.gce-pair-cols { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-.gce-pair-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
-.gce-img-picker { display: flex; gap: 6px; align-items: center; }
-.gce-input-xs { flex: 1; padding: 6px 10px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; color: var(--dark); }
-.gce-btn-upload { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--brand-light); color: var(--brand); font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; border: 1px solid rgba(99,102,241,0.2); transition: all 0.15s; white-space: nowrap; }
+.gce-pair-cols {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start; gap: 14px; width: 100%; max-width: 100%; box-sizing: border-box;
+}
+@media (max-width: 640px) {
+  .gce-pair-cols { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+.gce-pair-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+.gce-img-picker { display: flex; gap: 6px; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; }
+.gce-input-xs { flex: 1 1 0%; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; padding: 6px 10px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; color: var(--dark); }
+.gce-btn-upload { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px; background: var(--brand-light); color: var(--brand); font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; border: 1px solid rgba(99,102,241,0.2); transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .gce-btn-upload:hover { background: var(--brand); color: white; }
 .hidden-file { display: none; }
 .gce-img-preview { position: relative; width: fit-content; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 4px; background: var(--surface-soft); margin-top: 2px; }

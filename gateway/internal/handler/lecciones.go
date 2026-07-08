@@ -2,10 +2,12 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
 	leccionespb "Prueba-Go/gen/lecciones"
+	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
 )
@@ -322,12 +324,9 @@ func (h *LeccionesHandler) SubmitGameScore(ctx *gin.Context) {
 func (h *LeccionesHandler) GetLeaderboard(ctx *gin.Context) {
 	topN := int32(5)
 	if t := ctx.Query("top"); t != "" {
-		var n int32
-		if _, err := ctx.Request.Context().Deadline(); err == false {
-			// Parseo simple: el proto acepta int32
-			n = 5
+		if n, err := strconv.Atoi(t); err == nil && n > 0 {
+			topN = int32(n)
 		}
-		_ = n
 	}
 	resp, err := h.c.Lecciones.GetCursoLeaderboard(ctx.Request.Context(), &leccionespb.LeaderboardRequest{
 		CursoId: ctx.Param("id"),
@@ -336,6 +335,18 @@ func (h *LeccionesHandler) GetLeaderboard(ctx *gin.Context) {
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
+	}
+	for _, entry := range resp.Entries {
+		if (entry.UserName == "" || entry.UserName == "Anónimo") && entry.UserId != "" && h.c.Usuarios != nil {
+			uResp, err := h.c.Usuarios.GetUser(ctx.Request.Context(), &usuariospb.GetUserRequest{Id: entry.UserId})
+			if err == nil && uResp.User != nil {
+				entry.UserName = uResp.User.Name
+				if entry.UserName == "" {
+					entry.UserName = uResp.User.Email
+				}
+				entry.AvatarUrl = uResp.User.AvatarUrl
+			}
+		}
 	}
 	ctx.JSON(http.StatusOK, resp)
 }

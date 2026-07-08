@@ -641,12 +641,10 @@ func (r *postgresLeccionesRepository) UpdateUserTotalPoints(ctx context.Context,
 		 VALUES ($2, $1, NOW())
 		 ON CONFLICT (user_id) DO UPDATE
 		 SET points_total = EXCLUDED.points_total, updated_at = NOW()`, total, userID)
-	_, _ = r.db.ExecContext(ctx, `UPDATE users SET points_total=$1 WHERE id=$2`, total, userID)
 	return err
 }
 
 // GetLeaderboard devuelve los top-N usuarios por puntos en el curso.
-// Usa JOIN con users para traer nombre y avatar en una sola query.
 func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoID string, topN int) ([]*LeaderboardRow, error) {
 	if topN <= 0 {
 		topN = 5
@@ -654,13 +652,12 @@ func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoI
 	query := `
 		SELECT
 			gs.user_id,
-			COALESCE(u.name,'')       AS user_name,
-			COALESCE(u.avatar_url,'') AS avatar_url,
-			SUM(gs.points)::INT       AS points
+			'' AS user_name,
+			'' AS avatar_url,
+			SUM(gs.points)::INT AS points
 		FROM game_scores gs
-		JOIN users u ON u.id = gs.user_id
 		WHERE gs.capacitacion_id = $1
-		GROUP BY gs.user_id, u.name, u.avatar_url
+		GROUP BY gs.user_id
 		ORDER BY points DESC, MIN(gs.scored_at) ASC
 		LIMIT $2`
 	var rows []*LeaderboardRow
