@@ -1013,59 +1013,71 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 ══════════════════════════════════════════════════════════════════ */
 .memo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 16px;
 }
 .memo-card {
-  height: 150px; cursor: pointer; border: none; background: transparent; padding: 0;
-  perspective: 800px;
-  transition: transform 0.12s;
+  height: 230px; cursor: pointer; border: none; background: transparent; padding: 0;
+  perspective: 1000px;
+  transition: transform 0.15s;
 }
-.memo-card:not(.matched):hover { transform: scale(1.04) rotate(-1deg); }
-.memo-card:not(.matched):active { transform: scale(0.97); }
+.memo-card:not(.matched):hover { transform: scale(1.03) translateY(-3px); }
+.memo-card:not(.matched):active { transform: scale(0.98); }
 .memo-card.bounce { animation: cardBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-@keyframes cardBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.15)} 60%{transform:scale(0.95)} }
+@keyframes cardBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.1)} 60%{transform:scale(0.96)} }
 
 .card-inner {
   position: relative; width: 100%; height: 100%;
   transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.25,0.8,0.25,1);
-  border-radius: 14px;
+  border-radius: 16px;
 }
 .memo-card.flipped .card-inner { transform: rotateY(180deg); }
 
 .card-front, .card-back {
   position: absolute; inset: 0; backface-visibility: hidden;
-  border-radius: 14px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px;
-  border: 2px solid transparent; overflow: hidden;
+  border-radius: 16px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  border: 2px solid transparent;
 }
 .card-front {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
   position: relative;
+  overflow: hidden;
 }
-.card-front-icon { font-size: 2rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); }
+.card-front-icon { font-size: 3rem; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.25)); }
 .card-shine {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, transparent 60%);
   pointer-events: none;
 }
 .card-back {
   background: var(--surface, #fff);
   border-color: var(--border, #e2e8f0);
   transform: rotateY(180deg);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
   transition: background 0.3s, border-color 0.3s;
-  padding: 10px;
+  padding: 14px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148,163,184,0.4) transparent;
 }
 .card-match-mark {
-  position: absolute; top: 8px; right: 8px;
-  width: 22px; height: 22px; border-radius: 50%;
-  color: white; font-size: 0.75rem; font-weight: 900;
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  width: 24px; height: 24px; border-radius: 50%;
+  color: white; font-size: 0.8rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-.card-img { max-width: 80%; max-height: 60%; object-fit: contain; border-radius: 8px; }
-.card-txt { font-size: 0.85rem; font-weight: 800; text-align: center; color: var(--dark, #0f172a); word-break: break-word; transition: color 0.3s; }
+.card-img {
+  max-width: 95%; max-height: 135px; width: auto; height: auto;
+  object-fit: contain; border-radius: 8px; flex-shrink: 0; margin: auto;
+}
+.card-txt {
+  font-size: 0.94rem; line-height: 1.38; font-weight: 700;
+  text-align: center; color: var(--dark, #0f172a);
+  word-break: break-word; overflow-wrap: break-word;
+  transition: color 0.3s; width: 100%; margin: auto 0;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    6: CLASIFICAR
@@ -1370,8 +1382,9 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 @media (max-width: 600px) {
   .ia-header { padding: 16px 16px 0; }
   .game-wrap  { padding: 14px 16px 20px; }
-  .memo-grid  { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
-  .memo-card  { height: 110px; }
+  .memo-grid  { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; }
+  .memo-card  { height: 185px; }
+  .card-txt   { font-size: 0.88rem; }
   .ws-cell    { width: 26px; height: 26px; font-size: 0.72rem; }
   .ws-panel   { width: 100%; }
   .drag-cats  { grid-template-columns: 1fr 1fr; }
