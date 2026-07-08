@@ -735,8 +735,10 @@ type CursoResponse struct {
 	Precio          float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
 	ScheduledAt     string                 `protobuf:"bytes,15,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	VideocallStatus string                 `protobuf:"bytes,16,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
-	Duration        int32                  `protobuf:"varint,17,opt,name=duration,proto3" json:"duration,omitempty"`
-	unknownFields   protoimpl.UnknownFields
+	Duration             int32                  `protobuf:"varint,17,opt,name=duration,proto3" json:"duration,omitempty"`
+	TotalLecciones       int32                  `protobuf:"varint,18,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones"`
+	LeccionesCompletadas int32                  `protobuf:"varint,19,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas"`
+	unknownFields        protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
@@ -885,6 +887,20 @@ func (x *CursoResponse) GetVideocallStatus() string {
 func (x *CursoResponse) GetDuration() int32 {
 	if x != nil {
 		return x.Duration
+	}
+	return 0
+}
+
+func (x *CursoResponse) GetTotalLecciones() int32 {
+	if x != nil {
+		return x.TotalLecciones
+	}
+	return 0
+}
+
+func (x *CursoResponse) GetLeccionesCompletadas() int32 {
+	if x != nil {
+		return x.LeccionesCompletadas
 	}
 	return 0
 }

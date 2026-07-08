@@ -26,7 +26,15 @@ func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"user": resp})
+	stats := gin.H{
+		"cursos_inscritos":      resp.CursosInscritos,
+		"lecciones_completadas": resp.LeccionesCompletadas,
+		"total_lecciones":       resp.TotalLecciones,
+		"cursos_creados":        resp.CursosCreados,
+		"estudiantes_total":     resp.EstudiantesTotal,
+		"examenes_creados":      resp.ExamenesCreados,
+	}
+	ctx.JSON(http.StatusOK, gin.H{"user": resp, "stats": stats})
 }
 
 // PUT /api/perfil

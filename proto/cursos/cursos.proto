@@ -154,6 +154,8 @@ message CursoResponse {
   string scheduled_at    = 15;
   string videocall_status = 16;
   int32  duration        = 17;
+  int32  total_lecciones = 18;
+  int32  lecciones_completadas = 19;
 }
 
 message ListCursosResponse {

@@ -33,6 +33,8 @@ type Curso struct {
 	Duration       int32      `db:"duration"`
 	VideocallStatus *string   `db:"videocall_status"`
 	CreatedAt      time.Time  `db:"created_at"`
+	TotalLecciones       int32 `db:"total_lecciones"`
+	LeccionesCompletadas int32 `db:"lecciones_completadas"`
 }
 
 func (c *Curso) ToProto() *cursospb.CursoResponse {
@@ -43,6 +45,8 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		ThumbnailUrl: c.ThumbnailURL, Color: c.Color,
 		Precio:    c.Precio,
 		Duration:  c.Duration,
+		TotalLecciones:       c.TotalLecciones,
+		LeccionesCompletadas: c.LeccionesCompletadas,
 		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if c.InstructorID != nil {
@@ -255,7 +259,9 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(file_path,'') file_path, COALESCE(content,'') content,
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
-	COALESCE(color,'#f97316') color, precio, duration, created_at FROM capacitaciones`
+	COALESCE(color,'#f97316') color, precio, duration, created_at,
+	(SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = capacitaciones.id AND l.deleted_at IS NULL) as total_lecciones
+	FROM capacitaciones`
 
 func (r *postgresCursosRepository) List(ctx context.Context) ([]*Curso, error) {
 	var cursos []*Curso
@@ -270,11 +276,21 @@ func (r *postgresCursosRepository) ListPublicos(ctx context.Context) ([]*Curso, 
 }
 
 func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string) ([]*Curso, error) {
+	query := `
+		SELECT DISTINCT c.id, c.title, COALESCE(c.description,'') description, c.type,
+		       COALESCE(c.file_path,'') file_path, COALESCE(c.content,'') content,
+		       c.instructor_id, c.is_public, COALESCE(c.codigo_acceso,'') codigo_acceso,
+		       COALESCE(c.welcome_message,'') welcome_message, COALESCE(c.thumbnail_url,'') thumbnail_url,
+		       COALESCE(c.color,'#f97316') color, c.precio, c.duration, c.created_at,
+		       (SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = c.id AND l.deleted_at IS NULL) as total_lecciones,
+		       (SELECT COUNT(*) FROM progreso_lecciones pl JOIN lecciones l ON l.id = pl.leccion_id WHERE l.capacitacion_id = c.id AND pl.user_id = $1 AND l.deleted_at IS NULL) as lecciones_completadas
+		FROM capacitaciones c
+		LEFT JOIN asignaciones a ON a.capacitacion_id = c.id AND a.user_id = $1
+		LEFT JOIN inscripciones i ON i.capacitacion_id = c.id AND i.user_id = $1
+		WHERE (a.user_id = $1 OR i.user_id = $1) AND c.deleted_at IS NULL
+		ORDER BY c.created_at DESC`
 	var cursos []*Curso
-	return cursos, r.db.SelectContext(ctx, &cursos,
-		selectCurso+` WHERE deleted_at IS NULL AND id IN
-		(SELECT capacitacion_id FROM asignaciones WHERE user_id=$1 AND capacitacion_id IS NOT NULL)
-		ORDER BY created_at DESC`, userID)
+	return cursos, r.db.SelectContext(ctx, &cursos, query, userID)
 }
 
 func (r *postgresCursosRepository) ListByInstructor(ctx context.Context, instructorID string) ([]*Curso, error) {

@@ -118,6 +118,12 @@ message PerfilResponse {
   string created_at   = 10;
   // Gamificación: puntos acumulados globales del usuario.
   int32  points_total = 11;
+  int32  cursos_inscritos      = 12;
+  int32  lecciones_completadas = 13;
+  int32  total_lecciones       = 14;
+  int32  cursos_creados        = 15;
+  int32  estudiantes_total     = 16;
+  int32  examenes_creados      = 17;
 }
 
 message ListUsersResponse {

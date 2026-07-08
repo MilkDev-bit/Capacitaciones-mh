@@ -21,6 +21,12 @@ type Usuario struct {
 	Phone     string    `db:"phone"`
 	Specialty string    `db:"specialty"`
 	CreatedAt time.Time `db:"created_at"`
+	CursosInscritos      int32
+	LeccionesCompletadas int32
+	TotalLecciones       int32
+	CursosCreados        int32
+	EstudiantesTotal     int32
+	ExamenesCreados      int32
 }
 
 func (u *Usuario) ToProto() *usuariospb.PerfilResponse {
@@ -29,6 +35,12 @@ func (u *Usuario) ToProto() *usuariospb.PerfilResponse {
 		Bio: u.Bio, AvatarUrl: u.AvatarURL, CoverUrl: u.CoverURL,
 		Phone: u.Phone, Specialty: u.Specialty,
 		CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CursosInscritos: u.CursosInscritos,
+		LeccionesCompletadas: u.LeccionesCompletadas,
+		TotalLecciones: u.TotalLecciones,
+		CursosCreados: u.CursosCreados,
+		EstudiantesTotal: u.EstudiantesTotal,
+		ExamenesCreados: u.ExamenesCreados,
 	}
 }
 
@@ -65,7 +77,25 @@ func (r *postgresUsuarioRepository) FindByID(ctx context.Context, id string) (*U
 		        COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
 		        COALESCE(specialty,'') specialty, created_at
 		   FROM users WHERE id = $1`, id)
-	return u, err
+	if err != nil {
+		return nil, err
+	}
+	if u.Role == "user" {
+		_ = r.db.GetContext(ctx, &u.CursosInscritos, `SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, id)
+		_ = r.db.GetContext(ctx, &u.LeccionesCompletadas, `SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, id)
+		_ = r.db.GetContext(ctx, &u.TotalLecciones, `
+			SELECT COUNT(*) FROM lecciones l
+			JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
+			WHERE i.user_id=$1 AND l.deleted_at IS NULL`, id)
+	} else if u.Role == "instructor" {
+		_ = r.db.GetContext(ctx, &u.CursosCreados, `SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1 AND deleted_at IS NULL`, id)
+		_ = r.db.GetContext(ctx, &u.EstudiantesTotal, `
+			SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
+			JOIN capacitaciones c ON i.capacitacion_id = c.id
+			WHERE c.instructor_id=$1 AND c.deleted_at IS NULL`, id)
+		_ = r.db.GetContext(ctx, &u.ExamenesCreados, `SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, id)
+	}
+	return u, nil
 }
 
 func (r *postgresUsuarioRepository) UpdatePerfil(ctx context.Context, req *usuariospb.UpdatePerfilRequest) error {

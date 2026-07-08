@@ -535,8 +535,14 @@ type PerfilResponse struct {
 	Specialty string                 `protobuf:"bytes,9,opt,name=specialty,proto3" json:"specialty,omitempty"`
 	CreatedAt string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Gamificación: puntos acumulados globales del usuario.
-	PointsTotal   int32 `protobuf:"varint,11,opt,name=points_total,json=pointsTotal,proto3" json:"points_total,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	PointsTotal          int32                  `protobuf:"varint,11,opt,name=points_total,json=pointsTotal,proto3" json:"points_total,omitempty"`
+	CursosInscritos      int32                  `protobuf:"varint,12,opt,name=cursos_inscritos,json=cursosInscritos,proto3" json:"cursos_inscritos"`
+	LeccionesCompletadas int32                  `protobuf:"varint,13,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas"`
+	TotalLecciones       int32                  `protobuf:"varint,14,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones"`
+	CursosCreados        int32                  `protobuf:"varint,15,opt,name=cursos_creados,json=cursosCreados,proto3" json:"cursos_creados"`
+	EstudiantesTotal     int32                  `protobuf:"varint,16,opt,name=estudiantes_total,json=estudiantesTotal,proto3" json:"estudiantes_total"`
+	ExamenesCreados      int32                  `protobuf:"varint,17,opt,name=examenes_creados,json=examenesCreados,proto3" json:"examenes_creados"`
+	unknownFields        protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
@@ -643,6 +649,48 @@ func (x *PerfilResponse) GetCreatedAt() string {
 func (x *PerfilResponse) GetPointsTotal() int32 {
 	if x != nil {
 		return x.PointsTotal
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetCursosInscritos() int32 {
+	if x != nil {
+		return x.CursosInscritos
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetLeccionesCompletadas() int32 {
+	if x != nil {
+		return x.LeccionesCompletadas
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetTotalLecciones() int32 {
+	if x != nil {
+		return x.TotalLecciones
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetCursosCreados() int32 {
+	if x != nil {
+		return x.CursosCreados
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetEstudiantesTotal() int32 {
+	if x != nil {
+		return x.EstudiantesTotal
+	}
+	return 0
+}
+
+func (x *PerfilResponse) GetExamenesCreados() int32 {
+	if x != nil {
+		return x.ExamenesCreados
 	}
 	return 0
 }
