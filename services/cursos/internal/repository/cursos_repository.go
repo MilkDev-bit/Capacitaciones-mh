@@ -259,7 +259,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(file_path,'') file_path, COALESCE(content,'') content,
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
-	COALESCE(color,'#f97316') color, precio, duration, created_at,
+	COALESCE(color,'#f97316') color, precio, scheduled_at, duration, videocall_status, created_at,
 	(SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = capacitaciones.id AND l.deleted_at IS NULL) as total_lecciones
 	FROM capacitaciones`
 
@@ -281,7 +281,7 @@ func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string
 		       COALESCE(c.file_path,'') file_path, COALESCE(c.content,'') content,
 		       c.instructor_id, c.is_public, COALESCE(c.codigo_acceso,'') codigo_acceso,
 		       COALESCE(c.welcome_message,'') welcome_message, COALESCE(c.thumbnail_url,'') thumbnail_url,
-		       COALESCE(c.color,'#f97316') color, c.precio, c.duration, c.created_at,
+		       COALESCE(c.color,'#f97316') color, c.precio, c.scheduled_at, c.duration, c.videocall_status, c.created_at,
 		       (SELECT COUNT(*) FROM lecciones l WHERE l.capacitacion_id = c.id AND l.deleted_at IS NULL) as total_lecciones,
 		       (SELECT COUNT(*) FROM progreso_lecciones pl JOIN lecciones l ON l.id = pl.leccion_id WHERE l.capacitacion_id = c.id AND pl.user_id = $1 AND l.deleted_at IS NULL) as lecciones_completadas
 		FROM capacitaciones c
