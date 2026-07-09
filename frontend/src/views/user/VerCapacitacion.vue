@@ -1877,10 +1877,16 @@ function tramitarDC3() {
     transform: translateX(0);
   }
   .ver-main-inner {
-    padding: 18px;
+    padding: 16px;
+  }
+  .ver-lec-header {
+    flex-direction: column;
+    align-items: stretch;
   }
   .ver-lec-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    word-break: normal;
+    overflow-wrap: break-word;
   }
   .ver-doc-frame {
     min-height: 360px;
@@ -1894,8 +1900,51 @@ function tramitarDC3() {
     flex-direction: column;
     align-items: stretch;
   }
+  .ver-welcome-inner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+    padding: 24px 18px !important;
+  }
   .ver-welcome-title {
-    font-size: 1.5rem !important;
+    font-size: 1.45rem !important;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .ver-welcome-desc {
+    max-width: 100% !important;
+    font-size: 0.9rem !important;
+  }
+  .ver-welcome-aside {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 20px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid rgba(255,255,255,0.15) !important;
+  }
+  .ver-aside-stats {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  .ver-steps {
+    flex-direction: column !important;
+    gap: 18px !important;
+  }
+  .ver-step {
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 14px !important;
+  }
+  .ver-step-arrow {
+    display: none !important;
+  }
+  .ver-step-body p {
+    max-width: 100% !important;
+    margin: 0 !important;
   }
 }
 
