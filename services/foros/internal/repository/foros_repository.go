@@ -106,31 +106,7 @@ func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, user
 		          ) sub), '[]'::json
 		       ) as reactions
 		  FROM foro_posts fp
-		  -- Isolate to same licencia / cohort:
-		  -- A user sees posts only from people in the same licencia as them.
-		  -- Admins/instructors see all posts in the leccion.
-		  JOIN lecciones l ON l.id = fp.leccion_id
 		  WHERE fp.leccion_id = $1::uuid AND fp.deleted_at IS NULL
-		    AND (
-		        -- The post author shares same licencia as the requester
-		        EXISTS (
-		          SELECT 1 FROM inscripciones i_req
-		          JOIN inscripciones i_author ON
-		            i_author.user_id = fp.user_id
-		            AND i_author.capacitacion_id = i_req.capacitacion_id
-		            AND i_author.licencia_id IS NOT DISTINCT FROM i_req.licencia_id
-		          WHERE i_req.user_id = NULLIF($2,'')::uuid
-		            AND i_req.capacitacion_id = l.capacitacion_id
-		        )
-		        OR
-		        -- Or the user is admin / instructor (they see everything)
-		        EXISTS (
-		          SELECT 1 FROM users u WHERE u.id = NULLIF($2,'')::uuid
-		            AND u.role IN ('admin', 'instructor')
-		        )
-		        -- Or the user is the post author
-		        OR fp.user_id = NULLIF($2,'')::uuid
-		    )
 		 ORDER BY fp.created_at DESC`
 	var posts []*ForoPost
 	return posts, r.db.SelectContext(ctx, &posts, query, leccionID, userID)
