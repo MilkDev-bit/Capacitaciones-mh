@@ -276,15 +276,15 @@ async function loadForo(leccionId: string) {
 }
 
 async function crearPost() {
-  if (!nuevoPost.value.titulo || !nuevoPost.value.contenido) return
+  if (!nuevoPost.value.titulo?.trim() && !nuevoPost.value.contenido?.trim() && !postFile.value) return
   postLoading.value = true
   foroError.value = ''
   const hasMedia = !!postFile.value
   const loadingToast = hasMedia ? toast.loading('Subiendo archivo...') : null
   try {
     const payload: Record<string, any> = {
-      titulo: nuevoPost.value.titulo,
-      contenido: nuevoPost.value.contenido,
+      titulo: nuevoPost.value.titulo?.trim() || '',
+      contenido: nuevoPost.value.contenido?.trim() || '',
     }
     if (postFile.value) {
       const prefix = postFileIsVideo.value ? 'videos' : 'documents'
@@ -297,8 +297,9 @@ async function crearPost() {
     showNuevoPost.value = false
     await loadForo(selectedLeccion.value.id)
     toast.success('Post publicado')
-  } catch {
-    foroError.value = 'Error al publicar el post. Inténtalo de nuevo.'
+  } catch (err: any) {
+    console.error('Error al publicar post:', err)
+    foroError.value = err?.response?.data?.error || 'Error al publicar el post. Inténtalo de nuevo.'
     toast.error('Error al publicar el post')
   } finally {
     postLoading.value = false
@@ -947,7 +948,7 @@ function tramitarDC3() {
                     <button type="button" class="msg-attach-btn" @click="postFileInput?.click()" title="Adjuntar imagen o video">
                       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button @click="crearPost" class="msg-send-btn" :disabled="postLoading || !nuevoPost.contenido" title="Publicar">
+                    <button @click="crearPost" class="msg-send-btn" :disabled="postLoading || (!nuevoPost.contenido?.trim() && !nuevoPost.titulo?.trim() && !postFile)" title="Publicar">
                       <span v-if="postLoading" class="btn-spinner" style="width:14px;height:14px;border-width:2px;margin:0"></span>
                       <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>

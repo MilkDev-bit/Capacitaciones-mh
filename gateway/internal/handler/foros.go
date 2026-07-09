@@ -42,13 +42,17 @@ func (h *ForosHandler) ListForoPosts(ctx *gin.Context) {
 // POST /api/lecciones/:leccion_id/foro
 func (h *ForosHandler) CreateForoPost(ctx *gin.Context) {
 	var body struct {
-		Titulo    string `json:"titulo"    binding:"required"`
-		Contenido string `json:"contenido" binding:"required"`
+		Titulo    string `json:"titulo"`
+		Contenido string `json:"contenido"`
 		MediaURL  string `json:"media_url"`
 		MediaType string `json:"media_type"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if body.Titulo == "" && body.Contenido == "" && body.MediaURL == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "debes ingresar contenido o archivo"})
 		return
 	}
 	md := metadata.Pairs("x-user-name", foroASCII(ctx.GetString(middleware.CtxUserName)))
