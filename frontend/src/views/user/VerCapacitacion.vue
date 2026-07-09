@@ -5,6 +5,7 @@ import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { toast } from '../../utils/toast'
 import { uploadToR2 } from '../../utils/upload'
+import { getAvatarUrl } from '../../utils/avatars'
 import VideoPlayer from '../../components/VideoPlayer.vue'
 import CourseSidebar from '../../components/CourseSidebar.vue'
 import InteractiveActivity from '../../components/InteractiveActivity.vue'
@@ -285,12 +286,14 @@ async function loadForo(leccionId: string) {
 
 const userAvatars = ref<Record<string, string>>({})
 
-function getUserAvatar(userId?: string): string {
-  if (!userId) return ''
+function getUserAvatar(userId?: string, seedName?: string): string {
+  let url = ''
   if (userId === currentUser.value?.id && currentUser.value?.avatar_url) {
-    return currentUser.value.avatar_url
+    url = currentUser.value.avatar_url
+  } else if (userId && userAvatars.value[userId]) {
+    url = userAvatars.value[userId]
   }
-  return userAvatars.value[userId] || ''
+  return getAvatarUrl(url, userId || seedName)
 }
 
 async function loadUserAvatarsForForo() {
@@ -982,8 +985,7 @@ function tramitarDC3() {
               <!-- Caja de publicación estilo mensajería -->
               <div v-if="!foroLoading" class="msg-create-box">
                 <div class="msg-create-avatar">
-                  <img v-if="currentUser?.avatar_url" :src="currentUser.avatar_url" class="avatar-img" alt="Avatar" />
-                  <template v-else>{{ meInitials() }}</template>
+                  <img :src="getAvatarUrl(currentUser?.avatar_url, currentUser?.id || currentUser?.name)" class="avatar-img" alt="Avatar" />
                 </div>
                 <div class="msg-create-input-wrap">
                   <div class="msg-inputs">
@@ -1028,8 +1030,7 @@ function tramitarDC3() {
                   <div class="fb-post-header">
                     <div class="fb-post-avatar-wrap" @click.stop="openForoProfile(post.user_id, post.user_name)" style="cursor:pointer" title="Ver perfil">
                       <div class="fb-post-avatar">
-                        <img v-if="getUserAvatar(post.user_id)" :src="getUserAvatar(post.user_id)" class="avatar-img" alt="" />
-                        <template v-else>{{ foroInitials(post.user_name) }}</template>
+                        <img :src="getUserAvatar(post.user_id, post.user_name)" class="avatar-img" alt="" />
                       </div>
                     </div>
                     <div class="fb-post-meta">
@@ -1096,8 +1097,7 @@ function tramitarDC3() {
                       <div v-for="com in getMainComments(post.id)" :key="com.id" class="fb-comment-thread">
                         <div class="fb-comment">
                             <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">
-                              <img v-if="getUserAvatar(com.user_id)" :src="getUserAvatar(com.user_id)" class="avatar-img" alt="" />
-                              <template v-else>{{ foroInitials(com.user_name) }}</template>
+                              <img :src="getUserAvatar(com.user_id, com.user_name)" class="avatar-img" alt="" />
                             </div>
                           <div class="fb-comment-content">
                             <div class="fb-comment-bubble">
@@ -1133,8 +1133,7 @@ function tramitarDC3() {
                         <div v-if="getReplies(post.id, com.id).length" class="fb-comment-replies">
                           <div v-for="reply in getReplies(post.id, com.id)" :key="reply.id" class="fb-comment">
                             <div class="fb-comment-avatar" @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer" title="Ver perfil">
-                              <img v-if="getUserAvatar(reply.user_id)" :src="getUserAvatar(reply.user_id)" class="avatar-img" alt="" />
-                              <template v-else>{{ foroInitials(reply.user_name) }}</template>
+                              <img :src="getUserAvatar(reply.user_id, reply.user_name)" class="avatar-img" alt="" />
                             </div>
                             <div class="fb-comment-content">
                               <div class="fb-comment-bubble">
@@ -1246,8 +1245,7 @@ function tramitarDC3() {
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
           <div class="fpc-avatar">
-            <img v-if="getUserAvatar(foroProfileCard.id)" :src="getUserAvatar(foroProfileCard.id)" class="avatar-img" alt="" />
-            <template v-else>{{ foroInitials(foroProfileCard.name) }}</template>
+            <img :src="getUserAvatar(foroProfileCard.id, foroProfileCard.name)" class="avatar-img" alt="" />
           </div>
           <div class="fpc-name">{{ foroProfileCard.name }}</div>
           <div class="fpc-role">Participante del foro</div>

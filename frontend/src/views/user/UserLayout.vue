@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useTheme } from '../../composables/useTheme'
 import NotificationBell from '../../components/NotificationBell.vue'
 import api from '../../api'
+import { getAvatarUrl } from '../../utils/avatars'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -56,9 +57,9 @@ function initials(name: string) {
         </div>
         <span>MH Aprende</span>
       </div>
-      <nav>
+      <nav class="sn-links">
         <RouterLink to="/usuario/dashboard" @click="sidebarOpen = false">
-          <svg class="nav-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          <svg class="nav-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
           Dashboard
         </RouterLink>
         <RouterLink to="/usuario/capacitaciones" @click="sidebarOpen = false">
@@ -90,13 +91,14 @@ function initials(name: string) {
       </div>
     </aside>
 
-    <div class="shell-main">
+    <!-- Main Column -->
+    <div class="main-column">
       <header class="topbar">
-        <button class="topbar-hamburger" @click="sidebarOpen = true" aria-label="Abrir menú">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <button class="menu-toggle" @click="sidebarOpen = !sidebarOpen">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <div class="topbar-title" style="display:flex; align-items:center;">
-          <template v-for="(crumb, idx) in breadcrumbs" :key="idx">
+        <div class="topbar-left">
+          <template v-for="(crumb, idx) in breadcrumbs" :key="crumb.path">
             <span v-if="idx > 0" style="color:var(--muted); margin: 0 6px;">/</span>
             <RouterLink v-if="idx < breadcrumbs.length - 1" :to="crumb.path" class="breadcrumb-link">{{ crumb.name }}</RouterLink>
             <span v-else class="breadcrumb-current" style="color:var(--dark); font-weight:600;">{{ crumb.name }}</span>
@@ -115,8 +117,7 @@ function initials(name: string) {
           <div v-if="profileOpen" class="pd-overlay" @click="profileOpen = false" />
           <div class="topbar-user" @click.stop="profileOpen = !profileOpen">
             <div class="topbar-avatar">
-              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="avatar-img" alt="avatar" />
-              <template v-else>{{ initials(auth.user?.name || '') }}</template>
+              <img :src="getAvatarUrl(auth.user?.avatar_url, auth.user?.id || auth.user?.name)" class="avatar-img" alt="avatar" />
             </div>
             <span class="topbar-name">{{ (auth.user?.name || '').slice(0, 20) }}</span>
             <svg class="topbar-chevron" :class="{ open: profileOpen }" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
@@ -124,8 +125,7 @@ function initials(name: string) {
               <div v-if="profileOpen" class="profile-dropdown" @click.stop>
                 <div class="pd-header">
                   <div class="pd-avatar">
-                    <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="avatar-img" alt="avatar" />
-                    <template v-else>{{ initials(auth.user?.name || '') }}</template>
+                    <img :src="getAvatarUrl(auth.user?.avatar_url, auth.user?.id || auth.user?.name)" class="avatar-img" alt="avatar" />
                   </div>
                   <div class="pd-info">
                     <strong>{{ auth.user?.name }}</strong>

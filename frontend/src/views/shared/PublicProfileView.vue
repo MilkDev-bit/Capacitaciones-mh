@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
+import { getAvatarUrl } from '../../utils/avatars'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,8 +89,7 @@ onMounted(async () => {
       <div class="pp-identity">
         <div class="pp-identity-left">
           <div :class="['pp-avatar', roleClass]">
-            <img v-if="user.avatar_url" :src="user.avatar_url" class="pp-avatar-img" :alt="user.name" />
-            <span v-else>{{ initials(user.name) }}</span>
+            <img :src="getAvatarUrl(user.avatar_url, user.id || user.name)" class="pp-avatar-img" :alt="user.name" />
           </div>
           <div class="pp-id-info">
             <h1 class="pp-name">{{ user.name }}</h1>
