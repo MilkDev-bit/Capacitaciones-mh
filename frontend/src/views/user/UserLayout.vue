@@ -92,7 +92,7 @@ function initials(name: string) {
     </aside>
 
     <!-- Main Column -->
-    <div class="main-column">
+    <div class="shell-main main-column">
       <header class="topbar">
         <button class="menu-toggle" @click="sidebarOpen = !sidebarOpen">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
