@@ -32,13 +32,17 @@ const thumbClass: Record<string, string> = {
   document: 'thumb-document',
   text: 'thumb-text',
   link: 'thumb-link',
+  course: 'thumb-default',
+  mixto: 'thumb-default',
 }
-const typeIcon: Record<string, string> = { video: 'VID', document: 'PDF', text: 'TXT', link: 'URL' }
+const typeIcon: Record<string, string> = { video: 'VID', document: 'PDF', text: 'TXT', link: 'URL', course: 'CUR', mixto: 'CUR' }
 const typeLabel: Record<string, string> = {
   video: 'Video',
   document: 'Documento',
   text: 'Lectura',
   link: 'Enlace',
+  course: 'Curso Completo',
+  mixto: 'Curso Completo',
 }
 
 function normalize(text: string) {

@@ -5,7 +5,6 @@ import { toast } from '../utils/toast'
 import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
-import ContentTypeSelector from './ContentTypeSelector.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -18,16 +17,13 @@ const loading = ref(false)
 const form = ref({
   title: '',
   description: '',
-  type: 'video',
-  content: '',
+  type: 'course',
+  precio: 0,
   is_public: false,
   welcome_message: '',
   color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
-  scheduled_at: '',
-  duration: 60
 })
 
-const file = ref<File | null>(null)
 const thumbnailFile = ref<File | null>(null)
 
 function nextStep() {
@@ -45,30 +41,18 @@ function prevStep() {
 async function guardar() {
   if (!form.value.title) { toast.error('El titulo es requerido'); return }
   loading.value = true
-  const hasMedia = (form.value.type === 'video' || form.value.type === 'document') && file.value
-  const loadingToast = (hasMedia || thumbnailFile.value)
-    ? toast.loading('Subiendo archivos...')
+  const loadingToast = thumbnailFile.value
+    ? toast.loading('Subiendo portada...')
     : null
   try {
     const payload: Record<string, any> = {
       title: form.value.title,
       description: form.value.description,
-      type: form.value.type,
-      content: form.value.content,
+      type: 'course',
       is_public: form.value.is_public,
       welcome_message: form.value.welcome_message,
       color: form.value.color,
-    }
-    if (form.value.scheduled_at) {
-      payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
-    }
-    if (form.value.type === 'videocall') {
-      payload.duration = Number(form.value.duration) || 60;
-    }
-
-    if (file.value && hasMedia) {
-      const prefix = form.value.type === 'video' ? 'videos' : 'documents'
-      payload.content = await uploadToR2(file.value, prefix)
+      precio: Number(form.value.precio) || 0,
     }
     if (thumbnailFile.value) {
       payload.thumbnail_url = await uploadToR2(thumbnailFile.value, 'thumbnails')
@@ -101,9 +85,7 @@ async function guardar() {
         <div class="step-line" :class="{ active: step >= 2 }"></div>
         <div class="step" :class="{ active: step >= 2 }"><div class="step-num">2</div><div class="step-text">Diseño</div></div>
         <div class="step-line" :class="{ active: step >= 3 }"></div>
-        <div class="step" :class="{ active: step >= 3 }"><div class="step-num">3</div><div class="step-text">Contenido</div></div>
-        <div class="step-line" :class="{ active: step >= 4 }"></div>
-        <div class="step" :class="{ active: step >= 4 }"><div class="step-num">4</div><div class="step-text">Publicar</div></div>
+        <div class="step" :class="{ active: step >= 3 }"><div class="step-num">3</div><div class="step-text">Publicar</div></div>
       </div>
 
       <div class="modal-body">
@@ -116,6 +98,10 @@ async function guardar() {
           <div class="field mt-4">
             <label>Descripción</label>
             <textarea class="field-input" v-model="form.description" rows="4" placeholder="¿Qué aprenderán los estudiantes?"></textarea>
+          </div>
+          <div class="field mt-4">
+            <label>Precio Individual (MXN)</label>
+            <input type="number" class="field-input" v-model="form.precio" placeholder="Ej: 500.00 (0 para gratis)" min="0" step="0.01" />
           </div>
         </div>
 
@@ -134,37 +120,14 @@ async function guardar() {
           </div>
         </div>
 
-        <div v-if="step === 3" class="step-pane slide-down-enter-active">
-          <div class="field">
-            <label>Tipo de contenido principal</label>
-            <ContentTypeSelector v-model="form.type" />
-          </div>
-          <div class="field mt-4">
-            <label>Archivo principal (opcional)</label>
-            <DragDropUpload v-model="file" :accept="form.type === 'video' ? 'video/*' : form.type === 'document' ? '.pdf,.doc,.docx' : '*/*'" />
-          </div>
-          <div v-if="form.type === 'text'" class="field mt-4">
-            <label>Contenido de texto</label>
-            <textarea class="field-input" v-model="form.content" rows="6"></textarea>
-          </div>
-          <div v-if="form.type === 'videocall'" class="field mt-4">
-            <label>Fecha y Hora Programada</label>
-            <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
-          </div>
-          <div v-if="form.type === 'videocall'" class="field mt-4">
-            <label>Duración (minutos)</label>
-            <input type="number" class="field-input" v-model="form.duration" min="15" step="15" />
-          </div>
-        </div>
-
-        <div v-if="step === 4" class="step-pane text-center slide-down-enter-active">
+        <div v-if="step === 3" class="step-pane text-center slide-down-enter-active">
           <div class="preview-card" :style="{ background: thumbnailFile ? 'var(--surface-soft)' : form.color }">
             <div v-if="thumbnailFile" class="preview-img-wrap">
               <span class="preview-text">Imagen seleccionada</span>
             </div>
             <div class="preview-overlay">
               <h3>{{ form.title || 'Sin título' }}</h3>
-              <span class="badge badge-gray" style="background:rgba(255,255,255,0.2);color:#fff">{{ form.type }}</span>
+              <span class="badge badge-gray" style="background:rgba(255,255,255,0.2);color:#fff">Curso Completo</span>
             </div>
           </div>
           <div class="field mt-6 text-left">
@@ -183,7 +146,7 @@ async function guardar() {
       <div class="modal-footer">
         <button v-if="step > 1" class="btn btn-secondary" @click="prevStep" :disabled="loading">Atrás</button>
         <div class="spacer"></div>
-        <button v-if="step < 4" class="btn btn-primary" @click="nextStep">Siguiente</button>
+        <button v-if="step < 3" class="btn btn-primary" @click="nextStep">Siguiente</button>
         <button v-else class="btn btn-primary" @click="guardar" :disabled="loading">
           <span v-if="loading" class="spinner-small"></span>
           {{ loading ? 'Publicando...' : 'Publicar curso' }}

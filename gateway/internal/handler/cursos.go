@@ -13,6 +13,7 @@ import (
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
 	cursospb "Prueba-Go/gen/cursos"
+	leccionespb "Prueba-Go/gen/lecciones"
 	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,17 @@ func (h *CursosHandler) ListCursosPublicos(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	// Enriquecer con el total de lecciones (sin progreso de usuario)
+	for _, curso := range resp.Cursos {
+		leccionesResp, err := h.c.Lecciones.InstructorListLecciones(ctx.Request.Context(), &leccionespb.CursoRequest{
+			CursoId: curso.Id,
+		})
+		if err == nil && leccionesResp != nil {
+			curso.TotalLecciones = int32(len(leccionesResp.Lecciones))
+		}
+	}
+
 	ctx.JSON(http.StatusOK, resp.Cursos)
 }
 
@@ -90,13 +102,33 @@ func (h *CursosHandler) PreviewCurso(ctx *gin.Context) {
 
 // GET /api/mis-capacitaciones
 func (h *CursosHandler) ListMisCapacitaciones(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{
-		UserId: ctx.GetString(middleware.CtxUserID),
+		UserId: userID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	// Enriquecer cada curso con el progreso real del servicio de lecciones
+	for _, curso := range resp.Cursos {
+		leccionesResp, err := h.c.Lecciones.GetLeccionesConProgreso(ctx.Request.Context(), &leccionespb.CursoUserRequest{
+			CursoId: curso.Id,
+			UserId:  userID,
+		})
+		if err == nil && leccionesResp != nil {
+			curso.TotalLecciones = int32(len(leccionesResp.Lecciones))
+			completadas := int32(0)
+			for _, leccion := range leccionesResp.Lecciones {
+				if leccion.Completada {
+					completadas++
+				}
+			}
+			curso.LeccionesCompletadas = completadas
+		}
+	}
+
 	ctx.JSON(http.StatusOK, resp.Cursos)
 }
 

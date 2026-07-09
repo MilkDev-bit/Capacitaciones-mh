@@ -5,7 +5,6 @@ import { toast } from '../utils/toast'
 import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
-import ContentTypeSelector from './ContentTypeSelector.vue'
 import CourseTreeEditor from './CourseTreeEditor.vue'
 
 const props = defineProps<{
@@ -22,17 +21,11 @@ const activeTab = ref('info')
 const loading = ref(false)
 const form = ref<any>({})
 const thumbnailFile = ref<File | null>(null)
-const file = ref<File | null>(null)
 
 watch(() => props.show, (val) => {
   if (val && props.course) {
     form.value = { ...props.course }
-    if (form.value.scheduled_at) {
-      // slice ISO string to match datetime-local format YYYY-MM-DDThh:mm
-      form.value.scheduled_at = new Date(form.value.scheduled_at).toISOString().slice(0, 16);
-    }
     thumbnailFile.value = null
-    file.value = null
     activeTab.value = 'info'
   }
 })
@@ -44,34 +37,18 @@ async function saveInfo() {
     const payload: Record<string, any> = {
       title: form.value.title,
       description: form.value.description || '',
-      type: form.value.type,
-      content: form.value.content || '',
+      type: form.value.type || 'course',
       is_public: form.value.is_public,
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
       precio: Number(form.value.precio) || 0,
     }
-    if (form.value.scheduled_at) {
-      payload.scheduled_at = new Date(form.value.scheduled_at).toISOString();
-    }
-    if (form.value.type === 'videocall') {
-      payload.duration = Number(form.value.duration) || 60;
-    }
 
     if (thumbnailFile.value) {
       const uploadingToast = toast.loading('Subiendo portada...')
       try {
         payload.thumbnail_url = await uploadToR2(thumbnailFile.value, 'thumbnails')
-      } finally {
-        uploadingToast.close()
-      }
-    }
-    if (file.value) {
-      const uploadingToast = toast.loading('Subiendo archivo...')
-      try {
-        const prefix = form.value.type === 'video' ? 'videos' : 'documents'
-        payload.content = await uploadToR2(file.value, prefix)
       } finally {
         uploadingToast.close()
       }
@@ -128,22 +105,6 @@ async function saveInfo() {
           <div class="field mt-4">
             <label>Imagen de portada (Sobrescribe el color)</label>
             <DragDropUpload v-model="thumbnailFile" accept="image/*" />
-          </div>
-          <div class="field mt-4">
-            <label>Tipo de contenido</label>
-            <ContentTypeSelector v-model="form.type" />
-          </div>
-          <div v-if="form.type === 'videocall'" class="field mt-4">
-            <label>Fecha y Hora Programada</label>
-            <input type="datetime-local" class="field-input" v-model="form.scheduled_at" />
-          </div>
-          <div v-if="form.type === 'videocall'" class="field mt-4">
-            <label>Duración (minutos)</label>
-            <input type="number" class="field-input" v-model="form.duration" min="15" step="15" />
-          </div>
-          <div class="field mt-4">
-            <label>Archivo principal nuevo (opcional)</label>
-            <DragDropUpload v-model="file" />
           </div>
           
           <div class="field mt-6">

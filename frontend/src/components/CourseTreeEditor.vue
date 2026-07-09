@@ -76,7 +76,7 @@ async function saveModule() {
       await api.post(`/instructor/capacitaciones/${props.capId}/modulos`, {
         title: panelForm.value.title,
         description: panelForm.value.description,
-        orden: tree.value.modulos.length,
+        orden: tree.value.modulos?.length ?? 0,
       })
       toast.success('Módulo creado')
     } else {
@@ -87,8 +87,9 @@ async function saveModule() {
       toast.success('Módulo actualizado')
     }
     closePanel(); fetchTree()
-  } catch { toast.error('Error al guardar módulo') }
-  finally { panelSaving.value = false }
+  } catch (err: any) {
+    toast.error(err?.response?.data?.error || 'Error al guardar módulo')
+  } finally { panelSaving.value = false }
 }
 
 async function deleteModule(moduloId: string) {
@@ -124,8 +125,9 @@ async function saveSub() {
       toast.success('Submódulo actualizado')
     }
     closePanel(); fetchTree()
-  } catch { toast.error('Error al guardar submódulo') }
-  finally { panelSaving.value = false }
+  } catch (err: any) {
+    toast.error(err?.response?.data?.error || 'Error al guardar submódulo')
+  } finally { panelSaving.value = false }
 }
 
 async function deleteSub(moduloId: string, subId: string) {

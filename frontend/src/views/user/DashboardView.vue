@@ -217,7 +217,7 @@ function courseProgress(curso: any) {
     <!-- Tabla de Líderes por Curso -->
     <section v-if="capacitaciones.length" class="dash-section">
       <div class="dash-section-head">
-        <h2>🏆 Salón de la Fama (Top 5)</h2>
+        <h2>Salón de la Fama (Top 5)</h2>
         <select v-model="selectedLeaderboardCurso" @change="loadLeaderboard(selectedLeaderboardCurso)" class="lb-select">
           <option v-for="c in capacitaciones" :key="c.id" :value="c.id">{{ c.title }}</option>
         </select>

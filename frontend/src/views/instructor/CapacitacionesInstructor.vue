@@ -106,7 +106,8 @@ function copyCode(code: string) {
             <span class="badge" :class="c.is_public ? 'badge-success' : 'badge-warning'">
               {{ c.is_public ? 'Público' : 'Privado' }}
             </span>
-            <span class="badge badge-gray" style="background:rgba(255,255,255,0.9);color:#000">{{ c.type }}</span>
+            <span class="badge badge-gray" style="background:rgba(255,255,255,0.9);color:#000">{{ c.type === 'course' || c.type === 'mixto' ? 'Curso' : c.type }}</span>
+            <span v-if="c.precio > 0" class="badge" style="background:#16a34a;color:#fff">${{ c.precio }} MXN</span>
           </div>
           <div class="course-actions-overlay">
             <button class="icon-btn" @click="openEdit(c)" title="Editar Curso">
