@@ -118,7 +118,18 @@ async function load() {
       api.get(`/capacitaciones/${cursoId}/tree`),    // ← árbol jerárquico
     ])
     curso.value = cRes.data
-    tree.value = tRes.data || { modulos: [], lecciones: [] }
+    const data = tRes.data || {}
+    tree.value = {
+      modulos: (data.modulos || []).map((m: any) => ({
+        ...m,
+        lecciones: m.lecciones || [],
+        submodulos: (m.submodulos || []).map((s: any) => ({
+          ...s,
+          lecciones: s.lecciones || []
+        }))
+      })),
+      lecciones: data.lecciones || []
+    }
     // Si el curso ya estaba completado al entrar, mostrar el examen si lo hay
     if (progreso.value === 100) await cargarExamenFinal()
   } catch (e: any) {

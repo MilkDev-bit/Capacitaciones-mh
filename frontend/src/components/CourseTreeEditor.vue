@@ -25,7 +25,18 @@ async function fetchTree() {
   loading.value = true
   try {
     const res = await api.get(`/instructor/capacitaciones/${props.capId}/tree`)
-    tree.value = res.data || { modulos: [], lecciones: [] }
+    const data = res.data || {}
+    tree.value = {
+      modulos: (data.modulos || []).map((m: any) => ({
+        ...m,
+        lecciones: m.lecciones || [],
+        submodulos: (m.submodulos || []).map((s: any) => ({
+          ...s,
+          lecciones: s.lecciones || []
+        }))
+      })),
+      lecciones: data.lecciones || []
+    }
   } catch {
     toast.error('Error al cargar el árbol del curso')
   } finally {

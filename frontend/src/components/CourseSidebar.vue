@@ -51,24 +51,24 @@ function toggle(id: string) {
 
 // Progreso por sección
 function sectionProgress(lecciones: Leccion[]) {
-  if (!lecciones.length) return 0
+  if (!lecciones || !lecciones.length) return 0
   return Math.round((lecciones.filter(l => l.completada).length / lecciones.length) * 100)
 }
 function moduleProgress(mod: Modulo) {
-  const all: Leccion[] = [...mod.lecciones]
-  mod.submodulos.forEach(s => all.push(...s.lecciones))
+  const all: Leccion[] = [...(mod.lecciones ?? [])]
+  mod.submodulos?.forEach(s => all.push(...(s.lecciones ?? [])))
   return sectionProgress(all)
 }
 function moduleTotal(mod: Modulo) {
-  return mod.lecciones.length + mod.submodulos.reduce((s, sub) => s + sub.lecciones.length, 0)
+  return (mod.lecciones?.length ?? 0) + (mod.submodulos ?? []).reduce((s, sub) => s + (sub.lecciones?.length ?? 0), 0)
 }
 
 // Total del curso
 const allLecciones = computed<Leccion[]>(() => {
   const all: Leccion[] = [...(props.tree?.lecciones ?? [])]
   props.tree?.modulos?.forEach(m => {
-    all.push(...m.lecciones)
-    m.submodulos?.forEach(s => all.push(...s.lecciones))
+    all.push(...(m.lecciones ?? []))
+    m.submodulos?.forEach(s => all.push(...(s.lecciones ?? [])))
   })
   return all
 })
