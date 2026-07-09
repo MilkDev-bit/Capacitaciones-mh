@@ -1518,9 +1518,9 @@ function tramitarDC3() {
 
 /* Lesson header */
 .ver-lec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-.ver-lec-header-left { flex: 1; min-width: 0; }
+.ver-lec-header-left { flex: 1 1 260px; min-width: 0; }
 .ver-lec-breadcrumb { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-.ver-lec-title { font-size: 1.4rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; line-height: 1.25; }
+.ver-lec-title { font-size: clamp(1.2rem, 2.2vw, 1.45rem); font-weight: 800; color: var(--dark); letter-spacing: -0.02em; line-height: 1.28; word-break: normal; overflow-wrap: break-word; }
 .ver-lec-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -1855,7 +1855,7 @@ function tramitarDC3() {
 .fb-comment-send:disabled { background: var(--border); cursor: default; }
 .fb-comment-send:not(:disabled):hover { background: var(--brand-dark); }
 
-@media (max-width: 1120px) {
+@media (max-width: 1300px) {
   .ver-curso-shell {
     min-height: auto;
   }
