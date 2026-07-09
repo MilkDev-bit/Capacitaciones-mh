@@ -267,8 +267,9 @@ async function loadForo(leccionId: string) {
       const cRes = await api.get(`/foro/posts/${post.id}/comentarios`)
       comentariosMap.value[post.id] = cRes.data || []
     }
-  } catch {
-    foroError.value = 'No se pudieron cargar los posts del foro'
+  } catch (err: any) {
+    console.error('Error al cargar foro:', err)
+    foroError.value = err?.response?.data?.error || 'No se pudieron cargar los posts del foro'
   } finally {
     foroLoading.value = false
   }
