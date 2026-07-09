@@ -113,7 +113,7 @@ async function asignar() {
           <div class="assign-list">
             <label v-for="u in filteredUsers" :key="u.id" class="assign-item">
               <input type="checkbox" :value="u.id" v-model="selectedUsers" class="assign-check" />
-              <div class="assign-ava">{{ u.name.charAt(0).toUpperCase() }}</div>
+              <div class="assign-ava">{{ (u.name || 'U').charAt(0).toUpperCase() }}</div>
               <div class="assign-info">
                 <span class="assign-name">{{ u.name }}</span>
                 <span class="assign-email">{{ u.email }}</span>
@@ -210,15 +210,15 @@ async function asignar() {
           <tr><th>Nombre</th><th>Correo</th><th>Miembro desde</th></tr>
         </thead>
         <tbody>
-          <tr v-for="u in estudiantes" :key="u.id">
+          <tr v-for="u in estudiantes" :key="u.id || u.user_id">
             <td>
               <div class="user-cell">
-                <div class="ava">{{ u.name.charAt(0).toUpperCase() }}</div>
+                <div class="ava">{{ (u.name || 'U').charAt(0).toUpperCase() }}</div>
                 <strong>{{ u.name }}</strong>
               </div>
             </td>
             <td class="cell-muted">{{ u.email }}</td>
-            <td class="cell-muted">{{ new Date(u.created_at).toLocaleDateString() }}</td>
+            <td class="cell-muted">{{ (u.assigned_at || u.created_at) ? new Date(u.assigned_at || u.created_at).toLocaleDateString() : 'N/A' }}</td>
           </tr>
         </tbody>
       </table>

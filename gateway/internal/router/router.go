@@ -200,6 +200,7 @@ func New(d Deps) *gin.Engine {
 				inst.PATCH("/capacitaciones/:id/toggle-public", d.CursosH.InstructorTogglePublic)
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
+				inst.GET("/users", d.UsuariosH.ListUsers)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
 				inst.GET("/capacitaciones/:id/current-room", d.CursosH.InstructorGetCurrentRoom)
 				inst.POST("/videocalls/:id/end", d.CursosH.EndVideocall)
