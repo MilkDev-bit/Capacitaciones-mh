@@ -1509,7 +1509,8 @@ function tramitarDC3() {
 }
 .ver-welcome-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(105deg, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.72) 55%, rgba(10,10,12,0.3) 100%);
+  background: linear-gradient(105deg, rgba(10,10,14,0.95) 0%, rgba(10,10,14,0.88) 55%, rgba(10,10,14,0.68) 100%);
+  backdrop-filter: blur(2px);
 }
 .ver-progress-strip-bar {
   position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
@@ -1913,7 +1914,7 @@ function tramitarDC3() {
 .fb-comment-send:disabled { background: var(--border); cursor: default; }
 .fb-comment-send:not(:disabled):hover { background: var(--brand-dark); }
 
-@media (max-width: 1300px) {
+@media (max-width: 992px) {
   .ver-curso-shell {
     min-height: auto;
   }
@@ -1933,6 +1934,12 @@ function tramitarDC3() {
   .ver-sidebar.open {
     transform: translateX(0);
   }
+  .ver-main-inner {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
   .ver-main-inner {
     padding: 16px;
   }
@@ -1961,16 +1968,16 @@ function tramitarDC3() {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 24px !important;
-    padding: 24px 18px !important;
+    padding: 28px 20px !important;
   }
   .ver-welcome-title {
-    font-size: 1.45rem !important;
+    font-size: 1.5rem !important;
     word-break: normal;
     overflow-wrap: break-word;
   }
   .ver-welcome-desc {
     max-width: 100% !important;
-    font-size: 0.9rem !important;
+    font-size: 0.92rem !important;
   }
   .ver-welcome-aside {
     width: 100% !important;
