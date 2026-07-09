@@ -110,7 +110,7 @@ func (r *postgresForosRepository) ListPosts(ctx context.Context, leccionID, user
 		  -- A user sees posts only from people in the same licencia as them.
 		  -- Admins/instructors see all posts in the leccion.
 		  JOIN lecciones l ON l.id = fp.leccion_id
-		  WHERE fp.leccion_id = $1 AND fp.deleted_at IS NULL
+		  WHERE fp.leccion_id = $1::uuid AND fp.deleted_at IS NULL
 		    AND (
 		        -- The post author shares same licencia as the requester
 		        EXISTS (
@@ -141,7 +141,7 @@ func (r *postgresForosRepository) CreatePost(ctx context.Context, req *forospb.C
 	var id string
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO foro_posts(leccion_id,user_id,user_name,titulo,contenido,media_url,media_type)
-		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		 VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7) RETURNING id`,
 		req.LeccionId, req.UserId, userName, req.Titulo, req.Contenido, req.MediaUrl, req.MediaType,
 	).Scan(&id)
 	if err != nil {
@@ -155,17 +155,17 @@ func (r *postgresForosRepository) CreatePost(ctx context.Context, req *forospb.C
 		        COALESCE(media_url,'') media_url,
 		        COALESCE(media_type,'') media_type,
 		        '[]'::json as reactions, created_at
-		   FROM foro_posts WHERE id=$1`, id)
+		   FROM foro_posts WHERE id=$1::uuid`, id)
 }
 
 func (r *postgresForosRepository) DeletePost(ctx context.Context, postID, userID string, isAdmin bool) error {
 	var err error
 	if isAdmin {
 		_, err = r.db.ExecContext(ctx,
-			`UPDATE foro_posts SET deleted_at=NOW() WHERE id=$1`, postID)
+			`UPDATE foro_posts SET deleted_at=NOW() WHERE id=$1::uuid`, postID)
 	} else {
 		_, err = r.db.ExecContext(ctx,
-			`UPDATE foro_posts SET deleted_at=NOW() WHERE id=$1 AND user_id=$2`, postID, userID)
+			`UPDATE foro_posts SET deleted_at=NOW() WHERE id=$1::uuid AND user_id=$2::uuid`, postID, userID)
 	}
 	return err
 }
@@ -190,7 +190,7 @@ func (r *postgresForosRepository) ListComentarios(ctx context.Context, postID, u
 		          ) sub), '[]'::json
 		       ) as reactions
 		   FROM foro_comentarios c
-		  WHERE c.post_id=$1 ORDER BY c.created_at ASC`
+		  WHERE c.post_id=$1::uuid ORDER BY c.created_at ASC`
 	return cs, r.db.SelectContext(ctx, &cs, query, postID, userID)
 }
 
@@ -202,7 +202,7 @@ func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *for
 		parentID = &req.ParentId
 	}
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido,parent_id) VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido,parent_id) VALUES($1::uuid,$2::uuid,$3,$4,$5::uuid) RETURNING id`,
 		req.PostId, req.UserId, userName, req.Contenido, parentID,
 	).Scan(&id)
 	if err != nil {
@@ -213,20 +213,20 @@ func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *for
 		`SELECT id, post_id, parent_id, user_id,
 		        COALESCE(user_name,'') user_name,
 		        contenido, '[]'::json as reactions, created_at
-		   FROM foro_comentarios WHERE id=$1`, id)
+		   FROM foro_comentarios WHERE id=$1::uuid`, id)
 }
 
 func (r *postgresForosRepository) TogglePostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error) {
 	var exists bool
 	r.db.QueryRowContext(ctx,
-		`SELECT EXISTS(SELECT 1 FROM foro_post_reactions WHERE post_id=$1 AND user_id=$2 AND emoji=$3)`,
+		`SELECT EXISTS(SELECT 1 FROM foro_post_reactions WHERE post_id=$1::uuid AND user_id=$2::uuid AND emoji=$3)`,
 		req.PostId, req.UserId, req.Emoji,
 	).Scan(&exists)
 
 	if exists {
-		r.db.ExecContext(ctx, `DELETE FROM foro_post_reactions WHERE post_id=$1 AND user_id=$2 AND emoji=$3`, req.PostId, req.UserId, req.Emoji)
+		r.db.ExecContext(ctx, `DELETE FROM foro_post_reactions WHERE post_id=$1::uuid AND user_id=$2::uuid AND emoji=$3`, req.PostId, req.UserId, req.Emoji)
 	} else {
-		r.db.ExecContext(ctx, `INSERT INTO foro_post_reactions(post_id,user_id,emoji) VALUES($1,$2,$3)`, req.PostId, req.UserId, req.Emoji)
+		r.db.ExecContext(ctx, `INSERT INTO foro_post_reactions(post_id,user_id,emoji) VALUES($1::uuid,$2::uuid,$3)`, req.PostId, req.UserId, req.Emoji)
 	}
 	return r.getPostReactions(ctx, req.PostId, req.UserId)
 }
@@ -234,14 +234,14 @@ func (r *postgresForosRepository) TogglePostReaction(ctx context.Context, req *f
 func (r *postgresForosRepository) ToggleComentarioReaction(ctx context.Context, req *forospb.ComentarioReactionRequest) (*forospb.ReactionResponse, error) {
 	var exists bool
 	r.db.QueryRowContext(ctx,
-		`SELECT EXISTS(SELECT 1 FROM foro_comentario_reactions WHERE comentario_id=$1 AND user_id=$2 AND emoji=$3)`,
+		`SELECT EXISTS(SELECT 1 FROM foro_comentario_reactions WHERE comentario_id=$1::uuid AND user_id=$2::uuid AND emoji=$3)`,
 		req.ComentarioId, req.UserId, req.Emoji,
 	).Scan(&exists)
 
 	if exists {
-		r.db.ExecContext(ctx, `DELETE FROM foro_comentario_reactions WHERE comentario_id=$1 AND user_id=$2 AND emoji=$3`, req.ComentarioId, req.UserId, req.Emoji)
+		r.db.ExecContext(ctx, `DELETE FROM foro_comentario_reactions WHERE comentario_id=$1::uuid AND user_id=$2::uuid AND emoji=$3`, req.ComentarioId, req.UserId, req.Emoji)
 	} else {
-		r.db.ExecContext(ctx, `INSERT INTO foro_comentario_reactions(comentario_id,user_id,emoji) VALUES($1,$2,$3)`, req.ComentarioId, req.UserId, req.Emoji)
+		r.db.ExecContext(ctx, `INSERT INTO foro_comentario_reactions(comentario_id,user_id,emoji) VALUES($1::uuid,$2::uuid,$3)`, req.ComentarioId, req.UserId, req.Emoji)
 	}
 	return r.getComentarioReactions(ctx, req.ComentarioId, req.UserId)
 }
@@ -253,7 +253,7 @@ func (r *postgresForosRepository) getPostReactions(ctx context.Context, postID, 
 		  (SELECT json_agg(json_build_object('emoji', sub.emoji, 'count', sub.cnt, 'user_reacted', sub.user_reacted))
 		   FROM (
 		     SELECT emoji, COUNT(*) as cnt, BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
-		     FROM foro_post_reactions WHERE post_id = $1 GROUP BY emoji
+		     FROM foro_post_reactions WHERE post_id = $1::uuid GROUP BY emoji
 		   ) sub), '[]'::json)`, postID, userID).Scan(&data)
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (r *postgresForosRepository) getComentarioReactions(ctx context.Context, co
 		  (SELECT json_agg(json_build_object('emoji', sub.emoji, 'count', sub.cnt, 'user_reacted', sub.user_reacted))
 		   FROM (
 		     SELECT emoji, COUNT(*) as cnt, BOOL_OR(user_id = NULLIF($2,'')::uuid) as user_reacted
-		     FROM foro_comentario_reactions WHERE comentario_id = $1 GROUP BY emoji
+		     FROM foro_comentario_reactions WHERE comentario_id = $1::uuid GROUP BY emoji
 		   ) sub), '[]'::json)`, comentarioID, userID).Scan(&data)
 	if err != nil {
 		return nil, err

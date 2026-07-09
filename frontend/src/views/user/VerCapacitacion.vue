@@ -1337,7 +1337,7 @@ function tramitarDC3() {
 }
 .ver-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   min-height: calc(100vh - var(--topbar-h) - 56px);
   background: var(--surface);
   border: 1px solid rgba(17, 24, 39, 0.08);
@@ -1855,7 +1855,7 @@ function tramitarDC3() {
 .fb-comment-send:disabled { background: var(--border); cursor: default; }
 .fb-comment-send:not(:disabled):hover { background: var(--brand-dark); }
 
-@media (max-width: 768px) {
+@media (max-width: 1120px) {
   .ver-curso-shell {
     min-height: auto;
   }

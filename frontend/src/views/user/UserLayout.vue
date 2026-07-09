@@ -11,12 +11,19 @@ const { isDark, toggleTheme } = useTheme()
 const sidebarOpen = ref(false)
 const profileOpen = ref(false)
 
+const isUUID = (str: string) => /^[0-9a-fA-F-]{32,36}$/.test(str) || str.length > 25
 const breadcrumbs = computed(() => {
   const parts = router.currentRoute.value.path.split('/').filter(Boolean)
-  return parts.map((p, idx) => ({
-    name: p.charAt(0).toUpperCase() + p.slice(1),
-    path: '/' + parts.slice(0, idx + 1).join('/')
-  }))
+  return parts.map((p, idx) => {
+    let name = p.charAt(0).toUpperCase() + p.slice(1)
+    if (isUUID(p)) {
+      name = 'Detalle'
+    }
+    return {
+      name,
+      path: '/' + parts.slice(0, idx + 1).join('/')
+    }
+  })
 })
 
 // Theme is managed by useTheme
