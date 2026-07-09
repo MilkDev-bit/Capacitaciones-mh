@@ -4,12 +4,24 @@ import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useTheme } from '../../composables/useTheme'
 import NotificationBell from '../../components/NotificationBell.vue'
+import api from '../../api'
 
 const auth = useAuthStore()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 const sidebarOpen = ref(false)
 const profileOpen = ref(false)
+
+onMounted(async () => {
+  if (auth.user && !auth.user.avatar_url) {
+    try {
+      const res = await api.get('/perfil')
+      if (res.data?.user?.avatar_url) {
+        auth.user = { ...auth.user, avatar_url: res.data.user.avatar_url }
+      }
+    } catch { /* ignore */ }
+  }
+})
 
 const isUUID = (str: string) => /^[0-9a-fA-F-]{32,36}$/.test(str) || str.length > 25
 const breadcrumbs = computed(() => {

@@ -132,6 +132,13 @@ async function load() {
     }
     // Si el curso ya estaba completado al entrar, mostrar el examen si lo hay
     if (progreso.value === 100) await cargarExamenFinal()
+    if (currentUser.value && !currentUser.value.avatar_url) {
+      api.get('/perfil').then(res => {
+        if (res.data?.user?.avatar_url && authStore.user) {
+          authStore.user = { ...authStore.user, avatar_url: res.data.user.avatar_url }
+        }
+      }).catch(() => {})
+    }
   } catch (e: any) {
     loadError.value = e.response?.data?.error || 'No pudimos cargar el curso. Verifica tu conexión.'
   } finally {
@@ -267,12 +274,48 @@ async function loadForo(leccionId: string) {
       const cRes = await api.get(`/foro/posts/${post.id}/comentarios`)
       comentariosMap.value[post.id] = cRes.data || []
     }
+    loadUserAvatarsForForo()
   } catch (err: any) {
     console.error('Error al cargar foro:', err)
     foroError.value = err?.response?.data?.error || 'No se pudieron cargar los posts del foro'
   } finally {
     foroLoading.value = false
   }
+}
+
+const userAvatars = ref<Record<string, string>>({})
+
+function getUserAvatar(userId?: string): string {
+  if (!userId) return ''
+  if (userId === currentUser.value?.id && currentUser.value?.avatar_url) {
+    return currentUser.value.avatar_url
+  }
+  return userAvatars.value[userId] || ''
+}
+
+async function loadUserAvatarsForForo() {
+  if (currentUser.value?.id && currentUser.value?.avatar_url) {
+    userAvatars.value[currentUser.value.id] = currentUser.value.avatar_url
+  }
+  const ids = new Set<string>()
+  for (const p of foroPosts.value) {
+    if (p.user_id && !userAvatars.value[p.user_id]) ids.add(p.user_id)
+  }
+  for (const list of Object.values(comentariosMap.value)) {
+    for (const c of (list || [])) {
+      if (c.user_id && !userAvatars.value[c.user_id]) ids.add(c.user_id)
+    }
+  }
+  await Promise.all(
+    Array.from(ids).map(async (id) => {
+      try {
+        const res = await api.get(`/usuarios/${id}/perfil`)
+        userAvatars.value[id] = res.data?.user?.avatar_url || ''
+      } catch {
+        userAvatars.value[id] = ''
+      }
+    })
+  )
 }
 
 async function crearPost() {
@@ -938,7 +981,10 @@ function tramitarDC3() {
 
               <!-- Caja de publicación estilo mensajería -->
               <div v-if="!foroLoading" class="msg-create-box">
-                <div class="msg-create-avatar">{{ meInitials() }}</div>
+                <div class="msg-create-avatar">
+                  <img v-if="currentUser?.avatar_url" :src="currentUser.avatar_url" class="avatar-img" alt="Avatar" />
+                  <template v-else>{{ meInitials() }}</template>
+                </div>
                 <div class="msg-create-input-wrap">
                   <div class="msg-inputs">
                     <input v-model="nuevoPost.titulo" placeholder="Título (opcional)..." class="msg-create-title-input" />
@@ -981,7 +1027,10 @@ function tramitarDC3() {
                   <!-- Card header: avatar, nombre, tiempo, opciones -->
                   <div class="fb-post-header">
                     <div class="fb-post-avatar-wrap" @click.stop="openForoProfile(post.user_id, post.user_name)" style="cursor:pointer" title="Ver perfil">
-                      <div class="fb-post-avatar">{{ foroInitials(post.user_name) }}</div>
+                      <div class="fb-post-avatar">
+                        <img v-if="getUserAvatar(post.user_id)" :src="getUserAvatar(post.user_id)" class="avatar-img" alt="" />
+                        <template v-else>{{ foroInitials(post.user_name) }}</template>
+                      </div>
                     </div>
                     <div class="fb-post-meta">
                       <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name }}</router-link>
@@ -1046,7 +1095,10 @@ function tramitarDC3() {
                     <div v-if="expandedPost === post.id" class="fb-comments-section">
                       <div v-for="com in getMainComments(post.id)" :key="com.id" class="fb-comment-thread">
                         <div class="fb-comment">
-                          <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(com.user_name) }}</div>
+                            <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">
+                              <img v-if="getUserAvatar(com.user_id)" :src="getUserAvatar(com.user_id)" class="avatar-img" alt="" />
+                              <template v-else>{{ foroInitials(com.user_name) }}</template>
+                            </div>
                           <div class="fb-comment-content">
                             <div class="fb-comment-bubble">
                               <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
@@ -1080,7 +1132,10 @@ function tramitarDC3() {
                         <!-- Respuestas -->
                         <div v-if="getReplies(post.id, com.id).length" class="fb-comment-replies">
                           <div v-for="reply in getReplies(post.id, com.id)" :key="reply.id" class="fb-comment">
-                            <div class="fb-comment-avatar" @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer" title="Ver perfil">{{ foroInitials(reply.user_name) }}</div>
+                            <div class="fb-comment-avatar" @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer" title="Ver perfil">
+                              <img v-if="getUserAvatar(reply.user_id)" :src="getUserAvatar(reply.user_id)" class="avatar-img" alt="" />
+                              <template v-else>{{ foroInitials(reply.user_name) }}</template>
+                            </div>
                             <div class="fb-comment-content">
                               <div class="fb-comment-bubble">
                                 <router-link :to="`/usuario/perfil/${reply.user_id}`" class="fb-comment-author">{{ reply.user_name }}</router-link>
@@ -1190,7 +1245,10 @@ function tramitarDC3() {
           <button class="fpc-close" @click="foroProfileCard = null" aria-label="Cerrar">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
-          <div class="fpc-avatar">{{ foroInitials(foroProfileCard.name) }}</div>
+          <div class="fpc-avatar">
+            <img v-if="getUserAvatar(foroProfileCard.id)" :src="getUserAvatar(foroProfileCard.id)" class="avatar-img" alt="" />
+            <template v-else>{{ foroInitials(foroProfileCard.name) }}</template>
+          </div>
           <div class="fpc-name">{{ foroProfileCard.name }}</div>
           <div class="fpc-role">Participante del foro</div>
           <div class="fpc-actions">
@@ -1649,7 +1707,7 @@ function tramitarDC3() {
   box-shadow: var(--shadow-sm); margin-bottom: 14px;
 }
 .msg-create-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--brand), #ef4444);
   color: #fff; font-size: 0.85rem; font-weight: 800; margin-top: 4px;
@@ -1729,7 +1787,7 @@ function tramitarDC3() {
 .fb-post-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px 10px; }
 .fb-post-avatar-wrap { flex-shrink: 0; }
 .fb-post-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff; font-size: 0.8rem; font-weight: 800;
@@ -1819,7 +1877,7 @@ function tramitarDC3() {
 }
 .fb-comment { display: flex; gap: 9px; align-items: flex-start; }
 .fb-comment-avatar {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff; font-size: 0.7rem; font-weight: 800;
@@ -2066,7 +2124,7 @@ function tramitarDC3() {
 }
 .fpc-close:hover { background: var(--border); }
 .fpc-avatar {
-  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px;
+  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px; overflow: hidden;
   background: linear-gradient(135deg, var(--brand), var(--brand-dark));
   color: #fff; font-size: 1.6rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
