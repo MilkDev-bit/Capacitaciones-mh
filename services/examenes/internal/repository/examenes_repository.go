@@ -91,11 +91,19 @@ func (r *postgresExamenesRepository) ListByInstructor(ctx context.Context, instr
 func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID string) ([]*Examen, error) {
 	var e []*Examen
 	return e, r.db.SelectContext(ctx, &e,
-		`SELECT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
+		`SELECT DISTINCT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
 		        ex.capacitacion_id, ex.created_at
 		   FROM examenes ex
-		   JOIN asignaciones_examen ae ON ae.examen_id = ex.id AND ae.user_id = $1
-		  WHERE ex.deleted_at IS NULL ORDER BY ex.created_at DESC`, userID)
+		   LEFT JOIN asignaciones_examen ae ON ae.examen_id = ex.id AND ae.user_id = $1
+		   LEFT JOIN inscripciones i ON i.capacitacion_id = ex.capacitacion_id AND i.user_id = $1
+		   LEFT JOIN capacitaciones c ON c.id = ex.capacitacion_id
+		  WHERE ex.deleted_at IS NULL
+		    AND (
+		        ae.user_id IS NOT NULL OR
+		        i.user_id IS NOT NULL OR
+		        COALESCE(c.is_public, false) = true
+		    )
+		  ORDER BY ex.created_at DESC`, userID)
 }
 
 func (r *postgresExamenesRepository) FindByID(ctx context.Context, examenID string) (*Examen, error) {

@@ -281,7 +281,7 @@ async function submitIntermedias() {
 // ── Examen final ─────────────────────────────────────────────────────────────
 async function cargarExamenFinal() {
   try {
-    const res = await api.get('/usuario/examenes')
+    const res = await api.get('/mis-examenes')
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
       (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70) && !e.bloqueado
