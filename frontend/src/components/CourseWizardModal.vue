@@ -20,6 +20,7 @@ const form = ref({
   type: 'course',
   precio: 0,
   is_public: false,
+  dc3_enabled: true,
   welcome_message: '',
   color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
 })
@@ -50,6 +51,7 @@ async function guardar() {
       description: form.value.description,
       type: 'course',
       is_public: form.value.is_public,
+      dc3_enabled: form.value.dc3_enabled,
       welcome_message: form.value.welcome_message,
       color: form.value.color,
       precio: Number(form.value.precio) || 0,
@@ -137,6 +139,16 @@ async function guardar() {
               <div class="toggle-text">
                 <strong>Curso Público</strong>
                 <p>Cualquiera podrá ver e inscribirse a este curso.</p>
+              </div>
+            </label>
+          </div>
+          <div class="field mt-4 text-left">
+            <label class="toggle-wrap">
+              <input type="checkbox" v-model="form.dc3_enabled" class="toggle-input">
+              <div class="toggle-slider"></div>
+              <div class="toggle-text">
+                <strong>Habilitar Constancia DC-3</strong>
+                <p>Permite a los estudiantes tramitar y obtener su constancia DC-3 en este curso.</p>
               </div>
             </label>
           </div>

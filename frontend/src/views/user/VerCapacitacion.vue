@@ -157,8 +157,8 @@ async function load() {
       })),
       lecciones: data.lecciones || []
     }
-    // Si el curso ya estaba completado al entrar, mostrar el examen si lo hay
-    if (progreso.value === 100) await cargarExamenFinal()
+    // Cargar examen final si está asignado a este curso
+    await cargarExamenFinal()
     if (currentUser.value && !currentUser.value.avatar_url) {
       api.get('/perfil').then(res => {
         if (res.data?.user?.avatar_url && authStore.user) {
@@ -284,7 +284,7 @@ async function cargarExamenFinal() {
     const res = await api.get('/mis-examenes')
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
-      (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70) && !e.bloqueado
+      (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70)
     ) ?? null
   } catch { /* ignorar silenciosamente */ }
 }
@@ -697,7 +697,12 @@ function tramitarDC3() {
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Mis cursos
           </button>
-          <div v-if="progreso === 100" style="margin-top: 12px;">
+          <div v-if="progreso === 100 && examenFinal" style="margin-top: 12px;">
+            <router-link :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+              🎓 Responder Examen Final
+            </router-link>
+          </div>
+          <div v-if="progreso === 100 && curso?.dc3_enabled !== false" style="margin-top: 8px;">
             <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
@@ -1302,7 +1307,7 @@ function tramitarDC3() {
           <strong>Examen final disponible</strong>
           <p>{{ examenFinal.title }}</p>
         </div>
-        <router-link :to="`/usuario/examenes`" class="btn btn-primary ver-examen-final-btn">
+        <router-link :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary ver-examen-final-btn">
           Ir al examen
         </router-link>
       </div>
@@ -1319,8 +1324,11 @@ function tramitarDC3() {
           </div>
           <h2>¡Felicidades!</h2>
           <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
-          <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
-            <button class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
+          <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <router-link v-if="examenFinal" :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+              🎓 Responder Examen Final
+            </router-link>
+            <button v-if="curso?.dc3_enabled !== false" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>

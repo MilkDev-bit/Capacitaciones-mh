@@ -139,7 +139,7 @@ const handleVideoConferenceLeft = () => {
         <p class="modal-desc">
           ¡Gracias por tu participación! Se ha enviado una notificación al <strong>Comprador / Representante Legal</strong> de tu empresa o grupo con las instrucciones y el acceso prellenado para generar las constancias oficiales DC-3 de esta sesión.
         </p>
-        <div class="dc3-box">
+        <div v-if="cursoInfo?.dc3_enabled !== false" class="dc3-box">
           <p>Si tú eres el responsable o representante legal encargado de tramitar las constancias, puedes ingresar al formulario aquí:</p>
           <a :href="dc3FormUrl" target="_blank" class="btn btn-dc3">
             📋 Trámite y Emisión de Constancias DC-3

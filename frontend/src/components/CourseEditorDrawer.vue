@@ -24,7 +24,7 @@ const thumbnailFile = ref<File | null>(null)
 
 watch(() => props.show, (val) => {
   if (val && props.course) {
-    form.value = { ...props.course }
+    form.value = { dc3_enabled: true, ...props.course }
     thumbnailFile.value = null
     activeTab.value = 'info'
   }
@@ -39,6 +39,7 @@ async function saveInfo() {
       description: form.value.description || '',
       type: form.value.type || 'course',
       is_public: form.value.is_public,
+      dc3_enabled: form.value.dc3_enabled !== false,
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
@@ -114,6 +115,17 @@ async function saveInfo() {
               <div class="toggle-text">
                 <strong>Curso Público</strong>
                 <p>Visible para todos los usuarios</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="field mt-4">
+            <label class="toggle-wrap">
+              <input type="checkbox" v-model="form.dc3_enabled" class="toggle-input">
+              <div class="toggle-slider"></div>
+              <div class="toggle-text">
+                <strong>Habilitar Constancia DC-3</strong>
+                <p>Permite a los estudiantes tramitar y obtener su constancia DC-3 en este curso</p>
               </div>
             </label>
           </div>

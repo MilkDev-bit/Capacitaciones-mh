@@ -637,10 +637,15 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		Color          string  `json:"color"`
 		Precio         float64 `json:"precio"`
 		Duration       int32   `json:"duration"`
+		Dc3Enabled     *bool   `json:"dc3_enabled"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	dc3Enabled := true
+	if body.Dc3Enabled != nil {
+		dc3Enabled = *body.Dc3Enabled
 	}
 	resp, err := h.c.Cursos.InstructorCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
 		UserId:         ctx.GetString(middleware.CtxUserID),
@@ -654,6 +659,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		Color:          body.Color,
 		Precio:         body.Precio,
 		Duration:       body.Duration,
+		Dc3Enabled:     dc3Enabled,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -675,10 +681,15 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		Color          string  `json:"color"`
 		Precio         float64 `json:"precio"`
 		Duration       int32   `json:"duration"`
+		Dc3Enabled     *bool   `json:"dc3_enabled"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	dc3Enabled := true
+	if body.Dc3Enabled != nil {
+		dc3Enabled = *body.Dc3Enabled
 	}
 	resp, err := h.c.Cursos.InstructorUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
 		CursoId:        ctx.Param("id"),
@@ -693,6 +704,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		Color:          body.Color,
 		Precio:         body.Precio,
 		Duration:       body.Duration,
+		Dc3Enabled:     dc3Enabled,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -858,10 +870,15 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		ThumbnailURL   string `json:"thumbnail_url"`
 		Color          string `json:"color"`
 		Duration       int32  `json:"duration"`
+		Dc3Enabled     *bool  `json:"dc3_enabled"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	dc3Enabled := true
+	if body.Dc3Enabled != nil {
+		dc3Enabled = *body.Dc3Enabled
 	}
 	resp, err := h.c.Cursos.AdminCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
 		UserId:         ctx.GetString(middleware.CtxUserID),
@@ -874,6 +891,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
 		Duration:       body.Duration,
+		Dc3Enabled:     dc3Enabled,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -887,17 +905,22 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 	var body struct {
 		Title          string `json:"title"`
 		Description    string `json:"description"`
-		Type           string `json:"type"`
-		Content        string `json:"content"`
-		IsPublic       bool   `json:"is_public"`
-		WelcomeMessage string `json:"welcome_message"`
-		ThumbnailURL   string `json:"thumbnail_url"`
-		Color          string `json:"color"`
-		Duration       int32  `json:"duration"`
+		Type           string  `json:"type"`
+		Content        string  `json:"content"`
+		IsPublic       bool    `json:"is_public"`
+		WelcomeMessage string  `json:"welcome_message"`
+		ThumbnailURL   string  `json:"thumbnail_url"`
+		Color          string  `json:"color"`
+		Duration       int32   `json:"duration"`
+		Dc3Enabled     *bool   `json:"dc3_enabled"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	dc3Enabled := true
+	if body.Dc3Enabled != nil {
+		dc3Enabled = *body.Dc3Enabled
 	}
 	resp, err := h.c.Cursos.AdminUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
 		CursoId:        ctx.Param("id"),
@@ -911,6 +934,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		ThumbnailUrl:   body.ThumbnailURL,
 		Color:          body.Color,
 		Duration:       body.Duration,
+		Dc3Enabled:     dc3Enabled,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

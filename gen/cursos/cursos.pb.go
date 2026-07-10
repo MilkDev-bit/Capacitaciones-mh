@@ -264,6 +264,7 @@ type CreateCursoRequest struct {
 	Precio         float64                `protobuf:"fixed64,11,opt,name=precio,proto3" json:"precio,omitempty"`
 	ScheduledAt    string                 `protobuf:"bytes,12,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	Duration       int32                  `protobuf:"varint,13,opt,name=duration,proto3" json:"duration,omitempty"`
+	Dc3Enabled     bool                   `protobuf:"varint,14,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -389,6 +390,13 @@ func (x *CreateCursoRequest) GetDuration() int32 {
 	return 0
 }
 
+func (x *CreateCursoRequest) GetDc3Enabled() bool {
+	if x != nil {
+		return x.Dc3Enabled
+	}
+	return false
+}
+
 type UpdateCursoRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	CursoId         string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -406,6 +414,7 @@ type UpdateCursoRequest struct {
 	ScheduledAt     string                 `protobuf:"bytes,13,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
 	VideocallStatus string                 `protobuf:"bytes,14,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
 	Duration        int32                  `protobuf:"varint,15,opt,name=duration,proto3" json:"duration,omitempty"`
+	Dc3Enabled      bool                   `protobuf:"varint,16,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -543,6 +552,13 @@ func (x *UpdateCursoRequest) GetDuration() int32 {
 		return x.Duration
 	}
 	return 0
+}
+
+func (x *UpdateCursoRequest) GetDc3Enabled() bool {
+	if x != nil {
+		return x.Dc3Enabled
+	}
+	return false
 }
 
 type InscribirseRequest struct {
@@ -738,6 +754,7 @@ type CursoResponse struct {
 	Duration             int32                  `protobuf:"varint,17,opt,name=duration,proto3" json:"duration,omitempty"`
 	TotalLecciones       int32                  `protobuf:"varint,18,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones,omitempty"`
 	LeccionesCompletadas int32                  `protobuf:"varint,19,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas,omitempty"`
+	Dc3Enabled           bool                   `protobuf:"varint,20,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -903,6 +920,13 @@ func (x *CursoResponse) GetLeccionesCompletadas() int32 {
 		return x.LeccionesCompletadas
 	}
 	return 0
+}
+
+func (x *CursoResponse) GetDc3Enabled() bool {
+	if x != nil {
+		return x.Dc3Enabled
+	}
+	return false
 }
 
 type ListCursosResponse struct {
@@ -3205,7 +3229,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\x88\x03\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xa9\x03\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -3220,7 +3244,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	" \x01(\tR\x05color\x12\x16\n" +
 	"\x06precio\x18\v \x01(\x01R\x06precio\x12!\n" +
 	"\fscheduled_at\x18\f \x01(\tR\vscheduledAt\x12\x1a\n" +
-	"\bduration\x18\r \x01(\x05R\bduration\"\xce\x03\n" +
+	"\bduration\x18\r \x01(\x05R\bduration\x12\x1f\n" +
+	"\vdc3_enabled\x18\x0e \x01(\bR\n" +
+	"dc3Enabled\"\xef\x03\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -3237,7 +3263,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x06precio\x18\f \x01(\x01R\x06precio\x12!\n" +
 	"\fscheduled_at\x18\r \x01(\tR\vscheduledAt\x12)\n" +
 	"\x10videocall_status\x18\x0e \x01(\tR\x0fvideocallStatus\x12\x1a\n" +
-	"\bduration\x18\x0f \x01(\x05R\bduration\"H\n" +
+	"\bduration\x18\x0f \x01(\x05R\bduration\x12\x1f\n" +
+	"\vdc3_enabled\x18\x10 \x01(\bR\n" +
+	"dc3Enabled\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -3248,7 +3276,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xec\x04\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\x8d\x05\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -3270,7 +3298,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x10videocall_status\x18\x10 \x01(\tR\x0fvideocallStatus\x12\x1a\n" +
 	"\bduration\x18\x11 \x01(\x05R\bduration\x12'\n" +
 	"\x0ftotal_lecciones\x18\x12 \x01(\x05R\x0etotalLecciones\x123\n" +
-	"\x15lecciones_completadas\x18\x13 \x01(\x05R\x14leccionesCompletadas\"C\n" +
+	"\x15lecciones_completadas\x18\x13 \x01(\x05R\x14leccionesCompletadas\x12\x1f\n" +
+	"\vdc3_enabled\x18\x14 \x01(\bR\n" +
+	"dc3Enabled\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +

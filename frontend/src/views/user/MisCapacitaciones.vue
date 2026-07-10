@@ -371,7 +371,7 @@ async function unirseConCodigo() {
               <span class="code-hint">Deberás ingresarlo en la sala.</span>
             </div>
 
-            <div v-if="courseProgress(c) === 100 && c.type !== 'videocall'" style="margin-top: 12px; margin-bottom: -4px;">
+            <div v-if="courseProgress(c) === 100 && c.type !== 'videocall' && c.dc3_enabled !== false" style="margin-top: 12px; margin-bottom: -4px;">
               <button
                 class="btn btn-secondary btn-sm"
                 style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;"

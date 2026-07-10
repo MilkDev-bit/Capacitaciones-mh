@@ -31,6 +31,7 @@ type Curso struct {
 	Precio         float64    `db:"precio"`
 	ScheduledAt    *time.Time `db:"scheduled_at"`
 	Duration       int32      `db:"duration"`
+	DC3Enabled     bool       `db:"dc3_enabled"`
 	VideocallStatus *string   `db:"videocall_status"`
 	CreatedAt      time.Time  `db:"created_at"`
 	TotalLecciones       int32 `db:"total_lecciones"`
@@ -45,6 +46,7 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		ThumbnailUrl: c.ThumbnailURL, Color: c.Color,
 		Precio:    c.Precio,
 		Duration:  c.Duration,
+		Dc3Enabled: c.DC3Enabled,
 		TotalLecciones:       c.TotalLecciones,
 		LeccionesCompletadas: c.LeccionesCompletadas,
 		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -259,7 +261,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(file_path,'') file_path, COALESCE(content,'') content,
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
-	COALESCE(color,'#f97316') color, precio, scheduled_at, duration, videocall_status, created_at,
+	COALESCE(color,'#f97316') color, precio, scheduled_at, duration, videocall_status, COALESCE(dc3_enabled, true) dc3_enabled, created_at,
 	0 as total_lecciones,
 	0 as lecciones_completadas
 	FROM capacitaciones`
@@ -282,7 +284,7 @@ func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string
 		       COALESCE(c.file_path,'') file_path, COALESCE(c.content,'') content,
 		       c.instructor_id, c.is_public, COALESCE(c.codigo_acceso,'') codigo_acceso,
 		       COALESCE(c.welcome_message,'') welcome_message, COALESCE(c.thumbnail_url,'') thumbnail_url,
-		       COALESCE(c.color,'#f97316') color, c.precio, c.scheduled_at, c.duration, c.videocall_status, c.created_at,
+		       COALESCE(c.color,'#f97316') color, c.precio, c.scheduled_at, c.duration, c.videocall_status, COALESCE(c.dc3_enabled, true) dc3_enabled, c.created_at,
 		       0 as total_lecciones,
 		       0 as lecciones_completadas
 		FROM capacitaciones c
@@ -321,10 +323,10 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	}
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, duration)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, duration, dc3_enabled)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration,
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -338,9 +340,9 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 		color = "#f97316"
 	}
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, duration=$11 WHERE id=$12`,
+		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, duration=$11, dc3_enabled=$12 WHERE id=$13`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.CursoId,
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, req.CursoId,
 	)
 	if err != nil {
 		return nil, err
