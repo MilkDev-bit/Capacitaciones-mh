@@ -297,7 +297,7 @@ func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string
 func (r *postgresCursosRepository) ListByInstructor(ctx context.Context, instructorID string) ([]*Curso, error) {
 	var cursos []*Curso
 	return cursos, r.db.SelectContext(ctx, &cursos,
-		selectCurso+` WHERE deleted_at IS NULL AND instructor_id=$1 ORDER BY created_at DESC`, instructorID)
+		selectCurso+` WHERE deleted_at IS NULL AND (instructor_id=$1 OR instructor_id IS NULL OR COALESCE(is_public, false)=true) ORDER BY created_at DESC`, instructorID)
 }
 
 func (r *postgresCursosRepository) FindByID(ctx context.Context, cursoID string) (*Curso, error) {

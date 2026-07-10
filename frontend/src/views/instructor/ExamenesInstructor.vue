@@ -131,6 +131,12 @@ async function load() {
   capacitaciones.value = cRes.data || []
 }
 
+function getCursoNombre(capId?: string) {
+  if (!capId) return null
+  const cap = capacitaciones.value.find(c => c.id === capId)
+  return cap ? cap.title : null
+}
+
 onMounted(load)
 
 async function guardar() {
@@ -322,9 +328,9 @@ async function eliminar(id: string) {
               <h2 class="ex-card-title">{{ ex.title }}</h2>
               <p v-if="ex.description" class="ex-card-desc">{{ ex.description }}</p>
               <div class="ex-card-meta">
-                <span v-if="ex.capacitacion_nombre" class="ex-linked-badge">
+                <span v-if="ex.capacitacion_nombre || getCursoNombre(ex.capacitacion_id)" class="ex-linked-badge">
                   <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                  {{ ex.capacitacion_nombre }}
+                  {{ ex.capacitacion_nombre || getCursoNombre(ex.capacitacion_id) }}
                 </span>
                 <span v-else class="ex-nolink-badge">Sin curso enlazado</span>
               </div>
