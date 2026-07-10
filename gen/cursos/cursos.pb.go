@@ -718,28 +718,28 @@ func (x *AsignarRequest) GetExamenId() string {
 }
 
 type CursoResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title           string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Type            string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	FilePath        string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	Content         string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
-	InstructorId    string                 `protobuf:"bytes,7,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
-	IsPublic        bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
-	CodigoAcceso    string                 `protobuf:"bytes,9,opt,name=codigo_acceso,json=codigoAcceso,proto3" json:"codigo_acceso,omitempty"`
-	WelcomeMessage  string                 `protobuf:"bytes,10,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
-	ThumbnailUrl    string                 `protobuf:"bytes,11,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
-	Color           string                 `protobuf:"bytes,12,opt,name=color,proto3" json:"color,omitempty"`
-	CreatedAt       string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Precio          float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
-	ScheduledAt     string                 `protobuf:"bytes,15,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
-	VideocallStatus string                 `protobuf:"bytes,16,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title                string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description          string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Type                 string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	FilePath             string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	Content              string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
+	InstructorId         string                 `protobuf:"bytes,7,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	IsPublic             bool                   `protobuf:"varint,8,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
+	CodigoAcceso         string                 `protobuf:"bytes,9,opt,name=codigo_acceso,json=codigoAcceso,proto3" json:"codigo_acceso,omitempty"`
+	WelcomeMessage       string                 `protobuf:"bytes,10,opt,name=welcome_message,json=welcomeMessage,proto3" json:"welcome_message,omitempty"`
+	ThumbnailUrl         string                 `protobuf:"bytes,11,opt,name=thumbnail_url,json=thumbnailUrl,proto3" json:"thumbnail_url,omitempty"`
+	Color                string                 `protobuf:"bytes,12,opt,name=color,proto3" json:"color,omitempty"`
+	CreatedAt            string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Precio               float64                `protobuf:"fixed64,14,opt,name=precio,proto3" json:"precio,omitempty"`
+	ScheduledAt          string                 `protobuf:"bytes,15,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	VideocallStatus      string                 `protobuf:"bytes,16,opt,name=videocall_status,json=videocallStatus,proto3" json:"videocall_status,omitempty"`
 	Duration             int32                  `protobuf:"varint,17,opt,name=duration,proto3" json:"duration,omitempty"`
-	TotalLecciones       int32                  `protobuf:"varint,18,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones"`
-	LeccionesCompletadas int32                  `protobuf:"varint,19,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas"`
+	TotalLecciones       int32                  `protobuf:"varint,18,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones,omitempty"`
+	LeccionesCompletadas int32                  `protobuf:"varint,19,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas,omitempty"`
 	unknownFields        protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CursoResponse) Reset() {
@@ -3248,7 +3248,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\x8e\x04\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xec\x04\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -3268,7 +3268,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x06precio\x18\x0e \x01(\x01R\x06precio\x12!\n" +
 	"\fscheduled_at\x18\x0f \x01(\tR\vscheduledAt\x12)\n" +
 	"\x10videocall_status\x18\x10 \x01(\tR\x0fvideocallStatus\x12\x1a\n" +
-	"\bduration\x18\x11 \x01(\x05R\bduration\"C\n" +
+	"\bduration\x18\x11 \x01(\x05R\bduration\x12'\n" +
+	"\x0ftotal_lecciones\x18\x12 \x01(\x05R\x0etotalLecciones\x123\n" +
+	"\x15lecciones_completadas\x18\x13 \x01(\x05R\x14leccionesCompletadas\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +

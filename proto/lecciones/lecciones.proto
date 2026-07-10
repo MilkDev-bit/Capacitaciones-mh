@@ -32,6 +32,7 @@ service LeccionesService {
   // Compatibilidad: devuelve lista plana (útil para progreso rápido).
   rpc GetLeccionesConProgreso(CursoUserRequest) returns (ListLeccionesResponse);
   rpc MarcarLeccionCompleta(MarcarRequest)      returns (MarcarLeccionResponse);
+  rpc GuardarProgresoVideo(GuardarProgresoVideoRequest) returns (EmptyResponse);
 
   rpc InstructorListLecciones(CursoRequest)            returns (ListLeccionesResponse);
   rpc InstructorCreateLeccion(CreateLeccionRequest)    returns (LeccionResponse);
@@ -86,6 +87,12 @@ message SubmoduloIDRequest { string submodulo_id = 1; string modulo_id = 2; }
 message MarcarRequest {
   string leccion_id = 1;
   string user_id    = 2;
+}
+
+message GuardarProgresoVideoRequest {
+  string leccion_id      = 1;
+  string user_id         = 2;
+  int32  segundos_vistos = 3;
 }
 
 // ── Requests de Módulos ───────────────────────────────────────────────────────
@@ -279,6 +286,7 @@ message LeccionResponse {
   // Gamificación
   string     game_config_json = 14;
   int32      points_reward    = 15;
+  int32      segundos_vistos  = 16;
 }
 
 message ListLeccionesResponse {

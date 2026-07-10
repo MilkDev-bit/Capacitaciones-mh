@@ -129,6 +129,7 @@ func New(d Deps) *gin.Engine {
 			// Árbol completo Módulo → Submódulo → Lección
 			auth.GET("/capacitaciones/:id/tree", d.LeccionesH.GetCursoTree)
 			auth.POST("/lecciones/:leccion_id/completar", d.LeccionesH.MarcarLeccionCompleta)
+			auth.POST("/lecciones/:leccion_id/progreso-video", d.LeccionesH.GuardarProgresoVideo)
 			auth.GET("/capacitaciones/:id/intermedias", d.LeccionesH.GetPreguntasIntermedias)
 			auth.POST("/capacitaciones/:id/intermedias/submit", d.LeccionesH.SubmitPreguntasIntermedias)
 

@@ -31,6 +31,7 @@ const (
 	LeccionesService_InstructorReorderSubmodulos_FullMethodName        = "/lecciones.LeccionesService/InstructorReorderSubmodulos"
 	LeccionesService_GetLeccionesConProgreso_FullMethodName            = "/lecciones.LeccionesService/GetLeccionesConProgreso"
 	LeccionesService_MarcarLeccionCompleta_FullMethodName              = "/lecciones.LeccionesService/MarcarLeccionCompleta"
+	LeccionesService_GuardarProgresoVideo_FullMethodName               = "/lecciones.LeccionesService/GuardarProgresoVideo"
 	LeccionesService_InstructorListLecciones_FullMethodName            = "/lecciones.LeccionesService/InstructorListLecciones"
 	LeccionesService_InstructorCreateLeccion_FullMethodName            = "/lecciones.LeccionesService/InstructorCreateLeccion"
 	LeccionesService_InstructorUpdateLeccion_FullMethodName            = "/lecciones.LeccionesService/InstructorUpdateLeccion"
@@ -74,6 +75,7 @@ type LeccionesServiceClient interface {
 	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
 	MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*MarcarLeccionResponse, error)
+	GuardarProgresoVideo(ctx context.Context, in *GuardarProgresoVideoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	InstructorListLecciones(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
 	InstructorCreateLeccion(ctx context.Context, in *CreateLeccionRequest, opts ...grpc.CallOption) (*LeccionResponse, error)
 	InstructorUpdateLeccion(ctx context.Context, in *UpdateLeccionRequest, opts ...grpc.CallOption) (*LeccionResponse, error)
@@ -216,6 +218,16 @@ func (c *leccionesServiceClient) MarcarLeccionCompleta(ctx context.Context, in *
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MarcarLeccionResponse)
 	err := c.cc.Invoke(ctx, LeccionesService_MarcarLeccionCompleta_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) GuardarProgresoVideo(ctx context.Context, in *GuardarProgresoVideoRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GuardarProgresoVideo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +392,7 @@ type LeccionesServiceServer interface {
 	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(context.Context, *CursoUserRequest) (*ListLeccionesResponse, error)
 	MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error)
+	GuardarProgresoVideo(context.Context, *GuardarProgresoVideoRequest) (*EmptyResponse, error)
 	InstructorListLecciones(context.Context, *CursoRequest) (*ListLeccionesResponse, error)
 	InstructorCreateLeccion(context.Context, *CreateLeccionRequest) (*LeccionResponse, error)
 	InstructorUpdateLeccion(context.Context, *UpdateLeccionRequest) (*LeccionResponse, error)
@@ -443,6 +456,9 @@ func (UnimplementedLeccionesServiceServer) GetLeccionesConProgreso(context.Conte
 }
 func (UnimplementedLeccionesServiceServer) MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarcarLeccionCompleta not implemented")
+}
+func (UnimplementedLeccionesServiceServer) GuardarProgresoVideo(context.Context, *GuardarProgresoVideoRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GuardarProgresoVideo not implemented")
 }
 func (UnimplementedLeccionesServiceServer) InstructorListLecciones(context.Context, *CursoRequest) (*ListLeccionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListLecciones not implemented")
@@ -716,6 +732,24 @@ func _LeccionesService_MarcarLeccionCompleta_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LeccionesServiceServer).MarcarLeccionCompleta(ctx, req.(*MarcarRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_GuardarProgresoVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuardarProgresoVideoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GuardarProgresoVideo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GuardarProgresoVideo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GuardarProgresoVideo(ctx, req.(*GuardarProgresoVideoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1008,6 +1042,10 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarcarLeccionCompleta",
 			Handler:    _LeccionesService_MarcarLeccionCompleta_Handler,
+		},
+		{
+			MethodName: "GuardarProgresoVideo",
+			Handler:    _LeccionesService_GuardarProgresoVideo_Handler,
 		},
 		{
 			MethodName: "InstructorListLecciones",

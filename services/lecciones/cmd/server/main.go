@@ -83,6 +83,8 @@ func runMigrations(db *sqlx.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			user_id UUID NOT NULL,
 			leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			segundos_vistos INT NOT NULL DEFAULT 0,
+			completado BOOLEAN NOT NULL DEFAULT true,
 			completado_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(user_id, leccion_id)
 		)`,
@@ -182,6 +184,8 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE lecciones ALTER COLUMN type TYPE TEXT`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS game_config_json TEXT DEFAULT ''`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS points_reward    INT  NOT NULL DEFAULT 0`,
+		`ALTER TABLE progreso_lecciones ADD COLUMN IF NOT EXISTS segundos_vistos INT NOT NULL DEFAULT 0`,
+		`ALTER TABLE progreso_lecciones ADD COLUMN IF NOT EXISTS completado BOOLEAN NOT NULL DEFAULT true`,
 	}
 
 	for _, s := range alters {

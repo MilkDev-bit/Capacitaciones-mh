@@ -16,13 +16,31 @@ const cursoId = route.params.id as string
 const authStore = useAuthStore()
 const currentUser = computed(() => authStore.user)
 
-const videoProgressKey = (lecId: string) => `vp_${cursoId}_${lecId}`
+const videoProgressKey = (lecId: string) => `vp_${currentUser.value?.id || 'user'}_${cursoId}_${lecId}`
 function savedVideoTime(lecId: string): number {
-  return Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
+  const lec = lecciones.value.find((l: any) => l.id === lecId)
+  const dbSeconds = Number(lec?.segundos_vistos || 0)
+  const localSeconds = Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
+  return Math.max(dbSeconds, localSeconds)
 }
-function onVideoTimeUpdate(seconds: number) {
-  if (selectedLeccion.value)
-    localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
+let lastSyncedSeconds = -1
+async function onVideoTimeUpdate(seconds: number) {
+  if (!selectedLeccion.value) return
+  localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
+  selectedLeccion.value.segundos_vistos = seconds
+  if (Math.abs(seconds - lastSyncedSeconds) >= 5) {
+    lastSyncedSeconds = seconds
+    try {
+      await api.post(`/lecciones/${selectedLeccion.value.id}/progreso-video`, { segundos_vistos: seconds })
+    } catch {
+      // Ignorar error temporal de red al guardar progreso
+    }
+  }
+}
+async function onVideoEnded() {
+  if (selectedLeccion.value && !selectedLeccion.value.completada) {
+    await marcarCompleta()
+  }
 }
 
 const curso = ref<any>(null)
@@ -38,6 +56,11 @@ const lecciones = computed<any[]>(() => {
   return all
 })
 const selectedLeccion = ref<any | null>(null)
+const isSelectedLeccionVideo = computed(() => {
+  if (!selectedLeccion.value) return false
+  const t = String(selectedLeccion.value.lesson_type ?? selectedLeccion.value.type)
+  return ['video', '1'].includes(t)
+})
 const loading = ref(true)
 const loadError = ref('')
 
@@ -803,12 +826,16 @@ function tramitarDC3() {
                   <svg v-else width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 14h6v6m10-10h-6V4m0 10l7 7M10 10L3 3"/></svg>
                   {{ focusMode ? 'Salir del Enfoque' : 'Modo Enfoque' }}
                 </button>
-                <button v-if="!selectedLeccion.completada"
+                <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo"
                   @click="marcarCompleta"
                   class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                   Marcar completada
                 </button>
+                <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo"
+                  class="ver-video-info-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
+                  🎬 Finaliza el 100% del video para completarla
+                </span>
                 <span v-else class="ver-done-chip">
                   <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                   Completada
@@ -825,6 +852,7 @@ function tramitarDC3() {
                   :src="fileUrl(selectedLeccion.file_path)"
                   :saved-time="savedVideoTime(selectedLeccion.id)"
                   @timeupdate="onVideoTimeUpdate"
+                  @ended="onVideoEnded"
                 />
                 <div v-else class="ver-media-empty">Sin video disponible</div>
               </div>

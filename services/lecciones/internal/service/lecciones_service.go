@@ -141,6 +141,10 @@ func (s *LeccionesService) MarcarCompleta(ctx context.Context, leccionID, userID
 	}, nil
 }
 
+func (s *LeccionesService) GuardarProgresoVideo(ctx context.Context, leccionID, userID string, segundos int32) error {
+	return s.repo.GuardarProgresoVideo(ctx, leccionID, userID, segundos)
+}
+
 func (s *LeccionesService) InstructorListLecciones(ctx context.Context, cursoID string) ([]*leccionespb.LeccionResponse, error) {
 	lecs, err := s.repo.ListByCurso(ctx, cursoID)
 	if err != nil {

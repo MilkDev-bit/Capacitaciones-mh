@@ -73,6 +73,7 @@ type Leccion struct {
 	// Gamificación
 	GameConfigJSON string `db:"game_config_json"`
 	PointsReward   int32  `db:"points_reward"`
+	SegundosVistos int32  `db:"segundos_vistos"`
 }
 
 func parseLessonType(t string) leccionespb.LessonType {
@@ -120,6 +121,7 @@ func (l *Leccion) ToProto() *leccionespb.LeccionResponse {
 		CreatedAt:      l.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		GameConfigJson: l.GameConfigJSON,
 		PointsReward:   l.PointsReward,
+		SegundosVistos: l.SegundosVistos,
 	}
 	if l.ModuloID != nil {
 		resp.ModuloId = *l.ModuloID
@@ -198,6 +200,7 @@ type LeccionesRepository interface {
 	Delete(ctx context.Context, leccionID string) error
 	Reorder(ctx context.Context, cursoID string, ids []string) error
 	MarcarCompleta(ctx context.Context, leccionID, userID string) error
+	GuardarProgresoVideo(ctx context.Context, leccionID, userID string, segundos int32) error
 
 	// ── Preguntas intermedias ─────────────────────────────────────────────────
 	ListPreguntas(ctx context.Context, cursoID string) ([]*PreguntaIntermedia, error)
@@ -396,7 +399,7 @@ func (r *postgresLeccionesRepository) ReorderSubmodulos(ctx context.Context, mod
 // ── Lecciones ─────────────────────────────────────────────────────────────────
 
 func (r *postgresLeccionesRepository) ListByCurso(ctx context.Context, cursoID string) ([]*Leccion, error) {
-	query := `SELECT ` + selectLeccionCols + `, false AS completada
+	query := `SELECT ` + selectLeccionCols + `, false AS completada, 0 AS segundos_vistos
 	          FROM lecciones l
 	          WHERE l.capacitacion_id=$1 AND l.deleted_at IS NULL
 	          ORDER BY l.orden`
@@ -406,7 +409,8 @@ func (r *postgresLeccionesRepository) ListByCurso(ctx context.Context, cursoID s
 
 func (r *postgresLeccionesRepository) ListByCursoConProgreso(ctx context.Context, cursoID, userID string) ([]*Leccion, error) {
 	query := `SELECT ` + selectLeccionCols + `,
-	          CASE WHEN p.id IS NOT NULL THEN true ELSE false END AS completada
+	          CASE WHEN p.id IS NOT NULL AND p.completado = true THEN true ELSE false END AS completada,
+	          COALESCE(p.segundos_vistos, 0) AS segundos_vistos
 	          FROM lecciones l
 	          LEFT JOIN progreso_lecciones p ON p.leccion_id = l.id AND p.user_id = $2
 	          WHERE l.capacitacion_id = $1 AND l.deleted_at IS NULL
@@ -416,7 +420,7 @@ func (r *postgresLeccionesRepository) ListByCursoConProgreso(ctx context.Context
 }
 
 func (r *postgresLeccionesRepository) ListByModulo(ctx context.Context, moduloID string) ([]*Leccion, error) {
-	query := `SELECT ` + selectLeccionCols + `, false AS completada
+	query := `SELECT ` + selectLeccionCols + `, false AS completada, 0 AS segundos_vistos
 	          FROM lecciones l
 	          WHERE l.modulo_id=$1 AND l.submodulo_id IS NULL AND l.deleted_at IS NULL
 	          ORDER BY l.orden`
@@ -425,7 +429,7 @@ func (r *postgresLeccionesRepository) ListByModulo(ctx context.Context, moduloID
 }
 
 func (r *postgresLeccionesRepository) ListBySubmodulo(ctx context.Context, submoduloID string) ([]*Leccion, error) {
-	query := `SELECT ` + selectLeccionCols + `, false AS completada
+	query := `SELECT ` + selectLeccionCols + `, false AS completada, 0 AS segundos_vistos
 	          FROM lecciones l
 	          WHERE l.submodulo_id=$1 AND l.deleted_at IS NULL
 	          ORDER BY l.orden`
@@ -434,7 +438,7 @@ func (r *postgresLeccionesRepository) ListBySubmodulo(ctx context.Context, submo
 }
 
 func (r *postgresLeccionesRepository) FindByID(ctx context.Context, leccionID string) (*Leccion, error) {
-	query := `SELECT ` + selectLeccionCols + `, false AS completada
+	query := `SELECT ` + selectLeccionCols + `, false AS completada, 0 AS segundos_vistos
 	          FROM lecciones l
 	          WHERE l.id=$1 AND l.deleted_at IS NULL`
 	l := &Leccion{}
@@ -525,15 +529,28 @@ func (r *postgresLeccionesRepository) Reorder(ctx context.Context, cursoID strin
 
 func (r *postgresLeccionesRepository) MarcarCompleta(ctx context.Context, leccionID, userID string) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO progreso_lecciones(leccion_id, user_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+		`INSERT INTO progreso_lecciones(leccion_id, user_id, completado, completado_at)
+		 VALUES($1, $2, true, NOW())
+		 ON CONFLICT (user_id, leccion_id)
+		 DO UPDATE SET completado = true, completado_at = NOW()`,
 		leccionID, userID)
+	return err
+}
+
+func (r *postgresLeccionesRepository) GuardarProgresoVideo(ctx context.Context, leccionID, userID string, segundos int32) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO progreso_lecciones(leccion_id, user_id, segundos_vistos, completado)
+		 VALUES($1, $2, $3, false)
+		 ON CONFLICT (user_id, leccion_id)
+		 DO UPDATE SET segundos_vistos = EXCLUDED.segundos_vistos`,
+		leccionID, userID, segundos)
 	return err
 }
 
 func (r *postgresLeccionesRepository) IsLeccionCompletada(ctx context.Context, leccionID, userID string) (bool, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM progreso_lecciones WHERE leccion_id=$1 AND user_id=$2`,
+		`SELECT COUNT(*) FROM progreso_lecciones WHERE leccion_id=$1 AND user_id=$2 AND completado=true`,
 		leccionID, userID).Scan(&count)
 	return count > 0, err
 }

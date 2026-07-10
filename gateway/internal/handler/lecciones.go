@@ -246,6 +246,27 @@ func (h *LeccionesHandler) MarcarLeccionCompleta(ctx *gin.Context) {
 	})
 }
 
+// POST /api/lecciones/:leccion_id/progreso-video
+func (h *LeccionesHandler) GuardarProgresoVideo(ctx *gin.Context) {
+	var body struct {
+		SegundosVistos int32 `json:"segundos_vistos"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "segundos_vistos requerido"})
+		return
+	}
+	_, err := h.c.Lecciones.GuardarProgresoVideo(ctx.Request.Context(), &leccionespb.GuardarProgresoVideoRequest{
+		LeccionId:      ctx.Param("leccion_id"),
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		SegundosVistos: body.SegundosVistos,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "progreso guardado"})
+}
+
 // GET /api/capacitaciones/:id/intermedias
 func (h *LeccionesHandler) GetPreguntasIntermedias(ctx *gin.Context) {
 	resp, err := h.c.Lecciones.GetPreguntasIntermedias(ctx.Request.Context(), &leccionespb.CursoUserRequest{

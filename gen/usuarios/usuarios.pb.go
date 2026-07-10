@@ -535,15 +535,15 @@ type PerfilResponse struct {
 	Specialty string                 `protobuf:"bytes,9,opt,name=specialty,proto3" json:"specialty,omitempty"`
 	CreatedAt string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Gamificación: puntos acumulados globales del usuario.
-	PointsTotal          int32                  `protobuf:"varint,11,opt,name=points_total,json=pointsTotal,proto3" json:"points_total,omitempty"`
-	CursosInscritos      int32                  `protobuf:"varint,12,opt,name=cursos_inscritos,json=cursosInscritos,proto3" json:"cursos_inscritos"`
-	LeccionesCompletadas int32                  `protobuf:"varint,13,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas"`
-	TotalLecciones       int32                  `protobuf:"varint,14,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones"`
-	CursosCreados        int32                  `protobuf:"varint,15,opt,name=cursos_creados,json=cursosCreados,proto3" json:"cursos_creados"`
-	EstudiantesTotal     int32                  `protobuf:"varint,16,opt,name=estudiantes_total,json=estudiantesTotal,proto3" json:"estudiantes_total"`
-	ExamenesCreados      int32                  `protobuf:"varint,17,opt,name=examenes_creados,json=examenesCreados,proto3" json:"examenes_creados"`
+	PointsTotal          int32 `protobuf:"varint,11,opt,name=points_total,json=pointsTotal,proto3" json:"points_total,omitempty"`
+	CursosInscritos      int32 `protobuf:"varint,12,opt,name=cursos_inscritos,json=cursosInscritos,proto3" json:"cursos_inscritos,omitempty"`
+	LeccionesCompletadas int32 `protobuf:"varint,13,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas,omitempty"`
+	TotalLecciones       int32 `protobuf:"varint,14,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones,omitempty"`
+	CursosCreados        int32 `protobuf:"varint,15,opt,name=cursos_creados,json=cursosCreados,proto3" json:"cursos_creados,omitempty"`
+	EstudiantesTotal     int32 `protobuf:"varint,16,opt,name=estudiantes_total,json=estudiantesTotal,proto3" json:"estudiantes_total,omitempty"`
+	ExamenesCreados      int32 `protobuf:"varint,17,opt,name=examenes_creados,json=examenesCreados,proto3" json:"examenes_creados,omitempty"`
 	unknownFields        protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PerfilResponse) Reset() {
@@ -1229,7 +1229,7 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x11AwardBadgeRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"badge_slug\x18\x02 \x01(\tR\tbadgeSlug\"\xa2\x02\n" +
+	"badge_slug\x18\x02 \x01(\tR\tbadgeSlug\"\xaa\x04\n" +
 	"\x0ePerfilResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1244,7 +1244,13 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\n" +
 	" \x01(\tR\tcreatedAt\x12!\n" +
-	"\fpoints_total\x18\v \x01(\x05R\vpointsTotal\"V\n" +
+	"\fpoints_total\x18\v \x01(\x05R\vpointsTotal\x12)\n" +
+	"\x10cursos_inscritos\x18\f \x01(\x05R\x0fcursosInscritos\x123\n" +
+	"\x15lecciones_completadas\x18\r \x01(\x05R\x14leccionesCompletadas\x12'\n" +
+	"\x0ftotal_lecciones\x18\x0e \x01(\x05R\x0etotalLecciones\x12%\n" +
+	"\x0ecursos_creados\x18\x0f \x01(\x05R\rcursosCreados\x12+\n" +
+	"\x11estudiantes_total\x18\x10 \x01(\x05R\x10estudiantesTotal\x12)\n" +
+	"\x10examenes_creados\x18\x11 \x01(\x05R\x0fexamenesCreados\"V\n" +
 	"\x11ListUsersResponse\x12+\n" +
 	"\x05users\x18\x01 \x03(\v2\x15.usuarios.UserSummaryR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"\x99\x01\n" +

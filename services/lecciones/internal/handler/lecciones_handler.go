@@ -119,6 +119,13 @@ func (h *LeccionesHandler) MarcarLeccionCompleta(ctx context.Context, req *lecci
 	return resp, nil
 }
 
+func (h *LeccionesHandler) GuardarProgresoVideo(ctx context.Context, req *leccionespb.GuardarProgresoVideoRequest) (*leccionespb.EmptyResponse, error) {
+	if err := h.svc.GuardarProgresoVideo(ctx, req.LeccionId, req.UserId, req.SegundosVistos); err != nil {
+		return nil, toGRPC(err)
+	}
+	return &leccionespb.EmptyResponse{}, nil
+}
+
 func (h *LeccionesHandler) GetPreguntasIntermedias(ctx context.Context, req *leccionespb.CursoUserRequest) (*leccionespb.ListIntermediasResponse, error) {
 	list, err := h.svc.GetPreguntasIntermedias(ctx, req.CursoId, req.UserId)
 	if err != nil {

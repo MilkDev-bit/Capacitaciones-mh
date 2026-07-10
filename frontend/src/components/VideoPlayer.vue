@@ -82,6 +82,7 @@ function initPlayer() {
 
   // Emitir progreso cada 5 segundos para que el padre lo persista
   let lastEmit = 0
+  let endedEmitted = false
   player.on('timeupdate', () => {
     if (!player) return
     const t = Math.floor(player.currentTime)
@@ -89,9 +90,18 @@ function initPlayer() {
       lastEmit = t
       emit('timeupdate', t)
     }
+    if (!endedEmitted && player.duration > 0 && player.currentTime >= player.duration - 1) {
+      endedEmitted = true
+      emit('ended')
+    }
   })
 
-  player.on('ended', () => emit('ended'))
+  player.on('ended', () => {
+    if (!endedEmitted) {
+      endedEmitted = true
+      emit('ended')
+    }
+  })
 }
 
 onMounted(() => initPlayer())
