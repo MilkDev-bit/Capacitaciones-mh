@@ -74,10 +74,16 @@ function initPlayer() {
   })
 
   // Reanudar desde posición guardada
+  const seekToSaved = () => {
+    if (player && props.savedTime && props.savedTime > 0) {
+      if (Math.abs(player.currentTime - props.savedTime) > 2) {
+        player.currentTime = props.savedTime
+      }
+    }
+  }
   if (props.savedTime && props.savedTime > 0) {
-    player.once('ready', () => {
-      if (player && props.savedTime) player.currentTime = props.savedTime
-    })
+    player.once('ready', seekToSaved)
+    player.once('canplay', seekToSaved)
   }
 
   // Emitir progreso periódicamente y ante eventos clave para que el padre lo persista en BD
@@ -117,6 +123,12 @@ function initPlayer() {
 }
 
 onMounted(() => initPlayer())
+
+watch(() => props.savedTime, (newTime) => {
+  if (player && newTime && newTime > 0 && Math.abs((player.currentTime || 0) - newTime) > 3) {
+    player.currentTime = newTime
+  }
+})
 
 // Cuando cambia el src (el usuario cambia de lección), reinicializar
 watch(() => props.src, () => {

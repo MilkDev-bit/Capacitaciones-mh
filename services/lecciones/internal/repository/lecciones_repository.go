@@ -542,7 +542,7 @@ func (r *postgresLeccionesRepository) GuardarProgresoVideo(ctx context.Context, 
 		`INSERT INTO progreso_lecciones(leccion_id, user_id, segundos_vistos, completado)
 		 VALUES($1, $2, $3, false)
 		 ON CONFLICT (user_id, leccion_id)
-		 DO UPDATE SET segundos_vistos = EXCLUDED.segundos_vistos`,
+		 DO UPDATE SET segundos_vistos = GREATEST(progreso_lecciones.segundos_vistos, EXCLUDED.segundos_vistos)`,
 		leccionID, userID, segundos)
 	return err
 }

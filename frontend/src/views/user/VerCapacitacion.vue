@@ -922,9 +922,13 @@ function tramitarDC3() {
               <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
                 ← Anterior
               </button>
-              <button v-if="!selectedLeccion.completada && !isGameLesson(selectedLeccion)" class="btn btn-primary" @click="marcarCompleta">
+              <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion)" class="btn btn-primary" @click="marcarCompleta">
                 ✓ Marcar completada
               </button>
+              <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo"
+                class="ver-video-info-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
+                🎬 Finaliza el 100% del video para completarla
+              </span>
               <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
                 Siguiente →
               </button>
