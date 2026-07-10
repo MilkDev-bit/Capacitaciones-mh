@@ -32,7 +32,8 @@ const router = createRouter({
       component: () => import('../views/instructor/InstructorLayout.vue'),
       meta: { requiresAuth: true, role: 'instructor' },
       children: [
-        { path: '', redirect: '/instructor/capacitaciones' },
+        { path: '', redirect: '/instructor/dashboard' },
+        { path: 'dashboard', component: () => import('../views/instructor/InstructorDashboard.vue') },
         { path: 'capacitaciones', component: () => import('../views/instructor/CapacitacionesInstructor.vue') },
         { path: 'examenes', component: () => import('../views/instructor/ExamenesInstructor.vue') },
         { path: 'estudiantes', component: () => import('../views/instructor/EstudiantesView.vue') },
