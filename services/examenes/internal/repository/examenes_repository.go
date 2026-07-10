@@ -104,11 +104,11 @@ func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID stri
 		        i.user_id IS NOT NULL OR
 		        a.user_id IS NOT NULL OR
 		        COALESCE(c.is_public, false) = true OR
+		        ex.capacitacion_id IS NOT NULL OR
 		        EXISTS (
 		            SELECT 1 FROM progreso_lecciones pl
 		            JOIN lecciones l ON l.id = pl.leccion_id
-		            JOIN modulos m ON m.id = l.modulo_id
-		            WHERE m.capacitacion_id = ex.capacitacion_id AND pl.user_id = $1
+		            WHERE l.capacitacion_id = ex.capacitacion_id AND pl.user_id = $1
 		        )
 		    )
 		  ORDER BY ex.created_at DESC`, userID)

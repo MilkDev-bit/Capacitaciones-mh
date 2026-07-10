@@ -159,6 +159,14 @@ async function load() {
     }
     // Cargar examen final si está asignado a este curso
     await cargarExamenFinal()
+    if (progreso.value === 100 && examenFinal.value) {
+      toast.success('¡Curso completado! Redirigiendo automáticamente a tu Examen Final...')
+      setTimeout(() => {
+        if (examenFinal.value) {
+          router.push(`/usuario/examenes/${examenFinal.value.id}`)
+        }
+      }, 1600)
+    }
     if (currentUser.value && !currentUser.value.avatar_url) {
       api.get('/perfil').then(res => {
         if (res.data?.user?.avatar_url && authStore.user) {
@@ -235,6 +243,8 @@ async function marcarCompleta() {
     // Mostrar preguntas intermedias si hay
     if (preguntas.value.length > 0) {
       showIntermedias.value = true
+    } else if (progreso.value === 100) {
+      await iniciarExamenFinalAutomatico()
     }
   } catch {
     toast.error('Error al marcar lección')
@@ -287,6 +297,25 @@ async function cargarExamenFinal() {
       (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70)
     ) ?? null
   } catch { /* ignorar silenciosamente */ }
+}
+
+async function iniciarExamenFinalAutomatico() {
+  await cargarExamenFinal()
+  if (examenFinal.value) {
+    toast.success('¡Felicidades por completar el 100% del curso! Redirigiendo automáticamente a tu Examen Final...')
+    setTimeout(() => {
+      if (examenFinal.value) {
+        router.push(`/usuario/examenes/${examenFinal.value.id}`)
+      }
+    }, 1600)
+  }
+}
+
+function cerrarIntermediasYContinuar() {
+  showIntermedias.value = false
+  if (progreso.value === 100) {
+    iniciarExamenFinalAutomatico()
+  }
 }
 
 // ── Foro ────────────────────────────────────────────────────────────────────
@@ -983,7 +1012,7 @@ function tramitarDC3() {
                 <div v-if="resultadoInt" class="ver-int-result">
                   <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1) }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                   <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto</p>
-                  <button @click="showIntermedias = false" class="btn btn-secondary btn-sm" style="margin-top:12px">Continuar</button>
+                  <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm" style="margin-top:12px">Continuar</button>
                 </div>
                 <div v-else style="display:flex;flex-direction:column;gap:16px">
                   <div v-for="p in preguntas" :key="p.id" class="ver-int-pregunta">
