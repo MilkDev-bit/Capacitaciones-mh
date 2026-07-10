@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
@@ -24,16 +24,19 @@ function savedVideoTime(lecId: string): number {
   return Math.max(dbSeconds, localSeconds)
 }
 let lastSyncedSeconds = -1
+watch(() => selectedLeccion.value?.id, () => {
+  lastSyncedSeconds = -1
+})
 async function onVideoTimeUpdate(seconds: number) {
-  if (!selectedLeccion.value) return
+  if (!selectedLeccion.value || seconds <= 0) return
   localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
   selectedLeccion.value.segundos_vistos = seconds
-  if (Math.abs(seconds - lastSyncedSeconds) >= 5) {
-    lastSyncedSeconds = seconds
+  if (Math.abs(seconds - lastSyncedSeconds) >= 3 || lastSyncedSeconds === -1) {
     try {
       await api.post(`/lecciones/${selectedLeccion.value.id}/progreso-video`, { segundos_vistos: seconds })
+      lastSyncedSeconds = seconds
     } catch {
-      // Ignorar error temporal de red al guardar progreso
+      // Si falla la red, se reintentará en la siguiente actualización
     }
   }
 }

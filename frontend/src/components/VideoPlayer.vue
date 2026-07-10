@@ -80,13 +80,13 @@ function initPlayer() {
     })
   }
 
-  // Emitir progreso cada 5 segundos para que el padre lo persista
-  let lastEmit = 0
+  // Emitir progreso periódicamente y ante eventos clave para que el padre lo persista en BD
+  let lastEmit = -1
   let endedEmitted = false
   player.on('timeupdate', () => {
     if (!player) return
     const t = Math.floor(player.currentTime)
-    if (t !== lastEmit && t % 5 === 0) {
+    if (t > 0 && Math.abs(t - lastEmit) >= 3) {
       lastEmit = t
       emit('timeupdate', t)
     }
@@ -94,6 +94,18 @@ function initPlayer() {
       endedEmitted = true
       emit('ended')
     }
+  })
+
+  player.on('pause', () => {
+    if (!player) return
+    const t = Math.floor(player.currentTime)
+    if (t > 0) emit('timeupdate', t)
+  })
+
+  player.on('seeked', () => {
+    if (!player) return
+    const t = Math.floor(player.currentTime)
+    if (t > 0) emit('timeupdate', t)
   })
 
   player.on('ended', () => {
