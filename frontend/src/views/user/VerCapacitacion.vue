@@ -731,7 +731,7 @@ function tramitarDC3() {
               🎓 Responder Examen Final
             </router-link>
           </div>
-          <div v-if="progreso === 100 && curso?.dc3_enabled !== false" style="margin-top: 8px;">
+          <div v-if="progreso === 100 && curso?.dc3_enabled === true" style="margin-top: 8px;">
             <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
@@ -1361,7 +1361,7 @@ function tramitarDC3() {
             <router-link v-if="examenFinal" :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
               🎓 Responder Examen Final
             </router-link>
-            <button v-if="curso?.dc3_enabled !== false" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
+            <button v-if="curso?.dc3_enabled === true" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>

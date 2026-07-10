@@ -142,7 +142,29 @@ func (h *CursosHandler) GetCurso(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	// Serializar manualmente para que dc3_enabled=false no sea omitido por omitempty del proto
+	ctx.JSON(http.StatusOK, gin.H{
+		"id":                    resp.Id,
+		"title":                 resp.Title,
+		"description":           resp.Description,
+		"type":                  resp.Type,
+		"file_path":             resp.FilePath,
+		"content":               resp.Content,
+		"instructor_id":         resp.InstructorId,
+		"is_public":             resp.IsPublic,
+		"codigo_acceso":         resp.CodigoAcceso,
+		"welcome_message":       resp.WelcomeMessage,
+		"thumbnail_url":         resp.ThumbnailUrl,
+		"color":                 resp.Color,
+		"created_at":            resp.CreatedAt,
+		"precio":                resp.Precio,
+		"scheduled_at":          resp.ScheduledAt,
+		"videocall_status":      resp.VideocallStatus,
+		"duration":              resp.Duration,
+		"total_lecciones":       resp.TotalLecciones,
+		"lecciones_completadas": resp.LeccionesCompletadas,
+		"dc3_enabled":           resp.Dc3Enabled, // siempre presente, incluso cuando es false
+	})
 }
 
 // POST /api/cursos/:id/inscripciones
