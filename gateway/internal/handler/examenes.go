@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"Prueba-Go/gateway/internal/clients"
@@ -42,19 +44,32 @@ func (h *ExamenesHandler) GetExamen(ctx *gin.Context) {
 
 // POST /api/examenes/:id/submit
 func (h *ExamenesHandler) SubmitExamen(ctx *gin.Context) {
-	var body struct {
-		Respuestas []struct {
-			PreguntaID     string `json:"pregunta_id"`
-			OpcionID       string `json:"opcion_id"`
-			RespuestaTexto string `json:"respuesta_texto"`
-		} `json:"respuestas"`
-	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	bodyBytes, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo inválido"})
 		return
 	}
+
+	type itemResp struct {
+		PreguntaID     string `json:"pregunta_id"`
+		OpcionID       string `json:"opcion_id"`
+		RespuestaTexto string `json:"respuesta_texto"`
+	}
+
+	var items []itemResp
+	if err := json.Unmarshal(bodyBytes, &items); err != nil {
+		var wrapper struct {
+			Respuestas []itemResp `json:"respuestas"`
+		}
+		if err2 := json.Unmarshal(bodyBytes, &wrapper); err2 != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "formato de respuestas inválido"})
+			return
+		}
+		items = wrapper.Respuestas
+	}
+
 	var respuestas []*examenespb.RespuestaInput
-	for _, r := range body.Respuestas {
+	for _, r := range items {
 		respuestas = append(respuestas, &examenespb.RespuestaInput{
 			PreguntaId:     r.PreguntaID,
 			OpcionId:       r.OpcionID,
