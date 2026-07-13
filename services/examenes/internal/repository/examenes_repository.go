@@ -94,14 +94,8 @@ func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID stri
 		`SELECT DISTINCT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
 		        ex.capacitacion_id, ex.created_at
 		   FROM examenes ex
-		   LEFT JOIN asignaciones_examen ae ON ae.examen_id = ex.id AND ae.user_id = $1
 		  WHERE ex.deleted_at IS NULL
-		    AND (
-		        ex.capacitacion_id IS NOT NULL OR
-		        ae.user_id IS NOT NULL OR
-		        ex.instructor_id = $1
-		    )
-		  ORDER BY ex.created_at DESC`, userID)
+		  ORDER BY ex.created_at DESC`)
 }
 
 func (r *postgresExamenesRepository) FindByID(ctx context.Context, examenID string) (*Examen, error) {
