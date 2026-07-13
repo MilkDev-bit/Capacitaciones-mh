@@ -467,13 +467,13 @@ async function eliminar(id: string) {
             v-for="p in detalleFiltrada"
             :key="p.pregunta_id"
             class="det-q-card"
-            :class="!p.respuesta_dada ? 'q-unanswered' : p.tipo === 'open_text' ? 'q-open' : p.es_correcta ? 'q-correct' : 'q-wrong'"
+            :class="!(p.respuesta_dada || p.respuesta_texto) ? 'q-unanswered' : p.tipo === 'open_text' ? 'q-open' : p.es_correcta ? 'q-correct' : 'q-wrong'"
           >
             <div class="det-q-head">
               <span class="det-q-num">{{ (resDetalle?.indexOf(p) ?? 0) + 1 }}</span>
-              <p class="det-q-texto">{{ p.texto }}</p>
+              <p class="det-q-texto">{{ p.texto || p.pregunta_texto || 'Pregunta' }}</p>
               <div class="det-q-right">
-                <span v-if="!p.respuesta_dada" class="det-q-tag tag-unanswered">Sin respuesta</span>
+                <span v-if="!(p.respuesta_dada || p.respuesta_texto)" class="det-q-tag tag-unanswered">Sin respuesta</span>
                 <span v-else-if="p.tipo === 'open_text'" class="det-q-tag tag-open">Texto libre</span>
                 <span v-else-if="p.es_correcta" class="det-q-tag tag-correct">
                   <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
@@ -483,13 +483,13 @@ async function eliminar(id: string) {
                   <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
                   Incorrecto
                 </span>
-                <span class="det-q-val">{{ p.valor }} pt</span>
+                <span class="det-q-val">{{ p.valor || 1 }} pt</span>
               </div>
             </div>
-            <div v-if="p.respuesta_dada" class="det-q-answers">
+            <div v-if="p.respuesta_dada || p.respuesta_texto" class="det-q-answers">
               <div class="det-ans-row">
                 <span class="det-ans-label">Respondió</span>
-                <span class="det-ans-val" :class="p.tipo === 'open_text' ? 'val-open' : p.es_correcta ? 'val-correct' : 'val-wrong'">{{ p.respuesta_dada }}</span>
+                <span class="det-ans-val" :class="p.tipo === 'open_text' ? 'val-open' : p.es_correcta ? 'val-correct' : 'val-wrong'">{{ p.respuesta_dada || p.respuesta_texto }}</span>
               </div>
               <div v-if="p.tipo !== 'open_text' && !p.es_correcta && p.respuesta_correcta" class="det-ans-row">
                 <span class="det-ans-label">Correcta</span>

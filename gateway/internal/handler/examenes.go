@@ -185,15 +185,72 @@ func (h *ExamenesHandler) InstructorGetResultados(ctx *gin.Context) {
 
 // GET /api/instructor/examenes/:id/resultados/:user_id
 func (h *ExamenesHandler) InstructorGetRespuestasUsuario(ctx *gin.Context) {
+	examenID := ctx.Param("id")
+	userID := ctx.Param("user_id")
+
 	resp, err := h.c.Examenes.InstructorGetRespuestasUsuario(ctx.Request.Context(), &examenespb.RespuestasUsuarioRequest{
-		ExamenId: ctx.Param("id"),
-		UserId:   ctx.Param("user_id"),
+		ExamenId: examenID,
+		UserId:   userID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp.Respuestas)
+
+	exResp, _ := h.c.Examenes.GetExamen(ctx.Request.Context(), &examenespb.ExamenUserRequest{
+		ExamenId: examenID,
+	})
+
+	ansMap := make(map[string]*examenespb.RespuestaDetalle)
+	if resp != nil {
+		for _, ans := range resp.Respuestas {
+			ansMap[ans.PreguntaId] = ans
+		}
+	}
+
+	if exResp == nil || len(exResp.Preguntas) == 0 {
+		if resp != nil {
+			ctx.JSON(http.StatusOK, resp.Respuestas)
+			return
+		}
+		ctx.JSON(http.StatusOK, []gin.H{})
+		return
+	}
+
+	out := make([]gin.H, 0, len(exResp.Preguntas))
+	for _, q := range exResp.Preguntas {
+		ans, ok := ansMap[q.Id]
+		respuestaDada := ""
+		esCorrecta := false
+		if ok {
+			respuestaDada = ans.RespuestaTexto
+			esCorrecta = ans.EsCorrecta
+		}
+
+		respuestaCorrecta := ""
+		for _, opt := range q.Opciones {
+			if opt.EsCorrecta {
+				respuestaCorrecta = opt.Texto
+			}
+			if ok && ans.OpcionId == opt.Id && respuestaDada == "" {
+				respuestaDada = opt.Texto
+			}
+		}
+
+		out = append(out, gin.H{
+			"pregunta_id":        q.Id,
+			"texto":              q.Texto,
+			"pregunta_texto":     q.Texto,
+			"tipo":               q.Tipo,
+			"valor":              q.Valor,
+			"es_correcta":        esCorrecta,
+			"respuesta_dada":     respuestaDada,
+			"respuesta_texto":    respuestaDada,
+			"respuesta_correcta": respuestaCorrecta,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, out)
 }
 
 // POST /api/instructor/examenes
