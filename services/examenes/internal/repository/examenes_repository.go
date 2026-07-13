@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -181,6 +182,21 @@ func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, exame
 	userName := metaVal(ctx, "x-user-name")
 	if userName == "" {
 		userName = "Estudiante"
+	}
+
+	// Verificar si el usuario ya aprobó este examen con >= 80%
+	var prevPuntaje float64
+	var prevTotal float64
+	_ = r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(CASE WHEN o.es_correcta THEN COALESCE(p.valor, 1) ELSE 0 END), 0),
+		       COALESCE(SUM(COALESCE(p.valor, 1)), 0)
+		  FROM respuestas_examen re
+		  JOIN preguntas p ON p.id = re.pregunta_id
+		  LEFT JOIN opciones o ON o.id = re.opcion_id
+		 WHERE re.examen_id = $1 AND re.user_id = $2
+	`, examenID, userID).Scan(&prevPuntaje, &prevTotal)
+	if prevTotal > 0 && (prevPuntaje/prevTotal*100) >= 80 {
+		return nil, fmt.Errorf("Ya respondiste este examen con una calificación aprobatoria (>= 80%%)")
 	}
 
 	// Obtener preguntas del examen para calcular puntaje.

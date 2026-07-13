@@ -18,8 +18,8 @@ onMounted(async () => {
 
 const examensFiltrados = computed(() => {
   return examenes.value.filter((e: any) => {
-    if (statusFilter.value === 'pendiente'  && (e.bloqueado || (e.ya_respondido && e.porcentaje >= 70))) return false
-    if (statusFilter.value === 'completado' && (!e.ya_respondido || e.porcentaje < 70)) return false
+    if (statusFilter.value === 'pendiente'  && (e.bloqueado || (e.ya_respondido && e.porcentaje >= 80))) return false
+    if (statusFilter.value === 'completado' && (!e.ya_respondido || e.porcentaje < 80)) return false
     if (statusFilter.value === 'bloqueado'  && !e.bloqueado) return false
     if (dateFrom.value || dateTo.value) {
       const d = new Date(e.created_at)
@@ -50,12 +50,16 @@ function openInWindow(id: string) {
 
 function scoreColor(pct: number) {
   if (pct >= 80) return '#10b981'
-  if (pct >= 70) return '#f59e0b'
+  if (pct >= 60) return '#f59e0b'
   return '#ef4444'
 }
 
 function handleCardClick(e: any) {
-  if (e.bloqueado || (e.ya_respondido && e.porcentaje >= 70)) return
+  if (e.bloqueado) return
+  if (e.ya_respondido && e.porcentaje >= 80) {
+    alert(`Ya respondiste este examen con una calificación aprobatoria (${e.porcentaje.toFixed(0)}%). No es necesario repetirlo.`)
+    return
+  }
   router.push('/usuario/examenes/' + e.id)
 }
 
@@ -106,20 +110,20 @@ function tramitarDC3(e: any) {
       <div
         v-for="(e, i) in examensFiltrados" :key="e.id"
         class="exam-card"
-        :class="{ 'exam-card--locked': e.bloqueado, 'exam-card--done': e.ya_respondido && e.porcentaje >= 70 }"
+        :class="{ 'exam-card--locked': e.bloqueado, 'exam-card--done': e.ya_respondido && e.porcentaje >= 80 }"
         :style="`--anim-delay: ${i * 60}ms`"
         @click="handleCardClick(e)"
         tabindex="0"
         @keyup.enter="handleCardClick(e)"
       >
         <!-- Thumb -->
-        <div class="exam-thumb" :class="e.bloqueado ? 'thumb--locked' : (e.ya_respondido && e.porcentaje >= 70) ? 'thumb--done' : ''">
+        <div class="exam-thumb" :class="e.bloqueado ? 'thumb--locked' : (e.ya_respondido && e.porcentaje >= 80) ? 'thumb--done' : ''">
           <!-- Bloqueado -->
           <span v-if="e.bloqueado" class="exam-icon">
             <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           </span>
           <!-- Ya respondido -->
-          <span v-else-if="e.ya_respondido && e.porcentaje >= 70" class="exam-icon">
+          <span v-else-if="e.ya_respondido && e.porcentaje >= 80" class="exam-icon">
             <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </span>
           <!-- Normal o reintento -->
@@ -133,8 +137,8 @@ function tramitarDC3(e: any) {
         <div class="exam-body">
           <!-- Badge estado -->
           <span v-if="e.bloqueado" class="exam-badge badge--locked">Bloqueado</span>
-          <span v-else-if="e.ya_respondido && e.porcentaje >= 70" class="exam-badge badge--done">Aprobado</span>
-          <span v-else-if="e.ya_respondido && e.porcentaje < 70" class="exam-badge" style="background: #fee2e2; color: #dc2626;">No aprobado</span>
+          <span v-else-if="e.ya_respondido && e.porcentaje >= 80" class="exam-badge badge--done">Aprobado</span>
+          <span v-else-if="e.ya_respondido && e.porcentaje < 80" class="exam-badge" style="background: #fee2e2; color: #dc2626;">No aprobado</span>
           <span v-else class="exam-badge">Exámen</span>
 
           <h3>{{ e.title }}</h3>
@@ -146,7 +150,7 @@ function tramitarDC3(e: any) {
           </p>
 
           <!-- Completado y Aprobado: puntaje -->
-          <div v-else-if="e.ya_respondido && e.porcentaje >= 70">
+          <div v-else-if="e.ya_respondido && e.porcentaje >= 80">
             <div class="exam-score-row">
               <div class="exam-score-bar">
                 <div class="exam-score-fill" :style="{ width: e.porcentaje + '%', background: scoreColor(e.porcentaje) }"></div>
@@ -168,7 +172,7 @@ function tramitarDC3(e: any) {
 
           <!-- Disponible o Reintento: botones -->
           <div v-else class="exam-cta-row">
-            <span class="exam-cta">{{ e.ya_respondido && e.porcentaje < 70 ? '🔄 Reintentar exámen →' : 'Responder exámen →' }}</span>
+            <span class="exam-cta">{{ e.ya_respondido && e.porcentaje < 80 ? '🔄 Reintentar exámen →' : 'Responder exámen →' }}</span>
             <button
               class="exam-window-btn"
               @click.stop="openInWindow(e.id)"

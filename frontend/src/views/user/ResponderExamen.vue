@@ -130,10 +130,10 @@ function tramitarDC3() {
     <!-- Resultado -->
     <div v-else class="result-card">
       <div class="result-icon">
-        <svg v-if="resultado.porcentaje >= 70" width="56" height="56" fill="none" stroke="#22c55e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <svg v-if="resultado.porcentaje >= 80" width="56" height="56" fill="none" stroke="#22c55e" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <svg v-else width="56" height="56" fill="none" stroke="#f97316" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       </div>
-      <h2>{{ (resultado.ya_respondido && resultado.porcentaje >= 70) ? 'Ya completaste este exámen' : 'Exámen completado' }}</h2>
+      <h2>{{ (resultado.ya_respondido && resultado.porcentaje >= 80) ? 'Ya completaste y aprobaste este exámen' : 'Exámen completado' }}</h2>
       <div class="score-ring" :style="{ '--pct': resultado.porcentaje, '--color': getColor(resultado.porcentaje) }">
         <svg viewBox="0 0 100 100" class="ring-svg">
           <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border)" stroke-width="8"/>
@@ -152,12 +152,12 @@ function tramitarDC3() {
         Obtuviste <strong>{{ resultado.puntaje }}</strong> de <strong>{{ resultado.puntaje_max }}</strong> puntos
       </p>
       <p class="result-verdict" :style="{ color: getColor(resultado.porcentaje) }">
-        {{ resultado.porcentaje >= 80 ? '¡Excelente trabajo!' : resultado.porcentaje >= 70 ? '¡Aprobado!' : 'No aprobado — necesitas al menos 70% para aprobar' }}
+        {{ resultado.porcentaje >= 80 ? '¡Aprobado! Excelente trabajo.' : 'No aprobado — necesitas al menos 80% para aprobar' }}
       </p>
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap;">
         <router-link to="/usuario/examenes" class="btn btn-secondary" style="display:inline-flex">Volver a mis exámenes</router-link>
-        <button v-if="resultado.porcentaje < 70" @click="reintentar" class="btn btn-primary" style="display:inline-flex">🔄 Reintentar Examen</button>
-        <button v-if="resultado.porcentaje >= 70" @click="tramitarDC3" class="btn btn-primary" style="display:inline-flex; background: #10b981; border-color: #10b981;">📋 Tramitar Constancia DC-3</button>
+        <button v-if="resultado.porcentaje < 80" @click="reintentar" class="btn btn-primary" style="display:inline-flex">🔄 Reintentar Examen</button>
+        <button v-if="resultado.porcentaje >= 80" @click="tramitarDC3" class="btn btn-primary" style="display:inline-flex; background: #10b981; border-color: #10b981;">📋 Tramitar Constancia DC-3</button>
       </div>
     </div>
   </div>

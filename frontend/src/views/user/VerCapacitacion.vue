@@ -307,6 +307,10 @@ async function abrirExamenEnCurso() {
   showConfetti.value = false
   if (!examenFinal.value) await cargarExamenFinal()
   if (!examenFinal.value) return
+  if (examenFinal.value.ya_respondido && Number(examenFinal.value.porcentaje || 0) >= 80) {
+    toast.info(`Ya respondiste este examen con una calificación aprobatoria (${Number(examenFinal.value.porcentaje).toFixed(0)}%). No es necesario repetirlo.`)
+    return
+  }
   showExamenModal.value = true
   examenResultado.value = null
   examenRespuestas.value = {}
@@ -365,6 +369,12 @@ async function abrirPanelAvance() {
 async function iniciarExamenFinalAutomatico() {
   await cargarExamenFinal()
   if (examenFinal.value) {
+    if (examenFinal.value.ya_respondido && Number(examenFinal.value.porcentaje || 0) >= 80) {
+      toast.info(`Ya respondiste este examen final y lo aprobaste con ${Number(examenFinal.value.porcentaje).toFixed(0)}%.`)
+      showConfetti.value = true
+      setTimeout(() => { showConfetti.value = false }, 5000)
+      return
+    }
     showConfetti.value = false
     toast.success('¡Felicidades por completar el 100% del curso! Abriendo tu Examen Final...')
     await abrirExamenEnCurso()
@@ -804,11 +814,24 @@ function tramitarDC3() {
             </button>
           </div>
           <div v-if="progreso === 100 && examenFinal" style="margin-top: 8px;">
-            <button @click="abrirExamenEnCurso" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+            <button
+              v-if="examenFinal.ya_respondido && Number(examenFinal.porcentaje || 0) >= 80"
+              @click="abrirExamenEnCurso"
+              class="btn btn-secondary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: #10b98115; border: 1.5px solid #10b981; color: #10b981;"
+            >
+              ✓ Examen Aprobado ({{ Number(examenFinal.porcentaje).toFixed(0) }}%)
+            </button>
+            <button
+              v-else
+              @click="abrirExamenEnCurso"
+              class="btn btn-primary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
+            >
               <span class="glass-icon-badge glass-icon-amber">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
               </span>
-              Responder Examen Final
+              {{ examenFinal.ya_respondido ? '🔄 Repetir Examen (' + Number(examenFinal.porcentaje || 0).toFixed(0) + '%)' : 'Responder Examen Final' }}
             </button>
           </div>
           <div v-if="progreso === 100 && curso?.dc3_enabled === true" style="margin-top: 8px;">
