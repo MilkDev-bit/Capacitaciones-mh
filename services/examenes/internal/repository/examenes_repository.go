@@ -95,21 +95,11 @@ func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID stri
 		        ex.capacitacion_id, ex.created_at
 		   FROM examenes ex
 		   LEFT JOIN asignaciones_examen ae ON ae.examen_id = ex.id AND ae.user_id = $1
-		   LEFT JOIN inscripciones i ON i.capacitacion_id = ex.capacitacion_id AND i.user_id = $1
-		   LEFT JOIN asignaciones a ON a.capacitacion_id = ex.capacitacion_id AND a.user_id = $1
-		   LEFT JOIN capacitaciones c ON c.id = ex.capacitacion_id
 		  WHERE ex.deleted_at IS NULL
 		    AND (
-		        ae.user_id IS NOT NULL OR
-		        i.user_id IS NOT NULL OR
-		        a.user_id IS NOT NULL OR
-		        COALESCE(c.is_public, false) = true OR
 		        ex.capacitacion_id IS NOT NULL OR
-		        EXISTS (
-		            SELECT 1 FROM progreso_lecciones pl
-		            JOIN lecciones l ON l.id = pl.leccion_id
-		            WHERE l.capacitacion_id = ex.capacitacion_id AND pl.user_id = $1
-		        )
+		        ae.user_id IS NOT NULL OR
+		        ex.instructor_id = $1
 		    )
 		  ORDER BY ex.created_at DESC`, userID)
 }
