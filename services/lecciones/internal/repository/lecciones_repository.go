@@ -670,27 +670,33 @@ func (r *postgresLeccionesRepository) UpdateUserTotalPoints(ctx context.Context,
 	return err
 }
 
-// GetLeaderboard devuelve los top-N usuarios por puntos en el curso.
+// GetLeaderboard devuelve los top-N usuarios por puntos en el curso (juegos + lecciones completadas).
 func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoID string, topN int) ([]*LeaderboardRow, error) {
 	if topN <= 0 {
 		topN = 5
 	}
 	query := `
-		WITH best_scores AS (
-			SELECT user_id, leccion_id, MAX(points) AS max_points, MIN(scored_at) AS first_scored
+		WITH combined_points AS (
+			SELECT user_id, MAX(points) AS pts, MIN(scored_at) AS scored_at
 			FROM game_scores
 			WHERE capacitacion_id = $1
 			GROUP BY user_id, leccion_id
+			UNION ALL
+			SELECT pl.user_id, COALESCE(NULLIF(l.points_reward, 0), 15) AS pts, MIN(pl.completado_at) AS scored_at
+			FROM progreso_lecciones pl
+			JOIN lecciones l ON l.id = pl.leccion_id
+			WHERE l.capacitacion_id = $1 AND pl.completado = true
+			GROUP BY pl.user_id, pl.leccion_id, l.points_reward
 		)
 		SELECT
-			b.user_id,
+			c.user_id,
 			COALESCE(u.name, 'Estudiante') AS user_name,
 			COALESCE(u.avatar_url, '') AS avatar_url,
-			SUM(b.max_points)::INT AS points
-		FROM best_scores b
-		LEFT JOIN users u ON u.id = b.user_id
-		GROUP BY b.user_id, u.name, u.avatar_url
-		ORDER BY points DESC, MIN(b.first_scored) ASC
+			SUM(c.pts)::INT AS points
+		FROM combined_points c
+		LEFT JOIN users u ON u.id = c.user_id
+		GROUP BY c.user_id, u.name, u.avatar_url
+		ORDER BY points DESC, MIN(c.scored_at) ASC
 		LIMIT $2`
 	var rows []*LeaderboardRow
 	return rows, r.db.SelectContext(ctx, &rows, query, cursoID, topN)

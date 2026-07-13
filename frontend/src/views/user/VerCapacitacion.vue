@@ -792,13 +792,19 @@ function tramitarDC3() {
             Mis cursos
           </button>
           <div style="margin-top: 10px;">
-            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;" @click="abrirPanelAvance">
-              📊 Mi Avance y Puntuaciones
+            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;" @click="abrirPanelAvance">
+              <span class="glass-icon-badge glass-icon-blue">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
+              </span>
+              Mi Avance y Puntuaciones
             </button>
           </div>
           <div v-if="progreso === 100 && examenFinal" style="margin-top: 8px;">
-            <button @click="abrirExamenEnCurso" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
-              🎓 Responder Examen Final
+            <button @click="abrirExamenEnCurso" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+              <span class="glass-icon-badge glass-icon-amber">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+              </span>
+              Responder Examen Final
             </button>
           </div>
           <div v-if="progreso === 100 && curso?.dc3_enabled === true" style="margin-top: 8px;">
@@ -1445,9 +1451,14 @@ function tramitarDC3() {
       <div v-if="showAvancePanel" class="foro-card-backdrop" @click="showAvancePanel = false">
         <div class="ver-avance-panel-modal" @click.stop>
           <div class="ver-avance-head">
-            <div>
-              <h3>🏆 Mi Avance y Puntuaciones</h3>
-              <p>Progreso en el curso y ranking de puntuaciones logradas en juegos</p>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="glass-icon-box glass-icon-amber">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10c1.1 0 2 .9 2 2v2c0 2.21-1.79 4-4 4h-6c-2.21 0-4-1.79-4-4V6c0-1.1.9-2 2-2zM5 6H3c0 2.21 1.79 4 4 4M19 6h2c0 2.21-1.79 4-4 4"/></svg>
+              </div>
+              <div>
+                <h3>Mi Avance y Puntuaciones</h3>
+                <p>Progreso en el curso y ranking de puntuaciones logradas</p>
+              </div>
             </div>
             <button class="fpc-close" @click="showAvancePanel = false">✕</button>
           </div>
@@ -1470,19 +1481,28 @@ function tramitarDC3() {
               </div>
             </div>
 
-            <!-- Tabla de Leaderboard / Puntuaciones en juegos -->
+            <!-- Tabla de Leaderboard / Puntuaciones -->
             <div class="ver-avance-ranking">
-              <h4>🎯 Ranking de Puntuaciones en Juegos del Curso</h4>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <span class="glass-icon-badge glass-icon-orange">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </span>
+                <h4 style="margin: 0; font-size: 1.05rem; color: #f8fafc; font-weight: 700;">Ranking de Puntuaciones del Curso</h4>
+              </div>
+
               <div v-if="loadingLeaderboard" style="padding: 20px; text-align: center; color: #94a3b8;">
                 Cargando puntuaciones...
               </div>
               <div v-else-if="leaderboard.length === 0" style="padding: 24px; text-align: center; color: #94a3b8; background: rgba(255,255,255,0.03); border-radius: 12px; margin-top: 10px;">
-                Aún no hay puntuaciones registradas en juegos para este curso. ¡Completa actividades interactivas para sumar puntos!
+                Aún no hay puntuaciones registradas para este curso. ¡Completa lecciones o actividades interactivas para sumar puntos!
               </div>
               <div v-else class="leaderboard-list">
                 <div v-for="(entry, idx) in leaderboard" :key="entry.user_id || idx" class="leaderboard-row">
-                  <div class="lb-rank" :class="{ 'lb-rank-top': entry.rank <= 3 }">
-                    {{ entry.rank || idx + 1 }}
+                  <div class="lb-rank" :class="{ 'lb-rank-top': (entry.rank || idx + 1) <= 3 }">
+                    <span v-if="(entry.rank || idx + 1) === 1" class="glass-rank-badge glass-rank-gold" title="1er Lugar">1</span>
+                    <span v-else-if="(entry.rank || idx + 1) === 2" class="glass-rank-badge glass-rank-silver" title="2do Lugar">2</span>
+                    <span v-else-if="(entry.rank || idx + 1) === 3" class="glass-rank-badge glass-rank-bronze" title="3er Lugar">3</span>
+                    <span v-else>{{ entry.rank || idx + 1 }}</span>
                   </div>
                   <div class="lb-user">
                     <div class="lb-avatar">{{ (entry.user_name || 'E').charAt(0).toUpperCase() }}</div>
@@ -2569,5 +2589,53 @@ function tramitarDC3() {
   display: inline-block; font-size: 2.5rem; font-weight: 800; color: #10b981;
   background: rgba(16,185,129,0.1); border: 2px solid #10b981; border-radius: 50%;
   width: 100px; height: 100px; line-height: 96px; margin-bottom: 16px;
+}
+
+/* ── Glassmorphic Icons & Badges ── */
+.glass-icon-box {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+.glass-icon-badge {
+  width: 24px; height: 24px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.glass-icon-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.1));
+  color: #fbbf24;
+}
+.glass-icon-blue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.1));
+  color: #60a5fa;
+}
+.glass-icon-orange {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.1));
+  color: #f97316;
+}
+.glass-rank-badge {
+  width: 28px; height: 28px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+.glass-rank-gold {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.85), rgba(217, 119, 6, 0.65));
+  color: #fff;
+}
+.glass-rank-silver {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.85), rgba(100, 116, 139, 0.65));
+  color: #fff;
+}
+.glass-rank-bronze {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.75), rgba(180, 83, 9, 0.65));
+  color: #fff;
 }
 </style>

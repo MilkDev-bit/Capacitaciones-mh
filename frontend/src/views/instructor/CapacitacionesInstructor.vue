@@ -158,8 +158,11 @@ function copyCode(code: string) {
               </button>
             </div>
             <div style="margin-top: 12px; width: 100%;">
-              <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;" @click="abrirAvanceInstructor(c)">
-                📊 Avance y Puntuaciones de Usuarios
+              <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;" @click="abrirAvanceInstructor(c)">
+                <span class="glass-icon-badge glass-icon-blue">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                </span>
+                Avance y Puntuaciones de Usuarios
               </button>
             </div>
           </div>
@@ -185,9 +188,14 @@ function copyCode(code: string) {
       <div v-if="showAvanceModal" class="modal-backdrop" @click="showAvanceModal = false">
         <div class="avance-modal-card" @click.stop>
           <div class="avance-modal-head">
-            <div>
-              <h3>📊 Avance y Puntuaciones de Usuarios</h3>
-              <p>{{ selectedAvanceCourse?.title }}</p>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="glass-icon-box glass-icon-blue">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </div>
+              <div>
+                <h3>Avance y Puntuaciones de Usuarios</h3>
+                <p>{{ selectedAvanceCourse?.title }}</p>
+              </div>
             </div>
             <button class="close-btn" @click="showAvanceModal = false">✕</button>
           </div>
@@ -348,5 +356,26 @@ function copyCode(code: string) {
 .lb-inst-points { font-weight: 700; color: var(--brand); }
 .avance-modal-foot {
   padding: 14px 24px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end;
+}
+
+/* ── Glassmorphic Icons & Badges ── */
+.glass-icon-box {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+.glass-icon-badge {
+  width: 24px; height: 24px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.glass-icon-blue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.1));
+  color: #60a5fa;
 }
 </style>
