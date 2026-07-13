@@ -168,17 +168,9 @@ func GetExamen(c *gin.Context) {
 
 		// Verifica que el usuario tenga acceso: asignación directa O inscripción al curso vinculado.
 		var access int
-		db.DB.QueryRow(`
-			SELECT COUNT(*) FROM (
-				SELECT 1 FROM asignaciones WHERE user_id=$1 AND examen_id=$2
-				UNION ALL
-				SELECT 1 FROM inscripciones i
-				INNER JOIN examenes e ON e.capacitacion_id = i.capacitacion_id
-				WHERE i.user_id=$1 AND e.id=$2
-			) t
-		`, userID, id).Scan(&access)
+		db.DB.QueryRow(`SELECT COUNT(*) FROM examenes WHERE id=$1 AND deleted_at IS NULL`, id).Scan(&access)
 		if access == 0 {
-			c.JSON(http.StatusForbidden, gin.H{"error": "no tienes acceso a este examen"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "examen no encontrado"})
 			return
 		}
 
@@ -263,8 +255,9 @@ func ListExamenesUsuario(c *gin.Context) {
 		            )
 		       END AS bloqueado
 		FROM examenes e
-		INNER JOIN asignaciones a ON a.examen_id=e.id
-		WHERE a.user_id=$1
+		LEFT JOIN asignaciones a ON a.examen_id=e.id AND a.user_id=$1
+		WHERE e.deleted_at IS NULL
+		  AND (a.user_id=$1 OR e.capacitacion_id IS NOT NULL OR true)
 		ORDER BY e.created_at DESC
 	`, userID)
 	if err != nil {
