@@ -51,7 +51,7 @@ async function guardar() {
       description: form.value.description,
       type: 'course',
       is_public: form.value.is_public,
-      dc3_enabled: form.value.dc3_enabled,
+      dc3_enabled: form.value.dc3_enabled === true,
       welcome_message: form.value.welcome_message,
       color: form.value.color,
       precio: Number(form.value.precio) || 0,

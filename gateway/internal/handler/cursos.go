@@ -55,6 +55,42 @@ func genMetadata(ctx *gin.Context) context.Context {
 	return metadata.NewOutgoingContext(ctx.Request.Context(), md)
 }
 
+func cursoToJSON(resp *cursospb.CursoResponse) gin.H {
+	if resp == nil {
+		return gin.H{}
+	}
+	return gin.H{
+		"id":                    resp.Id,
+		"title":                 resp.Title,
+		"description":           resp.Description,
+		"type":                  resp.Type,
+		"file_path":             resp.FilePath,
+		"content":               resp.Content,
+		"instructor_id":         resp.InstructorId,
+		"is_public":             resp.IsPublic,
+		"codigo_acceso":         resp.CodigoAcceso,
+		"welcome_message":       resp.WelcomeMessage,
+		"thumbnail_url":         resp.ThumbnailUrl,
+		"color":                 resp.Color,
+		"created_at":            resp.CreatedAt,
+		"precio":                resp.Precio,
+		"scheduled_at":          resp.ScheduledAt,
+		"videocall_status":      resp.VideocallStatus,
+		"duration":              resp.Duration,
+		"total_lecciones":       resp.TotalLecciones,
+		"lecciones_completadas": resp.LeccionesCompletadas,
+		"dc3_enabled":           resp.Dc3Enabled,
+	}
+}
+
+func cursosToJSON(list []*cursospb.CursoResponse) []gin.H {
+	out := make([]gin.H, len(list))
+	for i, c := range list {
+		out[i] = cursoToJSON(c)
+	}
+	return out
+}
+
 // GET /api/cursos-publicos
 func (h *CursosHandler) ListCursosPublicos(ctx *gin.Context) {
 	resp, err := h.c.Cursos.ListCursosPublicos(ctx.Request.Context(), &cursospb.EmptyRequest{})
@@ -73,7 +109,7 @@ func (h *CursosHandler) ListCursosPublicos(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, resp.Cursos)
+	ctx.JSON(http.StatusOK, cursosToJSON(resp.Cursos))
 }
 
 // GET /api/cursos-publicos/:id
@@ -85,7 +121,7 @@ func (h *CursosHandler) GetCursoPublico(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, cursoToJSON(resp))
 }
 
 // GET /api/preview-curso/:codigo
@@ -129,7 +165,7 @@ func (h *CursosHandler) ListMisCapacitaciones(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, resp.Cursos)
+	ctx.JSON(http.StatusOK, cursosToJSON(resp.Cursos))
 }
 
 // GET /api/capacitaciones/:id
@@ -142,29 +178,7 @@ func (h *CursosHandler) GetCurso(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	// Serializar manualmente para que dc3_enabled=false no sea omitido por omitempty del proto
-	ctx.JSON(http.StatusOK, gin.H{
-		"id":                    resp.Id,
-		"title":                 resp.Title,
-		"description":           resp.Description,
-		"type":                  resp.Type,
-		"file_path":             resp.FilePath,
-		"content":               resp.Content,
-		"instructor_id":         resp.InstructorId,
-		"is_public":             resp.IsPublic,
-		"codigo_acceso":         resp.CodigoAcceso,
-		"welcome_message":       resp.WelcomeMessage,
-		"thumbnail_url":         resp.ThumbnailUrl,
-		"color":                 resp.Color,
-		"created_at":            resp.CreatedAt,
-		"precio":                resp.Precio,
-		"scheduled_at":          resp.ScheduledAt,
-		"videocall_status":      resp.VideocallStatus,
-		"duration":              resp.Duration,
-		"total_lecciones":       resp.TotalLecciones,
-		"lecciones_completadas": resp.LeccionesCompletadas,
-		"dc3_enabled":           resp.Dc3Enabled, // siempre presente, incluso cuando es false
-	})
+	ctx.JSON(http.StatusOK, cursoToJSON(resp))
 }
 
 // POST /api/cursos/:id/inscripciones
@@ -643,7 +657,7 @@ func (h *CursosHandler) InstructorListCapacitaciones(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp.Cursos)
+	ctx.JSON(http.StatusOK, cursosToJSON(resp.Cursos))
 }
 
 // POST /api/instructor/capacitaciones
@@ -687,7 +701,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSON(http.StatusCreated, cursoToJSON(resp))
 }
 
 // PUT /api/instructor/capacitaciones/:id
@@ -732,7 +746,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, cursoToJSON(resp))
 }
 
 // DELETE /api/instructor/capacitaciones/:id

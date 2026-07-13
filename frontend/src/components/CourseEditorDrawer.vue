@@ -24,7 +24,7 @@ const thumbnailFile = ref<File | null>(null)
 
 watch(() => props.show, (val) => {
   if (val && props.course) {
-    form.value = { dc3_enabled: true, ...props.course }
+    form.value = { ...props.course, dc3_enabled: props.course.dc3_enabled === true }
     thumbnailFile.value = null
     activeTab.value = 'info'
   }
@@ -39,7 +39,7 @@ async function saveInfo() {
       description: form.value.description || '',
       type: form.value.type || 'course',
       is_public: form.value.is_public,
-      dc3_enabled: form.value.dc3_enabled !== false,
+      dc3_enabled: form.value.dc3_enabled === true,
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
