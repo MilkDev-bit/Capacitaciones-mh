@@ -1535,7 +1535,7 @@ function tramitarDC3() {
               <span class="ver-examen-badge">EXAMEN FINAL DEL CURSO</span>
               <h3>{{ examenFinal.title }}</h3>
             </div>
-            <button class="fpc-close" @click="showExamenModal = false">✕</button>
+            <button class="ver-examen-close-btn" @click="showExamenModal = false" title="Cerrar">✕</button>
           </div>
 
           <div class="ver-examen-modal-body">
@@ -1544,11 +1544,11 @@ function tramitarDC3() {
                 {{ examenResultado.porcentaje }}%
               </div>
               <h4>¡Has completado el examen!</h4>
-              <p>Obtuviste {{ examenResultado.correctas }} de {{ examenResultado.total }} respuestas correctas.</p>
+              <p>Obtuviste {{ examenResultado.correctas }} de {{ examenResultado.total }} responses correctas.</p>
               <button class="btn btn-primary" style="margin-top: 16px;" @click="showExamenModal = false">Continuar</button>
             </div>
 
-            <div v-else-if="!examenData" style="padding: 40px; text-align: center;">
+            <div v-else-if="!examenData" style="padding: 40px; text-align: center; color: var(--muted);">
               Cargando examen final...
             </div>
 
@@ -1565,7 +1565,7 @@ function tramitarDC3() {
                         <span>{{ opc.texto }}</span>
                       </label>
                     </div>
-                    <textarea v-else v-model="examenRespuestas[preg.id]" class="form-control" placeholder="Escribe tu respuesta aquí..." rows="3"></textarea>
+                    <textarea v-else v-model="examenRespuestas[preg.id]" class="field-input" placeholder="Escribe tu respuesta aquí..." rows="3"></textarea>
                   </div>
                 </div>
               </div>
@@ -2553,41 +2553,54 @@ function tramitarDC3() {
 
 /* ── Examen modal en curso ── */
 .ver-examen-modal {
-  background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
   width: 90%; max-width: 720px; max-height: 88vh; display: flex; flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5); color: #f8fafc; overflow: hidden;
+  box-shadow: var(--shadow-lg); color: var(--text); overflow: hidden;
 }
 .ver-examen-modal-head {
-  padding: 20px 24px; border-bottom: 1px solid #334155; display: flex;
-  justify-content: space-between; align-items: center;
+  padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex;
+  justify-content: space-between; align-items: center; background: var(--surface);
 }
 .ver-examen-badge {
-  font-size: 0.75rem; font-weight: 700; color: #f97316; letter-spacing: 0.05em;
+  font-size: 0.75rem; font-weight: 700; color: var(--brand); letter-spacing: 0.05em; display: block;
 }
-.ver-examen-modal-head h3 { margin: 4px 0 0; font-size: 1.3rem; font-weight: 700; }
-.ver-examen-modal-body { padding: 24px; overflow-y: auto; flex: 1; }
-.ver-examen-preguntas { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.ver-examen-modal-head h3 { margin: 4px 0 0; font-size: 1.3rem; font-weight: 700; color: var(--dark); }
+.ver-examen-close-btn {
+  background: var(--surface-soft); border: 1px solid var(--border); cursor: pointer;
+  color: var(--muted); border-radius: 50%; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  transition: all 0.2s;
+}
+.ver-examen-close-btn:hover { background: var(--border); color: var(--dark); }
+.ver-examen-modal-body { padding: 24px; overflow-y: auto; flex: 1; background: var(--surface); }
+.ver-examen-desc { font-size: 0.95rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.ver-examen-preguntas { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
 .ver-examen-pregunta-card {
-  display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid #334155;
-  border-radius: 12px; padding: 16px;
+  display: flex; gap: 14px; background: var(--surface-soft); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px;
 }
 .preg-num {
-  width: 28px; height: 28px; border-radius: 50%; background: #f97316; color: #fff;
+  width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff;
   display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
 }
-.preg-content { flex: 1; }
-.preg-content h5 { margin: 0 0 12px; font-size: 1rem; color: #f8fafc; font-weight: 600; }
+.preg-content { flex: 1; min-width: 0; }
+.preg-content h5 { margin: 0 0 12px; font-size: 1.02rem; color: var(--dark); font-weight: 700; line-height: 1.4; }
 .preg-opciones { display: flex; flex-direction: column; gap: 8px; }
 .preg-opc-label {
   display: flex; align-items: center; gap: 10px; cursor: pointer;
-  padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.02);
-  border: 1px solid transparent; transition: all 0.2s;
+  padding: 10px 14px; border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--border); transition: all 0.2s; color: var(--text);
+  font-size: 0.95rem; font-weight: 500;
 }
-.preg-opc-label:hover { border-color: #f97316; background: rgba(249,115,22,0.08); }
+.preg-opc-label span { color: var(--text); }
+.preg-opc-label:hover { border-color: var(--brand); background: rgba(249,115,22,0.08); }
 .ver-examen-modal-foot {
-  padding: 16px 24px; border-top: 1px solid #334155; display: flex; justify-content: flex-end; gap: 12px;
+  padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;
+  background: var(--surface);
 }
-.ver-examen-res-box { text-align: center; padding: 30px; }
+.ver-examen-res-box { text-align: center; padding: 30px; color: var(--text); }
+.ver-examen-res-box h4 { color: var(--dark); font-size: 1.3rem; margin-bottom: 8px; }
+.ver-examen-res-box p { color: var(--muted); font-size: 0.95rem; }
 .ver-examen-score-badge {
   display: inline-block; font-size: 2.5rem; font-weight: 800; color: #10b981;
   background: rgba(16,185,129,0.1); border: 2px solid #10b981; border-radius: 50%;
