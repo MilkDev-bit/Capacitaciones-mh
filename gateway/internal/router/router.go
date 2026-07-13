@@ -9,6 +9,7 @@ import (
 
 	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/handler"
+	"Prueba-Go/gateway/internal/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -72,14 +73,17 @@ func New(d Deps) *gin.Engine {
 	})
 
 	api := r.Group("/api")
+	api.Use(middleware.NewRateLimiter(300, 50).Handler()) // Global Anti-DDoS (300 req/min, ráfaga 50)
 	{
 		api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 
-		// ── Auth (público) ────────────────────────────────────────────────────
-		api.POST("/register", d.AuthH.Register)
-		api.POST("/login", d.AuthH.Login)
+		// ── Auth (protección estricta contra fuerza bruta) ────────────────────
+		authStrict := api.Group("/", middleware.NewRateLimiter(20, 5).Handler())
+		authStrict.POST("/register", d.AuthH.Register)
+		authStrict.POST("/login", d.AuthH.Login)
+		authStrict.POST("/forgot-password", d.AuthH.ForgotPassword)
+
 		api.POST("/logout", d.AuthH.Logout)
-		api.POST("/forgot-password", d.AuthH.ForgotPassword)
 		api.POST("/reset-password", d.AuthH.ResetPassword)
 
 		// ── Público ───────────────────────────────────────────────────────────
