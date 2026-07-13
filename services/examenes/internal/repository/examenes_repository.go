@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"time"
 
 	examenespb "Prueba-Go/gen/examenes"
