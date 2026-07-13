@@ -683,13 +683,14 @@ func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoI
 			GROUP BY user_id, leccion_id
 		)
 		SELECT
-			user_id,
-			'' AS user_name,
-			'' AS avatar_url,
-			SUM(max_points)::INT AS points
-		FROM best_scores
-		GROUP BY user_id
-		ORDER BY points DESC, MIN(first_scored) ASC
+			b.user_id,
+			COALESCE(u.name, 'Estudiante') AS user_name,
+			COALESCE(u.avatar_url, '') AS avatar_url,
+			SUM(b.max_points)::INT AS points
+		FROM best_scores b
+		LEFT JOIN users u ON u.id = b.user_id
+		GROUP BY b.user_id, u.name, u.avatar_url
+		ORDER BY points DESC, MIN(b.first_scored) ASC
 		LIMIT $2`
 	var rows []*LeaderboardRow
 	return rows, r.db.SelectContext(ctx, &rows, query, cursoID, topN)

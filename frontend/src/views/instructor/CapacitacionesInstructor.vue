@@ -13,6 +13,25 @@ const showWizard = ref(false)
 const selectedCourse = ref<any>(null)
 const showDrawer = ref(false)
 
+const showAvanceModal = ref(false)
+const selectedAvanceCourse = ref<any>(null)
+const avanceLeaderboard = ref<any[]>([])
+const loadingAvance = ref(false)
+
+async function abrirAvanceInstructor(course: any) {
+  selectedAvanceCourse.value = course
+  showAvanceModal.value = true
+  loadingAvance.value = true
+  try {
+    const res = await api.get(`/capacitaciones/${course.id}/leaderboard`, { params: { top: 100 } })
+    avanceLeaderboard.value = res.data?.entries || []
+  } catch {
+    avanceLeaderboard.value = []
+  } finally {
+    loadingAvance.value = false
+  }
+}
+
 async function fetchCourses() {
   loading.value = true
   try {
@@ -138,6 +157,11 @@ function copyCode(code: string) {
                 <div class="toggle-thumb"></div>
               </button>
             </div>
+            <div style="margin-top: 12px; width: 100%;">
+              <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;" @click="abrirAvanceInstructor(c)">
+                📊 Avance y Puntuaciones de Usuarios
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -155,6 +179,42 @@ function copyCode(code: string) {
       @close="showDrawer = false" 
       @updated="fetchCourses()" 
     />
+
+    <!-- Modal Avance y Puntuaciones para Instructor -->
+    <Transition name="fade">
+      <div v-if="showAvanceModal" class="modal-backdrop" @click="showAvanceModal = false">
+        <div class="avance-modal-card" @click.stop>
+          <div class="avance-modal-head">
+            <div>
+              <h3>📊 Avance y Puntuaciones de Usuarios</h3>
+              <p>{{ selectedAvanceCourse?.title }}</p>
+            </div>
+            <button class="close-btn" @click="showAvanceModal = false">✕</button>
+          </div>
+          <div class="avance-modal-body">
+            <div v-if="loadingAvance" style="padding: 30px; text-align: center; color: var(--text-muted);">
+              Cargando puntuaciones de usuarios...
+            </div>
+            <div v-else-if="avanceLeaderboard.length === 0" style="padding: 30px; text-align: center; color: var(--text-muted); background: var(--surface-soft); border-radius: 12px;">
+              No hay registros de juegos o puntuaciones en este curso por el momento.
+            </div>
+            <div v-else class="lb-instructor-list">
+              <div v-for="(entry, idx) in avanceLeaderboard" :key="entry.user_id || idx" class="lb-inst-row">
+                <div class="lb-inst-rank">{{ entry.rank || idx + 1 }}</div>
+                <div class="lb-inst-user">
+                  <div class="lb-inst-avatar">{{ (entry.user_name || 'U').charAt(0).toUpperCase() }}</div>
+                  <span class="lb-inst-name">{{ entry.user_name || 'Estudiante' }}</span>
+                </div>
+                <div class="lb-inst-points">{{ entry.points || 0 }} pts</div>
+              </div>
+            </div>
+          </div>
+          <div class="avance-modal-foot">
+            <button class="btn btn-secondary" @click="showAvanceModal = false">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -253,5 +313,40 @@ function copyCode(code: string) {
 .spinner {
   width: 40px; height: 40px; border: 3px solid var(--border-light);
   border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;
+}
+
+/* ── Modal Avance y Puntuaciones Instructor ── */
+.avance-modal-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  width: 90%; max-width: 660px; max-height: 85vh; display: flex; flex-direction: column;
+  box-shadow: var(--shadow-xl); overflow: hidden;
+}
+.avance-modal-head {
+  padding: 20px 24px; border-bottom: 1px solid var(--border-light); display: flex;
+  justify-content: space-between; align-items: center;
+}
+.avance-modal-head h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark); }
+.avance-modal-head p { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+.avance-modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+.lb-instructor-list { display: flex; flex-direction: column; gap: 8px; }
+.lb-inst-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--surface-soft); border: 1px solid var(--border-light);
+  border-radius: 12px;
+}
+.lb-inst-rank {
+  width: 28px; height: 28px; border-radius: 50%; background: #334155; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
+  margin-right: 12px;
+}
+.lb-inst-user { display: flex; align-items: center; gap: 10px; flex: 1; }
+.lb-inst-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+.lb-inst-name { font-weight: 600; color: var(--text-dark); }
+.lb-inst-points { font-weight: 700; color: var(--brand); }
+.avance-modal-foot {
+  padding: 14px 24px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end;
 }
 </style>

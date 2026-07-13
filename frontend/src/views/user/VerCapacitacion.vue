@@ -78,6 +78,16 @@ const resultadoInt = ref<any | null>(null)
 
 // Examen final del curso
 const examenFinal = ref<any | null>(null)
+const showExamenModal = ref(false)
+const examenData = ref<any>(null)
+const examenRespuestas = ref<Record<string, string>>({})
+const examenSubmitting = ref(false)
+const examenResultado = ref<any>(null)
+
+// Panel de Avance y Puntuaciones en el curso
+const showAvancePanel = ref(false)
+const leaderboard = ref<any[]>([])
+const loadingLeaderboard = ref(false)
 
 // Foro
 const foroPosts = ref<any[]>([])
@@ -160,12 +170,8 @@ async function load() {
     // Cargar examen final si está asignado a este curso
     await cargarExamenFinal()
     if (progreso.value === 100 && examenFinal.value) {
-      toast.success('¡Curso completado! Redirigiendo automáticamente a tu Examen Final...')
-      setTimeout(() => {
-        if (examenFinal.value) {
-          router.push(`/usuario/examenes/${examenFinal.value.id}`)
-        }
-      }, 1600)
+      toast.success('¡Curso completado! Abriendo tu Examen Final...')
+      await abrirExamenEnCurso()
     }
     if (currentUser.value && !currentUser.value.avatar_url) {
       api.get('/perfil').then(res => {
@@ -294,22 +300,81 @@ async function cargarExamenFinal() {
     const res = await api.get('/mis-examenes')
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
-      (e: any) => e.capacitacion_id === cursoId && (!e.ya_respondido || e.porcentaje < 70)
+      (e: any) => (String(e.capacitacion_id) === String(cursoId) || String(e.capacitacionId) === String(cursoId)) && (!e.ya_respondido || e.porcentaje < 70)
     ) ?? null
   } catch { /* ignorar silenciosamente */ }
+}
+
+async function abrirExamenEnCurso() {
+  if (!examenFinal.value) await cargarExamenFinal()
+  if (!examenFinal.value) return
+  showExamenModal.value = true
+  examenResultado.value = null
+  examenRespuestas.value = {}
+  try {
+    const res = await api.get(`/examenes/${examenFinal.value.id}`)
+    examenData.value = res.data
+  } catch {
+    toast.error('Error al cargar el examen final')
+  }
+}
+
+async function enviarExamenEnCurso() {
+  if (!examenData.value) return
+  const preguntas = examenData.value.preguntas || []
+  const sinResponder = preguntas.filter((p: any) => p.tipo !== 'open_text' && !examenRespuestas.value[p.id])
+  if (sinResponder.length > 0) {
+    toast.warning(`Tienes ${sinResponder.length} pregunta(s) sin responder`)
+    return
+  }
+  examenSubmitting.value = true
+  try {
+    const payload = preguntas.map((p: any) => ({
+      pregunta_id: String(p.id),
+      opcion_id: p.tipo !== 'open_text' ? String(examenRespuestas.value[p.id]) : '',
+      respuesta_texto: p.tipo === 'open_text' ? String(examenRespuestas.value[p.id] || '') : '',
+    }))
+    const res = await api.post(`/examenes/${examenFinal.value.id}/submit`, payload)
+    examenResultado.value = res.data
+    toast.success('¡Examen final enviado correctamente!')
+    await cargarExamenFinal()
+  } catch {
+    toast.error('Error al enviar examen final')
+  } finally {
+    examenSubmitting.value = false
+  }
+}
+
+async function cargarLeaderboard() {
+  loadingLeaderboard.value = true
+  try {
+    const res = await api.get(`/capacitaciones/${cursoId}/leaderboard`, { params: { top: 25 } })
+    leaderboard.value = res.data?.entries || []
+  } catch {
+    leaderboard.value = []
+  } finally {
+    loadingLeaderboard.value = false
+  }
+}
+
+async function abrirPanelAvance() {
+  showAvancePanel.value = true
+  await cargarLeaderboard()
 }
 
 async function iniciarExamenFinalAutomatico() {
   await cargarExamenFinal()
   if (examenFinal.value) {
-    toast.success('¡Felicidades por completar el 100% del curso! Redirigiendo automáticamente a tu Examen Final...')
-    setTimeout(() => {
-      if (examenFinal.value) {
-        router.push(`/usuario/examenes/${examenFinal.value.id}`)
-      }
-    }, 1600)
+    toast.success('¡Felicidades por completar el 100% del curso! Abriendo tu Examen Final...')
+    await abrirExamenEnCurso()
   }
 }
+
+watch(progreso, async (newVal, oldVal) => {
+  if (newVal === 100 && (oldVal ?? 0) < 100) {
+    await iniciarExamenFinalAutomatico()
+  }
+})
 
 function cerrarIntermediasYContinuar() {
   showIntermedias.value = false
@@ -726,10 +791,15 @@ function tramitarDC3() {
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Mis cursos
           </button>
-          <div v-if="progreso === 100 && examenFinal" style="margin-top: 12px;">
-            <router-link :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+          <div style="margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;" @click="abrirPanelAvance">
+              📊 Mi Avance y Puntuaciones
+            </button>
+          </div>
+          <div v-if="progreso === 100 && examenFinal" style="margin-top: 8px;">
+            <button @click="abrirExamenEnCurso" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
               🎓 Responder Examen Final
-            </router-link>
+            </button>
           </div>
           <div v-if="progreso === 100 && curso?.dc3_enabled === true" style="margin-top: 8px;">
             <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;" @click="tramitarDC3">
@@ -1340,9 +1410,9 @@ function tramitarDC3() {
           <strong>Examen final disponible</strong>
           <p>{{ examenFinal.title }}</p>
         </div>
-        <router-link :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary ver-examen-final-btn">
-          Ir al examen
-        </router-link>
+        <button @click="abrirExamenEnCurso" class="btn btn-primary ver-examen-final-btn">
+          Responder examen
+        </button>
       </div>
     </Transition>
 
@@ -1358,13 +1428,132 @@ function tramitarDC3() {
           <h2>¡Felicidades!</h2>
           <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
           <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <router-link v-if="examenFinal" :to="`/usuario/examenes/${examenFinal.id}`" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+            <button v-if="examenFinal" @click="showConfetti = false; abrirExamenEnCurso()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
               🎓 Responder Examen Final
-            </router-link>
+            </button>
             <button v-if="curso?.dc3_enabled === true" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Modal Panel de Avance y Puntuación en Juegos / Actividades -->
+    <Transition name="fade">
+      <div v-if="showAvancePanel" class="foro-card-backdrop" @click="showAvancePanel = false">
+        <div class="ver-avance-panel-modal" @click.stop>
+          <div class="ver-avance-head">
+            <div>
+              <h3>🏆 Mi Avance y Puntuaciones</h3>
+              <p>Progreso en el curso y ranking de puntuaciones logradas en juegos</p>
+            </div>
+            <button class="fpc-close" @click="showAvancePanel = false">✕</button>
+          </div>
+
+          <div class="ver-avance-body">
+            <!-- Tarjeta de progreso propio -->
+            <div class="ver-avance-mycard">
+              <div class="ver-avance-mycard-row">
+                <div>
+                  <span class="ver-avance-lbl">Progreso en el curso</span>
+                  <div class="ver-avance-val">{{ progreso }}%</div>
+                </div>
+                <div>
+                  <span class="ver-avance-lbl">Lecciones completadas</span>
+                  <div class="ver-avance-val">{{ leccionesCompletadas }} / {{ lecciones.length }}</div>
+                </div>
+              </div>
+              <div class="ver-progress-bar-wrap" style="margin-top: 12px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+                <div :style="`width:${progreso}%; height: 100%; background: linear-gradient(90deg, #f97316, #fbbf24); border-radius: 5px; transition: width 0.4s;`"></div>
+              </div>
+            </div>
+
+            <!-- Tabla de Leaderboard / Puntuaciones en juegos -->
+            <div class="ver-avance-ranking">
+              <h4>🎯 Ranking de Puntuaciones en Juegos del Curso</h4>
+              <div v-if="loadingLeaderboard" style="padding: 20px; text-align: center; color: #94a3b8;">
+                Cargando puntuaciones...
+              </div>
+              <div v-else-if="leaderboard.length === 0" style="padding: 24px; text-align: center; color: #94a3b8; background: rgba(255,255,255,0.03); border-radius: 12px; margin-top: 10px;">
+                Aún no hay puntuaciones registradas en juegos para este curso. ¡Completa actividades interactivas para sumar puntos!
+              </div>
+              <div v-else class="leaderboard-list">
+                <div v-for="(entry, idx) in leaderboard" :key="entry.user_id || idx" class="leaderboard-row">
+                  <div class="lb-rank" :class="{ 'lb-rank-top': entry.rank <= 3 }">
+                    {{ entry.rank || idx + 1 }}
+                  </div>
+                  <div class="lb-user">
+                    <div class="lb-avatar">{{ (entry.user_name || 'E').charAt(0).toUpperCase() }}</div>
+                    <span class="lb-name">{{ entry.user_name || 'Estudiante' }}</span>
+                  </div>
+                  <div class="lb-points">
+                    <span>{{ entry.points || 0 }}</span> pts
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ver-avance-foot">
+            <button class="btn btn-secondary" @click="showAvancePanel = false">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Modal Examen Final integrado en el Curso -->
+    <Transition name="fade">
+      <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" @click.self="showExamenModal = false">
+        <div class="ver-examen-modal" @click.stop>
+          <div class="ver-examen-modal-head">
+            <div>
+              <span class="ver-examen-badge">EXAMEN FINAL DEL CURSO</span>
+              <h3>{{ examenFinal.title }}</h3>
+            </div>
+            <button class="fpc-close" @click="showExamenModal = false">✕</button>
+          </div>
+
+          <div class="ver-examen-modal-body">
+            <div v-if="examenResultado" class="ver-examen-res-box">
+              <div class="ver-examen-score-badge">
+                {{ examenResultado.porcentaje }}%
+              </div>
+              <h4>¡Has completado el examen!</h4>
+              <p>Obtuviste {{ examenResultado.correctas }} de {{ examenResultado.total }} respuestas correctas.</p>
+              <button class="btn btn-primary" style="margin-top: 16px;" @click="showExamenModal = false">Continuar</button>
+            </div>
+
+            <div v-else-if="!examenData" style="padding: 40px; text-align: center;">
+              Cargando examen final...
+            </div>
+
+            <div v-else>
+              <p v-if="examenData.description" class="ver-examen-desc">{{ examenData.description }}</p>
+              <div class="ver-examen-preguntas">
+                <div v-for="(preg, i) in examenData.preguntas" :key="preg.id" class="ver-examen-pregunta-card">
+                  <div class="preg-num">{{ Number(i) + 1 }}</div>
+                  <div class="preg-content">
+                    <h5>{{ preg.texto }}</h5>
+                    <div v-if="preg.tipo !== 'open_text'" class="preg-opciones">
+                      <label v-for="opc in preg.opciones" :key="opc.id" class="preg-opc-label">
+                        <input type="radio" :name="`preg-${preg.id}`" :value="opc.id" v-model="examenRespuestas[preg.id]" />
+                        <span>{{ opc.texto }}</span>
+                      </label>
+                    </div>
+                    <textarea v-else v-model="examenRespuestas[preg.id]" class="form-control" placeholder="Escribe tu respuesta aquí..." rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!examenResultado" class="ver-examen-modal-foot">
+            <button class="btn btn-secondary" @click="showExamenModal = false">Cancelar</button>
+            <button class="btn btn-primary" :disabled="examenSubmitting" @click="enviarExamenEnCurso">
+              {{ examenSubmitting ? 'Enviando...' : 'Enviar exámen final' }}
+            </button>
           </div>
         </div>
       </div>
@@ -2295,4 +2484,90 @@ function tramitarDC3() {
 }
 .reply-row { margin-left: 36px; margin-top: 10px; }
 
+/* ── Panel Avance y Puntuación ── */
+.ver-avance-panel-modal {
+  background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+  width: 90%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); color: #f8fafc; overflow: hidden;
+}
+.ver-avance-head {
+  padding: 20px 24px; border-bottom: 1px solid #334155; display: flex;
+  justify-content: space-between; align-items: center;
+}
+.ver-avance-head h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
+.ver-avance-head p { margin: 4px 0 0; font-size: 0.85rem; color: #94a3b8; }
+.ver-avance-body { padding: 24px; overflow-y: auto; flex: 1; }
+.ver-avance-mycard {
+  background: rgba(255,255,255,0.04); border: 1px solid #334155; border-radius: 12px;
+  padding: 16px; margin-bottom: 24px;
+}
+.ver-avance-mycard-row { display: flex; justify-content: space-between; }
+.ver-avance-lbl { font-size: 0.8rem; color: #94a3b8; }
+.ver-avance-val { font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin-top: 4px; }
+.ver-avance-ranking h4 { margin: 0 0 12px; font-size: 1rem; color: #f8fafc; }
+.leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
+.leaderboard-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid #334155;
+  border-radius: 10px;
+}
+.lb-rank {
+  width: 28px; height: 28px; border-radius: 50%; background: #334155; color: #f8fafc;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
+  margin-right: 12px;
+}
+.lb-rank-top { background: #f97316; color: #fff; }
+.lb-user { display: flex; align-items: center; gap: 10px; flex: 1; }
+.lb-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: #475569; color: #f8fafc;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+.lb-name { font-weight: 600; color: #f8fafc; }
+.lb-points { font-weight: 700; color: #fbbf24; }
+.ver-avance-foot {
+  padding: 14px 24px; border-top: 1px solid #334155; display: flex; justify-content: flex-end;
+}
+
+/* ── Examen modal en curso ── */
+.ver-examen-modal {
+  background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+  width: 90%; max-width: 720px; max-height: 88vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); color: #f8fafc; overflow: hidden;
+}
+.ver-examen-modal-head {
+  padding: 20px 24px; border-bottom: 1px solid #334155; display: flex;
+  justify-content: space-between; align-items: center;
+}
+.ver-examen-badge {
+  font-size: 0.75rem; font-weight: 700; color: #f97316; letter-spacing: 0.05em;
+}
+.ver-examen-modal-head h3 { margin: 4px 0 0; font-size: 1.3rem; font-weight: 700; }
+.ver-examen-modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+.ver-examen-preguntas { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.ver-examen-pregunta-card {
+  display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid #334155;
+  border-radius: 12px; padding: 16px;
+}
+.preg-num {
+  width: 28px; height: 28px; border-radius: 50%; background: #f97316; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+}
+.preg-content { flex: 1; }
+.preg-content h5 { margin: 0 0 12px; font-size: 1rem; color: #f8fafc; font-weight: 600; }
+.preg-opciones { display: flex; flex-direction: column; gap: 8px; }
+.preg-opc-label {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.02);
+  border: 1px solid transparent; transition: all 0.2s;
+}
+.preg-opc-label:hover { border-color: #f97316; background: rgba(249,115,22,0.08); }
+.ver-examen-modal-foot {
+  padding: 16px 24px; border-top: 1px solid #334155; display: flex; justify-content: flex-end; gap: 12px;
+}
+.ver-examen-res-box { text-align: center; padding: 30px; }
+.ver-examen-score-badge {
+  display: inline-block; font-size: 2.5rem; font-weight: 800; color: #10b981;
+  background: rgba(16,185,129,0.1); border: 2px solid #10b981; border-radius: 50%;
+  width: 100px; height: 100px; line-height: 96px; margin-bottom: 16px;
+}
 </style>
