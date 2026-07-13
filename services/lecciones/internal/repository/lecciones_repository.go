@@ -682,7 +682,7 @@ func (r *postgresLeccionesRepository) GetLeaderboard(ctx context.Context, cursoI
 			WHERE capacitacion_id = $1
 			GROUP BY user_id, leccion_id
 			UNION ALL
-			SELECT pl.user_id, COALESCE(NULLIF(l.points_reward, 0), 15) AS pts, MIN(pl.completado_at) AS scored_at
+			SELECT pl.user_id, COALESCE(NULLIF(l.points_reward, 0), 15) AS pts, NOW() AS scored_at
 			FROM progreso_lecciones pl
 			JOIN lecciones l ON l.id = pl.leccion_id
 			WHERE l.capacitacion_id = $1 AND pl.completado = true

@@ -16,36 +16,6 @@ const cursoId = route.params.id as string
 const authStore = useAuthStore()
 const currentUser = computed(() => authStore.user)
 
-const videoProgressKey = (lecId: string) => `vp_${currentUser.value?.id || 'user'}_${cursoId}_${lecId}`
-function savedVideoTime(lecId: string): number {
-  const lec = lecciones.value.find((l: any) => l.id === lecId)
-  const dbSeconds = Number(lec?.segundos_vistos || 0)
-  const localSeconds = Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
-  return Math.max(dbSeconds, localSeconds)
-}
-let lastSyncedSeconds = -1
-watch(() => selectedLeccion.value?.id, () => {
-  lastSyncedSeconds = -1
-})
-async function onVideoTimeUpdate(seconds: number) {
-  if (!selectedLeccion.value || seconds <= 0) return
-  localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
-  selectedLeccion.value.segundos_vistos = seconds
-  if (Math.abs(seconds - lastSyncedSeconds) >= 3 || lastSyncedSeconds === -1) {
-    try {
-      await api.post(`/lecciones/${selectedLeccion.value.id}/progreso-video`, { segundos_vistos: seconds })
-      lastSyncedSeconds = seconds
-    } catch {
-      // Si falla la red, se reintentará en la siguiente actualización
-    }
-  }
-}
-async function onVideoEnded() {
-  if (selectedLeccion.value && !selectedLeccion.value.completada) {
-    await marcarCompleta()
-  }
-}
-
 const curso = ref<any>(null)
 // Árbol jerárquico (Módulo → Submódulo → Lección)
 const tree = ref<any>({ modulos: [], lecciones: [] })
@@ -260,6 +230,36 @@ async function marcarCompleta() {
 function onGameCompleted() {
   if (!selectedLeccion.value || selectedLeccion.value.completada) return
   marcarCompleta()
+}
+
+const videoProgressKey = (lecId: string) => `vp_${currentUser.value?.id || 'user'}_${cursoId}_${lecId}`
+function savedVideoTime(lecId: string): number {
+  const lec = lecciones.value.find((l: any) => l.id === lecId)
+  const dbSeconds = Number(lec?.segundos_vistos || 0)
+  const localSeconds = Number(localStorage.getItem(videoProgressKey(lecId)) || 0)
+  return Math.max(dbSeconds, localSeconds)
+}
+let lastSyncedSeconds = -1
+watch(() => selectedLeccion.value?.id, () => {
+  lastSyncedSeconds = -1
+})
+async function onVideoTimeUpdate(seconds: number) {
+  if (!selectedLeccion.value || seconds <= 0) return
+  localStorage.setItem(videoProgressKey(selectedLeccion.value.id), String(seconds))
+  selectedLeccion.value.segundos_vistos = seconds
+  if (Math.abs(seconds - lastSyncedSeconds) >= 3 || lastSyncedSeconds === -1) {
+    try {
+      await api.post(`/lecciones/${selectedLeccion.value.id}/progreso-video`, { segundos_vistos: seconds })
+      lastSyncedSeconds = seconds
+    } catch {
+      // Si falla la red, se reintentará en la siguiente actualización
+    }
+  }
+}
+async function onVideoEnded() {
+  if (selectedLeccion.value && !selectedLeccion.value.completada) {
+    await marcarCompleta()
+  }
 }
 
 async function loadPreguntas(leccionId: string) {

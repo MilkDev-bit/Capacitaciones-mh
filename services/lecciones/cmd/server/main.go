@@ -186,6 +186,7 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS points_reward    INT  NOT NULL DEFAULT 0`,
 		`ALTER TABLE progreso_lecciones ADD COLUMN IF NOT EXISTS segundos_vistos INT NOT NULL DEFAULT 0`,
 		`ALTER TABLE progreso_lecciones ADD COLUMN IF NOT EXISTS completado BOOLEAN NOT NULL DEFAULT true`,
+		`ALTER TABLE progreso_lecciones ADD COLUMN IF NOT EXISTS completado_at TIMESTAMPTZ DEFAULT NOW()`,
 	}
 
 	for _, s := range alters {
