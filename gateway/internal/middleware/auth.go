@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	authpb "Prueba-Go/gen/auth"
@@ -25,14 +27,54 @@ const (
 	CtxTokenVersion = "tokenVersion"
 )
 
+type tokenCacheEntry struct {
+	userID       string
+	userName     string
+	email        string
+	role         string
+	tokenVersion int32
+	expiresAt    time.Time
+}
+
+var tokenCache sync.Map
+
+func init() {
+	go func() {
+		for range time.Tick(2 * time.Minute) {
+			now := time.Now()
+			tokenCache.Range(func(key, value any) bool {
+				entry := value.(tokenCacheEntry)
+				if now.After(entry.expiresAt) {
+					tokenCache.Delete(key)
+				}
+				return true
+			})
+		}
+	}()
+}
+
 // AuthRequired extrae el JWT de la cookie `auth_token`, lo valida llamando al
-// auth service y almacena los claims en el contexto de Gin.
+// auth service (o caché temporal de 30s) y almacena los claims en el contexto de Gin.
 func AuthRequired(c *clients.Clients) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token, err := extractToken(ctx)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
 			return
+		}
+
+		if cached, ok := tokenCache.Load(token); ok {
+			entry := cached.(tokenCacheEntry)
+			if time.Now().Before(entry.expiresAt) {
+				ctx.Set(CtxUserID, entry.userID)
+				ctx.Set(CtxUserName, entry.userName)
+				ctx.Set(CtxUserEmail, entry.email)
+				ctx.Set(CtxUserRole, entry.role)
+				ctx.Set(CtxTokenVersion, entry.tokenVersion)
+				ctx.Next()
+				return
+			}
+			tokenCache.Delete(token)
 		}
 
 		claims, err := c.Auth.ValidateToken(ctx.Request.Context(), &authpb.ValidateTokenRequest{Token: token})
@@ -42,8 +84,18 @@ func AuthRequired(c *clients.Clients) gin.HandlerFunc {
 			return
 		}
 
+		userName := extractNameFromJWT(token)
+		tokenCache.Store(token, tokenCacheEntry{
+			userID:       claims.UserId,
+			userName:     userName,
+			email:        claims.Email,
+			role:         claims.Role,
+			tokenVersion: claims.TokenVersion,
+			expiresAt:    time.Now().Add(30 * time.Second),
+		})
+
 		ctx.Set(CtxUserID, claims.UserId)
-		ctx.Set(CtxUserName, extractNameFromJWT(token))
+		ctx.Set(CtxUserName, userName)
 		ctx.Set(CtxUserEmail, claims.Email)
 		ctx.Set(CtxUserRole, claims.Role)
 		ctx.Set(CtxTokenVersion, claims.TokenVersion)

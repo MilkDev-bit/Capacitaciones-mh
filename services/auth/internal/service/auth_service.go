@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"Prueba-Go/services/auth/internal/config"
@@ -32,6 +33,13 @@ var (
 	ErrTokenInvalid       = errors.New("token inválido o expirado")
 	ErrTokenRevoked       = errors.New("sesión revocada")
 )
+
+type tvCacheItem struct {
+	version   int
+	expiresAt time.Time
+}
+
+var tvCache sync.Map
 
 // ── DTOs ─────────────────────────────────────────────────────────────────────
 
@@ -156,12 +164,23 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenStr string) (*Clai
 		return nil, ErrTokenInvalid
 	}
 
-	// Comprobamos token_version contra la BD para detectar revocaciones.
-	u, err := s.users.FindByID(ctx, claims.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("find user: %w", err)
+	// Comprobamos token_version en caché (15s) o BD para detectar revocaciones.
+	var tv int
+	if item, ok := tvCache.Load(claims.UserID); ok {
+		cached := item.(tvCacheItem)
+		if time.Now().Before(cached.expiresAt) {
+			tv = cached.version
+		}
 	}
-	if u.TokenVersion != claims.TokenVersion {
+	if tv == 0 {
+		u, err := s.users.FindByID(ctx, claims.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("find user: %w", err)
+		}
+		tv = u.TokenVersion
+		tvCache.Store(claims.UserID, tvCacheItem{version: tv, expiresAt: time.Now().Add(15 * time.Second)})
+	}
+	if tv != claims.TokenVersion {
 		return nil, ErrTokenRevoked
 	}
 
@@ -176,6 +195,7 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenStr string) (*Clai
 
 // Logout incrementa token_version, invalidando todos los JWT activos del usuario.
 func (s *AuthService) Logout(ctx context.Context, userID string) error {
+	tvCache.Delete(userID)
 	return s.users.UpdateTokenVersion(ctx, userID)
 }
 
@@ -226,11 +246,13 @@ func (s *AuthService) ResetPassword(ctx context.Context, resetToken, newPassword
 	}
 
 	// Invalidar todas las sesiones activas tras cambio de contraseña.
+	tvCache.Delete(u.ID)
 	return s.users.UpdateTokenVersion(ctx, u.ID)
 }
 
 // RevokeUserSessions invalida todos los JWT activos de un usuario (acción de admin).
 func (s *AuthService) RevokeUserSessions(ctx context.Context, userID string) error {
+	tvCache.Delete(userID)
 	return s.users.UpdateTokenVersion(ctx, userID)
 }
 
