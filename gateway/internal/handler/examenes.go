@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -12,6 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/metadata"
 )
+
+func examenesASCII(s string) string {
+	r := strings.NewReplacer(
+		"á", "a", "é", "e", "í", "i", "ó", "o", "ú", "u", "ñ", "n", "ü", "u",
+		"Á", "A", "É", "E", "Í", "I", "Ó", "O", "Ú", "U", "Ñ", "N", "Ü", "U",
+	).Replace(s)
+	var b strings.Builder
+	for _, c := range r {
+		if c >= 0x20 && c <= 0x7E {
+			b.WriteRune(c)
+		}
+	}
+	return b.String()
+}
 
 type ExamenesHandler struct{ c *clients.Clients }
 
@@ -76,7 +91,7 @@ func (h *ExamenesHandler) SubmitExamen(ctx *gin.Context) {
 			RespuestaTexto: r.RespuestaTexto,
 		})
 	}
-	md := metadata.Pairs("x-user-name", ctx.GetString(middleware.CtxUserName))
+	md := metadata.Pairs("x-user-name", examenesASCII(ctx.GetString(middleware.CtxUserName)))
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
 	resp, err := h.c.Examenes.SubmitExamen(grpcCtx, &examenespb.SubmitRequest{
 		ExamenId:   ctx.Param("id"),

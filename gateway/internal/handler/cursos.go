@@ -28,10 +28,14 @@ import (
 // toASCII elimina caracteres no-ASCII para que sean válidos como valores de
 // cabecera gRPC (solo se permiten caracteres ASCII imprimibles).
 func toASCII(s string) string {
+	r := strings.NewReplacer(
+		"á", "a", "é", "e", "í", "i", "ó", "o", "ú", "u", "ñ", "n", "ü", "u",
+		"Á", "A", "É", "E", "Í", "I", "Ó", "O", "Ú", "U", "Ñ", "N", "Ü", "U",
+	).Replace(s)
 	var b strings.Builder
-	for _, r := range s {
-		if r >= 0x20 && r <= 0x7E {
-			b.WriteRune(r)
+	for _, c := range r {
+		if c >= 0x20 && c <= 0x7E {
+			b.WriteRune(c)
 		}
 	}
 	return b.String()
@@ -814,7 +818,7 @@ func (h *CursosHandler) InstructorAsignar(ctx *gin.Context) {
 		return
 	}
 	md := metadata.Pairs(
-		"x-user-name", body.UserName,
+		"x-user-name", toASCII(body.UserName),
 		"x-user-email", body.UserEmail,
 	)
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
@@ -1015,7 +1019,7 @@ func (h *CursosHandler) AdminAsignar(ctx *gin.Context) {
 		return
 	}
 	md := metadata.Pairs(
-		"x-user-name", body.UserName,
+		"x-user-name", toASCII(body.UserName),
 		"x-user-email", body.UserEmail,
 	)
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
