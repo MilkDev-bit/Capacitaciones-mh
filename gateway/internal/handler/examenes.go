@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -133,14 +134,53 @@ func (h *ExamenesHandler) InstructorDeleteExamen(ctx *gin.Context) {
 
 // GET /api/instructor/examenes/:id/resultados
 func (h *ExamenesHandler) InstructorGetResultados(ctx *gin.Context) {
+	examenID := ctx.Param("id")
 	resp, err := h.c.Examenes.InstructorGetResultados(ctx.Request.Context(), &examenespb.ExamenRequest{
-		ExamenId: ctx.Param("id"),
+		ExamenId: examenID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp.Resultados)
+
+	exResp, _ := h.c.Examenes.GetExamen(ctx.Request.Context(), &examenespb.ExamenUserRequest{
+		ExamenId: examenID,
+	})
+	var puntajeMax float64 = 10.0
+	if exResp != nil {
+		puntajeMax = 0
+		for _, p := range exResp.Preguntas {
+			puntajeMax += p.Valor
+		}
+		if puntajeMax == 0 {
+			puntajeMax = 10.0
+		}
+	}
+
+	out := make([]gin.H, 0, len(resp.Resultados))
+	for _, r := range resp.Resultados {
+		nombre := r.UserName
+		if nombre == "" {
+			nombre = "Estudiante"
+		}
+		fecha := r.SubmittedAt
+		if fecha == "" {
+			fecha = time.Now().Format(time.RFC3339)
+		}
+		out = append(out, gin.H{
+			"user_id":       r.UserId,
+			"nombre":        nombre,
+			"user_name":     nombre,
+			"email":         "",
+			"puntaje":       r.Puntaje,
+			"puntaje_max":   puntajeMax,
+			"porcentaje":    r.Porcentaje,
+			"respondido_at": fecha,
+			"submitted_at":  fecha,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, out)
 }
 
 // GET /api/instructor/examenes/:id/resultados/:user_id

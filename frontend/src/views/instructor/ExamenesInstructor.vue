@@ -396,16 +396,16 @@ async function eliminar(id: string) {
                 <tbody>
                   <tr v-for="est in resLista" :key="est.user_id">
                     <td>
-                      <div class="res-student-name">{{ est.nombre }}</div>
-                      <div class="res-student-email">{{ est.email }}</div>
+                      <div class="res-student-name">{{ est.nombre || est.user_name || 'Estudiante' }}</div>
+                      <div v-if="est.email" class="res-student-email">{{ est.email }}</div>
                     </td>
-                    <td class="res-score">{{ est.puntaje.toFixed(1) }} / {{ est.puntaje_max.toFixed(1) }}</td>
+                    <td class="res-score">{{ Number(est.puntaje || 0).toFixed(1) }} / {{ Number(est.puntaje_max || 10).toFixed(1) }}</td>
                     <td>
                       <span class="res-pct-badge" :style="{ background: scoreColor(est.porcentaje) + '20', color: scoreColor(est.porcentaje) }">
-                        {{ est.porcentaje.toFixed(0) }}%
+                        {{ Number(est.porcentaje || 0).toFixed(0) }}%
                       </span>
                     </td>
-                    <td class="res-date">{{ new Date(est.respondido_at).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
+                    <td class="res-date">{{ new Date(est.respondido_at || est.submitted_at || Date.now()).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
                     <td>
                       <button class="btn btn-secondary btn-sm" @click="verDetalle(est)">Ver detalle</button>
                     </td>

@@ -178,6 +178,9 @@ func (r *postgresExamenesRepository) Delete(ctx context.Context, examenID string
 
 func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, examenID, userID string, respuestas []*examenespb.RespuestaInput) (*examenespb.ResultadoResponse, error) {
 	userName := metaVal(ctx, "x-user-name")
+	if userName == "" {
+		userName = "Estudiante"
+	}
 
 	// Obtener preguntas del examen para calcular puntaje.
 	preguntas, err := r.GetPreguntas(ctx, examenID)
@@ -196,24 +199,35 @@ func (r *postgresExamenesRepository) SubmitRespuestas(ctx context.Context, exame
 	var puntaje float64
 	for _, resp := range respuestas {
 		pq, ok := pqMap[resp.PreguntaId]
-		if !ok || pq.Tipo == "open_text" {
+		if !ok {
 			continue
 		}
-		var esCorrecta bool
-		r.db.QueryRowContext(ctx,
-			`SELECT es_correcta FROM opciones WHERE id=$1 AND pregunta_id=$2`,
-			resp.OpcionId, resp.PreguntaId,
-		).Scan(&esCorrecta)
-		if esCorrecta {
-			puntaje += pq.Valor
+		if pq.Tipo != "open_text" && resp.OpcionId != "" {
+			var esCorrecta bool
+			r.db.QueryRowContext(ctx,
+				`SELECT es_correcta FROM opciones WHERE id=$1 AND pregunta_id=$2`,
+				resp.OpcionId, resp.PreguntaId,
+			).Scan(&esCorrecta)
+			if esCorrecta {
+				puntaje += pq.Valor
+			}
 		}
+
+		var optID interface{} = nil
+		if resp.OpcionId != "" {
+			optID = resp.OpcionId
+		}
+
 		// Guardar respuesta con user_name denormalizado.
-		r.db.ExecContext(ctx,
-			`INSERT INTO respuestas_examen(examen_id,user_id,user_name,pregunta_id,opcion_id,respuesta_texto)
-			 VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,pregunta_id) DO UPDATE
+		_, err := r.db.ExecContext(ctx,
+			`INSERT INTO respuestas_examen(examen_id,user_id,user_name,pregunta_id,opcion_id,respuesta_texto,respondido_at)
+			 VALUES($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT(user_id,pregunta_id) DO UPDATE
 			 SET opcion_id=EXCLUDED.opcion_id, respuesta_texto=EXCLUDED.respuesta_texto,
-			     user_name=EXCLUDED.user_name`,
-			examenID, userID, userName, resp.PreguntaId, resp.OpcionId, resp.RespuestaTexto)
+			     user_name=EXCLUDED.user_name, respondido_at=NOW()`,
+			examenID, userID, userName, resp.PreguntaId, optID, resp.RespuestaTexto)
+		if err != nil {
+			log.Printf("[ERROR] SubmitRespuestas insert error user=%s pregunta=%s: %v", userID, resp.PreguntaId, err)
+		}
 	}
 
 	// Registrar en asignaciones_examen para que ListByUser funcione.
@@ -237,13 +251,13 @@ func (r *postgresExamenesRepository) GetResultados(ctx context.Context, examenID
 	var rows []*ResultadoRow
 	return rows, r.db.SelectContext(ctx, &rows,
 		`SELECT re.user_id,
-		        COALESCE(re.user_name,'') user_name,
-		        COALESCE(SUM(CASE WHEN o.es_correcta THEN p.valor ELSE 0 END),0) puntaje,
-		        CASE WHEN SUM(p.valor)>0
-		             THEN SUM(CASE WHEN o.es_correcta THEN p.valor ELSE 0 END)/SUM(p.valor)*100
+		        COALESCE(NULLIF(re.user_name,''),'Estudiante') user_name,
+		        COALESCE(SUM(CASE WHEN o.es_correcta THEN COALESCE(p.valor,1) ELSE 0 END),0) puntaje,
+		        CASE WHEN SUM(COALESCE(p.valor,1))>0
+		             THEN SUM(CASE WHEN o.es_correcta THEN COALESCE(p.valor,1) ELSE 0 END)/SUM(COALESCE(p.valor,1))*100
 		             ELSE 0 END porcentaje
 		   FROM respuestas_examen re
-		   JOIN preguntas p ON p.id = re.pregunta_id
+		   LEFT JOIN preguntas p ON p.id = re.pregunta_id
 		   LEFT JOIN opciones o ON o.id = re.opcion_id
 		  WHERE re.examen_id = $1
 		  GROUP BY re.user_id, re.user_name ORDER BY porcentaje DESC`, examenID)
