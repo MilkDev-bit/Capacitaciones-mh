@@ -330,15 +330,16 @@ async function enviarExamenEnCurso() {
   try {
     const payload = preguntas.map((p: any) => ({
       pregunta_id: String(p.id),
-      opcion_id: p.tipo !== 'open_text' ? String(examenRespuestas.value[p.id]) : '',
+      opcion_id: p.tipo !== 'open_text' ? String(examenRespuestas.value[p.id] || '') : '',
       respuesta_texto: p.tipo === 'open_text' ? String(examenRespuestas.value[p.id] || '') : '',
     }))
     const res = await api.post(`/examenes/${examenFinal.value.id}/submit`, payload)
     examenResultado.value = res.data
     toast.success('¡Examen final enviado correctamente!')
     await cargarExamenFinal()
-  } catch {
-    toast.error('Error al enviar examen final')
+  } catch (err: any) {
+    const msg = err?.response?.data?.error || 'Error al enviar examen final'
+    toast.error(msg)
   } finally {
     examenSubmitting.value = false
   }

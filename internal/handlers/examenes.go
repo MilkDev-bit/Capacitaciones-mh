@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -419,10 +421,22 @@ func SubmitExamen(c *gin.Context) {
 		return
 	}
 
-	var respuestas []models.Respuesta
-	if err := c.ShouldBindJSON(&respuestas); err != nil {
-		bindError(c, err)
+	bodyBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo de solicitud inválido"})
 		return
+	}
+
+	var respuestas []models.Respuesta
+	if err := json.Unmarshal(bodyBytes, &respuestas); err != nil {
+		var wrapper struct {
+			Respuestas []models.Respuesta `json:"respuestas"`
+		}
+		if err2 := json.Unmarshal(bodyBytes, &wrapper); err2 != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de respuestas inválido"})
+			return
+		}
+		respuestas = wrapper.Respuestas
 	}
 
 	tx, err := db.DB.Begin()
