@@ -300,9 +300,13 @@ async function cargarExamenFinal() {
     const res = await api.get('/mis-examenes')
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
-      (e: any) => (String(e.capacitacion_id) === String(cursoId) || String(e.capacitacionId) === String(cursoId)) && (!e.ya_respondido || e.porcentaje < 70)
-    ) ?? null
-  } catch { /* ignorar silenciosamente */ }
+      (e: any) => String(e.capacitacion_id) === String(cursoId) || String(e.capacitacionId) === String(cursoId)
+    ) || exams.find(
+      (e: any) => !e.ya_respondido || Number(e.porcentaje || 0) < 70
+    ) || (exams.length > 0 ? exams[0] : null)
+  } catch {
+    examenFinal.value = null
+  }
 }
 
 async function abrirExamenEnCurso() {
