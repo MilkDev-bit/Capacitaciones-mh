@@ -210,12 +210,6 @@ async function marcarCompleta() {
     if (idx >= 0) lecciones.value[idx].completada = true
     toast.success('Lección completada')
     
-    if (progreso.value === 100) {
-      showConfetti.value = true
-      setTimeout(() => { showConfetti.value = false }, 5000)
-      await cargarExamenFinal()
-    }
-
     // Mostrar preguntas intermedias si hay
     if (preguntas.value.length > 0) {
       showIntermedias.value = true
@@ -310,6 +304,7 @@ async function cargarExamenFinal() {
 }
 
 async function abrirExamenEnCurso() {
+  showConfetti.value = false
   if (!examenFinal.value) await cargarExamenFinal()
   if (!examenFinal.value) return
   showExamenModal.value = true
@@ -369,8 +364,12 @@ async function abrirPanelAvance() {
 async function iniciarExamenFinalAutomatico() {
   await cargarExamenFinal()
   if (examenFinal.value) {
+    showConfetti.value = false
     toast.success('¡Felicidades por completar el 100% del curso! Abriendo tu Examen Final...')
     await abrirExamenEnCurso()
+  } else {
+    showConfetti.value = true
+    setTimeout(() => { showConfetti.value = false }, 5000)
   }
 }
 
@@ -1529,7 +1528,7 @@ function tramitarDC3() {
 
     <!-- Modal Examen Final integrado en el Curso -->
     <Transition name="fade">
-      <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" @click.self="showExamenModal = false">
+      <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" style="z-index: 25000;" @click.self="showExamenModal = false">
         <div class="ver-examen-modal" @click.stop>
           <div class="ver-examen-modal-head">
             <div>
