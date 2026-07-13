@@ -521,7 +521,7 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
               <template v-if="['create-module','edit-module','create-sub','edit-sub'].includes(panelMode!)">
                 <div class="cte-field">
                   <label class="cte-label">Título *</label>
-                  <input v-model="panelForm.title" class="cte-input" autofocus :placeholder="panelMode?.includes('module') ? 'Ej: Fundamentos de redes' : 'Ej: Conceptos básicos'" />
+                  <input v-model="panelForm.title" class="cte-input" :placeholder="panelMode?.includes('module') ? 'Ej: Fundamentos de redes' : 'Ej: Conceptos básicos'" />
                 </div>
                 <div class="cte-field">
                   <label class="cte-label">Descripción</label>
@@ -533,7 +533,7 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
               <template v-if="['create-lesson','edit-lesson'].includes(panelMode!)">
                 <div class="cte-field">
                   <label class="cte-label">Título *</label>
-                  <input v-model="panelForm.title" class="cte-input" autofocus placeholder="Título de la lección" />
+                  <input v-model="panelForm.title" class="cte-input" placeholder="Título de la lección" />
                 </div>
                 <div class="cte-field">
                   <label class="cte-label">Descripción</label>

@@ -94,7 +94,7 @@ async function guardar() {
         <div v-if="step === 1" class="step-pane slide-down-enter-active">
           <div class="field">
             <label>Título del curso <span class="req">*</span></label>
-            <input class="field-input" v-model="form.title" placeholder="Ej: Introducción a Vue 3" autofocus />
+            <input class="field-input" v-model="form.title" placeholder="Ej: Introducción a Vue 3" />
             <span class="hint">{{ form.title.length }}/100 caracteres</span>
           </div>
           <div class="field mt-4">
