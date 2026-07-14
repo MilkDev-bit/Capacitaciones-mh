@@ -256,14 +256,14 @@ function courseProgress(curso: any) {
       <template v-else>
         <div class="dash-actions">
           <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
-            <div class="dash-action-icon" style="background:#e0e7ff;color:#4f46e5"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+            <div class="dash-action-icon dash-action-icon--blue"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
             <div class="dash-action-info">
               <strong>Explorar cursos</strong>
               <p>Descubre nuevos cursos disponibles</p>
             </div>
           </button>
           <button class="dash-action-card" @click="router.push('/usuario/capacitaciones')">
-            <div class="dash-action-icon" style="background:#fef3c7;color:#d97706"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+            <div class="dash-action-icon dash-action-icon--amber"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
             <div class="dash-action-info">
               <strong>Unirse con código</strong>
               <p>Ingresa el código de tu instructor</p>
@@ -323,19 +323,19 @@ function courseProgress(curso: any) {
 .dash-stat-card {
   display: flex; align-items: center; gap: 14px; padding: 18px 20px;
   border-radius: var(--r-lg);
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255,255,255,0.8); border-top: 3px solid transparent;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.95) inset;
+  background: var(--surface);
+  border: 1px solid var(--border-light); border-top: 3px solid transparent;
+  box-shadow: var(--shadow-sm);
   transition: transform 0.22s, box-shadow 0.22s;
   animation: fadeInUp 0.4s ease both;
   animation-delay: var(--anim-delay, 0ms);
 }
-.dash-stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.14); }
+.dash-stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
 .bg-violet { border-top-color: #7c3aed; }
 .bg-emerald { border-top-color: #059669; }
 .bg-sky     { border-top-color: #0284c7; }
 .bg-orange  { border-top-color: #f97316; }
+.bg-amber   { border-top-color: #f59e0b; }
 .dash-stat-icon {
   width: 46px; height: 46px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -345,7 +345,20 @@ function courseProgress(curso: any) {
 .bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
 .bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
 .bg-amber .dash-stat-icon   { background: #fef3c7; color: #d97706; }
-.bg-amber { border-top-color: #f59e0b; }
+
+html.dark-theme .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
+html.dark-theme .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18); color: #34d399; }
+html.dark-theme .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
+html.dark-theme .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
+html.dark-theme .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
+  html:not(.light-theme) .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18); color: #34d399; }
+  html:not(.light-theme) .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
+  html:not(.light-theme) .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
+  html:not(.light-theme) .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+}
 .dash-stat-info { min-width: 0; flex: 1; overflow: hidden; }
 .dash-stat-info strong { display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark); }
 .dash-stat-info span {
@@ -431,6 +444,14 @@ function courseProgress(curso: any) {
   width: 44px; height: 44px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+.dash-action-icon--blue { background: #e0e7ff; color: #4f46e5; }
+.dash-action-icon--amber { background: #fef3c7; color: #d97706; }
+html.dark-theme .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18); color: #818cf8; }
+html.dark-theme .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18); color: #818cf8; }
+  html:not(.light-theme) .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+}
 .dash-action-info strong { display: block; font-size: 0.92rem; font-weight: 700; color: var(--dark); }
 .dash-action-info p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 
@@ -456,6 +477,28 @@ function courseProgress(curso: any) {
 .lb-first { background: linear-gradient(90deg, #fffbeb, #fef3c7); border-color: #fde68a; }
 .lb-second { background: linear-gradient(90deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
 .lb-third { background: linear-gradient(90deg, #fff7ed, #ffedd5); border-color: #fed7aa; }
+
+html.dark-theme .lb-first {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)); border-color: rgba(245, 158, 11, 0.4);
+}
+html.dark-theme .lb-second {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)); border-color: rgba(148, 163, 184, 0.4);
+}
+html.dark-theme .lb-third {
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)); border-color: rgba(249, 115, 22, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .lb-first {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)); border-color: rgba(245, 158, 11, 0.4);
+  }
+  html:not(.light-theme) .lb-second {
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)); border-color: rgba(148, 163, 184, 0.4);
+  }
+  html:not(.light-theme) .lb-third {
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)); border-color: rgba(249, 115, 22, 0.4);
+  }
+}
 .lb-rank { font-size: 1.1rem; font-weight: 800; width: 40px; display: inline-block; }
 .lb-user strong { font-size: 0.94rem; color: var(--dark); }
 .lb-pts { font-weight: 800; color: var(--brand); font-size: 0.9rem; }

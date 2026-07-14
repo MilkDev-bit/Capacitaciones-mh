@@ -71,6 +71,22 @@ html.dark-theme {
   }
 }
 
+html.dark-theme .ad-stat-icon,
+html.dark-theme .ad-action-icon,
+html.dark-theme .inst-stat-icon,
+html.dark-theme .inst-action-icon {
+  background: color-mix(in srgb, currentColor 18%, transparent) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .ad-stat-icon,
+  html:not(.light-theme) .ad-action-icon,
+  html:not(.light-theme) .inst-stat-icon,
+  html:not(.light-theme) .inst-action-icon {
+    background: color-mix(in srgb, currentColor 18%, transparent) !important;
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
