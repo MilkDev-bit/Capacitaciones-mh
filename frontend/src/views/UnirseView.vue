@@ -108,10 +108,11 @@ function typeLabel(t: string) {
   padding: 20px;
 }
 .join-card {
-  background: #fff; border-radius: 20px; padding: 36px 32px;
+  background: var(--surface); border-radius: 20px; padding: 36px 32px;
   width: 100%; max-width: 440px;
   box-shadow: 0 24px 60px rgba(0,0,0,.22);
   display: flex; flex-direction: column; gap: 20px;
+  color: var(--text);
 }
 .brand-bar { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
 .brand-name { font-size: 1rem; font-weight: 800; color: var(--dark); letter-spacing: -.01em; }

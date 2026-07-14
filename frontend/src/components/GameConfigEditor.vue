@@ -506,13 +506,13 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 .gce-input {
   width: 100%; max-width: 100%; padding: 9px 12px;
   background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark);
+  border-radius: var(--r-md); font-size: 0.9rem; color: var(--text);
   transition: border-color 0.2s; box-sizing: border-box;
 }
 .gce-input:focus { outline: none; border-color: var(--brand); }
-.gce-input-sm { width: 100px; max-width: 100%; padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); box-sizing: border-box; }
+.gce-input-sm { width: 100px; max-width: 100%; padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--text); box-sizing: border-box; }
 .gce-input-sm:focus { outline: none; border-color: var(--brand); }
-.gce-select { padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); cursor: pointer; max-width: 100%; }
+.gce-select { padding: 8px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--text); cursor: pointer; max-width: 100%; }
 .gce-unit { font-size: 0.85rem; color: var(--muted); align-self: center; }
 .gce-points-row, .gce-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; }
 .gce-row-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; width: 100%; }
@@ -553,7 +553,7 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 }
 .gce-pair-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
 .gce-img-picker { display: flex; gap: 6px; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; }
-.gce-input-xs { flex: 1 1 0%; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; padding: 6px 10px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; color: var(--dark); }
+.gce-input-xs { flex: 1 1 0%; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; padding: 6px 10px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; color: var(--text); }
 .gce-btn-upload { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px; background: var(--brand-light); color: var(--brand); font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; border: 1px solid rgba(99,102,241,0.2); transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .gce-btn-upload:hover { background: var(--brand); color: white; }
 .hidden-file { display: none; }

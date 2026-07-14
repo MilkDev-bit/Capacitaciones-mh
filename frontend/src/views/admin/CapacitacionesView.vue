@@ -434,7 +434,7 @@ function cardColor(c: any) {
   background: var(--surface); color: var(--muted);
   box-shadow: var(--shadow-xs); max-width: 400px;
 }
-.ac-search-bar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--dark); font-size: 0.9rem; }
+.ac-search-bar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 0.9rem; }
 .ac-search-bar:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
 .ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
 .ac-card {

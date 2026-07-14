@@ -686,7 +686,7 @@ async function unirseConCodigo() {
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--dark);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
@@ -1025,7 +1025,7 @@ async function unirseConCodigo() {
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
-  color: var(--dark);
+  color: var(--text);
   font-size: 0.84rem;
   font-weight: 600;
   outline: none;
@@ -1049,7 +1049,7 @@ async function unirseConCodigo() {
   border-radius: 8px;
   border: 1.5px solid var(--border);
   background: var(--surface);
-  color: var(--dark);
+  color: var(--text);
   font-size: 0.85rem;
   font-weight: 700;
   display: inline-flex;

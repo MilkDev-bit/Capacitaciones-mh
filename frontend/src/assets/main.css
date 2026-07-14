@@ -59,6 +59,7 @@ html.dark-theme {
 
 @media (prefers-color-scheme: dark) {
   html:not(.light-theme) {
+    color-scheme: dark;
     --dark:    #ffffff;
     --text:    #f5f5f7;
     --bg:      #121212;
@@ -69,6 +70,10 @@ html.dark-theme {
     --muted:   #aeaeb2;
     --topbar-bg: rgba(29, 29, 31, 0.85);
   }
+}
+
+html.dark-theme {
+  color-scheme: dark;
 }
 
 html.dark-theme .ad-stat-icon,
@@ -100,7 +105,15 @@ body {
 }
 ::selection { background: rgba(249,115,22,.18); }
 button { font-family: inherit; cursor: pointer; letter-spacing: inherit; }
-input, select, textarea { font-family: inherit; letter-spacing: inherit; }
+input, select, textarea {
+  font-family: inherit;
+  letter-spacing: inherit;
+  color: var(--text);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -130,9 +143,10 @@ img { display: block; max-width: 100%; }
   width: 100%; padding: 12px 16px; border: 1px solid var(--border);
   border-radius: var(--r); font-size: 0.95rem; outline: none;
   transition: all 0.2s ease; background: var(--surface);
+  color: var(--text);
   box-shadow: 0 2px 5px rgba(0,0,0,0.01) inset;
 }
-.field-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(249,115,22,.15); background: #fff; }
+.field-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(249,115,22,.15); background: var(--surface); color: var(--text); }
 textarea.field-input { line-height: 1.5; }
 input[type="file"] {
   width: 100%;
@@ -450,9 +464,10 @@ input[type="file"]::file-selector-button {
   padding: 9px 14px; border: 2px solid var(--border); border-radius: var(--r);
   font-size: 1.1rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase;
   width: 130px; outline: none; font-family: 'Courier New', monospace; background: var(--bg);
+  color: var(--text);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.code-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
+.code-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); background: var(--surface); color: var(--text); }
 .section-label { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; }
 .empty-state {
   text-align: center; padding: 72px 20px;

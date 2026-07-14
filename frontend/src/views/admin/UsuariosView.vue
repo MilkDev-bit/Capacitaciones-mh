@@ -257,7 +257,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
   border: 1.5px solid var(--border); border-radius: var(--r); background: var(--surface);
   color: var(--muted); box-shadow: var(--shadow-xs); max-width: 400px;
 }
-.au-search-bar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--dark); font-size: 0.9rem; }
+.au-search-bar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 0.9rem; }
 .au-search-bar:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
 
 .au-list {
@@ -302,7 +302,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
 
 .au-role-select {
   padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
-  background: var(--bg); font-size: 0.8rem; font-weight: 600; color: var(--dark);
+  background: var(--bg); font-size: 0.8rem; font-weight: 600; color: var(--text);
   cursor: pointer; outline: none; width: max-content;
 }
 .au-role-select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(249,115,22,.15); }

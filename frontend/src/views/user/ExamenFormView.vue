@@ -376,7 +376,7 @@ function closeWindow() {
   border-bottom: 2px solid #e2e8f0;
   padding: 8px 0;
   font-size: 0.95rem;
-  color: #1e293b;
+  color: inherit;
   background: transparent;
   resize: vertical;
   outline: none;

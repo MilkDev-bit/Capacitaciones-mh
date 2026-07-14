@@ -117,10 +117,11 @@ async function unirse() {
   padding: 20px;
 }
 .join-card {
-  background: #fff; border-radius: 20px; padding: 36px 32px;
+  background: var(--surface); border-radius: 20px; padding: 36px 32px;
   width: 100%; max-width: 460px;
   box-shadow: 0 24px 60px rgba(0,0,0,.22);
   display: flex; flex-direction: column; gap: 20px;
+  color: var(--text);
 }
 .brand-bar { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
 .brand-name { font-size: 1rem; font-weight: 800; color: var(--dark); letter-spacing: -.01em; }
@@ -151,13 +152,13 @@ async function unirse() {
   font-size: 0.85rem; font-weight: 600; color: var(--dark);
 }
 .code-field {
-  font-size: 1.3rem; font-weight: 800; letter-spacing: .15em; color: var(--dark);
+  font-size: 1.3rem; font-weight: 800; letter-spacing: .15em; color: var(--text);
   font-family: 'Courier New', monospace; background: var(--bg);
   border: 2px solid var(--border); border-radius: 12px;
   padding: 12px 14px; text-align: center; outline: none; transition: all 0.2s;
 }
 .code-field:focus {
-  border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+  border-color: #3b82f6; background: var(--surface); color: var(--text); box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
 }
 
 .btn-join {

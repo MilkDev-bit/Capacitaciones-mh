@@ -735,11 +735,11 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
 .cte-input {
   width: 100%; padding: 10px 12px;
   background: var(--surface-soft); border: 1.5px solid var(--border);
-  border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark);
+  border-radius: var(--r-md); font-size: 0.9rem; color: var(--text);
   transition: border-color 0.2s; resize: vertical;
 }
 .cte-input:focus { outline: none; border-color: var(--brand); }
-.cte-input-sm { width: 120px; padding: 8px 10px; background: var(--surface-soft); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--dark); }
+.cte-input-sm { width: 120px; padding: 8px 10px; background: var(--surface-soft); border: 1.5px solid var(--border); border-radius: var(--r-md); font-size: 0.9rem; color: var(--text); }
 .cte-textarea-tall { min-height: 140px; }
 .cte-existing-file { font-size: 0.75rem; color: var(--brand); font-weight: 400; margin-left: 8px; }
 
