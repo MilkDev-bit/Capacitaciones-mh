@@ -238,7 +238,7 @@ async function uploadCover(e: Event) {
       </div>
 
       <!-- Estadísticas horizontales -->
-      <div class="fp-stats-bar" v-if="stats.cursos_inscritos !== undefined">
+      <div class="fp-stats-bar" v-if="stats && perfil">
         <div class="fp-stat">
           <span class="fp-stat-num">{{ stats.cursos_inscritos ?? 0 }}</span>
           <span class="fp-stat-lbl">Cursos inscritos</span>

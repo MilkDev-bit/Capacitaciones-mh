@@ -238,6 +238,7 @@ func New(d Deps) *gin.Engine {
 				adm.POST("/capacitaciones", d.CursosH.AdminCreateCapacitacion)
 				adm.PUT("/capacitaciones/:id", d.CursosH.AdminUpdateCapacitacion)
 				adm.DELETE("/capacitaciones/:id", d.CursosH.AdminDeleteCapacitacion)
+				adm.POST("/capacitaciones/:id/reset-codigo", d.CursosH.AdminResetCodigo)
 				adm.GET("/asignaciones", d.CursosH.AdminListAsignaciones)
 
 				adm.GET("/schedules", d.CursosH.AdminListSchedules)

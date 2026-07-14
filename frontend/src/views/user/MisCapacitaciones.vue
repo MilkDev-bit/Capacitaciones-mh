@@ -228,6 +228,12 @@ async function unirseConCodigo() {
     codigoLoading.value = false
   }
 }
+
+function copyCode(code: string) {
+  if (!code) return
+  navigator.clipboard.writeText(code)
+  toast.success('Código copiado al portapapeles')
+}
 </script>
 
 <template>
@@ -365,10 +371,16 @@ async function unirseConCodigo() {
               </div>
             </div>
             
-            <div class="course-code-display" v-if="c.type === 'videocall'">
-              <span class="code-label">Tu código de acceso:</span>
-              <div class="code-value">{{ c.codigo_acceso || 'Generando...' }}</div>
-              <span class="code-hint">Deberás ingresarlo en la sala.</span>
+            <div class="course-code-display" v-if="c.codigo_acceso || c.type === 'videocall'">
+              <span class="code-label">{{ c.type === 'videocall' ? 'Tu código de videollamada:' : 'Código de acceso:' }}</span>
+              <div class="code-value" @click.stop="copyCode(c.codigo_acceso || '')" title="Haz clic para copiar">
+                <strong style="font-weight: 900; font-size: 1.15em;">{{ c.codigo_acceso || 'Generando...' }}</strong>
+                <button v-if="c.codigo_acceso" class="btn-copy-mini" @click.stop="copyCode(c.codigo_acceso)" title="Copiar al portapapeles">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Copiar
+                </button>
+              </div>
+              <span class="code-hint">{{ c.type === 'videocall' ? 'Deberás ingresarlo en la sala.' : 'Comparte o usa este código para acceder.' }}</span>
             </div>
 
             <div v-if="courseProgress(c) === 100 && c.type !== 'videocall' && c.dc3_enabled === true" style="margin-top: 12px; margin-bottom: -4px;">
@@ -929,11 +941,41 @@ async function unirseConCodigo() {
 }
 
 .course-code-display .code-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #e2e8f0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(249, 115, 22, 0.15);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--brand, #f97316);
   letter-spacing: 0.1em;
+  cursor: pointer;
+  margin: 6px 0;
+}
+
+.course-code-display .btn-copy-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--brand, #f97316);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.course-code-display .btn-copy-mini:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
 }
 
 .course-code-display .code-hint {

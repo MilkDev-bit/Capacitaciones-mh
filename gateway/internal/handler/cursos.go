@@ -995,6 +995,18 @@ func (h *CursosHandler) AdminDeleteCapacitacion(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// POST /api/admin/capacitaciones/:id/reset-codigo
+func (h *CursosHandler) AdminResetCodigo(ctx *gin.Context) {
+	resp, err := h.c.Cursos.AdminResetCodigo(ctx.Request.Context(), &cursospb.CursoIDRequest{
+		CursoId: ctx.Param("id"),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"codigo_acceso": resp.CodigoAcceso})
+}
+
 // GET /api/admin/asignaciones
 func (h *CursosHandler) AdminListAsignaciones(ctx *gin.Context) {
 	resp, err := h.c.Cursos.AdminListAsignaciones(ctx.Request.Context(), &cursospb.EmptyRequest{})

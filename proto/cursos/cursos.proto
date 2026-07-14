@@ -49,6 +49,7 @@ service CursosService {
   rpc AdminCreateCapacitacion(CreateCursoRequest) returns (CursoResponse);
   rpc AdminUpdateCapacitacion(UpdateCursoRequest) returns (CursoResponse);
   rpc AdminDeleteCapacitacion(CursoIDRequest) returns (EmptyResponse);
+  rpc AdminResetCodigo(CursoIDRequest) returns (CursoResponse);
   rpc AdminListAsignaciones(EmptyRequest) returns (ListAsignacionesResponse);
   rpc AdminAsignar(AsignarRequest) returns (EmptyResponse);
   rpc AdminDesAsignar(AsignacionIDRequest) returns (EmptyResponse);

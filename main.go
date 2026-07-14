@@ -237,6 +237,7 @@ func main() {
 				admin.POST("/capacitaciones", handlers.CreateCapacitacion)
 				admin.PUT("/capacitaciones/:id", handlers.UpdateCapacitacion)
 				admin.DELETE("/capacitaciones/:id", handlers.DeleteCapacitacion)
+				admin.POST("/capacitaciones/:id/reset-codigo", handlers.AdminResetCodigo)
 
 				admin.GET("/examenes", handlers.ListExamenes)
 				admin.POST("/examenes", handlers.CreateExamen)

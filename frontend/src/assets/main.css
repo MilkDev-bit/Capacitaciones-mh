@@ -42,6 +42,10 @@
   --topbar-h:  64px;
   --topbar-bg: rgba(255, 255, 255, 0.82);
 
+  --bg-color: var(--bg);
+  --text-color: var(--text);
+  --border-color: var(--border);
+
   --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1.0);
 }
 
@@ -56,6 +60,10 @@ html.dark-theme {
   --muted:   #94a3b8;
   --subtle:  #64748b;
   --topbar-bg: rgba(29, 29, 31, 0.85);
+
+  --bg-color: var(--bg);
+  --text-color: var(--text);
+  --border-color: var(--border);
 
   --brand-light:  rgba(249, 115, 22, 0.16);
   --brand-border: rgba(249, 115, 22, 0.38);
@@ -77,6 +85,10 @@ html.dark-theme {
     --muted:   #94a3b8;
     --subtle:  #64748b;
     --topbar-bg: rgba(29, 29, 31, 0.85);
+
+    --bg-color: var(--bg);
+    --text-color: var(--text);
+    --border-color: var(--border);
 
     --brand-light:  rgba(249, 115, 22, 0.16);
     --brand-border: rgba(249, 115, 22, 0.38);
@@ -173,10 +185,144 @@ input, select, textarea {
   font-family: inherit;
   letter-spacing: inherit;
   color: var(--text);
+  background-color: var(--surface);
 }
 input::placeholder, textarea::placeholder {
   color: var(--muted);
   opacity: 0.85;
+}
+
+/* Universal Dark Mode Input & Form Element Contrast Styling */
+html.dark-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+html.dark-theme select,
+html.dark-theme textarea,
+html.dark-theme .field-input,
+html.dark-theme .cte-input,
+html.dark-theme .cte-input-sm,
+html.dark-theme .gce-input,
+html.dark-theme .gce-input-sm,
+html.dark-theme .gce-input-xs,
+html.dark-theme .gce-textarea,
+html.dark-theme .input-field,
+html.dark-theme .code-input,
+html.dark-theme .search-input,
+html.dark-theme .input,
+html.dark-theme .ver-notes-input,
+html.dark-theme .fb-comment-input,
+html.dark-theme .msg-create-title-input,
+html.dark-theme .msg-create-input,
+html.dark-theme .thread-input,
+html.dark-theme .date-input {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color-scheme: dark !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+  html:not(.light-theme) select,
+  html:not(.light-theme) textarea,
+  html:not(.light-theme) .field-input,
+  html:not(.light-theme) .cte-input,
+  html:not(.light-theme) .cte-input-sm,
+  html:not(.light-theme) .gce-input,
+  html:not(.light-theme) .gce-input-sm,
+  html:not(.light-theme) .gce-input-xs,
+  html:not(.light-theme) .gce-textarea,
+  html:not(.light-theme) .input-field,
+  html:not(.light-theme) .code-input,
+  html:not(.light-theme) .search-input,
+  html:not(.light-theme) .input,
+  html:not(.light-theme) .ver-notes-input,
+  html:not(.light-theme) .fb-comment-input,
+  html:not(.light-theme) .msg-create-title-input,
+  html:not(.light-theme) .msg-create-input,
+  html:not(.light-theme) .thread-input,
+  html:not(.light-theme) .date-input {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    color-scheme: dark !important;
+  }
+}
+
+html.dark-theme input:focus:not([type="checkbox"]):not([type="radio"]),
+html.dark-theme select:focus,
+html.dark-theme textarea:focus,
+html.dark-theme .field-input:focus,
+html.dark-theme .cte-input:focus,
+html.dark-theme .gce-input:focus,
+html.dark-theme .input-field:focus,
+html.dark-theme .code-input:focus,
+html.dark-theme .search-input:focus,
+html.dark-theme .input:focus {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.28) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) input:focus:not([type="checkbox"]):not([type="radio"]),
+  html:not(.light-theme) select:focus,
+  html:not(.light-theme) textarea:focus,
+  html:not(.light-theme) .field-input:focus,
+  html:not(.light-theme) .cte-input:focus,
+  html:not(.light-theme) .gce-input:focus,
+  html:not(.light-theme) .input-field:focus,
+  html:not(.light-theme) .code-input:focus,
+  html:not(.light-theme) .search-input:focus,
+  html:not(.light-theme) .input:focus {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.28) !important;
+  }
+}
+
+html.dark-theme input:-webkit-autofill,
+html.dark-theme input:-webkit-autofill:hover, 
+html.dark-theme input:-webkit-autofill:focus, 
+html.dark-theme textarea:-webkit-autofill,
+html.dark-theme textarea:-webkit-autofill:hover,
+html.dark-theme textarea:-webkit-autofill:focus,
+html.dark-theme select:-webkit-autofill,
+html.dark-theme select:-webkit-autofill:hover,
+html.dark-theme select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc !important;
+  -webkit-box-shadow: 0 0 0px 1000px #1e293b inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) input:-webkit-autofill,
+  html:not(.light-theme) input:-webkit-autofill:hover, 
+  html:not(.light-theme) input:-webkit-autofill:focus, 
+  html:not(.light-theme) textarea:-webkit-autofill,
+  html:not(.light-theme) textarea:-webkit-autofill:hover,
+  html:not(.light-theme) textarea:-webkit-autofill:focus,
+  html:not(.light-theme) select:-webkit-autofill,
+  html:not(.light-theme) select:-webkit-autofill:hover,
+  html:not(.light-theme) select:-webkit-autofill:focus {
+    -webkit-text-fill-color: #f8fafc !important;
+    -webkit-box-shadow: 0 0 0px 1000px #1e293b inset !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+  }
+}
+
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.9 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) input::placeholder,
+  html:not(.light-theme) textarea::placeholder {
+    color: #94a3b8 !important;
+    opacity: 0.9 !important;
+  }
 }
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
@@ -709,27 +855,29 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
 
 /* ─── Google reCAPTCHA Badge (Personalización de Tamaño y Modo Oscuro) ─── */
 .grecaptcha-badge {
-  transform: scale(0.76) !important;
+  transform: scale(0.62) !important;
   transform-origin: bottom right !important;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease, box-shadow 0.35s ease !important;
   border-radius: 12px !important;
   overflow: hidden !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
   z-index: 9999 !important;
 }
 
 .grecaptcha-badge:hover {
-  transform: scale(0.88) !important;
+  transform: scale(0.82) !important;
 }
 
-html.dark-theme .grecaptcha-badge {
-  filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.08) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+html.dark-theme .grecaptcha-badge,
+html.dark-theme .grecaptcha-badge iframe {
+  filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(1.15) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65) !important;
 }
 
 @media (prefers-color-scheme: dark) {
-  html:not(.light-theme) .grecaptcha-badge {
-    filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.08) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+  html:not(.light-theme) .grecaptcha-badge,
+  html:not(.light-theme) .grecaptcha-badge iframe {
+    filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(1.15) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65) !important;
   }
 }

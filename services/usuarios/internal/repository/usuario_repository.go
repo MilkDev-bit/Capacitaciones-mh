@@ -80,21 +80,18 @@ func (r *postgresUsuarioRepository) FindByID(ctx context.Context, id string) (*U
 	if err != nil {
 		return nil, err
 	}
-	if u.Role == "user" {
-		_ = r.db.GetContext(ctx, &u.CursosInscritos, `SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, id)
-		_ = r.db.GetContext(ctx, &u.LeccionesCompletadas, `SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, id)
-		_ = r.db.GetContext(ctx, &u.TotalLecciones, `
-			SELECT COUNT(*) FROM lecciones l
-			JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
-			WHERE i.user_id=$1 AND l.deleted_at IS NULL`, id)
-	} else if u.Role == "instructor" {
-		_ = r.db.GetContext(ctx, &u.CursosCreados, `SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1 AND deleted_at IS NULL`, id)
-		_ = r.db.GetContext(ctx, &u.EstudiantesTotal, `
-			SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
-			JOIN capacitaciones c ON i.capacitacion_id = c.id
-			WHERE c.instructor_id=$1 AND c.deleted_at IS NULL`, id)
-		_ = r.db.GetContext(ctx, &u.ExamenesCreados, `SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, id)
-	}
+	_ = r.db.GetContext(ctx, &u.CursosInscritos, `SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, id)
+	_ = r.db.GetContext(ctx, &u.LeccionesCompletadas, `SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, id)
+	_ = r.db.GetContext(ctx, &u.TotalLecciones, `
+		SELECT COUNT(*) FROM lecciones l
+		JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
+		WHERE i.user_id=$1 AND l.deleted_at IS NULL`, id)
+	_ = r.db.GetContext(ctx, &u.CursosCreados, `SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1 AND deleted_at IS NULL`, id)
+	_ = r.db.GetContext(ctx, &u.EstudiantesTotal, `
+		SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
+		JOIN capacitaciones c ON i.capacitacion_id = c.id
+		WHERE c.instructor_id=$1 AND c.deleted_at IS NULL`, id)
+	_ = r.db.GetContext(ctx, &u.ExamenesCreados, `SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, id)
 	return u, nil
 }
 

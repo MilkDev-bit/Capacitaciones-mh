@@ -52,6 +52,7 @@ const (
 	CursosService_AdminCreateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminCreateCapacitacion"
 	CursosService_AdminUpdateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminUpdateCapacitacion"
 	CursosService_AdminDeleteCapacitacion_FullMethodName        = "/cursos.CursosService/AdminDeleteCapacitacion"
+	CursosService_AdminResetCodigo_FullMethodName               = "/cursos.CursosService/AdminResetCodigo"
 	CursosService_AdminListAsignaciones_FullMethodName          = "/cursos.CursosService/AdminListAsignaciones"
 	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
 	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
@@ -113,6 +114,7 @@ type CursosServiceClient interface {
 	AdminCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	AdminUpdateCapacitacion(ctx context.Context, in *UpdateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	AdminDeleteCapacitacion(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	AdminResetCodigo(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	AdminListAsignaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListAsignacionesResponse, error)
 	AdminAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	AdminDesAsignar(ctx context.Context, in *AsignacionIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -469,6 +471,16 @@ func (c *cursosServiceClient) AdminDeleteCapacitacion(ctx context.Context, in *C
 	return out, nil
 }
 
+func (c *cursosServiceClient) AdminResetCodigo(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CursoResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminResetCodigo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) AdminListAsignaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListAsignacionesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAsignacionesResponse)
@@ -654,6 +666,7 @@ type CursosServiceServer interface {
 	AdminCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
 	AdminUpdateCapacitacion(context.Context, *UpdateCursoRequest) (*CursoResponse, error)
 	AdminDeleteCapacitacion(context.Context, *CursoIDRequest) (*EmptyResponse, error)
+	AdminResetCodigo(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	AdminListAsignaciones(context.Context, *EmptyRequest) (*ListAsignacionesResponse, error)
 	AdminAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error)
 	AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error)
@@ -778,6 +791,9 @@ func (UnimplementedCursosServiceServer) AdminUpdateCapacitacion(context.Context,
 }
 func (UnimplementedCursosServiceServer) AdminDeleteCapacitacion(context.Context, *CursoIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminDeleteCapacitacion not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminResetCodigo(context.Context, *CursoIDRequest) (*CursoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminResetCodigo not implemented")
 }
 func (UnimplementedCursosServiceServer) AdminListAsignaciones(context.Context, *EmptyRequest) (*ListAsignacionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminListAsignaciones not implemented")
@@ -1436,6 +1452,24 @@ func _CursosService_AdminDeleteCapacitacion_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_AdminResetCodigo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminResetCodigo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminResetCodigo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminResetCodigo(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_AdminListAsignaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmptyRequest)
 	if err := dec(in); err != nil {
@@ -1826,6 +1860,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminDeleteCapacitacion",
 			Handler:    _CursosService_AdminDeleteCapacitacion_Handler,
+		},
+		{
+			MethodName: "AdminResetCodigo",
+			Handler:    _CursosService_AdminResetCodigo_Handler,
 		},
 		{
 			MethodName: "AdminListAsignaciones",

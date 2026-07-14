@@ -14,6 +14,7 @@ import (
 	"Prueba-Go/internal/storage"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func ListCapacitaciones(c *gin.Context) {
@@ -42,6 +43,12 @@ func ListCapacitaciones(c *gin.Context) {
 			&cap.WelcomeMessage, &cap.ThumbnailURL,
 			&cap.Color, &cap.IsPublic,
 			&cap.CodigoAcceso, &createdAt)
+		if cap.CodigoAcceso == "" {
+			newCode := strings.ToUpper(uuid.New().String()[:8])
+			if _, err := db.DB.Exec(`UPDATE capacitaciones SET codigo_acceso=$1 WHERE id=$2`, newCode, cap.ID); err == nil {
+				cap.CodigoAcceso = newCode
+			}
+		}
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, gin.H{"data": result, "total": total, "page": page, "limit": limit})
@@ -108,11 +115,12 @@ func CreateCapacitacion(c *gin.Context) {
 		}
 	}
 
+	codigoAcceso := strings.ToUpper(uuid.New().String()[:8])
 	var id string
 	if err := db.DB.QueryRow(
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, welcome_message, is_public, color, thumbnail_url)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, welcome_message, is_public, color, thumbnail_url, codigo_acceso)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		title, description, capType, filePath, content, welcomeMsg, isPublic, color, thumbnailPath, codigoAcceso,
 	).Scan(&id); err != nil {
 		slog.Error("CreateCapacitacion: INSERT", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar la capacitación"})
@@ -172,6 +180,17 @@ func DeleteCapacitacion(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Exec(`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func AdminResetCodigo(c *gin.Context) {
+	id := c.Param("id")
+	codigo := strings.ToUpper(uuid.New().String()[:8])
+	_, err := db.DB.Exec(`UPDATE capacitaciones SET codigo_acceso = $1 WHERE id = $2 AND deleted_at IS NULL`, codigo, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al generar código"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"codigo_acceso": codigo})
 }
 
 func ListCapacitacionesUsuario(c *gin.Context) {

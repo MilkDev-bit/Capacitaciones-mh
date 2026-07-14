@@ -229,6 +229,13 @@ func (s *CursosService) AdminList(ctx context.Context) ([]*cursospb.CursoRespons
 	if err != nil {
 		return nil, err
 	}
+	for _, c := range cursos {
+		if c.CodigoAcceso == "" {
+			if updated, err2 := s.repo.ResetCodigo(ctx, c.ID); err2 == nil && updated != nil {
+				c.CodigoAcceso = updated.CodigoAcceso
+			}
+		}
+	}
 	return toProtoSlice(cursos), nil
 }
 
@@ -250,6 +257,14 @@ func (s *CursosService) AdminUpdate(ctx context.Context, req *cursospb.UpdateCur
 
 func (s *CursosService) AdminDelete(ctx context.Context, cursoID string) error {
 	return s.repo.Delete(ctx, cursoID)
+}
+
+func (s *CursosService) AdminResetCodigo(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.CursoResponse, error) {
+	c, err := s.repo.ResetCodigo(ctx, req.CursoId)
+	if err != nil {
+		return nil, err
+	}
+	return c.ToProto(), nil
 }
 
 func (s *CursosService) AdminListAsignaciones(ctx context.Context) ([]*cursospb.AsignacionInfo, error) {

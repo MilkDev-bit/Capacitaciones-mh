@@ -41,31 +41,28 @@ func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
 		"examenes_creados":      resp.ExamenesCreados,
 	}
 
-	if resp.Role == "instructor" {
-		// Cursos creados
-		if cursosResp, errC := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
-			stats["cursos_creados"] = int32(len(cursosResp.Cursos))
+	// Cursos creados
+	if cursosResp, errC := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
+		stats["cursos_creados"] = int32(len(cursosResp.Cursos))
+	}
+	// Estudiantes totales
+	if estResp, errEst := h.c.Cursos.InstructorListEstudiantes(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errEst == nil {
+		stats["estudiantes_total"] = int32(len(estResp.Estudiantes))
+	}
+	// Exámenes creados
+	if examResp, errE := h.c.Examenes.InstructorListExamenes(ctx.Request.Context(), &examenespb.UserRequest{UserId: userID}); errE == nil {
+		stats["examenes_creados"] = int32(len(examResp.Examenes))
+	}
+	// Cursos inscritos y lecciones completadas
+	if cursosResp, errC := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
+		stats["cursos_inscritos"] = int32(len(cursosResp.Cursos))
+		var comp, total int32
+		for _, c := range cursosResp.Cursos {
+			comp += c.LeccionesCompletadas
+			total += c.TotalLecciones
 		}
-		// Estudiantes totales
-		if estResp, errEst := h.c.Cursos.InstructorListEstudiantes(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errEst == nil {
-			stats["estudiantes_total"] = int32(len(estResp.Estudiantes))
-		}
-		// Exámenes creados
-		if examResp, errE := h.c.Examenes.InstructorListExamenes(ctx.Request.Context(), &examenespb.UserRequest{UserId: userID}); errE == nil {
-			stats["examenes_creados"] = int32(len(examResp.Examenes))
-		}
-	} else if resp.Role == "user" {
-		// Para usuarios, las stats vienen del servicio de cursos/lecciones (inscripciones)
-		if cursosResp, errC := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
-			stats["cursos_inscritos"] = int32(len(cursosResp.Cursos))
-			var comp, total int32
-			for _, c := range cursosResp.Cursos {
-				comp += c.LeccionesCompletadas
-				total += c.TotalLecciones
-			}
-			stats["lecciones_completadas"] = comp
-			stats["total_lecciones"] = total
-		}
+		stats["lecciones_completadas"] = comp
+		stats["total_lecciones"] = total
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"user": resp, "stats": stats})

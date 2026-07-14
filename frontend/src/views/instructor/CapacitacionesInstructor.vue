@@ -152,7 +152,7 @@ function copyCode(code: string) {
           <p class="course-desc">{{ c.description || 'Sin descripción' }}</p>
 
           <div class="course-footer">
-            <div class="course-code-wrapper" v-if="!c.precio || c.precio === 0">
+            <div class="course-code-wrapper">
               <div v-if="c.codigo_acceso" class="course-code-badge" @click="copyCode(c.codigo_acceso)"
                 title="Haz clic para copiar el código">
                 <span class="code-label">Código:</span>

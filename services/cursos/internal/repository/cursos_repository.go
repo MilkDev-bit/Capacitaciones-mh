@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
@@ -321,12 +322,13 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	if req.UserId != "" {
 		instructorID = &req.UserId
 	}
+	codigoAcceso := strings.ToUpper(uuid.New().String()[:8])
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, duration, dc3_enabled)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, duration, dc3_enabled, codigo_acceso)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled,
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, codigoAcceso,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -339,11 +341,25 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 	if color == "" {
 		color = "#f97316"
 	}
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, duration=$11, dc3_enabled=$12 WHERE id=$13`,
+	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, duration=$11, dc3_enabled=$12`
+	args := []interface{}{
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
-		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, req.CursoId,
-	)
+		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
+		req.Precio, req.Duration, req.Dc3Enabled,
+	}
+	if req.ScheduledAt != "" {
+		if t, err := time.Parse(time.RFC3339, req.ScheduledAt); err == nil {
+			query += `, scheduled_at=$13 WHERE id=$14`
+			args = append(args, t, req.CursoId)
+		} else {
+			query += ` WHERE id=$13`
+			args = append(args, req.CursoId)
+		}
+	} else {
+		query += `, scheduled_at=NULL WHERE id=$13`
+		args = append(args, req.CursoId)
+	}
+	_, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -351,9 +367,29 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 }
 
 func (r *postgresCursosRepository) Delete(ctx context.Context, cursoID string) error {
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1`, cursoID)
-	return err
+	res, err := r.db.ExecContext(ctx,
+		`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, cursoID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return errors.New("not found")
+	}
+	return nil
+}
+
+func (r *postgresCursosRepository) DeleteByInstructor(ctx context.Context, instructorID, cursoID string) error {
+	res, err := r.db.ExecContext(ctx,
+		`UPDATE capacitaciones SET deleted_at=NOW() WHERE id=$1 AND instructor_id=$2 AND deleted_at IS NULL`, cursoID, instructorID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return errors.New("not found or forbidden")
+	}
+	return nil
 }
 
 func (r *postgresCursosRepository) TogglePublic(ctx context.Context, cursoID string) (*Curso, error) {
@@ -366,7 +402,7 @@ func (r *postgresCursosRepository) TogglePublic(ctx context.Context, cursoID str
 }
 
 func (r *postgresCursosRepository) ResetCodigo(ctx context.Context, cursoID string) (*Curso, error) {
-	newCode := uuid.New().String()[:8]
+	newCode := strings.ToUpper(uuid.New().String()[:8])
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE capacitaciones SET codigo_acceso=$1 WHERE id=$2`, newCode, cursoID)
 	if err != nil {

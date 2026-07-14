@@ -56,32 +56,30 @@ func GetPerfil(c *gin.Context) {
 		return
 	}
 
-	stats := gin.H{}
+	var cursosInscritos, leccionesCompletadas, totalLecciones int
+	var cursosCreados, estudiantesTotal, examenesCreados int
 
-	if u.Role == "user" {
-		var cursosInscritos, leccionesCompletadas, totalLecciones int
-		db.DB.QueryRow(`SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, userID).Scan(&cursosInscritos)
-		db.DB.QueryRow(`SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, userID).Scan(&leccionesCompletadas)
-		db.DB.QueryRow(`
-			SELECT COUNT(*) FROM lecciones l
-			JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
-			WHERE i.user_id=$1`, userID).Scan(&totalLecciones)
-		stats["cursos_inscritos"] = cursosInscritos
-		stats["lecciones_completadas"] = leccionesCompletadas
-		stats["total_lecciones"] = totalLecciones
-	}
+	_ = db.DB.QueryRow(`SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, userID).Scan(&cursosInscritos)
+	_ = db.DB.QueryRow(`SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, userID).Scan(&leccionesCompletadas)
+	_ = db.DB.QueryRow(`
+		SELECT COUNT(*) FROM lecciones l
+		JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
+		WHERE i.user_id=$1 AND l.deleted_at IS NULL`, userID).Scan(&totalLecciones)
 
-	if u.Role == "instructor" {
-		var cursosCreados, estudiantesTotal, examenesCreados int
-		db.DB.QueryRow(`SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1`, userID).Scan(&cursosCreados)
-		db.DB.QueryRow(`
-			SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
-			JOIN capacitaciones c ON i.capacitacion_id = c.id
-			WHERE c.instructor_id=$1`, userID).Scan(&estudiantesTotal)
-		db.DB.QueryRow(`SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, userID).Scan(&examenesCreados)
-		stats["cursos_creados"] = cursosCreados
-		stats["estudiantes_total"] = estudiantesTotal
-		stats["examenes_creados"] = examenesCreados
+	_ = db.DB.QueryRow(`SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1 AND deleted_at IS NULL`, userID).Scan(&cursosCreados)
+	_ = db.DB.QueryRow(`
+		SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
+		JOIN capacitaciones c ON i.capacitacion_id = c.id
+		WHERE c.instructor_id=$1 AND c.deleted_at IS NULL`, userID).Scan(&estudiantesTotal)
+	_ = db.DB.QueryRow(`SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, userID).Scan(&examenesCreados)
+
+	stats := gin.H{
+		"cursos_inscritos":      cursosInscritos,
+		"lecciones_completadas": leccionesCompletadas,
+		"total_lecciones":       totalLecciones,
+		"cursos_creados":        cursosCreados,
+		"estudiantes_total":     estudiantesTotal,
+		"examenes_creados":      examenesCreados,
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": u, "stats": stats})

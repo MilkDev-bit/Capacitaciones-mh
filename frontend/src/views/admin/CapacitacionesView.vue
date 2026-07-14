@@ -160,6 +160,26 @@ function fileUrl(path: string) {
 function cardColor(c: any) {
   return c.color || '#f97316'
 }
+
+function copyCode(code: string) {
+  if (!code) return
+  navigator.clipboard.writeText(code)
+  toast.success('Código copiado al portapapeles')
+}
+
+async function resetCode(id: string, hasExisting: boolean = true) {
+  const msg = hasExisting
+    ? '¿Generar nuevo código de acceso? El anterior dejará de funcionar.'
+    : '¿Deseas generar un código de acceso para esta capacitación?'
+  if (!await toast.confirm(msg)) return
+  try {
+    const res = await api.post(`/admin/capacitaciones/${id}/reset-codigo`)
+    toast.success('Código actualizado: ' + res.data.codigo_acceso)
+    await load()
+  } catch (e: any) {
+    toast.error('Error al generar código')
+  }
+}
 </script>
 <template>
   <div class="ac-shell">
@@ -183,11 +203,8 @@ function cardColor(c: any) {
 
     <div v-if="loading && !capacitaciones.length" class="ac-grid">
       <div v-for="n in 6" :key="n" class="ac-card ac-card-skel">
-        <div class="skeleton" style="height:130px;border-radius:var(--r-lg) var(--r-lg) 0 0"></div>
-        <div style="padding:16px">
-          <div class="skeleton skel-title"></div>
-          <div class="skeleton skel-text" style="margin-top:8px"></div>
-        </div>
+        <div class="ac-card-banner"></div>
+        <div class="ac-card-body"></div>
       </div>
     </div>
 
@@ -211,6 +228,17 @@ function cardColor(c: any) {
         <div class="ac-card-body">
           <h3>{{ c.title }}</h3>
           <p class="ac-card-desc">{{ c.description || 'Sin descripcion' }}</p>
+          <div class="course-code-wrapper" style="margin-top: 10px; margin-bottom: 12px; background: var(--surface); border: 1px dashed var(--border); padding: 8px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <div v-if="c.codigo_acceso" style="display: flex; align-items: center; gap: 6px; cursor: pointer;" @click="copyCode(c.codigo_acceso)" title="Haz clic para copiar">
+              <span style="font-size: 0.78rem; color: var(--muted); font-weight: 600;">Código:</span>
+              <strong style="font-family: monospace; font-size: 1.05rem; font-weight: 900; color: var(--brand, #f97316); letter-spacing: 0.08em;">{{ c.codigo_acceso }}</strong>
+            </div>
+            <div v-else style="font-size: 0.8rem; color: var(--muted);">Sin código</div>
+            <div style="display: flex; gap: 4px;">
+              <button v-if="c.codigo_acceso" class="btn-copy-mini" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 6px; background: var(--brand, #f97316); color: #fff; border: none; font-weight: 700; cursor: pointer;" @click.stop="copyCode(c.codigo_acceso)" title="Copiar al portapapeles">Copiar</button>
+              <button class="btn-copy-mini" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 6px; background: var(--secondary, #334155); color: #fff; border: none; font-weight: 700; cursor: pointer;" @click.stop="resetCode(c.id, !!c.codigo_acceso)" title="Generar / Rotar código">↻</button>
+            </div>
+          </div>
           <div class="ac-card-footer">
             <span class="ac-card-date">{{ new Date(c.created_at).toLocaleDateString('es') }}</span>
             <div class="ac-card-actions">
