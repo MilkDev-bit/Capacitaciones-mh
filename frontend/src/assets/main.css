@@ -627,3 +627,30 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brand); outline
   right: 20px !important;
 }
 .iziToast-overlay { backdrop-filter: blur(4px) !important; background: rgba(0,0,0,.45) !important; }
+
+/* ─── Google reCAPTCHA Badge (Personalización de Tamaño y Modo Oscuro) ─── */
+.grecaptcha-badge {
+  transform: scale(0.76) !important;
+  transform-origin: bottom right !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease, box-shadow 0.35s ease !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  z-index: 9999 !important;
+}
+
+.grecaptcha-badge:hover {
+  transform: scale(0.88) !important;
+}
+
+html.dark-theme .grecaptcha-badge {
+  filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .grecaptcha-badge {
+    filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.08) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+  }
+}
