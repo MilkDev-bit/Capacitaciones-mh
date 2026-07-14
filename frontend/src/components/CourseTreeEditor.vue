@@ -55,6 +55,10 @@ const panelFile = ref<File | null>(null)
 const panelSaving = ref(false)
 
 function openPanel(mode: PanelMode, ctx: any = {}, form: any = {}) {
+  if ((mode === 'edit-lesson') && (!ctx.leccionId || ctx.leccionId === 'undefined')) {
+    toast.warning('No se encontró el ID de la lección a editar')
+    return
+  }
   panelMode.value = mode
   panelCtx.value = ctx
   panelForm.value = { type: '1', lesson_type: '1', duracion_min: 0, points_reward: 100, ...form }
@@ -198,16 +202,23 @@ async function saveLesson() {
     if (panelMode.value === 'create-lesson') {
       await api.post(`/instructor/capacitaciones/${props.capId}/lecciones`, payload)
       toast.success('Lección creada')
-    } else {
+    } else if (panelMode.value === 'edit-lesson' && panelCtx.value.leccionId && panelCtx.value.leccionId !== 'undefined') {
       await api.put(`/instructor/capacitaciones/${props.capId}/lecciones/${panelCtx.value.leccionId}`, payload)
       toast.success('Lección actualizada')
+    } else {
+      toast.error('No se pudo identificar el ID de la lección para actualizar')
+      return
     }
     closePanel(); fetchTree()
   } catch { toast.error('Error al guardar lección') }
   finally { panelSaving.value = false }
 }
 
-async function deleteLesson(leccionId: string) {
+async function deleteLesson(leccionId?: string) {
+  if (!leccionId || leccionId === 'undefined') {
+    toast.warning('No se pudo identificar la lección (ID indefinido)')
+    return
+  }
   if (!await toast.confirm('¿Eliminar lección?')) return
   try {
     await api.delete(`/instructor/capacitaciones/${props.capId}/lecciones/${leccionId}`)

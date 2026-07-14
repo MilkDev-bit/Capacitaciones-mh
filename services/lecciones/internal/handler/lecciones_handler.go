@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"strings"
 
 	leccionespb "Prueba-Go/gen/lecciones"
 	"Prueba-Go/services/lecciones/internal/service"
@@ -232,5 +235,14 @@ func (h *LeccionesHandler) GetUserPoints(ctx context.Context, req *leccionespb.U
 // ── Error helper ──────────────────────────────────────────────────────────────
 
 func toGRPC(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return status.Error(codes.NotFound, "recurso no encontrado")
+	}
+	if strings.Contains(err.Error(), "invalid input syntax for type uuid") || strings.Contains(err.Error(), "SQLSTATE 22P02") {
+		return status.Error(codes.InvalidArgument, "ID de recurso inválido")
+	}
 	return status.Error(codes.Internal, err.Error())
 }

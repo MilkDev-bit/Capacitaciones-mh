@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"strings"
 
 	examenespb "Prueba-Go/gen/examenes"
 	"Prueba-Go/services/examenes/internal/service"
@@ -112,5 +115,14 @@ func (h *ExamenesHandler) AdminDeleteExamen(ctx context.Context, req *examenespb
 }
 
 func toGRPC(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return status.Error(codes.NotFound, "recurso no encontrado")
+	}
+	if strings.Contains(err.Error(), "invalid input syntax for type uuid") || strings.Contains(err.Error(), "SQLSTATE 22P02") {
+		return status.Error(codes.InvalidArgument, "ID de recurso inválido")
+	}
 	return status.Error(codes.Internal, err.Error())
 }

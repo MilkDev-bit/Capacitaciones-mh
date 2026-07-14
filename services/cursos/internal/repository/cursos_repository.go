@@ -310,7 +310,8 @@ func (r *postgresCursosRepository) FindByID(ctx context.Context, cursoID string)
 
 func (r *postgresCursosRepository) FindByCodigo(ctx context.Context, codigo string) (*Curso, error) {
 	c := &Curso{}
-	return c, r.db.GetContext(ctx, c, selectCurso+` WHERE codigo_acceso=$1 AND deleted_at IS NULL`, codigo)
+	cleanCode := strings.ToUpper(strings.TrimSpace(codigo))
+	return c, r.db.GetContext(ctx, c, selectCurso+` WHERE UPPER(TRIM(codigo_acceso))=$1 AND deleted_at IS NULL`, cleanCode)
 }
 
 func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.CreateCursoRequest) (*Curso, error) {
@@ -578,7 +579,8 @@ func (r *postgresCursosRepository) FindLicenciaByID(ctx context.Context, licenci
 
 func (r *postgresCursosRepository) FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error) {
 	l := &Licencia{}
-	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE codigo_acceso=$1`, codigo)
+	cleanCode := strings.ToUpper(strings.TrimSpace(codigo))
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE UPPER(TRIM(codigo_acceso))=$1`, cleanCode)
 }
 
 func (r *postgresCursosRepository) IncrementarUsoLicencia(ctx context.Context, licenciaID string) error {

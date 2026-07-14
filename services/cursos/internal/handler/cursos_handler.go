@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
+	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
 	"Prueba-Go/services/cursos/internal/service"
@@ -374,13 +376,18 @@ func (h *CursosHandler) AdminDeleteSchedule(ctx context.Context, req *cursospb.S
 }
 
 func mapErr(err error) error {
+	if err == nil {
+		return nil
+	}
 	switch {
-	case errors.Is(err, service.ErrNotFound):
-		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, service.ErrNotFound) || errors.Is(err, sql.ErrNoRows):
+		return status.Error(codes.NotFound, "recurso o código de acceso no encontrado")
 	case errors.Is(err, service.ErrForbidden):
 		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, service.ErrConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
+	case strings.Contains(err.Error(), "no es válido") || strings.Contains(err.Error(), "inválido") || strings.Contains(err.Error(), "capacidad máxima") || strings.Contains(err.Error(), "no corresponde") || strings.Contains(err.Error(), "de pago") || strings.Contains(err.Error(), "requerido") || strings.Contains(err.Error(), "invalid input syntax"):
+		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		slog.Error("cursos: error interno", "error", err)
 		return status.Error(codes.Internal, "error interno del servidor")
