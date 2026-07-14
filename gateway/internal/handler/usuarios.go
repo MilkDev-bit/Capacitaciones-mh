@@ -155,8 +155,9 @@ func (h *UsuariosHandler) SearchUsers(ctx *gin.Context) {
 		return
 	}
 	resp, err := h.c.Usuarios.SearchUsers(ctx.Request.Context(), &usuariospb.SearchUsersRequest{
-		Query: q,
-		Limit: 10,
+		Query:       q,
+		Limit:       10,
+		RequesterId: ctx.GetString(middleware.CtxUserID),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

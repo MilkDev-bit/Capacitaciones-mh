@@ -1487,7 +1487,7 @@ function tramitarDC3() {
                 <p>Progreso en el curso y ranking de puntuaciones logradas</p>
               </div>
             </div>
-            <button class="fpc-close" @click="showAvancePanel = false">✕</button>
+            <button class="ver-examen-close-btn" @click="showAvancePanel = false" title="Cerrar">✕</button>
           </div>
 
           <div class="ver-avance-body">
@@ -1503,7 +1503,7 @@ function tramitarDC3() {
                   <div class="ver-avance-val">{{ leccionesCompletadas }} / {{ lecciones.length }}</div>
                 </div>
               </div>
-              <div class="ver-progress-bar-wrap" style="margin-top: 12px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+              <div class="ver-progress-bar-wrap" style="margin-top: 12px; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
                 <div :style="`width:${progreso}%; height: 100%; background: linear-gradient(90deg, #f97316, #fbbf24); border-radius: 5px; transition: width 0.4s;`"></div>
               </div>
             </div>
@@ -1514,13 +1514,13 @@ function tramitarDC3() {
                 <span class="glass-icon-badge glass-icon-orange">
                   <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </span>
-                <h4 style="margin: 0; font-size: 1.05rem; color: #f8fafc; font-weight: 700;">Ranking de Puntuaciones del Curso</h4>
+                <h4 style="margin: 0; font-size: 1.05rem; color: var(--dark); font-weight: 700;">Ranking de Puntuaciones del Curso</h4>
               </div>
 
-              <div v-if="loadingLeaderboard" style="padding: 20px; text-align: center; color: #94a3b8;">
+              <div v-if="loadingLeaderboard" style="padding: 20px; text-align: center; color: var(--muted);">
                 Cargando puntuaciones...
               </div>
-              <div v-else-if="leaderboard.length === 0" style="padding: 24px; text-align: center; color: #94a3b8; background: rgba(255,255,255,0.03); border-radius: 12px; margin-top: 10px;">
+              <div v-else-if="leaderboard.length === 0" style="padding: 24px; text-align: center; color: var(--muted); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px; margin-top: 10px;">
                 Aún no hay puntuaciones registradas para este curso. ¡Completa lecciones o actividades interactivas para sumar puntos!
               </div>
               <div v-else class="leaderboard-list">
@@ -2533,46 +2533,52 @@ function tramitarDC3() {
 
 /* ── Panel Avance y Puntuación ── */
 .ver-avance-panel-modal {
-  background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
   width: 90%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5); color: #f8fafc; overflow: hidden;
+  box-shadow: var(--shadow-lg); color: var(--text); overflow: hidden;
 }
 .ver-avance-head {
-  padding: 20px 24px; border-bottom: 1px solid #334155; display: flex;
-  justify-content: space-between; align-items: center;
+  padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex;
+  justify-content: space-between; align-items: center; background: var(--surface);
 }
-.ver-avance-head h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
-.ver-avance-head p { margin: 4px 0 0; font-size: 0.85rem; color: #94a3b8; }
-.ver-avance-body { padding: 24px; overflow-y: auto; flex: 1; }
+.ver-avance-head h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--dark); }
+.ver-avance-head p { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+.ver-avance-body { padding: 24px; overflow-y: auto; flex: 1; background: var(--surface); }
 .ver-avance-mycard {
-  background: rgba(255,255,255,0.04); border: 1px solid #334155; border-radius: 12px;
-  padding: 16px; margin-bottom: 24px;
+  background: var(--surface-soft); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px; margin-bottom: 24px; box-shadow: var(--shadow-xs);
 }
 .ver-avance-mycard-row { display: flex; justify-content: space-between; }
-.ver-avance-lbl { font-size: 0.8rem; color: #94a3b8; }
-.ver-avance-val { font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin-top: 4px; }
-.ver-avance-ranking h4 { margin: 0 0 12px; font-size: 1rem; color: #f8fafc; }
+.ver-avance-lbl { font-size: 0.82rem; font-weight: 500; color: var(--muted); }
+.ver-avance-val { font-size: 1.2rem; font-weight: 800; color: var(--dark); margin-top: 4px; }
+.ver-avance-ranking h4 { margin: 0 0 12px; font-size: 1rem; color: var(--dark); }
 .leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
 .leaderboard-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid #334155;
-  border-radius: 10px;
+  padding: 12px 16px; background: var(--surface-soft); border: 1px solid var(--border);
+  border-radius: 12px; transition: all 0.2s;
 }
+.leaderboard-row:hover { border-color: var(--brand); }
 .lb-rank {
-  width: 28px; height: 28px; border-radius: 50%; background: #334155; color: #f8fafc;
+  width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text);
   display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
   margin-right: 12px;
 }
 .lb-rank-top { background: #f97316; color: #fff; }
-.lb-user { display: flex; align-items: center; gap: 10px; flex: 1; }
+.lb-user { display: flex; align-items: center; gap: 12px; flex: 1; }
 .lb-avatar {
-  width: 32px; height: 32px; border-radius: 50%; background: #475569; color: #f8fafc;
-  display: flex; align-items: center; justify-content: center; font-weight: 700;
+  width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;
 }
-.lb-name { font-weight: 600; color: #f8fafc; }
-.lb-points { font-weight: 700; color: #fbbf24; }
+.lb-name { font-weight: 650; color: var(--dark); }
+.lb-points { font-weight: 700; color: #d97706; }
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .lb-points { color: #fbbf24; }
+}
+html.dark-theme .lb-points { color: #fbbf24; }
 .ver-avance-foot {
-  padding: 14px 24px; border-top: 1px solid #334155; display: flex; justify-content: flex-end;
+  padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;
+  background: var(--surface);
 }
 
 /* ── Examen modal en curso ── */

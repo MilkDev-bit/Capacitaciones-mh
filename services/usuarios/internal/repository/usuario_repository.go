@@ -137,13 +137,15 @@ func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, li
 	if limit <= 0 {
 		limit = 10
 	}
-	// Fetch requester role
+	// Fetch requester role if requesterID is present
 	var role string
-	_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
+	if requesterID != "" {
+		_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
+	}
 
 	var q string
 	var args []any
-	if role == "admin" || role == "instructor" {
+	if role == "admin" || role == "instructor" || requesterID == "" || role == "" {
 		q = `SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
 		            COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
 		            COALESCE(specialty,'') specialty, created_at
