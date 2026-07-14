@@ -67,14 +67,17 @@ async function deleteCourse(id: string) {
   }
 }
 
-async function resetCode(id: string) {
-  if (!await toast.confirm('¿Generar nuevo código de acceso? El anterior dejará de funcionar.')) return
+async function resetCode(id: string, hasExisting: boolean = true) {
+  const msg = hasExisting
+    ? '¿Generar nuevo código de acceso? El anterior dejará de funcionar.'
+    : '¿Deseas generar un código de invitación para este curso?'
+  if (!await toast.confirm(msg)) return
   try {
     const res = await api.post(`/instructor/capacitaciones/${id}/reset-codigo`)
     toast.success('Código actualizado: ' + res.data.codigo_acceso)
     fetchCourses()
   } catch (e) {
-    toast.error('Error al resetear código')
+    toast.error('Error al generar código')
   }
 }
 
@@ -142,22 +145,35 @@ function copyCode(code: string) {
           <p class="course-desc">{{ c.description || 'Sin descripción' }}</p>
           
           <div class="course-footer">
-            <div class="course-code" v-if="c.codigo_acceso && (!c.precio || c.precio === 0)">
-              <span class="code-label">Código de Invitación:</span>
-              <strong @click="copyCode(c.codigo_acceso)" title="Copiar código">{{ c.codigo_acceso }}</strong>
-              <button class="btn-text small" @click="resetCode(c.id)">Reset</button>
+            <div class="course-code-wrapper" v-if="!c.precio || c.precio === 0">
+              <div v-if="c.codigo_acceso" class="course-code-badge" @click="copyCode(c.codigo_acceso)" title="Haz clic para copiar el código">
+                <span class="code-label">🔑 Código:</span>
+                <strong class="code-value">{{ c.codigo_acceso }}</strong>
+                <button class="btn-copy-mini" @click.stop="copyCode(c.codigo_acceso)" title="Copiar al portapapeles">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  Copiar
+                </button>
+              </div>
+              <div v-else class="course-code-badge empty">
+                <span class="code-label">🔑 Sin código de acceso</span>
+                <button class="btn-gen-mini" @click="resetCode(c.id, false)">➕ Generar código</button>
+              </div>
+              <button v-if="c.codigo_acceso" class="btn-text small text-muted" @click="resetCode(c.id, true)" title="Generar un nuevo código (el actual dejará de funcionar)">↻ Rotar</button>
             </div>
             
-            <div style="display:flex;gap:8px;align-items:center;">
+            <div style="display:flex;gap:8px;align-items:center;margin-left:auto;width:100%;justify-content:space-between;margin-top:4px;">
               <button v-if="c.type === 'videocall'" class="btn btn-primary btn-sm" @click="$router.push(`/instructor/videocall/${c.id}`)">
                 Iniciar Videollamada
               </button>
-              <button class="toggle-btn" :class="{ on: c.is_public }" @click="togglePublic(c)" title="Cambiar visibilidad">
-                <div class="toggle-track"></div>
-                <div class="toggle-thumb"></div>
-              </button>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+                <span style="font-size:0.8rem;color:var(--muted);font-weight:600;">{{ c.is_public ? 'Público' : 'Privado' }}</span>
+                <button class="toggle-btn" :class="{ on: c.is_public }" @click="togglePublic(c)" title="Cambiar visibilidad">
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </button>
+              </div>
             </div>
-            <div style="margin-top: 12px; width: 100%;">
+            <div style="margin-top: 8px; width: 100%;">
               <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;" @click="abrirAvanceInstructor(c)">
                 <span class="glass-icon-badge glass-icon-blue">
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
@@ -294,15 +310,26 @@ function copyCode(code: string) {
   display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1;
 }
 .course-footer {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   padding-top: 16px; border-top: 1px solid var(--border-light);
 }
-.course-code {
-  display: flex; align-items: center; gap: 8px; font-size: 0.85rem; background: var(--surface-soft);
-  padding: 6px 12px; border-radius: var(--r-full);
+.course-code-wrapper {
+  display: flex; align-items: center; gap: 8px; width: 100%; justify-content: space-between;
+  background: var(--surface-soft); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-light);
 }
-.code-label { color: var(--muted); }
-.course-code strong { color: var(--brand); cursor: pointer; letter-spacing: 0.05em; }
+.course-code-badge {
+  display: flex; align-items: center; gap: 8px; font-size: 0.88rem; cursor: pointer; flex: 1;
+}
+.code-label { color: var(--muted); font-weight: 500; }
+.code-value { color: var(--brand); font-weight: 800; font-family: monospace; font-size: 1.05rem; letter-spacing: 0.06em; }
+.btn-copy-mini, .btn-gen-mini {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px;
+  background: var(--brand); color: #fff; font-size: 0.78rem; font-weight: 700; border: none; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 2px 6px rgba(249, 115, 22, 0.25);
+}
+.btn-copy-mini:hover, .btn-gen-mini:hover {
+  background: var(--brand-dark); transform: translateY(-1px);
+}
 
 .toggle-btn {
   position: relative; width: 40px; height: 22px; background: none; border: none; padding: 0; cursor: pointer;

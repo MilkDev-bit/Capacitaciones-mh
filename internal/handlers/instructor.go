@@ -83,6 +83,11 @@ func InstructorListCapacitaciones(c *gin.Context) {
 		rows.Scan(&cap.ID, &cap.Title, &cap.Description, &cap.Type,
 			&cap.FilePath, &cap.Content, &cap.InstructorID, &cap.IsPublic, &cap.CodigoAcceso,
 			&cap.WelcomeMessage, &cap.ThumbnailURL, &cap.Color, &cap.CreatedAt)
+		if cap.CodigoAcceso == "" {
+			newCode := codeFromUUID(cap.ID)
+			_, _ = db.DB.Exec(`UPDATE capacitaciones SET codigo_acceso=$1 WHERE id=$2 AND (codigo_acceso IS NULL OR codigo_acceso='')`, newCode, cap.ID)
+			cap.CodigoAcceso = newCode
+		}
 		result = append(result, cap)
 	}
 	c.JSON(http.StatusOK, result)

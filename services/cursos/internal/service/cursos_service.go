@@ -128,6 +128,13 @@ func (s *CursosService) InstructorListCapacitaciones(ctx context.Context, instru
 	if err != nil {
 		return nil, err
 	}
+	for _, c := range cursos {
+		if c.CodigoAcceso == "" {
+			if updated, err2 := s.repo.ResetCodigo(ctx, c.ID); err2 == nil && updated != nil {
+				c.CodigoAcceso = updated.CodigoAcceso
+			}
+		}
+	}
 	return toProtoSlice(cursos), nil
 }
 
