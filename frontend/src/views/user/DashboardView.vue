@@ -345,20 +345,6 @@ function courseProgress(curso: any) {
 .bg-sky .dash-stat-icon     { background: #e0f2fe; color: #0284c7; }
 .bg-orange .dash-stat-icon  { background: #ffedd5; color: #ea580c; }
 .bg-amber .dash-stat-icon   { background: #fef3c7; color: #d97706; }
-
-html.dark-theme .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
-html.dark-theme .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18); color: #34d399; }
-html.dark-theme .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
-html.dark-theme .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
-html.dark-theme .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
-
-@media (prefers-color-scheme: dark) {
-  html:not(.light-theme) .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
-  html:not(.light-theme) .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18); color: #34d399; }
-  html:not(.light-theme) .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
-  html:not(.light-theme) .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
-  html:not(.light-theme) .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
-}
 .dash-stat-info { min-width: 0; flex: 1; overflow: hidden; }
 .dash-stat-info strong { display: block; font-size: 1.6rem; font-weight: 900; line-height: 1; color: var(--dark); }
 .dash-stat-info span {
@@ -446,12 +432,6 @@ html.dark-theme .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18
 }
 .dash-action-icon--blue { background: #e0e7ff; color: #4f46e5; }
 .dash-action-icon--amber { background: #fef3c7; color: #d97706; }
-html.dark-theme .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18); color: #818cf8; }
-html.dark-theme .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
-@media (prefers-color-scheme: dark) {
-  html:not(.light-theme) .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18); color: #818cf8; }
-  html:not(.light-theme) .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
-}
 .dash-action-info strong { display: block; font-size: 0.92rem; font-weight: 700; color: var(--dark); }
 .dash-action-info p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 
@@ -478,27 +458,6 @@ html.dark-theme .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18); 
 .lb-second { background: linear-gradient(90deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
 .lb-third { background: linear-gradient(90deg, #fff7ed, #ffedd5); border-color: #fed7aa; }
 
-html.dark-theme .lb-first {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)); border-color: rgba(245, 158, 11, 0.4);
-}
-html.dark-theme .lb-second {
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)); border-color: rgba(148, 163, 184, 0.4);
-}
-html.dark-theme .lb-third {
-  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)); border-color: rgba(249, 115, 22, 0.4);
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not(.light-theme) .lb-first {
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)); border-color: rgba(245, 158, 11, 0.4);
-  }
-  html:not(.light-theme) .lb-second {
-    background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)); border-color: rgba(148, 163, 184, 0.4);
-  }
-  html:not(.light-theme) .lb-third {
-    background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)); border-color: rgba(249, 115, 22, 0.4);
-  }
-}
 .lb-rank { font-size: 1.1rem; font-weight: 800; width: 40px; display: inline-block; }
 .lb-user strong { font-size: 0.94rem; color: var(--dark); }
 .lb-pts { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
@@ -508,5 +467,62 @@ html.dark-theme .lb-third {
   .dash-stat-icon { width: 38px; height: 38px; flex-shrink: 0; }
   .dash-stat-info strong { font-size: 1.2rem; }
   .dash-stat-info span { font-size: 0.65rem; }
+}
+</style>
+
+<style>
+/* Global dark mode styles for DashboardView cards, icons, and Salón de la Fama */
+html.dark-theme .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18) !important; color: #a78bfa !important; }
+html.dark-theme .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18) !important; color: #34d399 !important; }
+html.dark-theme .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18) !important; color: #38bdf8 !important; }
+html.dark-theme .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18) !important; color: #fb923c !important; }
+html.dark-theme .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18) !important; color: #fbbf24 !important; }
+
+html.dark-theme .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18) !important; color: #818cf8 !important; }
+html.dark-theme .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18) !important; color: #fbbf24 !important; }
+
+html.dark-theme .lb-first {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+html.dark-theme .lb-second {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)) !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+}
+html.dark-theme .lb-third {
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)) !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+}
+html.dark-theme .lb-item:not(.lb-first):not(.lb-second):not(.lb-third) {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .bg-violet .dash-stat-icon { background: rgba(124, 58, 237, 0.18) !important; color: #a78bfa !important; }
+  html:not(.light-theme) .bg-emerald .dash-stat-icon { background: rgba(5, 150, 105, 0.18) !important; color: #34d399 !important; }
+  html:not(.light-theme) .bg-sky .dash-stat-icon     { background: rgba(2, 132, 199, 0.18) !important; color: #38bdf8 !important; }
+  html:not(.light-theme) .bg-orange .dash-stat-icon  { background: rgba(234, 88, 12, 0.18) !important; color: #fb923c !important; }
+  html:not(.light-theme) .bg-amber .dash-stat-icon   { background: rgba(217, 119, 6, 0.18) !important; color: #fbbf24 !important; }
+
+  html:not(.light-theme) .dash-action-icon--blue { background: rgba(79, 70, 229, 0.18) !important; color: #818cf8 !important; }
+  html:not(.light-theme) .dash-action-icon--amber { background: rgba(217, 119, 6, 0.18) !important; color: #fbbf24 !important; }
+
+  html:not(.light-theme) .lb-first {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12)) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+  }
+  html:not(.light-theme) .lb-second {
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(100, 116, 139, 0.12)) !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+  }
+  html:not(.light-theme) .lb-third {
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.12)) !important;
+    border-color: rgba(249, 115, 22, 0.4) !important;
+  }
+  html:not(.light-theme) .lb-item:not(.lb-first):not(.lb-second):not(.lb-third) {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
 }
 </style>

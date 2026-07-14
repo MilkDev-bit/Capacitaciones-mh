@@ -8,6 +8,8 @@ import (
 	"Prueba-Go/gateway/internal/middleware"
 	"Prueba-Go/gateway/internal/storage"
 	authpb "Prueba-Go/gen/auth"
+	cursospb "Prueba-Go/gen/cursos"
+	examenespb "Prueba-Go/gen/examenes"
 	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
@@ -19,13 +21,17 @@ func NewUsuariosHandler(c *clients.Clients) *UsuariosHandler { return &UsuariosH
 
 // GET /api/perfil
 func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Usuarios.GetPerfil(ctx.Request.Context(), &usuariospb.GetPerfilRequest{
-		UserId: ctx.GetString(middleware.CtxUserID),
+		UserId: userID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	// Enriquecer stats desde los microservicios correspondientes
+	// (el servicio de usuarios puede no tener acceso a esas tablas en producción)
 	stats := gin.H{
 		"cursos_inscritos":      resp.CursosInscritos,
 		"lecciones_completadas": resp.LeccionesCompletadas,
@@ -34,6 +40,34 @@ func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
 		"estudiantes_total":     resp.EstudiantesTotal,
 		"examenes_creados":      resp.ExamenesCreados,
 	}
+
+	if resp.Role == "instructor" {
+		// Cursos creados
+		if cursosResp, errC := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
+			stats["cursos_creados"] = int32(len(cursosResp.Cursos))
+		}
+		// Estudiantes totales
+		if estResp, errEst := h.c.Cursos.InstructorListEstudiantes(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errEst == nil {
+			stats["estudiantes_total"] = int32(len(estResp.Estudiantes))
+		}
+		// Exámenes creados
+		if examResp, errE := h.c.Examenes.InstructorListExamenes(ctx.Request.Context(), &examenespb.UserRequest{UserId: userID}); errE == nil {
+			stats["examenes_creados"] = int32(len(examResp.Examenes))
+		}
+	} else if resp.Role == "user" {
+		// Para usuarios, las stats vienen del servicio de cursos/lecciones (inscripciones)
+		if cursosResp, errC := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
+			stats["cursos_inscritos"] = int32(len(cursosResp.Cursos))
+			var comp, total int32
+			for _, c := range cursosResp.Cursos {
+				comp += c.LeccionesCompletadas
+				total += c.TotalLecciones
+			}
+			stats["lecciones_completadas"] = comp
+			stats["total_lecciones"] = total
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"user": resp, "stats": stats})
 }
 

@@ -629,3 +629,43 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
 .glass-icon-xs { display: inline-flex; align-items: center; justify-content: center; }
 .star-glow { color: #f59e0b; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4)); }
 </style>
+
+<style>
+/* Dark theme adjustments for GameConfigEditor */
+html.dark-theme .gce-root {
+  background: var(--surface-soft, #2c2c2e) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html.dark-theme .gce-pair-block,
+html.dark-theme .gce-sentence-block {
+  background: var(--surface, #1d1d1f) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html.dark-theme .gce-code {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+html.dark-theme .gce-img-preview {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.light-theme) .gce-root {
+    background: var(--surface-soft, #2c2c2e) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  html:not(.light-theme) .gce-pair-block,
+  html:not(.light-theme) .gce-sentence-block {
+    background: var(--surface, #1d1d1f) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  html:not(.light-theme) .gce-code {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+  html:not(.light-theme) .gce-img-preview {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+}
+</style>

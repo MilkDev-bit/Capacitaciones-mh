@@ -51,10 +51,17 @@ html.dark-theme {
   --bg:      #121212;
   --surface: #1d1d1f;
   --surface-soft: #2c2c2e;
-  --border:  rgba(255, 255, 255, 0.1);
-  --border-light: rgba(255, 255, 255, 0.05);
-  --muted:   #aeaeb2;
+  --border:  rgba(255, 255, 255, 0.12);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --muted:   #94a3b8;
+  --subtle:  #64748b;
   --topbar-bg: rgba(29, 29, 31, 0.85);
+
+  --brand-light:  rgba(249, 115, 22, 0.16);
+  --brand-border: rgba(249, 115, 22, 0.38);
+  --success-bg:   rgba(52, 199, 89, 0.16);
+  --danger-bg:    rgba(255, 59, 48, 0.16);
+  --warning-bg:   rgba(245, 158, 11, 0.16);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -65,10 +72,17 @@ html.dark-theme {
     --bg:      #121212;
     --surface: #1d1d1f;
     --surface-soft: #2c2c2e;
-    --border:  rgba(255, 255, 255, 0.1);
-    --border-light: rgba(255, 255, 255, 0.05);
-    --muted:   #aeaeb2;
+    --border:  rgba(255, 255, 255, 0.12);
+    --border-light: rgba(255, 255, 255, 0.06);
+    --muted:   #94a3b8;
+    --subtle:  #64748b;
     --topbar-bg: rgba(29, 29, 31, 0.85);
+
+    --brand-light:  rgba(249, 115, 22, 0.16);
+    --brand-border: rgba(249, 115, 22, 0.38);
+    --success-bg:   rgba(52, 199, 89, 0.16);
+    --danger-bg:    rgba(255, 59, 48, 0.16);
+    --warning-bg:   rgba(245, 158, 11, 0.16);
   }
 }
 
@@ -79,16 +93,66 @@ html.dark-theme {
 html.dark-theme .ad-stat-icon,
 html.dark-theme .ad-action-icon,
 html.dark-theme .inst-stat-icon,
-html.dark-theme .inst-action-icon {
-  background: color-mix(in srgb, currentColor 18%, transparent) !important;
+html.dark-theme .inst-action-icon,
+html.dark-theme .dash-stat-icon,
+html.dark-theme .dash-action-icon {
+  background: color-mix(in srgb, currentColor 18%, rgba(255, 255, 255, 0.03)) !important;
+}
+
+html.dark-theme .ad-stat-card,
+html.dark-theme .ad-action-card,
+html.dark-theme .inst-stat-card,
+html.dark-theme .inst-action-card,
+html.dark-theme .dash-stat-card,
+html.dark-theme .dash-action-card,
+html.dark-theme .dash-course-item,
+html.dark-theme .lb-card {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark-theme .ad-stat-card:hover,
+html.dark-theme .ad-action-card:hover,
+html.dark-theme .inst-stat-card:hover,
+html.dark-theme .inst-action-card:hover,
+html.dark-theme .dash-stat-card:hover,
+html.dark-theme .dash-action-card:hover,
+html.dark-theme .dash-course-item:hover {
+  border-color: rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(249, 115, 22, 0.12) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   html:not(.light-theme) .ad-stat-icon,
   html:not(.light-theme) .ad-action-icon,
   html:not(.light-theme) .inst-stat-icon,
-  html:not(.light-theme) .inst-action-icon {
-    background: color-mix(in srgb, currentColor 18%, transparent) !important;
+  html:not(.light-theme) .inst-action-icon,
+  html:not(.light-theme) .dash-stat-icon,
+  html:not(.light-theme) .dash-action-icon {
+    background: color-mix(in srgb, currentColor 18%, rgba(255, 255, 255, 0.03)) !important;
+  }
+  html:not(.light-theme) .ad-stat-card,
+  html:not(.light-theme) .ad-action-card,
+  html:not(.light-theme) .inst-stat-card,
+  html:not(.light-theme) .inst-action-card,
+  html:not(.light-theme) .dash-stat-card,
+  html:not(.light-theme) .dash-action-card,
+  html:not(.light-theme) .dash-course-item,
+  html:not(.light-theme) .lb-card {
+    border-color: rgba(255, 255, 255, 0.09) !important;
+    background: var(--surface) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  }
+  html:not(.light-theme) .ad-stat-card:hover,
+  html:not(.light-theme) .ad-action-card:hover,
+  html:not(.light-theme) .inst-stat-card:hover,
+  html:not(.light-theme) .inst-action-card:hover,
+  html:not(.light-theme) .dash-stat-card:hover,
+  html:not(.light-theme) .dash-action-card:hover,
+  html:not(.light-theme) .dash-course-item:hover {
+    border-color: rgba(249, 115, 22, 0.45) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(249, 115, 22, 0.12) !important;
   }
 }
 
