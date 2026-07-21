@@ -82,10 +82,15 @@ const stats = computed(() => {
     <div class="ph">
       <div>
         <h1 class="ph-title">Entregas de Actividades</h1>
-        <p class="ph-sub">Revisa y descarga los archivos adjuntos subidos por los estudiantes en tareas y actividades.</p>
+        <p class="ph-sub">Revisa y descarga los archivos adjuntos subidos por los estudiantes en tareas y actividades.
+        </p>
       </div>
       <button class="btn btn-secondary" @click="load" :disabled="loading">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" :class="{ 'spin': loading }"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+          :class="{ 'spin': loading }">
+          <path
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
         Actualizar
       </button>
     </div>
@@ -123,8 +128,12 @@ const stats = computed(() => {
       <div class="filter-group search-group">
         <label class="filter-lbl">Buscar:</label>
         <div class="search-input-wrapper">
-          <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input v-model="searchQuery" class="field-input search-input" placeholder="Nombre, correo, curso o archivo..." />
+          <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            viewBox="0 0 24 24">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input v-model="searchQuery" class="field-input search-input"
+            placeholder="Nombre, correo, curso o archivo..." />
         </div>
       </div>
     </div>
@@ -160,12 +169,12 @@ const stats = computed(() => {
             <td>
               <div class="course-cell">
                 <strong class="course-title">{{ e.curso_title || 'Capacitación' }}</strong>
-                <span class="lesson-badge">📌 {{ e.leccion_title || 'Actividad' }}</span>
+                <span class="lesson-badge">{{ e.leccion_title || 'Actividad' }}</span>
               </div>
             </td>
             <td>
               <div class="file-cell">
-                <span class="file-icon">📎</span>
+                <span class="file-icon"></span>
                 <div class="file-info">
                   <strong class="file-name" :title="e.file_name">{{ e.file_name || 'Archivo adjunto' }}</strong>
                   <span class="file-size">{{ formatSize(e.file_size) }}</span>
@@ -177,12 +186,20 @@ const stats = computed(() => {
             </td>
             <td>
               <div class="actions-cell">
-                <a :href="fileUrl(e.file_path)" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Ver en nueva pestaña">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <a :href="fileUrl(e.file_path)" target="_blank" rel="noopener noreferrer"
+                  class="btn btn-secondary btn-sm" title="Ver en nueva pestaña">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
                   Ver
                 </a>
-                <a :href="fileUrl(e.file_path)" :download="e.file_name || 'entrega'" class="btn btn-primary btn-sm" title="Descargar archivo">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <a :href="fileUrl(e.file_path)" :download="e.file_name || 'entrega'" class="btn btn-primary btn-sm"
+                  title="Descargar archivo">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
                   Descargar
                 </a>
               </div>
@@ -206,6 +223,7 @@ const stats = computed(() => {
   flex-direction: column;
   gap: 20px;
 }
+
 .ph {
   display: flex;
   justify-content: space-between;
@@ -213,11 +231,13 @@ const stats = computed(() => {
   flex-wrap: wrap;
   gap: 12px;
 }
+
 .ph-title {
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--dark);
 }
+
 .ph-sub {
   color: var(--muted);
   font-size: 0.87rem;
@@ -230,6 +250,7 @@ const stats = computed(() => {
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
+
 .stat-box {
   background: var(--surface);
   border-radius: var(--r-lg);
@@ -239,25 +260,31 @@ const stats = computed(() => {
   border: 1px solid var(--border-light);
   transition: transform 0.2s;
 }
+
 .stat-box:hover {
   transform: translateY(-2px);
 }
+
 .stat-box.brand {
   background: var(--brand);
 }
+
 .stat-num {
   font-size: 2rem;
   font-weight: 800;
   color: var(--dark);
 }
+
 .stat-box.brand .stat-num {
   color: #fff;
 }
+
 .stat-lbl {
   font-size: 0.78rem;
   color: var(--muted);
   margin-top: 4px;
 }
+
 .stat-box.brand .stat-lbl {
   color: rgba(255, 255, 255, 0.85);
 }
@@ -275,6 +302,7 @@ const stats = computed(() => {
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
 }
+
 .filter-group {
   display: flex;
   flex-direction: column;
@@ -282,14 +310,17 @@ const stats = computed(() => {
   flex: 1;
   min-width: 220px;
 }
+
 .search-group {
   flex: 2;
 }
+
 .filter-lbl {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--dark);
 }
+
 .field-select {
   padding: 8px 12px;
   border-radius: var(--r);
@@ -298,16 +329,19 @@ const stats = computed(() => {
   color: var(--dark);
   font-size: 0.88rem;
 }
+
 .search-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
+
 .search-icon {
   position: absolute;
   left: 12px;
   color: var(--muted);
 }
+
 .search-input {
   padding: 8px 12px 8px 36px;
   width: 100%;
@@ -326,10 +360,12 @@ const stats = computed(() => {
   border: 1px solid var(--border-light);
   overflow-x: auto;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
+
 th {
   background: var(--bg);
   padding: 12px 16px;
@@ -341,17 +377,20 @@ th {
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border);
 }
+
 td {
   padding: 14px 16px;
   border-top: 1px solid var(--border-light);
   font-size: 0.9rem;
   vertical-align: middle;
 }
+
 .user-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .ava {
   width: 36px;
   height: 36px;
@@ -365,6 +404,7 @@ td {
   font-size: 0.9rem;
   flex-shrink: 0;
 }
+
 .ava-img {
   width: 36px;
   height: 36px;
@@ -372,48 +412,58 @@ td {
   object-fit: cover;
   flex-shrink: 0;
 }
+
 .user-info {
   display: flex;
   flex-direction: column;
 }
+
 .user-info strong {
   color: var(--dark);
   font-size: 0.92rem;
 }
+
 .cell-muted {
   color: var(--muted);
   font-size: 0.8rem;
 }
+
 .course-cell {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .course-title {
   color: var(--dark);
   font-size: 0.9rem;
 }
+
 .lesson-badge {
   display: inline-block;
   font-size: 0.78rem;
   color: var(--brand);
   font-weight: 600;
 }
+
 .file-cell {
   display: flex;
   align-items: center;
   gap: 8px;
   max-width: 260px;
 }
+
 .file-icon {
   font-size: 1.4rem;
   flex-shrink: 0;
 }
+
 .file-info {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 .file-name {
   white-space: nowrap;
   overflow: hidden;
@@ -421,15 +471,18 @@ td {
   color: var(--dark);
   font-size: 0.88rem;
 }
+
 .file-size {
   font-size: 0.75rem;
   color: var(--muted);
 }
+
 .actions-cell {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
 }
+
 .loading-state,
 .empty-state {
   padding: 60px 20px;
@@ -439,25 +492,36 @@ td {
   align-items: center;
   gap: 12px;
 }
+
 .empty-icon {
   font-size: 3rem;
 }
-.empty-state h3, .loading-state p {
+
+.empty-state h3,
+.loading-state p {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--dark);
 }
+
 .empty-state p {
   color: var(--muted);
   font-size: 0.9rem;
   max-width: 450px;
 }
+
 .spin {
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 900px) {
@@ -465,10 +529,12 @@ td {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (max-width: 600px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+
   .actions-cell {
     flex-direction: column;
   }
