@@ -119,7 +119,7 @@ const formatSize = (bytes: number) => {
       <div class="dd-text">
         <span class="dd-primary">Haz clic o arrastra un archivo aquí</span>
         <span class="dd-secondary">Formatos soportados: {{ accept || 'Cualquiera' }}</span>
-        <span class="dd-secondary">Tamaño máximo: 50MB</span>
+        <span class="dd-secondary">Tamaño máximo: 100MB</span>
       </div>
     </div>
     

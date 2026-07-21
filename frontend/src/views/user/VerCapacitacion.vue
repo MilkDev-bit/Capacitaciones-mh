@@ -198,6 +198,11 @@ function checkAndSetActividadFile(file: File) {
     actividadFile.value = null
     return
   }
+  if (file.size > 100 * 1024 * 1024) {
+    toast.error('El archivo no puede superar los 100 MB')
+    actividadFile.value = null
+    return
+  }
   actividadFile.value = file
 }
 
@@ -588,8 +593,8 @@ async function crearPost() {
 function onPostFile(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
   if (!f) return
-  if (f.size > 50 * 1024 * 1024) {
-    toast.error('El archivo no puede superar 50 MB')
+  if (f.size > 100 * 1024 * 1024) {
+    toast.error('El archivo no puede superar 100 MB')
     return
   }
   postFile.value = f
@@ -614,8 +619,8 @@ function triggerComentarioFile(key: string) {
 function onComentarioFile(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
   if (!f) return
-  if (f.size > 50 * 1024 * 1024) {
-    toast.error('El archivo no puede superar 50 MB')
+  if (f.size > 100 * 1024 * 1024) {
+    toast.error('El archivo no puede superar 100 MB')
     return
   }
   activeComentarioFile.value = f

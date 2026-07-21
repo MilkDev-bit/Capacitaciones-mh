@@ -99,7 +99,7 @@ const ALLOWED_MIME = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ]
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100 MB
 
 function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
@@ -112,7 +112,7 @@ function onFileSelected(e: Event) {
     return
   }
   if (file.size > MAX_FILE_SIZE) {
-    errorMsg.value = 'El archivo supera los 50 MB'
+    errorMsg.value = 'El archivo supera los 100 MB'
     setTimeout(() => { errorMsg.value = '' }, 4000)
     return
   }

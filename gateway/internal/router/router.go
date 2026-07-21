@@ -35,7 +35,7 @@ type Deps struct {
 // New construye y devuelve el engine de Gin con todas las rutas registradas.
 func New(d Deps) *gin.Engine {
 	r := gin.Default()
-	r.MaxMultipartMemory = 8 << 20
+	r.MaxMultipartMemory = 100 << 20
 
 	_ = r.SetTrustedProxies(nil)
 

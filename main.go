@@ -78,7 +78,7 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.MaxMultipartMemory = 8 << 20 // 8 MB en memoria; el resto va a disco temporal
+	r.MaxMultipartMemory = 100 << 20 // 100 MB en memoria; el resto va a disco temporal
 
 	// Railway usa un proxy interno — confiar solo en él para X-Forwarded-For.
 	// nil = no confiar en ningún proxy (usar IP directa); ajustar si Railway
