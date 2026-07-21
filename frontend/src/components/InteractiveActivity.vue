@@ -22,7 +22,7 @@ const gameType = computed(() => {
       '7': '7', 'wordsearch': '7', 'sopa': '7', 'lesson_type_game_wordsearch': '7',
       '8': '8', 'fillblank': '8', 'completar': '8', 'lesson_type_game_fillblank': '8',
       '9': '9', 'order': '9', 'ordenar': '9', 'lesson_type_game_order': '9',
-      '10': '10', 'hangman': '10', 'ahorcado': '10', 'lesson_type_game_hangman': '10'
+      '11': '11', 'hangman': '11', 'ahorcado': '11', 'lesson_type_game_hangman': '11'
     }
     return MAP[s] ?? String(raw)
   }
@@ -35,7 +35,7 @@ const GAME_META: Record<string, { label: string; icon: string; gradient: string;
   '7': { label: 'Sopa de Letras',     icon: '🔤', gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', accent: '#f97316' },
   '8': { label: 'Completar Espacios', icon: '✍️', gradient: 'linear-gradient(135deg,#10b981,#059669)', accent: '#10b981' },
   '9': { label: 'Ordenar',            icon: '🔢', gradient: 'linear-gradient(135deg,#ec4899,#f43f5e)', accent: '#ec4899' },
-  '10': { label: 'Ahorcado Cibernético', icon: '🎯', gradient: 'linear-gradient(135deg,#f43f5e,#e11d48)', accent: '#f43f5e' },
+  '11': { label: 'Ahorcado Cibernético', icon: '🎯', gradient: 'linear-gradient(135deg,#f43f5e,#e11d48)', accent: '#f43f5e' },
 }
 const meta = computed(() => GAME_META[gameType.value] ?? { label: 'Juego', icon: '🎮', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', accent: '#6366f1' })
 
@@ -554,7 +554,7 @@ function initSpecificGame() {
   else if (t==='7') initWordSearch()
   else if (t==='8') initFillBlank()
   else if (t==='9') initOrder()
-  else if (t==='10') initHangman()
+  else if (t==='11') initHangman()
 }
 
 const fmt = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${s%60}s`
@@ -907,8 +907,8 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
       </div>
     </div>
 
-    <!-- ═══════════════ 10: AHORCADO CIBERNÉTICO ═══════════════ -->
-    <div v-else-if="gameType === '10'" class="game-wrap">
+    <!-- ═══════════════ 11: AHORCADO CIBERNÉTICO ═══════════════ -->
+    <div v-else-if="gameType === '11'" class="game-wrap">
       <!-- Barra superior de estado -->
       <div class="hm-header-bar">
         <div class="hm-progress">

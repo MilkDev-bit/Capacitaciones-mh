@@ -54,6 +54,11 @@ service LeccionesService {
   rpc GetCursoLeaderboard(LeaderboardRequest)   returns (LeaderboardResponse);
   // Puntos totales del usuario en todos los cursos (para el perfil).
   rpc GetUserPoints(UserRequest)                returns (UserPointsResponse);
+
+  // ── Actividades / Tareas programables por fecha ───────────────────────────
+  rpc SubmitEntregaActividad(SubmitEntregaRequest)          returns (EntregaResponse);
+  rpc GetEntregaActividadUsuario(GetEntregaRequest)         returns (EntregaResponse);
+  rpc InstructorListEntregas(InstructorListEntregasRequest) returns (ListEntregasResponse);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,6 +75,7 @@ enum LessonType {
   LESSON_TYPE_GAME_WORDSEARCH = 7; // minijuego: sopa de letras
   LESSON_TYPE_GAME_FILLBLANK  = 8; // minijuego: completar el espacio
   LESSON_TYPE_GAME_ORDER      = 9; // minijuego: ordenar secuencia
+  LESSON_TYPE_ACTIVITY        = 10; // actividad / tarea con fecha de inicio y cierre + subida de archivo
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,6 +165,8 @@ message CreateLeccionRequest {
   string     game_config_json = 11;
   // Puntos que otorga completar esta lección/juego.
   int32      points_reward    = 12;
+  string     fecha_inicio     = 13;
+  string     fecha_cierre     = 14;
 }
 
 message UpdateLeccionRequest {
@@ -175,6 +183,8 @@ message UpdateLeccionRequest {
   string     submodulo_id    = 11;
   string     game_config_json = 12;
   int32      points_reward    = 13;
+  string     fecha_inicio     = 14;
+  string     fecha_cierre     = 15;
 }
 
 message ReorderRequest {
@@ -225,6 +235,25 @@ message SubmitGameScoreRequest {
 message LeaderboardRequest {
   string curso_id = 1;
   int32  top_n    = 2; // cuántos puestos retornar (default: 5)
+}
+
+message SubmitEntregaRequest {
+  string leccion_id       = 1;
+  string capacitacion_id  = 2;
+  string user_id          = 3;
+  string file_path        = 4;
+  string file_name        = 5;
+  int64  file_size        = 6;
+}
+
+message GetEntregaRequest {
+  string leccion_id = 1;
+  string user_id    = 2;
+}
+
+message InstructorListEntregasRequest {
+  string curso_id   = 1;
+  string leccion_id = 2;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,6 +316,9 @@ message LeccionResponse {
   string     game_config_json = 14;
   int32      points_reward    = 15;
   int32      segundos_vistos  = 16;
+  string     fecha_inicio     = 17;
+  string     fecha_cierre     = 18;
+  EntregaResponse mi_entrega  = 19;
 }
 
 message ListLeccionesResponse {
@@ -370,6 +402,27 @@ message UserPointsResponse {
   // Mapa: curso_id → puntos (serializado como JSON string por simplicidad de proto3).
   string points_by_course_json = 3;
   repeated Badge badges = 4;
+}
+
+message EntregaResponse {
+  string id              = 1;
+  string leccion_id      = 2;
+  string capacitacion_id = 3;
+  string user_id         = 4;
+  string user_name       = 5;
+  string user_email      = 6;
+  string avatar_url      = 7;
+  string curso_title     = 8;
+  string leccion_title   = 9;
+  string file_path       = 10;
+  string file_name       = 11;
+  int64  file_size       = 12;
+  string created_at      = 13;
+  string updated_at      = 14;
+}
+
+message ListEntregasResponse {
+  repeated EntregaResponse entregas = 1;
 }
 
 message EmptyResponse {}

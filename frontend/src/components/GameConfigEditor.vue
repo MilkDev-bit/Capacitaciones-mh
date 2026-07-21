@@ -49,7 +49,7 @@ function defaultsFor(type: string) {
   if (type === '7') return { instruction: '', words: [''], grid_size: 12, difficulty: 'medium', show_word_list: true }
   if (type === '8') return { instruction: '', mode: 'select', sentences: [{ text: '', answer: '', options: ['', ''] }] }
   if (type === '9') return { instruction: '', items: [{ text: '', correct_order: 1 }, { text: '', correct_order: 2 }], show_numbers: false }
-  if (type === '10') return { instruction: '', max_errors: 6, items: [{ word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico' }, { word: 'SEGURIDAD', hint: 'Protección de sistemas' }] }
+  if (type === '11') return { instruction: '', max_errors: 6, items: [{ word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico' }, { word: 'SEGURIDAD', hint: 'Protección de sistemas' }] }
   return {}
 }
 
@@ -66,7 +66,7 @@ watch([() => props.modelValue, () => props.lessonType], ([json, type]) => {
   if (type === '7') ws.value     = { ...defaultsFor('7') as WSConfig,    ...parsed }
   if (type === '8') fb.value     = { ...defaultsFor('8') as FBConfig,    ...parsed }
   if (type === '9') order.value  = { ...defaultsFor('9') as OrderConfig, ...parsed }
-  if (type === '10') hangman.value = { ...defaultsFor('10') as HangmanConfig, ...parsed }
+  if (type === '11') hangman.value = { ...defaultsFor('11') as HangmanConfig, ...parsed }
   if (!json) emitJson()
 }, { immediate: true })
 
@@ -85,7 +85,7 @@ function emitJson() {
   }
   else if (t === '8') obj = fb.value
   else if (t === '9') obj = order.value
-  else if (t === '10') obj = hangman.value
+  else if (t === '11') obj = hangman.value
   else return
   emit('update:modelValue', JSON.stringify(obj, null, 2))
 }
@@ -163,13 +163,13 @@ function onPointsChange() { emit('update:pointsReward', localPoints.value); emit
 
 const gameNames: Record<string, string> = {
   '5': 'Memorama', '6': 'Arrastrar y Soltar', '7': 'Sopa de Letras',
-  '8': 'Completar Espacios', '9': 'Ordenar Secuencia', '10': 'Ahorcado',
+  '8': 'Completar Espacios', '9': 'Ordenar Secuencia', '11': 'Ahorcado',
 }
 const gameName = computed(() => gameNames[props.lessonType] ?? '')
 </script>
 
 <template>
-  <div class="gce-root" v-if="['5','6','7','8','9','10'].includes(lessonType)">
+  <div class="gce-root" v-if="['5','6','7','8','9','11'].includes(lessonType)">
     <!-- Header del editor -->
     <div class="gce-header">
       <span class="gce-badge glass-badge-editor">
@@ -457,7 +457,7 @@ const gameName = computed(() => gameNames[props.lessonType] ?? '')
     </template>
 
     <!-- ─────────────── AHORCADO ─────────────── -->
-    <template v-if="lessonType === '10'">
+    <template v-if="lessonType === '11'">
       <div class="gce-field">
         <label class="gce-label">Instrucción del Ahorcado</label>
         <input v-model="hangman.instruction" @input="emitJson" class="gce-input" placeholder="Ej: Adivina la palabra oculta antes de perder tus vidas" />

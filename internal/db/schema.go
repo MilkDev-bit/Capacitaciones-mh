@@ -281,9 +281,29 @@ CREATE INDEX IF NOT EXISTS idx_foro_comentarios_parent_id ON foro_comentarios(pa
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
 ALTER TABLE examenes       ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
 ALTER TABLE lecciones      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE lecciones      ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE lecciones      ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMPTZ DEFAULT NULL;
 CREATE INDEX IF NOT EXISTS idx_capacitaciones_deleted_at ON capacitaciones(deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_examenes_deleted_at       ON examenes(deleted_at)       WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_lecciones_deleted_at      ON lecciones(deleted_at)      WHERE deleted_at IS NULL;
+
+-- Entregas de actividades/tareas de estudiantes
+CREATE TABLE IF NOT EXISTS entregas_actividad (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    file_size BIGINT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(leccion_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_entregas_actividad_leccion ON entregas_actividad(leccion_id);
+CREATE INDEX IF NOT EXISTS idx_entregas_actividad_curso   ON entregas_actividad(capacitacion_id);
+CREATE INDEX IF NOT EXISTS idx_entregas_actividad_user    ON entregas_actividad(user_id);
+
 
 -- Revocación de JWT: token_version permite invalidar tokens activos al cambiar contraseña o al banear usuario
 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1;

@@ -37,6 +37,7 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/instructor/CapacitacionesInstructor.vue') },
         { path: 'examenes', component: () => import('../views/instructor/ExamenesInstructor.vue') },
         { path: 'estudiantes', component: () => import('../views/instructor/EstudiantesView.vue') },
+        { path: 'entregas', component: () => import('../views/instructor/EntregasView.vue') },
         { path: 'perfil', component: () => import('../views/instructor/InstructorPerfilView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },

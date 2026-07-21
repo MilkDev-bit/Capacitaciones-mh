@@ -166,15 +166,113 @@ function startCourse() {
 
 onMounted(load)
 
+const entregaActual = ref<any | null>(null)
+const actividadFile = ref<File | null>(null)
+const uploadingActividad = ref(false)
+
+const BLOCKED_EXTENSIONS = ['.exe', '.bat', '.sh', '.cmd', '.msi', '.ps1', '.vbs', '.js', '.py', '.bin', '.app', '.com', '.scr', '.pif', '.jar', '.csh', '.ksh', '.wsf', '.wsh', '.inf', '.reg']
+function isExecutableFile(file: File): boolean {
+  const name = file.name.toLowerCase()
+  return BLOCKED_EXTENSIONS.some(ext => name.endsWith(ext))
+}
+
+function onActividadDrop(e: DragEvent) {
+  const files = e.dataTransfer?.files
+  if (files && files.length > 0) {
+    const file = files.item(0)
+    if (file) checkAndSetActividadFile(file)
+  }
+}
+
+function onActividadFileChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files.item(0)
+    if (file) checkAndSetActividadFile(file)
+  }
+}
+
+function checkAndSetActividadFile(file: File) {
+  if (isExecutableFile(file)) {
+    toast.error('No se permiten archivos ejecutables (.exe, .bat, etc.)')
+    actividadFile.value = null
+    return
+  }
+  actividadFile.value = file
+}
+
+function formatActividadFecha(dtStr: string): string {
+  if (!dtStr) return 'No especificada'
+  try {
+    const dt = new Date(dtStr)
+    if (isNaN(dt.getTime())) return dtStr
+    return dt.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+  } catch {
+    return dtStr
+  }
+}
+
+function isActividadCerrada(fechaCierre: string): boolean {
+  if (!fechaCierre) return false
+  const limit = new Date(fechaCierre).getTime()
+  if (isNaN(limit)) return false
+  return Date.now() > limit
+}
+
+async function subirActividad() {
+  if (!actividadFile.value || !selectedLeccion.value) return
+  uploadingActividad.value = true
+  const t = toast.loading('Subiendo documento de la tarea...')
+  try {
+    const filePath = await uploadToR2(actividadFile.value, 'documents')
+    const payload = {
+      file_path: filePath,
+      file_name: actividadFile.value.name,
+      file_size: actividadFile.value.size
+    }
+    const res = await api.post(`/capacitaciones/${cursoId}/lecciones/${selectedLeccion.value.id}/entrega`, payload)
+    toast.success('¡Tarea entregada exitosamente!')
+    entregaActual.value = res.data?.entrega || {
+      id: res.data?.id || 'new',
+      file_path: filePath,
+      file_name: actividadFile.value.name,
+      file_size: actividadFile.value.size,
+      created_at: new Date().toISOString()
+    }
+    actividadFile.value = null
+    if (!selectedLeccion.value.completada) {
+      await marcarCompleta()
+    }
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al entregar la tarea')
+  } finally {
+    t.close()
+    uploadingActividad.value = false
+  }
+}
+
 async function selectLeccion(lec: any) {
   selectedLeccion.value = lec
   sidebarOpen.value = false
   showIntermedias.value = false
   resultadoInt.value = null
   respuestas.value = {}
+  entregaActual.value = null
+  actividadFile.value = null
   
   // Cargar nota local — siempre inicializar la clave para reactividad
   notasPersonales.value[lec.id] = localStorage.getItem(`cap_nota_${cursoId}_${lec.id}`) || ''
+
+  if (String(lec.lesson_type ?? lec.type) === '10') {
+    try {
+      const res = await api.get(`/capacitaciones/${cursoId}/lecciones/${lec.id}/entrega`)
+      if (res.data?.entrega && res.data?.entrega.id) {
+        entregaActual.value = res.data.entrega
+      }
+    } catch {
+      /* no entrega previa o error de carga */
+    }
+  }
 
   await loadForo(lec.id) // maneja sus errores internamente
   try {
@@ -194,7 +292,7 @@ function guardarNota() {
 function isGameLesson(lec: any): boolean {
   if (!lec) return false
   const t = String(lec.lesson_type ?? lec.type ?? '').toLowerCase()
-  return ['5','6','7','8','9','10',
+  return ['5','6','7','8','9','11',
           'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order', 'lesson_type_game_hangman',
           'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order', 'ahorcado', 'hangman'].includes(t)
 }
@@ -683,7 +781,7 @@ function typeLabel(t: any) {
     document: 'PDF / Documento', '3': 'PDF / Documento',
     text: 'Lectura', '2': 'Lectura',
     link: 'Enlace', '4': 'Quiz',
-    '5': 'Memorama', '6': 'Clasificar', '7': 'Sopa de Letras', '8': 'Completar', '9': 'Secuencia', '10': 'Ahorcado'
+    '5': 'Memorama', '6': 'Clasificar', '7': 'Sopa de Letras', '8': 'Completar', '9': 'Secuencia', '11': 'Ahorcado', '10': 'Actividad'
   }
   return map[String(t)] || String(t)
 }
@@ -694,7 +792,7 @@ function typeIcon(t: any) {
     document: '📄', '3': '📄',
     text: '📝', '2': '📝',
     link: '🔗', '4': '❓',
-    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊', '10': '🎯'
+    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊', '11': '🎯', '10': '📋'
   }
   return map[String(t)] || '📄'
 }
@@ -1040,6 +1138,80 @@ function tramitarDC3() {
                 <p v-else class="ver-media-empty ver-media-empty-light">Sin enlace configurado</p>
               </div>
 
+              <!-- Actividades programables por fecha (Tarea / Entrega) -->
+              <div v-else-if="['10', 'activity', 'actividad'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type).toLowerCase())" class="ver-activity-box">
+                <div class="ver-activity-head">
+                  <div class="ver-activity-dates">
+                    <div v-if="selectedLeccion.fecha_inicio" class="ver-act-date">
+                      <span class="ver-act-date-label">📅 Apertura:</span>
+                      <span class="ver-act-date-val">{{ formatActividadFecha(selectedLeccion.fecha_inicio) }}</span>
+                    </div>
+                    <div v-if="selectedLeccion.fecha_cierre" class="ver-act-date">
+                      <span class="ver-act-date-label">⏰ Cierre:</span>
+                      <span class="ver-act-date-val" :class="{ 'ver-act-expired': isActividadCerrada(selectedLeccion.fecha_cierre) }">{{ formatActividadFecha(selectedLeccion.fecha_cierre) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="selectedLeccion.description || selectedLeccion.content" class="ver-activity-instructions">
+                  <h3 class="ver-act-sub">Instrucciones de la Actividad</h3>
+                  <p v-if="selectedLeccion.description" class="ver-act-desc">{{ selectedLeccion.description }}</p>
+                  <div v-if="selectedLeccion.content && selectedLeccion.content !== selectedLeccion.description" class="ver-act-content mt-2">{{ selectedLeccion.content }}</div>
+                </div>
+
+                <!-- Archivo de instrucciones si el instructor subió uno en la lección -->
+                <div v-if="selectedLeccion.file_path" class="ver-activity-resource mt-4">
+                  <a :href="fileUrl(selectedLeccion.file_path)" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px">
+                    📄 Descargar archivo adjunto del instructor
+                  </a>
+                </div>
+
+                <hr class="ver-act-divider" />
+
+                <!-- Entrega del estudiante -->
+                <div class="ver-activity-submission">
+                  <h3 class="ver-act-sub">Tu Entrega</h3>
+                  
+                  <!-- Si ya entregó -->
+                  <div v-if="entregaActual" class="ver-submission-success">
+                    <div class="ver-sub-info">
+                      <span class="ver-sub-icon">✅</span>
+                      <div>
+                        <strong>{{ entregaActual.file_name || 'Archivo entregado' }}</strong>
+                        <p class="ver-sub-date">Entregado el: {{ formatActividadFecha(entregaActual.created_at) }}</p>
+                      </div>
+                    </div>
+                    <a :href="fileUrl(entregaActual.file_path)" target="_blank" class="btn btn-secondary btn-sm">Ver archivo</a>
+                  </div>
+
+                  <!-- Zona de subida -->
+                  <div v-else class="ver-upload-zone">
+                    <div v-if="isActividadCerrada(selectedLeccion.fecha_cierre)" class="ver-act-closed-alert">
+                      ⚠️ La fecha límite para entregar esta actividad ha finalizado.
+                    </div>
+                    <div v-else>
+                      <label class="ver-droparea" @dragover.prevent @drop.prevent="onActividadDrop">
+                        <input type="file" @change="onActividadFileChange" style="display:none" />
+                        <div class="ver-droparea-inner">
+                          <span class="ver-drop-icon">📁</span>
+                          <strong v-if="!actividadFile">Haz clic aquí o arrastra tu archivo para adjuntarlo</strong>
+                          <strong v-else class="ver-file-selected">📎 {{ actividadFile.name }} ({{ (actividadFile.size / 1024).toFixed(1) }} KB)</strong>
+                          <span class="ver-drop-hint">Cualquier tipo de documento permitido, excepto archivos ejecutables (.exe, .bat, .sh, etc.)</span>
+                        </div>
+                      </label>
+
+                      <div v-if="actividadFile" class="ver-upload-actions mt-3">
+                        <button class="btn btn-primary" :disabled="uploadingActividad" @click="subirActividad">
+                          <span v-if="uploadingActividad" class="btn-spinner"></span>
+                          {{ uploadingActividad ? 'Subiendo...' : 'Subir y Entregar Tarea' }}
+                        </button>
+                        <button class="btn btn-secondary" :disabled="uploadingActividad" @click="actividadFile = null">Cancelar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Minijuegos Interactivos -->
               <div v-else-if="isGameLesson(selectedLeccion)">
                 <InteractiveActivity
@@ -1054,7 +1226,7 @@ function tramitarDC3() {
               <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
                 ← Anterior
               </button>
-              <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion)" class="btn btn-primary" @click="marcarCompleta">
+              <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion) && !(String(selectedLeccion.lesson_type ?? selectedLeccion.type) === '10' && !entregaActual)" class="btn btn-primary" @click="marcarCompleta">
                 ✓ Marcar completada
               </button>
               <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo"
@@ -2695,5 +2867,144 @@ html.dark-theme .lb-points { color: #fbbf24; }
 .glass-rank-bronze {
   background: linear-gradient(135deg, rgba(217, 119, 6, 0.75), rgba(180, 83, 9, 0.65));
   color: #fff;
+}
+
+/* Estilos de Actividad / Tareas */
+.ver-activity-box {
+  background: var(--card-bg, #ffffff);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+.ver-activity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  background: rgba(99, 102, 241, 0.06);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+.ver-activity-dates {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.ver-act-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.ver-act-date-label {
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+}
+.ver-act-date-val {
+  font-weight: 700;
+  color: var(--brand, #6366f1);
+}
+.ver-act-expired {
+  color: #ef4444 !important;
+}
+.ver-act-sub {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-dark, #1e293b);
+  margin-bottom: 10px;
+}
+.ver-act-desc {
+  font-size: 0.98rem;
+  color: var(--text-main, #334155);
+  line-height: 1.6;
+}
+.ver-act-content {
+  font-size: 0.95rem;
+  color: var(--text-muted, #475569);
+  white-space: pre-line;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 12px;
+  border-radius: 8px;
+}
+.ver-act-divider {
+  border: none;
+  border-top: 1px dashed var(--border-color, #cbd5e1);
+  margin: 24px 0;
+}
+.ver-activity-submission {
+  margin-top: 16px;
+}
+.ver-submission-success {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 16px 20px;
+  border-radius: 12px;
+}
+.ver-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ver-sub-icon {
+  font-size: 1.6rem;
+}
+.ver-sub-date {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  margin: 2px 0 0;
+}
+.ver-act-closed-alert {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.ver-droparea {
+  display: block;
+  border: 2px dashed var(--brand, #6366f1);
+  border-radius: 14px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(99, 102, 241, 0.02);
+  transition: all 0.2s ease;
+}
+.ver-droparea:hover {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: #4f46e5;
+}
+.ver-droparea-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ver-drop-icon {
+  font-size: 2.2rem;
+}
+.ver-file-selected {
+  color: var(--brand, #6366f1);
+  font-size: 1.05rem;
+}
+.ver-drop-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  max-width: 450px;
+}
+.ver-upload-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
 }
 </style>

@@ -162,6 +162,20 @@ func runMigrations(db *sqlx.DB) error {
 			points_total INT NOT NULL DEFAULT 0,
 			updated_at   TIMESTAMPTZ DEFAULT NOW()
 		)`,
+
+		// ── Actividades programables por fecha y entregas
+		`CREATE TABLE IF NOT EXISTS entregas_actividad (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			capacitacion_id UUID NOT NULL,
+			user_id UUID NOT NULL,
+			file_path TEXT NOT NULL,
+			file_name TEXT NOT NULL,
+			file_size BIGINT DEFAULT 0,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(leccion_id, user_id)
+		)`,
 	}
 
 	for _, s := range tables {
@@ -174,6 +188,8 @@ func runMigrations(db *sqlx.DB) error {
 	alters := []string{
 		// Soft-delete y gamificación en lecciones
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ NULL`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMPTZ NULL`,
 
 		// Feature A: FK jerárquicas en lecciones (nullable → lección "suelta" si ambas son NULL)
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS modulo_id    UUID REFERENCES modulos(id)    ON DELETE SET NULL`,
@@ -207,7 +223,11 @@ func runMigrations(db *sqlx.DB) error {
 		// Índice de leaderboard: por curso → suma de puntos descendente
 		`CREATE INDEX IF NOT EXISTS idx_game_scores_lb          ON game_scores(capacitacion_id, user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_user_badges_user        ON user_badges(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_entregas_actividad_lec  ON entregas_actividad(leccion_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_entregas_actividad_cur  ON entregas_actividad(capacitacion_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_entregas_actividad_usr  ON entregas_actividad(user_id)`,
 	}
+
 
 	for _, s := range indexes {
 		if _, err := db.Exec(s); err != nil {

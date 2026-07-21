@@ -428,6 +428,8 @@ func (h *LeccionesHandler) InstructorCreateLeccion(ctx *gin.Context) {
 		SubmoduloID    string `json:"submodulo_id"`
 		GameConfigJSON string `json:"game_config_json"` // JSON libre, validado en el frontend
 		PointsReward   int32  `json:"points_reward"`
+		FechaInicio    string `json:"fecha_inicio"`
+		FechaCierre    string `json:"fecha_cierre"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -446,6 +448,8 @@ func (h *LeccionesHandler) InstructorCreateLeccion(ctx *gin.Context) {
 		SubmoduloId:    body.SubmoduloID,
 		GameConfigJson: body.GameConfigJSON,
 		PointsReward:   body.PointsReward,
+		FechaInicio:    body.FechaInicio,
+		FechaCierre:    body.FechaCierre,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -468,6 +472,8 @@ func (h *LeccionesHandler) InstructorUpdateLeccion(ctx *gin.Context) {
 		SubmoduloID    string `json:"submodulo_id"`
 		GameConfigJSON string `json:"game_config_json"`
 		PointsReward   int32  `json:"points_reward"`
+		FechaInicio    string `json:"fecha_inicio"`
+		FechaCierre    string `json:"fecha_cierre"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -487,6 +493,8 @@ func (h *LeccionesHandler) InstructorUpdateLeccion(ctx *gin.Context) {
 		SubmoduloId:    body.SubmoduloID,
 		GameConfigJson: body.GameConfigJSON,
 		PointsReward:   body.PointsReward,
+		FechaInicio:    body.FechaInicio,
+		FechaCierre:    body.FechaCierre,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -586,4 +594,68 @@ func (h *LeccionesHandler) InstructorDeletePreguntaIntermedia(ctx *gin.Context) 
 		return
 	}
 	ctx.Status(http.StatusNoContent)
+}
+
+// ── Entregas de Actividades / Tareas ──────────────────────────────────────────
+
+// POST /api/capacitaciones/:id/lecciones/:leccion_id/entrega
+func (h *LeccionesHandler) SubmitEntregaActividad(ctx *gin.Context) {
+	var body struct {
+		FilePath string `json:"file_path" binding:"required"`
+		FileName string `json:"file_name" binding:"required"`
+		FileSize int64  `json:"file_size"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userID := ctx.GetString(middleware.CtxUserID)
+	resp, err := h.c.Lecciones.SubmitEntregaActividad(ctx.Request.Context(), &leccionespb.SubmitEntregaRequest{
+		LeccionId:      ctx.Param("leccion_id"),
+		CapacitacionId: ctx.Param("id"),
+		UserId:         userID,
+		FilePath:       body.FilePath,
+		FileName:       body.FileName,
+		FileSize:       body.FileSize,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// GET /api/capacitaciones/:id/lecciones/:leccion_id/entrega
+func (h *LeccionesHandler) GetEntregaActividadUsuario(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
+	resp, err := h.c.Lecciones.GetEntregaActividadUsuario(ctx.Request.Context(), &leccionespb.GetEntregaRequest{
+		LeccionId: ctx.Param("leccion_id"),
+		UserId:    userID,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// GET /api/instructor/capacitaciones/:id/entregas ó /api/instructor/entregas
+func (h *LeccionesHandler) InstructorListEntregas(ctx *gin.Context) {
+	cursoID := ctx.Param("id")
+	if cursoID == "" {
+		cursoID = ctx.Query("curso_id")
+	}
+	leccionID := ctx.Param("leccion_id")
+	if leccionID == "" {
+		leccionID = ctx.Query("leccion_id")
+	}
+	resp, err := h.c.Lecciones.InstructorListEntregas(ctx.Request.Context(), &leccionespb.InstructorListEntregasRequest{
+		CursoId:   cursoID,
+		LeccionId: leccionID,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
 }

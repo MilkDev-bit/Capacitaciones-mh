@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -74,6 +75,10 @@ type Leccion struct {
 	GameConfigJSON string `db:"game_config_json"`
 	PointsReward   int32  `db:"points_reward"`
 	SegundosVistos int32  `db:"segundos_vistos"`
+	// Tareas/Actividades
+	FechaInicio *time.Time `db:"fecha_inicio"`
+	FechaCierre *time.Time `db:"fecha_cierre"`
+	MiEntrega   *EntregaActividad
 }
 
 func parseLessonType(t string) leccionespb.LessonType {
@@ -102,6 +107,8 @@ func parseLessonType(t string) leccionespb.LessonType {
 		return leccionespb.LessonType_LESSON_TYPE_GAME_FILLBLANK
 	case "order", "ordenar", "9":
 		return leccionespb.LessonType_LESSON_TYPE_GAME_ORDER
+	case "activity", "tarea", "actividad", "10":
+		return leccionespb.LessonType_LESSON_TYPE_ACTIVITY
 	}
 	return leccionespb.LessonType_LESSON_TYPE_UNSPECIFIED
 }
@@ -128,6 +135,15 @@ func (l *Leccion) ToProto() *leccionespb.LeccionResponse {
 	}
 	if l.SubmoduloID != nil {
 		resp.SubmoduloId = *l.SubmoduloID
+	}
+	if l.FechaInicio != nil {
+		resp.FechaInicio = l.FechaInicio.Format("2006-01-02T15:04:05Z")
+	}
+	if l.FechaCierre != nil {
+		resp.FechaCierre = l.FechaCierre.Format("2006-01-02T15:04:05Z")
+	}
+	if l.MiEntrega != nil {
+		resp.MiEntrega = l.MiEntrega.ToProto()
 	}
 	return resp
 }
@@ -166,6 +182,42 @@ type LeaderboardRow struct {
 	UserName  string `db:"user_name"`
 	AvatarURL string `db:"avatar_url"`
 	Points    int32  `db:"points"`
+}
+
+type EntregaActividad struct {
+	ID             string    `db:"id"`
+	LeccionID      string    `db:"leccion_id"`
+	CapacitacionID string    `db:"capacitacion_id"`
+	UserID         string    `db:"user_id"`
+	UserName       string    `db:"user_name"`
+	UserEmail      string    `db:"user_email"`
+	AvatarURL      string    `db:"avatar_url"`
+	CursoTitle     string    `db:"curso_title"`
+	LeccionTitle   string    `db:"leccion_title"`
+	FilePath       string    `db:"file_path"`
+	FileName       string    `db:"file_name"`
+	FileSize       int64     `db:"file_size"`
+	CreatedAt      time.Time `db:"created_at"`
+	UpdatedAt      time.Time `db:"updated_at"`
+}
+
+func (e *EntregaActividad) ToProto() *leccionespb.EntregaResponse {
+	return &leccionespb.EntregaResponse{
+		Id:             e.ID,
+		LeccionId:      e.LeccionID,
+		CapacitacionId: e.CapacitacionID,
+		UserId:         e.UserID,
+		UserName:       e.UserName,
+		UserEmail:      e.UserEmail,
+		AvatarUrl:      e.AvatarURL,
+		CursoTitle:     e.CursoTitle,
+		LeccionTitle:   e.LeccionTitle,
+		FilePath:       e.FilePath,
+		FileName:       e.FileName,
+		FileSize:       e.FileSize,
+		CreatedAt:      e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:      e.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -232,6 +284,12 @@ type LeccionesRepository interface {
 	TryAwardBadge(ctx context.Context, userID, badgeSlug string) (bool, error)
 	// Devuelve todos los slugs de insignias desbloqueadas por un usuario.
 	GetUserBadgeSlugs(ctx context.Context, userID string) ([]string, error)
+
+	// ── Entregas de Tareas / Actividades ──────────────────────────────────────
+	SubmitEntrega(ctx context.Context, req *leccionespb.SubmitEntregaRequest) (*EntregaActividad, error)
+	GetEntregaUsuario(ctx context.Context, leccionID, userID string) (*EntregaActividad, error)
+	GetEntregasPorUsuarioCurso(ctx context.Context, cursoID, userID string) (map[string]*EntregaActividad, error)
+	InstructorListEntregas(ctx context.Context, cursoID, leccionID string) ([]*EntregaActividad, error)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,7 +334,8 @@ const selectLeccionCols = `
 	l.created_at,
 	l.modulo_id, l.submodulo_id,
 	COALESCE(l.game_config_json,'') AS game_config_json,
-	COALESCE(l.points_reward,0)    AS points_reward`
+	COALESCE(l.points_reward,0)    AS points_reward,
+	l.fecha_inicio, l.fecha_cierre`
 
 // ── Módulos ───────────────────────────────────────────────────────────────────
 
@@ -416,7 +475,18 @@ func (r *postgresLeccionesRepository) ListByCursoConProgreso(ctx context.Context
 	          WHERE l.capacitacion_id = $1 AND l.deleted_at IS NULL
 	          ORDER BY l.orden`
 	var lecs []*Leccion
-	return lecs, r.db.SelectContext(ctx, &lecs, query, cursoID, userID)
+	if err := r.db.SelectContext(ctx, &lecs, query, cursoID, userID); err != nil {
+		return nil, err
+	}
+	entregasMap, _ := r.GetEntregasPorUsuarioCurso(ctx, cursoID, userID)
+	if entregasMap != nil {
+		for _, l := range lecs {
+			if ent, ok := entregasMap[l.ID]; ok {
+				l.MiEntrega = ent
+			}
+		}
+	}
+	return lecs, nil
 }
 
 func (r *postgresLeccionesRepository) ListByModulo(ctx context.Context, moduloID string) ([]*Leccion, error) {
@@ -445,6 +515,22 @@ func (r *postgresLeccionesRepository) FindByID(ctx context.Context, leccionID st
 	return l, r.db.GetContext(ctx, l, query, leccionID)
 }
 
+func parseOptionalDate(s string) (time.Time, error) {
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid date format")
+}
+
 func (r *postgresLeccionesRepository) Create(ctx context.Context, req *leccionespb.CreateLeccionRequest) (*Leccion, error) {
 	// Convertir enum a string para almacenar en BD
 	lessonTypeStr := req.LessonType.String()
@@ -460,15 +546,29 @@ func (r *postgresLeccionesRepository) Create(ctx context.Context, req *lecciones
 		submoduloID = &req.SubmoduloId
 	}
 
+	var fechaInicio, fechaCierre *time.Time
+	if req.FechaInicio != "" {
+		if t, err := parseOptionalDate(req.FechaInicio); err == nil {
+			fechaInicio = &t
+		}
+	}
+	if req.FechaCierre != "" {
+		if t, err := parseOptionalDate(req.FechaCierre); err == nil {
+			fechaCierre = &t
+		}
+	}
+
 	var id string
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO lecciones(
 			capacitacion_id, title, description, type, file_path, content,
-			orden, duracion_min, modulo_id, submodulo_id, game_config_json, points_reward
-		) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+			orden, duracion_min, modulo_id, submodulo_id, game_config_json, points_reward,
+			fecha_inicio, fecha_cierre
+		) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
 		req.CursoId, req.Title, req.Description, lessonTypeStr,
 		req.FilePath, req.Content, req.Orden, req.DuracionMin,
 		moduloID, submoduloID, req.GameConfigJson, req.PointsReward,
+		fechaInicio, fechaCierre,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -490,15 +590,27 @@ func (r *postgresLeccionesRepository) Update(ctx context.Context, req *lecciones
 		submoduloID = &req.SubmoduloId
 	}
 
+	var fechaInicio, fechaCierre *time.Time
+	if req.FechaInicio != "" {
+		if t, err := parseOptionalDate(req.FechaInicio); err == nil {
+			fechaInicio = &t
+		}
+	}
+	if req.FechaCierre != "" {
+		if t, err := parseOptionalDate(req.FechaCierre); err == nil {
+			fechaCierre = &t
+		}
+	}
+
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE lecciones SET
 			title=$1, description=$2, type=$3, file_path=$4, content=$5,
 			orden=$6, duracion_min=$7, modulo_id=$8, submodulo_id=$9,
-			game_config_json=$10, points_reward=$11
-		WHERE id=$12`,
+			game_config_json=$10, points_reward=$11, fecha_inicio=$12, fecha_cierre=$13
+		WHERE id=$14`,
 		req.Title, req.Description, lessonTypeStr, req.FilePath, req.Content,
 		req.Orden, req.DuracionMin, moduloID, submoduloID,
-		req.GameConfigJson, req.PointsReward, req.LeccionId)
+		req.GameConfigJson, req.PointsReward, fechaInicio, fechaCierre, req.LeccionId)
 	if err != nil {
 		return nil, err
 	}
@@ -725,5 +837,80 @@ func (r *postgresLeccionesRepository) GetUserBadgeSlugs(ctx context.Context, use
 		`SELECT badge_slug FROM user_badges WHERE user_id=$1 ORDER BY unlocked_at DESC`,
 		userID)
 	return slugs, err
+}
+
+// ── Entregas de Tareas / Actividades ──────────────────────────────────────────
+
+const selectEntregaCols = `
+	e.id, e.leccion_id, e.capacitacion_id, e.user_id,
+	COALESCE(u.name, '')       AS user_name,
+	COALESCE(u.email, '')      AS user_email,
+	COALESCE(u.avatar_url, '') AS avatar_url,
+	COALESCE(c.title, '')      AS curso_title,
+	COALESCE(l.title, '')      AS leccion_title,
+	e.file_path, e.file_name,
+	COALESCE(e.file_size, 0)   AS file_size,
+	e.created_at, e.updated_at`
+
+const fromEntregaJoin = `
+	FROM entregas_actividad e
+	LEFT JOIN users u ON u.id = e.user_id
+	LEFT JOIN capacitaciones c ON c.id = e.capacitacion_id
+	LEFT JOIN lecciones l ON l.id = e.leccion_id`
+
+func (r *postgresLeccionesRepository) SubmitEntrega(ctx context.Context, req *leccionespb.SubmitEntregaRequest) (*EntregaActividad, error) {
+	var id string
+	query := `
+		INSERT INTO entregas_actividad (
+			leccion_id, capacitacion_id, user_id, file_path, file_name, file_size, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+		ON CONFLICT (leccion_id, user_id) DO UPDATE SET
+			file_path  = EXCLUDED.file_path,
+			file_name  = EXCLUDED.file_name,
+			file_size  = EXCLUDED.file_size,
+			updated_at = NOW()
+		RETURNING id`
+	err := r.db.QueryRowContext(ctx, query,
+		req.LeccionId, req.CapacitacionId, req.UserId, req.FilePath, req.FileName, req.FileSize,
+	).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetEntregaUsuario(ctx, req.LeccionId, req.UserId)
+}
+
+func (r *postgresLeccionesRepository) GetEntregaUsuario(ctx context.Context, leccionID, userID string) (*EntregaActividad, error) {
+	query := `SELECT ` + selectEntregaCols + fromEntregaJoin + ` WHERE e.leccion_id=$1 AND e.user_id=$2`
+	e := &EntregaActividad{}
+	return e, r.db.GetContext(ctx, e, query, leccionID, userID)
+}
+
+func (r *postgresLeccionesRepository) GetEntregasPorUsuarioCurso(ctx context.Context, cursoID, userID string) (map[string]*EntregaActividad, error) {
+	query := `SELECT ` + selectEntregaCols + fromEntregaJoin + ` WHERE e.capacitacion_id=$1 AND e.user_id=$2`
+	var list []*EntregaActividad
+	if err := r.db.SelectContext(ctx, &list, query, cursoID, userID); err != nil {
+		return nil, err
+	}
+	m := make(map[string]*EntregaActividad, len(list))
+	for _, e := range list {
+		m[e.LeccionID] = e
+	}
+	return m, nil
+}
+
+func (r *postgresLeccionesRepository) InstructorListEntregas(ctx context.Context, cursoID, leccionID string) ([]*EntregaActividad, error) {
+	var list []*EntregaActividad
+	var query string
+	var args []interface{}
+	if leccionID != "" {
+		query = `SELECT ` + selectEntregaCols + fromEntregaJoin + ` WHERE e.leccion_id=$1 ORDER BY e.updated_at DESC`
+		args = append(args, leccionID)
+	} else if cursoID != "" {
+		query = `SELECT ` + selectEntregaCols + fromEntregaJoin + ` WHERE e.capacitacion_id=$1 ORDER BY e.updated_at DESC`
+		args = append(args, cursoID)
+	} else {
+		return nil, errors.New("debe proporcionar curso_id o leccion_id")
+	}
+	return list, r.db.SelectContext(ctx, &list, query, args...)
 }
 

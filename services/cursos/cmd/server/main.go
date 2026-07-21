@@ -216,6 +216,20 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS owner_id UUID`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ`,
+		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMPTZ`,
+		`CREATE TABLE IF NOT EXISTS entregas_actividad (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			leccion_id UUID NOT NULL REFERENCES lecciones(id) ON DELETE CASCADE,
+			capacitacion_id UUID NOT NULL,
+			user_id UUID NOT NULL,
+			file_path TEXT NOT NULL,
+			file_name TEXT NOT NULL,
+			file_size BIGINT DEFAULT 0,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(leccion_id, user_id)
+		)`,
 	}
 	for i, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

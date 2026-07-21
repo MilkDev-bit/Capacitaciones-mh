@@ -313,6 +313,38 @@ func (s *LeccionesService) GetUserPoints(ctx context.Context, userID string) (*l
 	}, nil
 }
 
+// ── Entregas de Actividades / Tareas ──────────────────────────────────────────
+
+func (s *LeccionesService) SubmitEntregaActividad(ctx context.Context, req *leccionespb.SubmitEntregaRequest) (*leccionespb.EntregaResponse, error) {
+	e, err := s.repo.SubmitEntrega(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return e.ToProto(), nil
+}
+
+func (s *LeccionesService) GetEntregaActividadUsuario(ctx context.Context, req *leccionespb.GetEntregaRequest) (*leccionespb.EntregaResponse, error) {
+	e, err := s.repo.GetEntregaUsuario(ctx, req.LeccionId, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return e.ToProto(), nil
+}
+
+func (s *LeccionesService) InstructorListEntregas(ctx context.Context, req *leccionespb.InstructorListEntregasRequest) (*leccionespb.ListEntregasResponse, error) {
+	list, err := s.repo.InstructorListEntregas(ctx, req.CursoId, req.LeccionId)
+	if err != nil {
+		return nil, err
+	}
+	resp := &leccionespb.ListEntregasResponse{
+		Entregas: make([]*leccionespb.EntregaResponse, 0, len(list)),
+	}
+	for _, e := range list {
+		resp.Entregas = append(resp.Entregas, e.ToProto())
+	}
+	return resp, nil
+}
+
 // ── Helpers privados ──────────────────────────────────────────────────────────
 
 func (s *LeccionesService) buildIntermediasResponse(ctx context.Context, cursoID string, showCorrect bool) ([]*leccionespb.IntermediaResponse, error) {

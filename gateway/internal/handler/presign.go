@@ -18,6 +18,7 @@ var allowedPrefixes = map[string]bool{
 	"covers":     true,
 	"foro":       true,
 	"mensajes":   true,
+	"entregas":   true,
 }
 
 // PresignHandler genera URLs pre-firmadas para subidas directas al bucket R2.
@@ -39,10 +40,19 @@ func (h *PresignHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 
+	if prefix == "entregas" && storage.BlockedExtensions[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se permiten archivos ejecutables o scripts"})
+		return
+	}
+
 	contentType, ok := storage.MimeTypes[ext]
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "extensión no permitida"})
-		return
+		if prefix == "entregas" && !storage.BlockedExtensions[ext] {
+			contentType = "application/octet-stream"
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "extensión no permitida"})
+			return
+		}
 	}
 
 	svc := storage.Default()

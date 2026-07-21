@@ -61,7 +61,14 @@ function openPanel(mode: PanelMode, ctx: any = {}, form: any = {}) {
   }
   panelMode.value = mode
   panelCtx.value = ctx
-  panelForm.value = { type: '1', lesson_type: '1', duracion_min: 0, points_reward: 100, ...form }
+  const formattedForm = { ...form }
+  if (formattedForm.fecha_inicio && typeof formattedForm.fecha_inicio === 'string') {
+    formattedForm.fecha_inicio = formattedForm.fecha_inicio.slice(0, 16)
+  }
+  if (formattedForm.fecha_cierre && typeof formattedForm.fecha_cierre === 'string') {
+    formattedForm.fecha_cierre = formattedForm.fecha_cierre.slice(0, 16)
+  }
+  panelForm.value = { type: '1', lesson_type: '1', duracion_min: 0, points_reward: 100, fecha_inicio: '', fecha_cierre: '', ...formattedForm }
   panelFile.value = null
 }
 function closePanel() { panelMode.value = null }
@@ -77,7 +84,7 @@ const panelTitle = computed(() => ((({
 
 const isGameType = computed(() => {
   const t = String(panelForm.value.lesson_type ?? panelForm.value.type ?? '').toLowerCase()
-  return ['5', '6', '7', '8', '9', '10',
+  return ['5', '6', '7', '8', '9', '11',
     'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order', 'lesson_type_game_hangman',
     'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order', 'ahorcado', 'hangman'].includes(t)
 })
@@ -165,6 +172,7 @@ async function saveLesson() {
 
   const type = String(form.lesson_type ?? form.type ?? '1')
   if (type === '2' && !form.content?.trim()) return toast.error('El contenido de texto es requerido')
+  if (type === '10' && (!form.fecha_inicio || !form.fecha_cierre)) return toast.error('Las fechas de inicio y cierre son requeridas para la actividad')
   // link es tipo externo — no aplica a enums numéricos
   if (type === '99' && !isValidUrl(form.content || '')) return toast.error('URL inválida')
 
@@ -175,6 +183,7 @@ async function saveLesson() {
     if (type === '7') finalConfigJson = JSON.stringify({ instruction: 'Encuentra las palabras en la cuadrícula', words: ['CAPACITACION', 'SOPA', 'LETRA', 'JUEGO', 'CURSO'], grid_size: 12, difficulty: 'medium', show_word_list: true })
     if (type === '8') finalConfigJson = JSON.stringify({ instruction: 'Completa la oración', mode: 'select', sentences: [{ text: 'Vue es un framework de ___', answer: 'JavaScript', options: ['JavaScript', 'Python'] }] })
     if (type === '9') finalConfigJson = JSON.stringify({ instruction: 'Ordena correctamente los pasos', items: [{ text: 'Primer paso', correct_order: 1 }, { text: 'Segundo paso', correct_order: 2 }], show_numbers: false })
+    if (type === '11') finalConfigJson = JSON.stringify({ instruction: 'Adivina la palabra oculta', max_errors: 6, items: [{ word: 'JAVASCRIPT', hint: 'Lenguaje web dinámico' }, { word: 'SEGURIDAD', hint: 'Protección de sistemas' }] })
   }
 
   const payload: Record<string, any> = {
@@ -188,6 +197,8 @@ async function saveLesson() {
     submodulo_id: panelCtx.value.submoduloId ?? '',
     game_config_json: finalConfigJson,
     points_reward: Number(form.points_reward || 0),
+    fecha_inicio: form.fecha_inicio || '',
+    fecha_cierre: form.fecha_cierre || '',
   }
 
   if (panelFile.value && (type === '1' || type === '3')) {
@@ -658,6 +669,18 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
                 <div class="cte-field">
                   <label class="cte-label">Tipo de lección</label>
                   <ContentTypeSelector v-model="panelForm.lesson_type" />
+                </div>
+
+                <!-- Configuración de Actividad (Fechas) -->
+                <div v-if="panelForm.lesson_type === '10' || panelForm.lesson_type === 10" class="cte-dates-grid">
+                  <div class="cte-field">
+                    <label class="cte-label">Fecha de Inicio *</label>
+                    <input type="datetime-local" v-model="panelForm.fecha_inicio" class="cte-input" required />
+                  </div>
+                  <div class="cte-field">
+                    <label class="cte-label">Fecha de Cierre *</label>
+                    <input type="datetime-local" v-model="panelForm.fecha_cierre" class="cte-input" required />
+                  </div>
                 </div>
 
                 <!-- Archivo (video/pdf) -->
@@ -1248,6 +1271,17 @@ async function moveLeccion(lecciones: any[], cursoId: string, i: any, dir: -1 | 
   color: var(--brand);
   font-weight: 400;
   margin-left: 8px;
+}
+
+.cte-dates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(99, 102, 241, 0.05);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  margin-top: 4px;
 }
 
 /* Panel transition */

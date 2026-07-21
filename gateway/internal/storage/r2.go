@@ -33,8 +33,25 @@ var MimeTypes = map[string]string{
 	".pdf":  "application/pdf",
 	".doc":  "application/msword",
 	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".ppt":  "application/vnd.ms-powerpoint",
 	".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+	".xls":  "application/vnd.ms-excel",
 	".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	".txt":  "text/plain",
+	".csv":  "text/csv",
+	".zip":  "application/zip",
+	".rar":  "application/vnd.rar",
+	".7z":   "application/x-7z-compressed",
+}
+
+// BlockedExtensions contiene las extensiones consideradas ejecutables o scripts peligrosos.
+var BlockedExtensions = map[string]bool{
+	".exe": true, ".bat": true, ".cmd": true, ".sh": true, ".ps1": true,
+	".vbs": true, ".js": true, ".msc": true, ".scr": true, ".msi": true,
+	".apk": true, ".bin": true, ".elf": true, ".py": true, ".rb": true,
+	".php": true, ".cgi": true, ".jar": true, ".com": true, ".inf": true,
+	".reg": true, ".htm": true, ".html": true, ".svg": true, ".dll": true,
+	".sys": true, ".cpl": true, ".hta": true,
 }
 
 // StorageService encapsulates the R2 presign client.
@@ -146,6 +163,9 @@ func (s *StorageService) UploadMultipart(ctx context.Context, fh *multipart.File
 	}
 
 	ext := strings.ToLower(filepath.Ext(fh.Filename))
+	if BlockedExtensions[ext] {
+		return "", fmt.Errorf("no se permiten archivos ejecutables o scripts")
+	}
 	ct, ok := MimeTypes[ext]
 	if !ok {
 		ct = "application/octet-stream"

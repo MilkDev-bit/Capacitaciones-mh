@@ -28,30 +28,32 @@ type LessonType int32
 
 const (
 	LessonType_LESSON_TYPE_UNSPECIFIED     LessonType = 0
-	LessonType_LESSON_TYPE_VIDEO           LessonType = 1 // lección en video
-	LessonType_LESSON_TYPE_TEXT            LessonType = 2 // lectura/HTML
-	LessonType_LESSON_TYPE_PDF             LessonType = 3 // documento PDF
-	LessonType_LESSON_TYPE_QUIZ            LessonType = 4 // quiz de opción múltiple (las preguntas intermedias existentes)
-	LessonType_LESSON_TYPE_GAME_MEMORY     LessonType = 5 // minijuego: memorama de pares
-	LessonType_LESSON_TYPE_GAME_DRAGDROP   LessonType = 6 // minijuego: arrastrar y soltar
-	LessonType_LESSON_TYPE_GAME_WORDSEARCH LessonType = 7 // minijuego: sopa de letras
-	LessonType_LESSON_TYPE_GAME_FILLBLANK  LessonType = 8 // minijuego: completar el espacio
-	LessonType_LESSON_TYPE_GAME_ORDER      LessonType = 9 // minijuego: ordenar secuencia
+	LessonType_LESSON_TYPE_VIDEO           LessonType = 1  // lección en video
+	LessonType_LESSON_TYPE_TEXT            LessonType = 2  // lectura/HTML
+	LessonType_LESSON_TYPE_PDF             LessonType = 3  // documento PDF
+	LessonType_LESSON_TYPE_QUIZ            LessonType = 4  // quiz de opción múltiple (las preguntas intermedias existentes)
+	LessonType_LESSON_TYPE_GAME_MEMORY     LessonType = 5  // minijuego: memorama de pares
+	LessonType_LESSON_TYPE_GAME_DRAGDROP   LessonType = 6  // minijuego: arrastrar y soltar
+	LessonType_LESSON_TYPE_GAME_WORDSEARCH LessonType = 7  // minijuego: sopa de letras
+	LessonType_LESSON_TYPE_GAME_FILLBLANK  LessonType = 8  // minijuego: completar el espacio
+	LessonType_LESSON_TYPE_GAME_ORDER      LessonType = 9  // minijuego: ordenar secuencia
+	LessonType_LESSON_TYPE_ACTIVITY        LessonType = 10 // actividad / tarea con fecha de inicio y cierre + subida de archivo
 )
 
 // Enum value maps for LessonType.
 var (
 	LessonType_name = map[int32]string{
-		0: "LESSON_TYPE_UNSPECIFIED",
-		1: "LESSON_TYPE_VIDEO",
-		2: "LESSON_TYPE_TEXT",
-		3: "LESSON_TYPE_PDF",
-		4: "LESSON_TYPE_QUIZ",
-		5: "LESSON_TYPE_GAME_MEMORY",
-		6: "LESSON_TYPE_GAME_DRAGDROP",
-		7: "LESSON_TYPE_GAME_WORDSEARCH",
-		8: "LESSON_TYPE_GAME_FILLBLANK",
-		9: "LESSON_TYPE_GAME_ORDER",
+		0:  "LESSON_TYPE_UNSPECIFIED",
+		1:  "LESSON_TYPE_VIDEO",
+		2:  "LESSON_TYPE_TEXT",
+		3:  "LESSON_TYPE_PDF",
+		4:  "LESSON_TYPE_QUIZ",
+		5:  "LESSON_TYPE_GAME_MEMORY",
+		6:  "LESSON_TYPE_GAME_DRAGDROP",
+		7:  "LESSON_TYPE_GAME_WORDSEARCH",
+		8:  "LESSON_TYPE_GAME_FILLBLANK",
+		9:  "LESSON_TYPE_GAME_ORDER",
+		10: "LESSON_TYPE_ACTIVITY",
 	}
 	LessonType_value = map[string]int32{
 		"LESSON_TYPE_UNSPECIFIED":     0,
@@ -64,6 +66,7 @@ var (
 		"LESSON_TYPE_GAME_WORDSEARCH": 7,
 		"LESSON_TYPE_GAME_FILLBLANK":  8,
 		"LESSON_TYPE_GAME_ORDER":      9,
+		"LESSON_TYPE_ACTIVITY":        10,
 	}
 )
 
@@ -971,7 +974,9 @@ type CreateLeccionRequest struct {
 	// Ejemplo: {"pairs":[{"front":"HTTP","back":"Protocolo de transferencia"},...]}
 	GameConfigJson string `protobuf:"bytes,11,opt,name=game_config_json,json=gameConfigJson,proto3" json:"game_config_json,omitempty"`
 	// Puntos que otorga completar esta lección/juego.
-	PointsReward  int32 `protobuf:"varint,12,opt,name=points_reward,json=pointsReward,proto3" json:"points_reward,omitempty"`
+	PointsReward  int32  `protobuf:"varint,12,opt,name=points_reward,json=pointsReward,proto3" json:"points_reward,omitempty"`
+	FechaInicio   string `protobuf:"bytes,13,opt,name=fecha_inicio,json=fechaInicio,proto3" json:"fecha_inicio,omitempty"`
+	FechaCierre   string `protobuf:"bytes,14,opt,name=fecha_cierre,json=fechaCierre,proto3" json:"fecha_cierre,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1090,6 +1095,20 @@ func (x *CreateLeccionRequest) GetPointsReward() int32 {
 	return 0
 }
 
+func (x *CreateLeccionRequest) GetFechaInicio() string {
+	if x != nil {
+		return x.FechaInicio
+	}
+	return ""
+}
+
+func (x *CreateLeccionRequest) GetFechaCierre() string {
+	if x != nil {
+		return x.FechaCierre
+	}
+	return ""
+}
+
 type UpdateLeccionRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	LeccionId      string                 `protobuf:"bytes,1,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
@@ -1105,6 +1124,8 @@ type UpdateLeccionRequest struct {
 	SubmoduloId    string                 `protobuf:"bytes,11,opt,name=submodulo_id,json=submoduloId,proto3" json:"submodulo_id,omitempty"`
 	GameConfigJson string                 `protobuf:"bytes,12,opt,name=game_config_json,json=gameConfigJson,proto3" json:"game_config_json,omitempty"`
 	PointsReward   int32                  `protobuf:"varint,13,opt,name=points_reward,json=pointsReward,proto3" json:"points_reward,omitempty"`
+	FechaInicio    string                 `protobuf:"bytes,14,opt,name=fecha_inicio,json=fechaInicio,proto3" json:"fecha_inicio,omitempty"`
+	FechaCierre    string                 `protobuf:"bytes,15,opt,name=fecha_cierre,json=fechaCierre,proto3" json:"fecha_cierre,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1228,6 +1249,20 @@ func (x *UpdateLeccionRequest) GetPointsReward() int32 {
 		return x.PointsReward
 	}
 	return 0
+}
+
+func (x *UpdateLeccionRequest) GetFechaInicio() string {
+	if x != nil {
+		return x.FechaInicio
+	}
+	return ""
+}
+
+func (x *UpdateLeccionRequest) GetFechaCierre() string {
+	if x != nil {
+		return x.FechaCierre
+	}
+	return ""
 }
 
 type ReorderRequest struct {
@@ -1668,6 +1703,194 @@ func (x *LeaderboardRequest) GetTopN() int32 {
 	return 0
 }
 
+type SubmitEntregaRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	LeccionId      string                 `protobuf:"bytes,1,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
+	CapacitacionId string                 `protobuf:"bytes,2,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	FilePath       string                 `protobuf:"bytes,4,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	FileName       string                 `protobuf:"bytes,5,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize       int64                  `protobuf:"varint,6,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SubmitEntregaRequest) Reset() {
+	*x = SubmitEntregaRequest{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitEntregaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitEntregaRequest) ProtoMessage() {}
+
+func (x *SubmitEntregaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitEntregaRequest.ProtoReflect.Descriptor instead.
+func (*SubmitEntregaRequest) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *SubmitEntregaRequest) GetLeccionId() string {
+	if x != nil {
+		return x.LeccionId
+	}
+	return ""
+}
+
+func (x *SubmitEntregaRequest) GetCapacitacionId() string {
+	if x != nil {
+		return x.CapacitacionId
+	}
+	return ""
+}
+
+func (x *SubmitEntregaRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SubmitEntregaRequest) GetFilePath() string {
+	if x != nil {
+		return x.FilePath
+	}
+	return ""
+}
+
+func (x *SubmitEntregaRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *SubmitEntregaRequest) GetFileSize() int64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+type GetEntregaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LeccionId     string                 `protobuf:"bytes,1,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEntregaRequest) Reset() {
+	*x = GetEntregaRequest{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEntregaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEntregaRequest) ProtoMessage() {}
+
+func (x *GetEntregaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEntregaRequest.ProtoReflect.Descriptor instead.
+func (*GetEntregaRequest) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *GetEntregaRequest) GetLeccionId() string {
+	if x != nil {
+		return x.LeccionId
+	}
+	return ""
+}
+
+func (x *GetEntregaRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type InstructorListEntregasRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CursoId       string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
+	LeccionId     string                 `protobuf:"bytes,2,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstructorListEntregasRequest) Reset() {
+	*x = InstructorListEntregasRequest{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstructorListEntregasRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstructorListEntregasRequest) ProtoMessage() {}
+
+func (x *InstructorListEntregasRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstructorListEntregasRequest.ProtoReflect.Descriptor instead.
+func (*InstructorListEntregasRequest) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *InstructorListEntregasRequest) GetCursoId() string {
+	if x != nil {
+		return x.CursoId
+	}
+	return ""
+}
+
+func (x *InstructorListEntregasRequest) GetLeccionId() string {
+	if x != nil {
+		return x.LeccionId
+	}
+	return ""
+}
+
 type CursoTreeResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	CursoId string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -1680,7 +1903,7 @@ type CursoTreeResponse struct {
 
 func (x *CursoTreeResponse) Reset() {
 	*x = CursoTreeResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[24]
+	mi := &file_lecciones_lecciones_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1692,7 +1915,7 @@ func (x *CursoTreeResponse) String() string {
 func (*CursoTreeResponse) ProtoMessage() {}
 
 func (x *CursoTreeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[24]
+	mi := &file_lecciones_lecciones_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1705,7 +1928,7 @@ func (x *CursoTreeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CursoTreeResponse.ProtoReflect.Descriptor instead.
 func (*CursoTreeResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{24}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CursoTreeResponse) GetCursoId() string {
@@ -1746,7 +1969,7 @@ type ModuloResponse struct {
 
 func (x *ModuloResponse) Reset() {
 	*x = ModuloResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[25]
+	mi := &file_lecciones_lecciones_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1758,7 +1981,7 @@ func (x *ModuloResponse) String() string {
 func (*ModuloResponse) ProtoMessage() {}
 
 func (x *ModuloResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[25]
+	mi := &file_lecciones_lecciones_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1771,7 +1994,7 @@ func (x *ModuloResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModuloResponse.ProtoReflect.Descriptor instead.
 func (*ModuloResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{25}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ModuloResponse) GetId() string {
@@ -1845,7 +2068,7 @@ type SubmoduloResponse struct {
 
 func (x *SubmoduloResponse) Reset() {
 	*x = SubmoduloResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[26]
+	mi := &file_lecciones_lecciones_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1857,7 +2080,7 @@ func (x *SubmoduloResponse) String() string {
 func (*SubmoduloResponse) ProtoMessage() {}
 
 func (x *SubmoduloResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[26]
+	mi := &file_lecciones_lecciones_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1870,7 +2093,7 @@ func (x *SubmoduloResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmoduloResponse.ProtoReflect.Descriptor instead.
 func (*SubmoduloResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{26}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SubmoduloResponse) GetId() string {
@@ -1939,16 +2162,19 @@ type LeccionResponse struct {
 	ModuloId    string `protobuf:"bytes,12,opt,name=modulo_id,json=moduloId,proto3" json:"modulo_id,omitempty"`
 	SubmoduloId string `protobuf:"bytes,13,opt,name=submodulo_id,json=submoduloId,proto3" json:"submodulo_id,omitempty"`
 	// Gamificación
-	GameConfigJson string `protobuf:"bytes,14,opt,name=game_config_json,json=gameConfigJson,proto3" json:"game_config_json,omitempty"`
-	PointsReward   int32  `protobuf:"varint,15,opt,name=points_reward,json=pointsReward,proto3" json:"points_reward,omitempty"`
-	SegundosVistos int32  `protobuf:"varint,16,opt,name=segundos_vistos,json=segundosVistos,proto3" json:"segundos_vistos,omitempty"`
+	GameConfigJson string           `protobuf:"bytes,14,opt,name=game_config_json,json=gameConfigJson,proto3" json:"game_config_json,omitempty"`
+	PointsReward   int32            `protobuf:"varint,15,opt,name=points_reward,json=pointsReward,proto3" json:"points_reward,omitempty"`
+	SegundosVistos int32            `protobuf:"varint,16,opt,name=segundos_vistos,json=segundosVistos,proto3" json:"segundos_vistos,omitempty"`
+	FechaInicio    string           `protobuf:"bytes,17,opt,name=fecha_inicio,json=fechaInicio,proto3" json:"fecha_inicio,omitempty"`
+	FechaCierre    string           `protobuf:"bytes,18,opt,name=fecha_cierre,json=fechaCierre,proto3" json:"fecha_cierre,omitempty"`
+	MiEntrega      *EntregaResponse `protobuf:"bytes,19,opt,name=mi_entrega,json=miEntrega,proto3" json:"mi_entrega,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *LeccionResponse) Reset() {
 	*x = LeccionResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[27]
+	mi := &file_lecciones_lecciones_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1960,7 +2186,7 @@ func (x *LeccionResponse) String() string {
 func (*LeccionResponse) ProtoMessage() {}
 
 func (x *LeccionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[27]
+	mi := &file_lecciones_lecciones_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1973,7 +2199,7 @@ func (x *LeccionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeccionResponse.ProtoReflect.Descriptor instead.
 func (*LeccionResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{27}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *LeccionResponse) GetId() string {
@@ -2088,6 +2314,27 @@ func (x *LeccionResponse) GetSegundosVistos() int32 {
 	return 0
 }
 
+func (x *LeccionResponse) GetFechaInicio() string {
+	if x != nil {
+		return x.FechaInicio
+	}
+	return ""
+}
+
+func (x *LeccionResponse) GetFechaCierre() string {
+	if x != nil {
+		return x.FechaCierre
+	}
+	return ""
+}
+
+func (x *LeccionResponse) GetMiEntrega() *EntregaResponse {
+	if x != nil {
+		return x.MiEntrega
+	}
+	return nil
+}
+
 type ListLeccionesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Lecciones     []*LeccionResponse     `protobuf:"bytes,1,rep,name=lecciones,proto3" json:"lecciones,omitempty"`
@@ -2097,7 +2344,7 @@ type ListLeccionesResponse struct {
 
 func (x *ListLeccionesResponse) Reset() {
 	*x = ListLeccionesResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[28]
+	mi := &file_lecciones_lecciones_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2109,7 +2356,7 @@ func (x *ListLeccionesResponse) String() string {
 func (*ListLeccionesResponse) ProtoMessage() {}
 
 func (x *ListLeccionesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[28]
+	mi := &file_lecciones_lecciones_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2122,7 +2369,7 @@ func (x *ListLeccionesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLeccionesResponse.ProtoReflect.Descriptor instead.
 func (*ListLeccionesResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{28}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ListLeccionesResponse) GetLecciones() []*LeccionResponse {
@@ -2146,7 +2393,7 @@ type MarcarLeccionResponse struct {
 
 func (x *MarcarLeccionResponse) Reset() {
 	*x = MarcarLeccionResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[29]
+	mi := &file_lecciones_lecciones_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2158,7 +2405,7 @@ func (x *MarcarLeccionResponse) String() string {
 func (*MarcarLeccionResponse) ProtoMessage() {}
 
 func (x *MarcarLeccionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[29]
+	mi := &file_lecciones_lecciones_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2171,7 +2418,7 @@ func (x *MarcarLeccionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarcarLeccionResponse.ProtoReflect.Descriptor instead.
 func (*MarcarLeccionResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{29}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *MarcarLeccionResponse) GetPointsEarned() int32 {
@@ -2210,7 +2457,7 @@ type IntermediaResponse struct {
 
 func (x *IntermediaResponse) Reset() {
 	*x = IntermediaResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[30]
+	mi := &file_lecciones_lecciones_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2222,7 +2469,7 @@ func (x *IntermediaResponse) String() string {
 func (*IntermediaResponse) ProtoMessage() {}
 
 func (x *IntermediaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[30]
+	mi := &file_lecciones_lecciones_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2235,7 +2482,7 @@ func (x *IntermediaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntermediaResponse.ProtoReflect.Descriptor instead.
 func (*IntermediaResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{30}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *IntermediaResponse) GetId() string {
@@ -2298,7 +2545,7 @@ type OpcionInfo struct {
 
 func (x *OpcionInfo) Reset() {
 	*x = OpcionInfo{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[31]
+	mi := &file_lecciones_lecciones_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2310,7 +2557,7 @@ func (x *OpcionInfo) String() string {
 func (*OpcionInfo) ProtoMessage() {}
 
 func (x *OpcionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[31]
+	mi := &file_lecciones_lecciones_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2323,7 +2570,7 @@ func (x *OpcionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpcionInfo.ProtoReflect.Descriptor instead.
 func (*OpcionInfo) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{31}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *OpcionInfo) GetId() string {
@@ -2356,7 +2603,7 @@ type ListIntermediasResponse struct {
 
 func (x *ListIntermediasResponse) Reset() {
 	*x = ListIntermediasResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[32]
+	mi := &file_lecciones_lecciones_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2368,7 +2615,7 @@ func (x *ListIntermediasResponse) String() string {
 func (*ListIntermediasResponse) ProtoMessage() {}
 
 func (x *ListIntermediasResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[32]
+	mi := &file_lecciones_lecciones_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2381,7 +2628,7 @@ func (x *ListIntermediasResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIntermediasResponse.ProtoReflect.Descriptor instead.
 func (*ListIntermediasResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{32}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListIntermediasResponse) GetPreguntas() []*IntermediaResponse {
@@ -2401,7 +2648,7 @@ type SubmitIntermediasResponse struct {
 
 func (x *SubmitIntermediasResponse) Reset() {
 	*x = SubmitIntermediasResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[33]
+	mi := &file_lecciones_lecciones_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2413,7 +2660,7 @@ func (x *SubmitIntermediasResponse) String() string {
 func (*SubmitIntermediasResponse) ProtoMessage() {}
 
 func (x *SubmitIntermediasResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[33]
+	mi := &file_lecciones_lecciones_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2426,7 +2673,7 @@ func (x *SubmitIntermediasResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitIntermediasResponse.ProtoReflect.Descriptor instead.
 func (*SubmitIntermediasResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{33}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *SubmitIntermediasResponse) GetCorrectas() int32 {
@@ -2455,7 +2702,7 @@ type SubmitGameScoreResponse struct {
 
 func (x *SubmitGameScoreResponse) Reset() {
 	*x = SubmitGameScoreResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[34]
+	mi := &file_lecciones_lecciones_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2467,7 +2714,7 @@ func (x *SubmitGameScoreResponse) String() string {
 func (*SubmitGameScoreResponse) ProtoMessage() {}
 
 func (x *SubmitGameScoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[34]
+	mi := &file_lecciones_lecciones_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2480,7 +2727,7 @@ func (x *SubmitGameScoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitGameScoreResponse.ProtoReflect.Descriptor instead.
 func (*SubmitGameScoreResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{34}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *SubmitGameScoreResponse) GetPointsEarned() int32 {
@@ -2524,7 +2771,7 @@ type LeaderboardEntry struct {
 
 func (x *LeaderboardEntry) Reset() {
 	*x = LeaderboardEntry{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[35]
+	mi := &file_lecciones_lecciones_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2536,7 +2783,7 @@ func (x *LeaderboardEntry) String() string {
 func (*LeaderboardEntry) ProtoMessage() {}
 
 func (x *LeaderboardEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[35]
+	mi := &file_lecciones_lecciones_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2549,7 +2796,7 @@ func (x *LeaderboardEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaderboardEntry.ProtoReflect.Descriptor instead.
 func (*LeaderboardEntry) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{35}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *LeaderboardEntry) GetRank() int32 {
@@ -2599,7 +2846,7 @@ type LeaderboardResponse struct {
 
 func (x *LeaderboardResponse) Reset() {
 	*x = LeaderboardResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[36]
+	mi := &file_lecciones_lecciones_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2611,7 +2858,7 @@ func (x *LeaderboardResponse) String() string {
 func (*LeaderboardResponse) ProtoMessage() {}
 
 func (x *LeaderboardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[36]
+	mi := &file_lecciones_lecciones_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2624,7 +2871,7 @@ func (x *LeaderboardResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaderboardResponse.ProtoReflect.Descriptor instead.
 func (*LeaderboardResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{36}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *LeaderboardResponse) GetCursoId() string {
@@ -2662,7 +2909,7 @@ type Badge struct {
 
 func (x *Badge) Reset() {
 	*x = Badge{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[37]
+	mi := &file_lecciones_lecciones_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2674,7 +2921,7 @@ func (x *Badge) String() string {
 func (*Badge) ProtoMessage() {}
 
 func (x *Badge) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[37]
+	mi := &file_lecciones_lecciones_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2687,7 +2934,7 @@ func (x *Badge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Badge.ProtoReflect.Descriptor instead.
 func (*Badge) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{37}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *Badge) GetSlug() string {
@@ -2745,7 +2992,7 @@ type UserPointsResponse struct {
 
 func (x *UserPointsResponse) Reset() {
 	*x = UserPointsResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[38]
+	mi := &file_lecciones_lecciones_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2757,7 +3004,7 @@ func (x *UserPointsResponse) String() string {
 func (*UserPointsResponse) ProtoMessage() {}
 
 func (x *UserPointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[38]
+	mi := &file_lecciones_lecciones_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2770,7 +3017,7 @@ func (x *UserPointsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserPointsResponse.ProtoReflect.Descriptor instead.
 func (*UserPointsResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{38}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *UserPointsResponse) GetUserId() string {
@@ -2801,6 +3048,198 @@ func (x *UserPointsResponse) GetBadges() []*Badge {
 	return nil
 }
 
+type EntregaResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	LeccionId      string                 `protobuf:"bytes,2,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
+	CapacitacionId string                 `protobuf:"bytes,3,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserName       string                 `protobuf:"bytes,5,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	UserEmail      string                 `protobuf:"bytes,6,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	AvatarUrl      string                 `protobuf:"bytes,7,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	CursoTitle     string                 `protobuf:"bytes,8,opt,name=curso_title,json=cursoTitle,proto3" json:"curso_title,omitempty"`
+	LeccionTitle   string                 `protobuf:"bytes,9,opt,name=leccion_title,json=leccionTitle,proto3" json:"leccion_title,omitempty"`
+	FilePath       string                 `protobuf:"bytes,10,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	FileName       string                 `protobuf:"bytes,11,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize       int64                  `protobuf:"varint,12,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *EntregaResponse) Reset() {
+	*x = EntregaResponse{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EntregaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EntregaResponse) ProtoMessage() {}
+
+func (x *EntregaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EntregaResponse.ProtoReflect.Descriptor instead.
+func (*EntregaResponse) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *EntregaResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetLeccionId() string {
+	if x != nil {
+		return x.LeccionId
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetCapacitacionId() string {
+	if x != nil {
+		return x.CapacitacionId
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetUserEmail() string {
+	if x != nil {
+		return x.UserEmail
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetCursoTitle() string {
+	if x != nil {
+		return x.CursoTitle
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetLeccionTitle() string {
+	if x != nil {
+		return x.LeccionTitle
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetFilePath() string {
+	if x != nil {
+		return x.FilePath
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetFileSize() int64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *EntregaResponse) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *EntregaResponse) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ListEntregasResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entregas      []*EntregaResponse     `protobuf:"bytes,1,rep,name=entregas,proto3" json:"entregas,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListEntregasResponse) Reset() {
+	*x = ListEntregasResponse{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListEntregasResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListEntregasResponse) ProtoMessage() {}
+
+func (x *ListEntregasResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListEntregasResponse.ProtoReflect.Descriptor instead.
+func (*ListEntregasResponse) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ListEntregasResponse) GetEntregas() []*EntregaResponse {
+	if x != nil {
+		return x.Entregas
+	}
+	return nil
+}
+
 type EmptyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -2809,7 +3248,7 @@ type EmptyResponse struct {
 
 func (x *EmptyResponse) Reset() {
 	*x = EmptyResponse{}
-	mi := &file_lecciones_lecciones_proto_msgTypes[39]
+	mi := &file_lecciones_lecciones_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2821,7 +3260,7 @@ func (x *EmptyResponse) String() string {
 func (*EmptyResponse) ProtoMessage() {}
 
 func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lecciones_lecciones_proto_msgTypes[39]
+	mi := &file_lecciones_lecciones_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2834,7 +3273,7 @@ func (x *EmptyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmptyResponse.ProtoReflect.Descriptor instead.
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{39}
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{44}
 }
 
 var File_lecciones_lecciones_proto protoreflect.FileDescriptor
@@ -2901,7 +3340,7 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x05orden\x18\x05 \x01(\x05R\x05orden\"\\\n" +
 	"\x18ReorderSubmodulosRequest\x12\x1b\n" +
 	"\tmodulo_id\x18\x01 \x01(\tR\bmoduloId\x12#\n" +
-	"\rsubmodulo_ids\x18\x02 \x03(\tR\fsubmoduloIds\"\xa0\x03\n" +
+	"\rsubmodulo_ids\x18\x02 \x03(\tR\fsubmoduloIds\"\xe6\x03\n" +
 	"\x14CreateLeccionRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2916,7 +3355,9 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\fsubmodulo_id\x18\n" +
 	" \x01(\tR\vsubmoduloId\x12(\n" +
 	"\x10game_config_json\x18\v \x01(\tR\x0egameConfigJson\x12#\n" +
-	"\rpoints_reward\x18\f \x01(\x05R\fpointsReward\"\xbf\x03\n" +
+	"\rpoints_reward\x18\f \x01(\x05R\fpointsReward\x12!\n" +
+	"\ffecha_inicio\x18\r \x01(\tR\vfechaInicio\x12!\n" +
+	"\ffecha_cierre\x18\x0e \x01(\tR\vfechaCierre\"\x85\x04\n" +
 	"\x14UpdateLeccionRequest\x12\x1d\n" +
 	"\n" +
 	"leccion_id\x18\x01 \x01(\tR\tleccionId\x12\x19\n" +
@@ -2933,7 +3374,9 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	" \x01(\tR\bmoduloId\x12!\n" +
 	"\fsubmodulo_id\x18\v \x01(\tR\vsubmoduloId\x12(\n" +
 	"\x10game_config_json\x18\f \x01(\tR\x0egameConfigJson\x12#\n" +
-	"\rpoints_reward\x18\r \x01(\x05R\fpointsReward\"L\n" +
+	"\rpoints_reward\x18\r \x01(\x05R\fpointsReward\x12!\n" +
+	"\ffecha_inicio\x18\x0e \x01(\tR\vfechaInicio\x12!\n" +
+	"\ffecha_cierre\x18\x0f \x01(\tR\vfechaCierre\"L\n" +
 	"\x0eReorderRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x1f\n" +
 	"\vleccion_ids\x18\x02 \x03(\tR\n" +
@@ -2969,7 +3412,23 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\ttime_secs\x18\x05 \x01(\x05R\btimeSecs\"D\n" +
 	"\x12LeaderboardRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x13\n" +
-	"\x05top_n\x18\x02 \x01(\x05R\x04topN\"\x9d\x01\n" +
+	"\x05top_n\x18\x02 \x01(\x05R\x04topN\"\xce\x01\n" +
+	"\x14SubmitEntregaRequest\x12\x1d\n" +
+	"\n" +
+	"leccion_id\x18\x01 \x01(\tR\tleccionId\x12'\n" +
+	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tfile_path\x18\x04 \x01(\tR\bfilePath\x12\x1b\n" +
+	"\tfile_name\x18\x05 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\x06 \x01(\x03R\bfileSize\"K\n" +
+	"\x11GetEntregaRequest\x12\x1d\n" +
+	"\n" +
+	"leccion_id\x18\x01 \x01(\tR\tleccionId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"Y\n" +
+	"\x1dInstructorListEntregasRequest\x12\x19\n" +
+	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x1d\n" +
+	"\n" +
+	"leccion_id\x18\x02 \x01(\tR\tleccionId\"\x9d\x01\n" +
 	"\x11CursoTreeResponse\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x123\n" +
 	"\amodulos\x18\x02 \x03(\v2\x19.lecciones.ModuloResponseR\amodulos\x128\n" +
@@ -2994,7 +3453,7 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x05orden\x18\x05 \x01(\x05R\x05orden\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x128\n" +
-	"\tlecciones\x18\a \x03(\v2\x1a.lecciones.LeccionResponseR\tlecciones\"\x93\x04\n" +
+	"\tlecciones\x18\a \x03(\v2\x1a.lecciones.LeccionResponseR\tlecciones\"\x94\x05\n" +
 	"\x0fLeccionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\x12\x14\n" +
@@ -3016,7 +3475,11 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\fsubmodulo_id\x18\r \x01(\tR\vsubmoduloId\x12(\n" +
 	"\x10game_config_json\x18\x0e \x01(\tR\x0egameConfigJson\x12#\n" +
 	"\rpoints_reward\x18\x0f \x01(\x05R\fpointsReward\x12'\n" +
-	"\x0fsegundos_vistos\x18\x10 \x01(\x05R\x0esegundosVistos\"Q\n" +
+	"\x0fsegundos_vistos\x18\x10 \x01(\x05R\x0esegundosVistos\x12!\n" +
+	"\ffecha_inicio\x18\x11 \x01(\tR\vfechaInicio\x12!\n" +
+	"\ffecha_cierre\x18\x12 \x01(\tR\vfechaCierre\x129\n" +
+	"\n" +
+	"mi_entrega\x18\x13 \x01(\v2\x1a.lecciones.EntregaResponseR\tmiEntrega\"Q\n" +
 	"\x15ListLeccionesResponse\x128\n" +
 	"\tlecciones\x18\x01 \x03(\v2\x1a.lecciones.LeccionResponseR\tlecciones\"\x86\x01\n" +
 	"\x15MarcarLeccionResponse\x12#\n" +
@@ -3070,8 +3533,32 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\ftotal_points\x18\x02 \x01(\x05R\vtotalPoints\x121\n" +
 	"\x15points_by_course_json\x18\x03 \x01(\tR\x12pointsByCourseJson\x12(\n" +
-	"\x06badges\x18\x04 \x03(\v2\x10.lecciones.BadgeR\x06badges\"\x0f\n" +
-	"\rEmptyResponse*\x9a\x02\n" +
+	"\x06badges\x18\x04 \x03(\v2\x10.lecciones.BadgeR\x06badges\"\xb8\x03\n" +
+	"\x0fEntregaResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"leccion_id\x18\x02 \x01(\tR\tleccionId\x12'\n" +
+	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tuser_name\x18\x05 \x01(\tR\buserName\x12\x1d\n" +
+	"\n" +
+	"user_email\x18\x06 \x01(\tR\tuserEmail\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\a \x01(\tR\tavatarUrl\x12\x1f\n" +
+	"\vcurso_title\x18\b \x01(\tR\n" +
+	"cursoTitle\x12#\n" +
+	"\rleccion_title\x18\t \x01(\tR\fleccionTitle\x12\x1b\n" +
+	"\tfile_path\x18\n" +
+	" \x01(\tR\bfilePath\x12\x1b\n" +
+	"\tfile_name\x18\v \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\f \x01(\x03R\bfileSize\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\r \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x0e \x01(\tR\tupdatedAt\"N\n" +
+	"\x14ListEntregasResponse\x126\n" +
+	"\bentregas\x18\x01 \x03(\v2\x1a.lecciones.EntregaResponseR\bentregas\"\x0f\n" +
+	"\rEmptyResponse*\xb4\x02\n" +
 	"\n" +
 	"LessonType\x12\x1b\n" +
 	"\x17LESSON_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -3083,7 +3570,9 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x19LESSON_TYPE_GAME_DRAGDROP\x10\x06\x12\x1f\n" +
 	"\x1bLESSON_TYPE_GAME_WORDSEARCH\x10\a\x12\x1e\n" +
 	"\x1aLESSON_TYPE_GAME_FILLBLANK\x10\b\x12\x1a\n" +
-	"\x16LESSON_TYPE_GAME_ORDER\x10\t2\x8b\x12\n" +
+	"\x16LESSON_TYPE_GAME_ORDER\x10\t\x12\x18\n" +
+	"\x14LESSON_TYPE_ACTIVITY\x10\n" +
+	"2\x9f\x14\n" +
 	"\x10LeccionesService\x12I\n" +
 	"\fGetCursoTree\x12\x1b.lecciones.CursoUserRequest\x1a\x1c.lecciones.CursoTreeResponse\x12O\n" +
 	"\x16InstructorGetCursoTree\x12\x17.lecciones.CursoRequest\x1a\x1c.lecciones.CursoTreeResponse\x12S\n" +
@@ -3110,7 +3599,10 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\"InstructorDeletePreguntaIntermedia\x12\x1e.lecciones.IntermediaIDRequest\x1a\x18.lecciones.EmptyResponse\x12X\n" +
 	"\x0fSubmitGameScore\x12!.lecciones.SubmitGameScoreRequest\x1a\".lecciones.SubmitGameScoreResponse\x12T\n" +
 	"\x13GetCursoLeaderboard\x12\x1d.lecciones.LeaderboardRequest\x1a\x1e.lecciones.LeaderboardResponse\x12F\n" +
-	"\rGetUserPoints\x12\x16.lecciones.UserRequest\x1a\x1d.lecciones.UserPointsResponseB%Z#Prueba-Go/gen/lecciones;leccionespbb\x06proto3"
+	"\rGetUserPoints\x12\x16.lecciones.UserRequest\x1a\x1d.lecciones.UserPointsResponse\x12U\n" +
+	"\x16SubmitEntregaActividad\x12\x1f.lecciones.SubmitEntregaRequest\x1a\x1a.lecciones.EntregaResponse\x12V\n" +
+	"\x1aGetEntregaActividadUsuario\x12\x1c.lecciones.GetEntregaRequest\x1a\x1a.lecciones.EntregaResponse\x12c\n" +
+	"\x16InstructorListEntregas\x12(.lecciones.InstructorListEntregasRequest\x1a\x1f.lecciones.ListEntregasResponseB%Z#Prueba-Go/gen/lecciones;leccionespbb\x06proto3"
 
 var (
 	file_lecciones_lecciones_proto_rawDescOnce sync.Once
@@ -3125,124 +3617,137 @@ func file_lecciones_lecciones_proto_rawDescGZIP() []byte {
 }
 
 var file_lecciones_lecciones_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_lecciones_lecciones_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_lecciones_lecciones_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
 var file_lecciones_lecciones_proto_goTypes = []any{
-	(LessonType)(0),                     // 0: lecciones.LessonType
-	(*UserRequest)(nil),                 // 1: lecciones.UserRequest
-	(*CursoRequest)(nil),                // 2: lecciones.CursoRequest
-	(*CursoUserRequest)(nil),            // 3: lecciones.CursoUserRequest
-	(*LeccionRequest)(nil),              // 4: lecciones.LeccionRequest
-	(*IntermediaIDRequest)(nil),         // 5: lecciones.IntermediaIDRequest
-	(*ModuloIDRequest)(nil),             // 6: lecciones.ModuloIDRequest
-	(*SubmoduloIDRequest)(nil),          // 7: lecciones.SubmoduloIDRequest
-	(*MarcarRequest)(nil),               // 8: lecciones.MarcarRequest
-	(*GuardarProgresoVideoRequest)(nil), // 9: lecciones.GuardarProgresoVideoRequest
-	(*CreateModuloRequest)(nil),         // 10: lecciones.CreateModuloRequest
-	(*UpdateModuloRequest)(nil),         // 11: lecciones.UpdateModuloRequest
-	(*ReorderModulosRequest)(nil),       // 12: lecciones.ReorderModulosRequest
-	(*CreateSubmoduloRequest)(nil),      // 13: lecciones.CreateSubmoduloRequest
-	(*UpdateSubmoduloRequest)(nil),      // 14: lecciones.UpdateSubmoduloRequest
-	(*ReorderSubmodulosRequest)(nil),    // 15: lecciones.ReorderSubmodulosRequest
-	(*CreateLeccionRequest)(nil),        // 16: lecciones.CreateLeccionRequest
-	(*UpdateLeccionRequest)(nil),        // 17: lecciones.UpdateLeccionRequest
-	(*ReorderRequest)(nil),              // 18: lecciones.ReorderRequest
-	(*CreateIntermediaRequest)(nil),     // 19: lecciones.CreateIntermediaRequest
-	(*SubmitIntermediasRequest)(nil),    // 20: lecciones.SubmitIntermediasRequest
-	(*Respuesta)(nil),                   // 21: lecciones.Respuesta
-	(*OpcionInput)(nil),                 // 22: lecciones.OpcionInput
-	(*SubmitGameScoreRequest)(nil),      // 23: lecciones.SubmitGameScoreRequest
-	(*LeaderboardRequest)(nil),          // 24: lecciones.LeaderboardRequest
-	(*CursoTreeResponse)(nil),           // 25: lecciones.CursoTreeResponse
-	(*ModuloResponse)(nil),              // 26: lecciones.ModuloResponse
-	(*SubmoduloResponse)(nil),           // 27: lecciones.SubmoduloResponse
-	(*LeccionResponse)(nil),             // 28: lecciones.LeccionResponse
-	(*ListLeccionesResponse)(nil),       // 29: lecciones.ListLeccionesResponse
-	(*MarcarLeccionResponse)(nil),       // 30: lecciones.MarcarLeccionResponse
-	(*IntermediaResponse)(nil),          // 31: lecciones.IntermediaResponse
-	(*OpcionInfo)(nil),                  // 32: lecciones.OpcionInfo
-	(*ListIntermediasResponse)(nil),     // 33: lecciones.ListIntermediasResponse
-	(*SubmitIntermediasResponse)(nil),   // 34: lecciones.SubmitIntermediasResponse
-	(*SubmitGameScoreResponse)(nil),     // 35: lecciones.SubmitGameScoreResponse
-	(*LeaderboardEntry)(nil),            // 36: lecciones.LeaderboardEntry
-	(*LeaderboardResponse)(nil),         // 37: lecciones.LeaderboardResponse
-	(*Badge)(nil),                       // 38: lecciones.Badge
-	(*UserPointsResponse)(nil),          // 39: lecciones.UserPointsResponse
-	(*EmptyResponse)(nil),               // 40: lecciones.EmptyResponse
+	(LessonType)(0),                       // 0: lecciones.LessonType
+	(*UserRequest)(nil),                   // 1: lecciones.UserRequest
+	(*CursoRequest)(nil),                  // 2: lecciones.CursoRequest
+	(*CursoUserRequest)(nil),              // 3: lecciones.CursoUserRequest
+	(*LeccionRequest)(nil),                // 4: lecciones.LeccionRequest
+	(*IntermediaIDRequest)(nil),           // 5: lecciones.IntermediaIDRequest
+	(*ModuloIDRequest)(nil),               // 6: lecciones.ModuloIDRequest
+	(*SubmoduloIDRequest)(nil),            // 7: lecciones.SubmoduloIDRequest
+	(*MarcarRequest)(nil),                 // 8: lecciones.MarcarRequest
+	(*GuardarProgresoVideoRequest)(nil),   // 9: lecciones.GuardarProgresoVideoRequest
+	(*CreateModuloRequest)(nil),           // 10: lecciones.CreateModuloRequest
+	(*UpdateModuloRequest)(nil),           // 11: lecciones.UpdateModuloRequest
+	(*ReorderModulosRequest)(nil),         // 12: lecciones.ReorderModulosRequest
+	(*CreateSubmoduloRequest)(nil),        // 13: lecciones.CreateSubmoduloRequest
+	(*UpdateSubmoduloRequest)(nil),        // 14: lecciones.UpdateSubmoduloRequest
+	(*ReorderSubmodulosRequest)(nil),      // 15: lecciones.ReorderSubmodulosRequest
+	(*CreateLeccionRequest)(nil),          // 16: lecciones.CreateLeccionRequest
+	(*UpdateLeccionRequest)(nil),          // 17: lecciones.UpdateLeccionRequest
+	(*ReorderRequest)(nil),                // 18: lecciones.ReorderRequest
+	(*CreateIntermediaRequest)(nil),       // 19: lecciones.CreateIntermediaRequest
+	(*SubmitIntermediasRequest)(nil),      // 20: lecciones.SubmitIntermediasRequest
+	(*Respuesta)(nil),                     // 21: lecciones.Respuesta
+	(*OpcionInput)(nil),                   // 22: lecciones.OpcionInput
+	(*SubmitGameScoreRequest)(nil),        // 23: lecciones.SubmitGameScoreRequest
+	(*LeaderboardRequest)(nil),            // 24: lecciones.LeaderboardRequest
+	(*SubmitEntregaRequest)(nil),          // 25: lecciones.SubmitEntregaRequest
+	(*GetEntregaRequest)(nil),             // 26: lecciones.GetEntregaRequest
+	(*InstructorListEntregasRequest)(nil), // 27: lecciones.InstructorListEntregasRequest
+	(*CursoTreeResponse)(nil),             // 28: lecciones.CursoTreeResponse
+	(*ModuloResponse)(nil),                // 29: lecciones.ModuloResponse
+	(*SubmoduloResponse)(nil),             // 30: lecciones.SubmoduloResponse
+	(*LeccionResponse)(nil),               // 31: lecciones.LeccionResponse
+	(*ListLeccionesResponse)(nil),         // 32: lecciones.ListLeccionesResponse
+	(*MarcarLeccionResponse)(nil),         // 33: lecciones.MarcarLeccionResponse
+	(*IntermediaResponse)(nil),            // 34: lecciones.IntermediaResponse
+	(*OpcionInfo)(nil),                    // 35: lecciones.OpcionInfo
+	(*ListIntermediasResponse)(nil),       // 36: lecciones.ListIntermediasResponse
+	(*SubmitIntermediasResponse)(nil),     // 37: lecciones.SubmitIntermediasResponse
+	(*SubmitGameScoreResponse)(nil),       // 38: lecciones.SubmitGameScoreResponse
+	(*LeaderboardEntry)(nil),              // 39: lecciones.LeaderboardEntry
+	(*LeaderboardResponse)(nil),           // 40: lecciones.LeaderboardResponse
+	(*Badge)(nil),                         // 41: lecciones.Badge
+	(*UserPointsResponse)(nil),            // 42: lecciones.UserPointsResponse
+	(*EntregaResponse)(nil),               // 43: lecciones.EntregaResponse
+	(*ListEntregasResponse)(nil),          // 44: lecciones.ListEntregasResponse
+	(*EmptyResponse)(nil),                 // 45: lecciones.EmptyResponse
 }
 var file_lecciones_lecciones_proto_depIdxs = []int32{
 	0,  // 0: lecciones.CreateLeccionRequest.lesson_type:type_name -> lecciones.LessonType
 	0,  // 1: lecciones.UpdateLeccionRequest.lesson_type:type_name -> lecciones.LessonType
 	22, // 2: lecciones.CreateIntermediaRequest.opciones:type_name -> lecciones.OpcionInput
 	21, // 3: lecciones.SubmitIntermediasRequest.respuestas:type_name -> lecciones.Respuesta
-	26, // 4: lecciones.CursoTreeResponse.modulos:type_name -> lecciones.ModuloResponse
-	28, // 5: lecciones.CursoTreeResponse.lecciones:type_name -> lecciones.LeccionResponse
-	27, // 6: lecciones.ModuloResponse.submodulos:type_name -> lecciones.SubmoduloResponse
-	28, // 7: lecciones.ModuloResponse.lecciones:type_name -> lecciones.LeccionResponse
-	28, // 8: lecciones.SubmoduloResponse.lecciones:type_name -> lecciones.LeccionResponse
+	29, // 4: lecciones.CursoTreeResponse.modulos:type_name -> lecciones.ModuloResponse
+	31, // 5: lecciones.CursoTreeResponse.lecciones:type_name -> lecciones.LeccionResponse
+	30, // 6: lecciones.ModuloResponse.submodulos:type_name -> lecciones.SubmoduloResponse
+	31, // 7: lecciones.ModuloResponse.lecciones:type_name -> lecciones.LeccionResponse
+	31, // 8: lecciones.SubmoduloResponse.lecciones:type_name -> lecciones.LeccionResponse
 	0,  // 9: lecciones.LeccionResponse.lesson_type:type_name -> lecciones.LessonType
-	28, // 10: lecciones.ListLeccionesResponse.lecciones:type_name -> lecciones.LeccionResponse
-	32, // 11: lecciones.IntermediaResponse.opciones:type_name -> lecciones.OpcionInfo
-	31, // 12: lecciones.ListIntermediasResponse.preguntas:type_name -> lecciones.IntermediaResponse
-	36, // 13: lecciones.LeaderboardResponse.entries:type_name -> lecciones.LeaderboardEntry
-	36, // 14: lecciones.LeaderboardResponse.my_entry:type_name -> lecciones.LeaderboardEntry
-	38, // 15: lecciones.UserPointsResponse.badges:type_name -> lecciones.Badge
-	3,  // 16: lecciones.LeccionesService.GetCursoTree:input_type -> lecciones.CursoUserRequest
-	2,  // 17: lecciones.LeccionesService.InstructorGetCursoTree:input_type -> lecciones.CursoRequest
-	10, // 18: lecciones.LeccionesService.InstructorCreateModulo:input_type -> lecciones.CreateModuloRequest
-	11, // 19: lecciones.LeccionesService.InstructorUpdateModulo:input_type -> lecciones.UpdateModuloRequest
-	6,  // 20: lecciones.LeccionesService.InstructorDeleteModulo:input_type -> lecciones.ModuloIDRequest
-	12, // 21: lecciones.LeccionesService.InstructorReorderModulos:input_type -> lecciones.ReorderModulosRequest
-	13, // 22: lecciones.LeccionesService.InstructorCreateSubmodulo:input_type -> lecciones.CreateSubmoduloRequest
-	14, // 23: lecciones.LeccionesService.InstructorUpdateSubmodulo:input_type -> lecciones.UpdateSubmoduloRequest
-	7,  // 24: lecciones.LeccionesService.InstructorDeleteSubmodulo:input_type -> lecciones.SubmoduloIDRequest
-	15, // 25: lecciones.LeccionesService.InstructorReorderSubmodulos:input_type -> lecciones.ReorderSubmodulosRequest
-	3,  // 26: lecciones.LeccionesService.GetLeccionesConProgreso:input_type -> lecciones.CursoUserRequest
-	8,  // 27: lecciones.LeccionesService.MarcarLeccionCompleta:input_type -> lecciones.MarcarRequest
-	9,  // 28: lecciones.LeccionesService.GuardarProgresoVideo:input_type -> lecciones.GuardarProgresoVideoRequest
-	2,  // 29: lecciones.LeccionesService.InstructorListLecciones:input_type -> lecciones.CursoRequest
-	16, // 30: lecciones.LeccionesService.InstructorCreateLeccion:input_type -> lecciones.CreateLeccionRequest
-	17, // 31: lecciones.LeccionesService.InstructorUpdateLeccion:input_type -> lecciones.UpdateLeccionRequest
-	4,  // 32: lecciones.LeccionesService.InstructorDeleteLeccion:input_type -> lecciones.LeccionRequest
-	18, // 33: lecciones.LeccionesService.InstructorReorderLecciones:input_type -> lecciones.ReorderRequest
-	3,  // 34: lecciones.LeccionesService.GetPreguntasIntermedias:input_type -> lecciones.CursoUserRequest
-	20, // 35: lecciones.LeccionesService.SubmitPreguntasIntermedias:input_type -> lecciones.SubmitIntermediasRequest
-	2,  // 36: lecciones.LeccionesService.InstructorListPreguntasIntermedias:input_type -> lecciones.CursoRequest
-	19, // 37: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:input_type -> lecciones.CreateIntermediaRequest
-	5,  // 38: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:input_type -> lecciones.IntermediaIDRequest
-	23, // 39: lecciones.LeccionesService.SubmitGameScore:input_type -> lecciones.SubmitGameScoreRequest
-	24, // 40: lecciones.LeccionesService.GetCursoLeaderboard:input_type -> lecciones.LeaderboardRequest
-	1,  // 41: lecciones.LeccionesService.GetUserPoints:input_type -> lecciones.UserRequest
-	25, // 42: lecciones.LeccionesService.GetCursoTree:output_type -> lecciones.CursoTreeResponse
-	25, // 43: lecciones.LeccionesService.InstructorGetCursoTree:output_type -> lecciones.CursoTreeResponse
-	26, // 44: lecciones.LeccionesService.InstructorCreateModulo:output_type -> lecciones.ModuloResponse
-	26, // 45: lecciones.LeccionesService.InstructorUpdateModulo:output_type -> lecciones.ModuloResponse
-	40, // 46: lecciones.LeccionesService.InstructorDeleteModulo:output_type -> lecciones.EmptyResponse
-	40, // 47: lecciones.LeccionesService.InstructorReorderModulos:output_type -> lecciones.EmptyResponse
-	27, // 48: lecciones.LeccionesService.InstructorCreateSubmodulo:output_type -> lecciones.SubmoduloResponse
-	27, // 49: lecciones.LeccionesService.InstructorUpdateSubmodulo:output_type -> lecciones.SubmoduloResponse
-	40, // 50: lecciones.LeccionesService.InstructorDeleteSubmodulo:output_type -> lecciones.EmptyResponse
-	40, // 51: lecciones.LeccionesService.InstructorReorderSubmodulos:output_type -> lecciones.EmptyResponse
-	29, // 52: lecciones.LeccionesService.GetLeccionesConProgreso:output_type -> lecciones.ListLeccionesResponse
-	30, // 53: lecciones.LeccionesService.MarcarLeccionCompleta:output_type -> lecciones.MarcarLeccionResponse
-	40, // 54: lecciones.LeccionesService.GuardarProgresoVideo:output_type -> lecciones.EmptyResponse
-	29, // 55: lecciones.LeccionesService.InstructorListLecciones:output_type -> lecciones.ListLeccionesResponse
-	28, // 56: lecciones.LeccionesService.InstructorCreateLeccion:output_type -> lecciones.LeccionResponse
-	28, // 57: lecciones.LeccionesService.InstructorUpdateLeccion:output_type -> lecciones.LeccionResponse
-	40, // 58: lecciones.LeccionesService.InstructorDeleteLeccion:output_type -> lecciones.EmptyResponse
-	40, // 59: lecciones.LeccionesService.InstructorReorderLecciones:output_type -> lecciones.EmptyResponse
-	33, // 60: lecciones.LeccionesService.GetPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
-	34, // 61: lecciones.LeccionesService.SubmitPreguntasIntermedias:output_type -> lecciones.SubmitIntermediasResponse
-	33, // 62: lecciones.LeccionesService.InstructorListPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
-	31, // 63: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:output_type -> lecciones.IntermediaResponse
-	40, // 64: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:output_type -> lecciones.EmptyResponse
-	35, // 65: lecciones.LeccionesService.SubmitGameScore:output_type -> lecciones.SubmitGameScoreResponse
-	37, // 66: lecciones.LeccionesService.GetCursoLeaderboard:output_type -> lecciones.LeaderboardResponse
-	39, // 67: lecciones.LeccionesService.GetUserPoints:output_type -> lecciones.UserPointsResponse
-	42, // [42:68] is the sub-list for method output_type
-	16, // [16:42] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	43, // 10: lecciones.LeccionResponse.mi_entrega:type_name -> lecciones.EntregaResponse
+	31, // 11: lecciones.ListLeccionesResponse.lecciones:type_name -> lecciones.LeccionResponse
+	35, // 12: lecciones.IntermediaResponse.opciones:type_name -> lecciones.OpcionInfo
+	34, // 13: lecciones.ListIntermediasResponse.preguntas:type_name -> lecciones.IntermediaResponse
+	39, // 14: lecciones.LeaderboardResponse.entries:type_name -> lecciones.LeaderboardEntry
+	39, // 15: lecciones.LeaderboardResponse.my_entry:type_name -> lecciones.LeaderboardEntry
+	41, // 16: lecciones.UserPointsResponse.badges:type_name -> lecciones.Badge
+	43, // 17: lecciones.ListEntregasResponse.entregas:type_name -> lecciones.EntregaResponse
+	3,  // 18: lecciones.LeccionesService.GetCursoTree:input_type -> lecciones.CursoUserRequest
+	2,  // 19: lecciones.LeccionesService.InstructorGetCursoTree:input_type -> lecciones.CursoRequest
+	10, // 20: lecciones.LeccionesService.InstructorCreateModulo:input_type -> lecciones.CreateModuloRequest
+	11, // 21: lecciones.LeccionesService.InstructorUpdateModulo:input_type -> lecciones.UpdateModuloRequest
+	6,  // 22: lecciones.LeccionesService.InstructorDeleteModulo:input_type -> lecciones.ModuloIDRequest
+	12, // 23: lecciones.LeccionesService.InstructorReorderModulos:input_type -> lecciones.ReorderModulosRequest
+	13, // 24: lecciones.LeccionesService.InstructorCreateSubmodulo:input_type -> lecciones.CreateSubmoduloRequest
+	14, // 25: lecciones.LeccionesService.InstructorUpdateSubmodulo:input_type -> lecciones.UpdateSubmoduloRequest
+	7,  // 26: lecciones.LeccionesService.InstructorDeleteSubmodulo:input_type -> lecciones.SubmoduloIDRequest
+	15, // 27: lecciones.LeccionesService.InstructorReorderSubmodulos:input_type -> lecciones.ReorderSubmodulosRequest
+	3,  // 28: lecciones.LeccionesService.GetLeccionesConProgreso:input_type -> lecciones.CursoUserRequest
+	8,  // 29: lecciones.LeccionesService.MarcarLeccionCompleta:input_type -> lecciones.MarcarRequest
+	9,  // 30: lecciones.LeccionesService.GuardarProgresoVideo:input_type -> lecciones.GuardarProgresoVideoRequest
+	2,  // 31: lecciones.LeccionesService.InstructorListLecciones:input_type -> lecciones.CursoRequest
+	16, // 32: lecciones.LeccionesService.InstructorCreateLeccion:input_type -> lecciones.CreateLeccionRequest
+	17, // 33: lecciones.LeccionesService.InstructorUpdateLeccion:input_type -> lecciones.UpdateLeccionRequest
+	4,  // 34: lecciones.LeccionesService.InstructorDeleteLeccion:input_type -> lecciones.LeccionRequest
+	18, // 35: lecciones.LeccionesService.InstructorReorderLecciones:input_type -> lecciones.ReorderRequest
+	3,  // 36: lecciones.LeccionesService.GetPreguntasIntermedias:input_type -> lecciones.CursoUserRequest
+	20, // 37: lecciones.LeccionesService.SubmitPreguntasIntermedias:input_type -> lecciones.SubmitIntermediasRequest
+	2,  // 38: lecciones.LeccionesService.InstructorListPreguntasIntermedias:input_type -> lecciones.CursoRequest
+	19, // 39: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:input_type -> lecciones.CreateIntermediaRequest
+	5,  // 40: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:input_type -> lecciones.IntermediaIDRequest
+	23, // 41: lecciones.LeccionesService.SubmitGameScore:input_type -> lecciones.SubmitGameScoreRequest
+	24, // 42: lecciones.LeccionesService.GetCursoLeaderboard:input_type -> lecciones.LeaderboardRequest
+	1,  // 43: lecciones.LeccionesService.GetUserPoints:input_type -> lecciones.UserRequest
+	25, // 44: lecciones.LeccionesService.SubmitEntregaActividad:input_type -> lecciones.SubmitEntregaRequest
+	26, // 45: lecciones.LeccionesService.GetEntregaActividadUsuario:input_type -> lecciones.GetEntregaRequest
+	27, // 46: lecciones.LeccionesService.InstructorListEntregas:input_type -> lecciones.InstructorListEntregasRequest
+	28, // 47: lecciones.LeccionesService.GetCursoTree:output_type -> lecciones.CursoTreeResponse
+	28, // 48: lecciones.LeccionesService.InstructorGetCursoTree:output_type -> lecciones.CursoTreeResponse
+	29, // 49: lecciones.LeccionesService.InstructorCreateModulo:output_type -> lecciones.ModuloResponse
+	29, // 50: lecciones.LeccionesService.InstructorUpdateModulo:output_type -> lecciones.ModuloResponse
+	45, // 51: lecciones.LeccionesService.InstructorDeleteModulo:output_type -> lecciones.EmptyResponse
+	45, // 52: lecciones.LeccionesService.InstructorReorderModulos:output_type -> lecciones.EmptyResponse
+	30, // 53: lecciones.LeccionesService.InstructorCreateSubmodulo:output_type -> lecciones.SubmoduloResponse
+	30, // 54: lecciones.LeccionesService.InstructorUpdateSubmodulo:output_type -> lecciones.SubmoduloResponse
+	45, // 55: lecciones.LeccionesService.InstructorDeleteSubmodulo:output_type -> lecciones.EmptyResponse
+	45, // 56: lecciones.LeccionesService.InstructorReorderSubmodulos:output_type -> lecciones.EmptyResponse
+	32, // 57: lecciones.LeccionesService.GetLeccionesConProgreso:output_type -> lecciones.ListLeccionesResponse
+	33, // 58: lecciones.LeccionesService.MarcarLeccionCompleta:output_type -> lecciones.MarcarLeccionResponse
+	45, // 59: lecciones.LeccionesService.GuardarProgresoVideo:output_type -> lecciones.EmptyResponse
+	32, // 60: lecciones.LeccionesService.InstructorListLecciones:output_type -> lecciones.ListLeccionesResponse
+	31, // 61: lecciones.LeccionesService.InstructorCreateLeccion:output_type -> lecciones.LeccionResponse
+	31, // 62: lecciones.LeccionesService.InstructorUpdateLeccion:output_type -> lecciones.LeccionResponse
+	45, // 63: lecciones.LeccionesService.InstructorDeleteLeccion:output_type -> lecciones.EmptyResponse
+	45, // 64: lecciones.LeccionesService.InstructorReorderLecciones:output_type -> lecciones.EmptyResponse
+	36, // 65: lecciones.LeccionesService.GetPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
+	37, // 66: lecciones.LeccionesService.SubmitPreguntasIntermedias:output_type -> lecciones.SubmitIntermediasResponse
+	36, // 67: lecciones.LeccionesService.InstructorListPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
+	34, // 68: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:output_type -> lecciones.IntermediaResponse
+	45, // 69: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:output_type -> lecciones.EmptyResponse
+	38, // 70: lecciones.LeccionesService.SubmitGameScore:output_type -> lecciones.SubmitGameScoreResponse
+	40, // 71: lecciones.LeccionesService.GetCursoLeaderboard:output_type -> lecciones.LeaderboardResponse
+	42, // 72: lecciones.LeccionesService.GetUserPoints:output_type -> lecciones.UserPointsResponse
+	43, // 73: lecciones.LeccionesService.SubmitEntregaActividad:output_type -> lecciones.EntregaResponse
+	43, // 74: lecciones.LeccionesService.GetEntregaActividadUsuario:output_type -> lecciones.EntregaResponse
+	44, // 75: lecciones.LeccionesService.InstructorListEntregas:output_type -> lecciones.ListEntregasResponse
+	47, // [47:76] is the sub-list for method output_type
+	18, // [18:47] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_lecciones_lecciones_proto_init() }
@@ -3256,7 +3761,7 @@ func file_lecciones_lecciones_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lecciones_lecciones_proto_rawDesc), len(file_lecciones_lecciones_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   40,
+			NumMessages:   45,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

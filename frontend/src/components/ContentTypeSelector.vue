@@ -56,6 +56,18 @@ const types = [
     group: "Minijuego",
     color: "#f97316",
   },
+  {
+    id: "11", name: "Ahorcado", desc: "Adivinar la palabra secreta",
+    icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M12 12v6m-4-4h8"/></svg>',
+    group: "Minijuego",
+    color: "#f43f5e",
+  },
+  {
+    id: "10", name: "Actividad", desc: "Entrega de tareas por fecha",
+    icon: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>',
+    group: "Contenido",
+    color: "#6366f1",
+  },
 ];
 
 const groups = ["Contenido", "Minijuego"];

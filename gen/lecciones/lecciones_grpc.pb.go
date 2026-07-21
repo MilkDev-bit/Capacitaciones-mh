@@ -45,6 +45,9 @@ const (
 	LeccionesService_SubmitGameScore_FullMethodName                    = "/lecciones.LeccionesService/SubmitGameScore"
 	LeccionesService_GetCursoLeaderboard_FullMethodName                = "/lecciones.LeccionesService/GetCursoLeaderboard"
 	LeccionesService_GetUserPoints_FullMethodName                      = "/lecciones.LeccionesService/GetUserPoints"
+	LeccionesService_SubmitEntregaActividad_FullMethodName             = "/lecciones.LeccionesService/SubmitEntregaActividad"
+	LeccionesService_GetEntregaActividadUsuario_FullMethodName         = "/lecciones.LeccionesService/GetEntregaActividadUsuario"
+	LeccionesService_InstructorListEntregas_FullMethodName             = "/lecciones.LeccionesService/InstructorListEntregas"
 )
 
 // LeccionesServiceClient is the client API for LeccionesService service.
@@ -94,6 +97,10 @@ type LeccionesServiceClient interface {
 	GetCursoLeaderboard(ctx context.Context, in *LeaderboardRequest, opts ...grpc.CallOption) (*LeaderboardResponse, error)
 	// Puntos totales del usuario en todos los cursos (para el perfil).
 	GetUserPoints(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*UserPointsResponse, error)
+	// ── Actividades / Tareas programables por fecha ───────────────────────────
+	SubmitEntregaActividad(ctx context.Context, in *SubmitEntregaRequest, opts ...grpc.CallOption) (*EntregaResponse, error)
+	GetEntregaActividadUsuario(ctx context.Context, in *GetEntregaRequest, opts ...grpc.CallOption) (*EntregaResponse, error)
+	InstructorListEntregas(ctx context.Context, in *InstructorListEntregasRequest, opts ...grpc.CallOption) (*ListEntregasResponse, error)
 }
 
 type leccionesServiceClient struct {
@@ -364,6 +371,36 @@ func (c *leccionesServiceClient) GetUserPoints(ctx context.Context, in *UserRequ
 	return out, nil
 }
 
+func (c *leccionesServiceClient) SubmitEntregaActividad(ctx context.Context, in *SubmitEntregaRequest, opts ...grpc.CallOption) (*EntregaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EntregaResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_SubmitEntregaActividad_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) GetEntregaActividadUsuario(ctx context.Context, in *GetEntregaRequest, opts ...grpc.CallOption) (*EntregaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EntregaResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_GetEntregaActividadUsuario_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) InstructorListEntregas(ctx context.Context, in *InstructorListEntregasRequest, opts ...grpc.CallOption) (*ListEntregasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListEntregasResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_InstructorListEntregas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LeccionesServiceServer is the server API for LeccionesService service.
 // All implementations must embed UnimplementedLeccionesServiceServer
 // for forward compatibility.
@@ -411,6 +448,10 @@ type LeccionesServiceServer interface {
 	GetCursoLeaderboard(context.Context, *LeaderboardRequest) (*LeaderboardResponse, error)
 	// Puntos totales del usuario en todos los cursos (para el perfil).
 	GetUserPoints(context.Context, *UserRequest) (*UserPointsResponse, error)
+	// ── Actividades / Tareas programables por fecha ───────────────────────────
+	SubmitEntregaActividad(context.Context, *SubmitEntregaRequest) (*EntregaResponse, error)
+	GetEntregaActividadUsuario(context.Context, *GetEntregaRequest) (*EntregaResponse, error)
+	InstructorListEntregas(context.Context, *InstructorListEntregasRequest) (*ListEntregasResponse, error)
 	mustEmbedUnimplementedLeccionesServiceServer()
 }
 
@@ -498,6 +539,15 @@ func (UnimplementedLeccionesServiceServer) GetCursoLeaderboard(context.Context, 
 }
 func (UnimplementedLeccionesServiceServer) GetUserPoints(context.Context, *UserRequest) (*UserPointsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserPoints not implemented")
+}
+func (UnimplementedLeccionesServiceServer) SubmitEntregaActividad(context.Context, *SubmitEntregaRequest) (*EntregaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitEntregaActividad not implemented")
+}
+func (UnimplementedLeccionesServiceServer) GetEntregaActividadUsuario(context.Context, *GetEntregaRequest) (*EntregaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetEntregaActividadUsuario not implemented")
+}
+func (UnimplementedLeccionesServiceServer) InstructorListEntregas(context.Context, *InstructorListEntregasRequest) (*ListEntregasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorListEntregas not implemented")
 }
 func (UnimplementedLeccionesServiceServer) mustEmbedUnimplementedLeccionesServiceServer() {}
 func (UnimplementedLeccionesServiceServer) testEmbeddedByValue()                          {}
@@ -988,6 +1038,60 @@ func _LeccionesService_GetUserPoints_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LeccionesService_SubmitEntregaActividad_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitEntregaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).SubmitEntregaActividad(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_SubmitEntregaActividad_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).SubmitEntregaActividad(ctx, req.(*SubmitEntregaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_GetEntregaActividadUsuario_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEntregaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).GetEntregaActividadUsuario(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_GetEntregaActividadUsuario_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).GetEntregaActividadUsuario(ctx, req.(*GetEntregaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_InstructorListEntregas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstructorListEntregasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).InstructorListEntregas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_InstructorListEntregas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).InstructorListEntregas(ctx, req.(*InstructorListEntregasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LeccionesService_ServiceDesc is the grpc.ServiceDesc for LeccionesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1098,6 +1202,18 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserPoints",
 			Handler:    _LeccionesService_GetUserPoints_Handler,
+		},
+		{
+			MethodName: "SubmitEntregaActividad",
+			Handler:    _LeccionesService_SubmitEntregaActividad_Handler,
+		},
+		{
+			MethodName: "GetEntregaActividadUsuario",
+			Handler:    _LeccionesService_GetEntregaActividadUsuario_Handler,
+		},
+		{
+			MethodName: "InstructorListEntregas",
+			Handler:    _LeccionesService_InstructorListEntregas_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

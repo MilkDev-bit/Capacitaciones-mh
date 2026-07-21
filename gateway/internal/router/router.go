@@ -136,6 +136,8 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/lecciones/:leccion_id/progreso-video", d.LeccionesH.GuardarProgresoVideo)
 			auth.GET("/capacitaciones/:id/intermedias", d.LeccionesH.GetPreguntasIntermedias)
 			auth.POST("/capacitaciones/:id/intermedias/submit", d.LeccionesH.SubmitPreguntasIntermedias)
+			auth.POST("/capacitaciones/:id/lecciones/:leccion_id/entrega", d.LeccionesH.SubmitEntregaActividad)
+			auth.GET("/capacitaciones/:id/lecciones/:leccion_id/entrega", d.LeccionesH.GetEntregaActividadUsuario)
 
 			// Gamificación
 			auth.POST("/lecciones/:leccion_id/game-score", d.LeccionesH.SubmitGameScore)
@@ -213,6 +215,10 @@ func New(d Deps) *gin.Engine {
 				inst.GET("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorListPreguntasIntermedias)
 				inst.POST("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorCreatePreguntaIntermedia)
 				inst.DELETE("/capacitaciones/:id/intermedias/:pregunta_id", d.LeccionesH.InstructorDeletePreguntaIntermedia)
+
+				inst.GET("/capacitaciones/:id/entregas", d.LeccionesH.InstructorListEntregas)
+				inst.GET("/capacitaciones/:id/lecciones/:leccion_id/entregas", d.LeccionesH.InstructorListEntregas)
+				inst.GET("/entregas", d.LeccionesH.InstructorListEntregas)
 
 				inst.GET("/examenes", d.ExamenesH.InstructorListExamenes)
 				inst.POST("/examenes", d.ExamenesH.InstructorCreateExamen)

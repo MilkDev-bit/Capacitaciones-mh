@@ -232,6 +232,32 @@ func (h *LeccionesHandler) GetUserPoints(ctx context.Context, req *leccionespb.U
 	return resp, nil
 }
 
+// ── Entregas de Actividades / Tareas ──────────────────────────────────────────
+
+func (h *LeccionesHandler) SubmitEntregaActividad(ctx context.Context, req *leccionespb.SubmitEntregaRequest) (*leccionespb.EntregaResponse, error) {
+	resp, err := h.svc.SubmitEntregaActividad(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
+func (h *LeccionesHandler) GetEntregaActividadUsuario(ctx context.Context, req *leccionespb.GetEntregaRequest) (*leccionespb.EntregaResponse, error) {
+	resp, err := h.svc.GetEntregaActividadUsuario(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
+func (h *LeccionesHandler) InstructorListEntregas(ctx context.Context, req *leccionespb.InstructorListEntregasRequest) (*leccionespb.ListEntregasResponse, error) {
+	resp, err := h.svc.InstructorListEntregas(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return resp, nil
+}
+
 // ── Error helper ──────────────────────────────────────────────────────────────
 
 func toGRPC(err error) error {
