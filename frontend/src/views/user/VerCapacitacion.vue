@@ -98,7 +98,7 @@ const leccionesCompletadas = computed(() => lecciones.value.filter(l => l.comple
 const duracionTotal = computed(() =>
   lecciones.value.reduce((total, lec) => total + Number(lec.duracion_min || 0), 0)
 )
-const tiempoRestante = computed(() => 
+const tiempoRestante = computed(() =>
   lecciones.value.filter(l => !l.completada).reduce((total, lec) => total + Number(lec.duracion_min || 0), 0)
 )
 const currentIndex = computed(() =>
@@ -148,7 +148,7 @@ async function load() {
         if (res.data?.user?.avatar_url && authStore.user) {
           authStore.user = { ...authStore.user, avatar_url: res.data.user.avatar_url }
         }
-      }).catch(() => {})
+      }).catch(() => { })
     }
   } catch (e: any) {
     loadError.value = e.response?.data?.error || 'No pudimos cargar el curso. Verifica tu conexión.'
@@ -264,7 +264,7 @@ async function selectLeccion(lec: any) {
   respuestas.value = {}
   entregaActual.value = null
   actividadFile.value = null
-  
+
   // Cargar nota local — siempre inicializar la clave para reactividad
   notasPersonales.value[lec.id] = localStorage.getItem(`cap_nota_${cursoId}_${lec.id}`) || ''
 
@@ -297,9 +297,9 @@ function guardarNota() {
 function isGameLesson(lec: any): boolean {
   if (!lec) return false
   const t = String(lec.lesson_type ?? lec.type ?? '').toLowerCase()
-  return ['5','6','7','8','9','11',
-          'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order', 'lesson_type_game_hangman',
-          'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order', 'ahorcado', 'hangman'].includes(t)
+  return ['5', '6', '7', '8', '9', '11',
+    'lesson_type_game_memory', 'lesson_type_game_dragdrop', 'lesson_type_game_wordsearch', 'lesson_type_game_fillblank', 'lesson_type_game_order', 'lesson_type_game_hangman',
+    'memory', 'dragdrop', 'wordsearch', 'sopa', 'fillblank', 'order', 'ahorcado', 'hangman'].includes(t)
 }
 
 const showConfetti = ref(false)
@@ -312,7 +312,7 @@ async function marcarCompleta() {
     const idx = lecciones.value.findIndex(l => l.id === selectedLeccion.value.id)
     if (idx >= 0) lecciones.value[idx].completada = true
     toast.success('Lección completada')
-    
+
     // Mostrar preguntas intermedias si hay
     if (preguntas.value.length > 0) {
       showIntermedias.value = true
@@ -707,7 +707,7 @@ async function crearComentario(postId: string, parentId?: string) {
   const mapKey = parentId || postId
   const texto = nuevoComentario.value[mapKey]
   const hasFile = activeComentarioFileKey.value === mapKey && activeComentarioFile.value
-  
+
   if (!texto?.trim() && !hasFile) return
 
   const formData = new FormData()
@@ -859,7 +859,10 @@ function tramitarDC3() {
     <!-- Error state -->
     <div v-if="loadError && !loading" class="ver-error-state">
       <div class="ver-error-icon">
-        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4m0 4h.01" />
+        </svg>
       </div>
       <h2>No se pudo cargar el curso</h2>
       <p>{{ loadError }}</p>
@@ -896,7 +899,9 @@ function tramitarDC3() {
 
       <!-- Mobile toggle button -->
       <button class="ver-mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Ver índice de lecciones">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
         <span>Índice</span>
         <span class="ver-mobile-toggle-count">{{ leccionesCompletadas }}/{{ lecciones.length }}</span>
       </button>
@@ -905,51 +910,53 @@ function tramitarDC3() {
       <aside :class="['ver-sidebar', sidebarOpen ? 'open' : '']">
         <div class="ver-sidebar-head">
           <button class="ver-back-btn" @click="goBack" title="Volver a mis cursos">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
             Mis cursos
           </button>
           <div style="margin-top: 10px;">
-            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;" @click="abrirPanelAvance">
+            <button class="btn btn-secondary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
+              @click="abrirPanelAvance">
               <span class="glass-icon-badge glass-icon-blue">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
               </span>
               Mi Avance y Puntuaciones
             </button>
           </div>
           <div v-if="progreso === 100 && examenFinal" style="margin-top: 8px;">
-            <button
-              v-if="examenFinal.ya_respondido && Number(examenFinal.porcentaje || 0) >= 80"
-              @click="abrirExamenEnCurso"
-              class="btn btn-secondary btn-sm"
-              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: #10b98115; border: 1.5px solid #10b981; color: #10b981;"
-            >
+            <button v-if="examenFinal.ya_respondido && Number(examenFinal.porcentaje || 0) >= 80"
+              @click="abrirExamenEnCurso" class="btn btn-secondary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: #10b98115; border: 1.5px solid #10b981; color: #10b981;">
               ✓ Examen Aprobado ({{ Number(examenFinal.porcentaje).toFixed(0) }}%)
             </button>
-            <button
-              v-else
-              @click="abrirExamenEnCurso"
-              class="btn btn-primary btn-sm"
-              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
-            >
+            <button v-else @click="abrirExamenEnCurso" class="btn btn-primary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
               <span class="glass-icon-badge glass-icon-amber">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                </svg>
               </span>
-              {{ examenFinal.ya_respondido ? '🔄 Repetir Examen (' + Number(examenFinal.porcentaje || 0).toFixed(0) + '%)' : 'Responder Examen Final' }}
+              {{ examenFinal.ya_respondido ? '🔄 Repetir Examen (' + Number(examenFinal.porcentaje || 0).toFixed(0) +
+                '%)' : 'Responder Examen Final' }}
             </button>
           </div>
           <div v-if="progreso === 100 && curso?.dc3_enabled === true" style="margin-top: 8px;">
-            <button class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;" @click="tramitarDC3">
+            <button class="btn btn-secondary btn-sm"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;"
+              @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
           </div>
         </div>
         <!-- Árbol jerárquico de navegación -->
-        <CourseSidebar
-          :tree="tree"
-          :selected-id="selectedLeccion?.id ?? null"
-          :curso-title="curso?.title"
-          @select="selectLeccion"
-        />
+        <CourseSidebar :tree="tree" :selected-id="selectedLeccion?.id ?? null" :curso-title="curso?.title"
+          @select="selectLeccion" />
       </aside>
 
 
@@ -957,9 +964,12 @@ function tramitarDC3() {
       <main class="ver-main">
         <div class="ver-main-inner">
           <div v-if="!selectedLeccion" class="ver-welcome-hero">
-            <div class="ver-welcome-banner" :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : { background: curso?.color || '#f97316' }">
+            <div class="ver-welcome-banner"
+              :style="curso?.thumbnail_url ? `background-image: url('${fileUrl(curso.thumbnail_url)}')` : { background: curso?.color || '#f97316' }">
               <div class="ver-welcome-overlay"></div>
-              <div class="ver-progress-strip-bar"><div class="ver-progress-strip-fill" :style="`width:${progreso}%`"></div></div>
+              <div class="ver-progress-strip-bar">
+                <div class="ver-progress-strip-fill" :style="`width:${progreso}%`"></div>
+              </div>
               <div class="ver-welcome-inner">
                 <div class="ver-welcome-content">
                   <span class="ver-welcome-badge">Módulo de Capacitación</span>
@@ -972,10 +982,9 @@ function tramitarDC3() {
                 <div class="ver-welcome-aside">
                   <div class="ver-ring-wrap">
                     <svg class="ver-ring-svg" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="40" class="ver-ring-track"/>
+                      <circle cx="50" cy="50" r="40" class="ver-ring-track" />
                       <circle cx="50" cy="50" r="40" class="ver-ring-prog"
-                        :stroke-dasharray="`${progreso * 2.513} 251.3`"
-                        transform="rotate(-90 50 50)"/>
+                        :stroke-dasharray="`${progreso * 2.513} 251.3`" transform="rotate(-90 50 50)" />
                     </svg>
                     <div class="ver-ring-label">
                       <strong>{{ progreso }}%</strong>
@@ -1007,7 +1016,11 @@ function tramitarDC3() {
               <div class="ver-steps">
                 <div class="ver-step">
                   <div class="ver-step-icon">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
                   </div>
                   <div class="ver-step-body">
                     <strong>Ve el contenido</strong>
@@ -1017,7 +1030,10 @@ function tramitarDC3() {
                 </div>
                 <div class="ver-step">
                   <div class="ver-step-icon">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    </svg>
                   </div>
                   <div class="ver-step-body">
                     <strong>Marca completada</strong>
@@ -1027,7 +1043,11 @@ function tramitarDC3() {
                 </div>
                 <div class="ver-step">
                   <div class="ver-step-icon">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
                   </div>
                   <div class="ver-step-body">
                     <strong>Contesta las preguntas</strong>
@@ -1040,7 +1060,10 @@ function tramitarDC3() {
 
             <div class="ver-welcome-message" v-if="curso?.welcome_message">
               <div class="ver-wm-icon">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>
               </div>
               <div>
                 <h3>Acerca de este curso</h3>
@@ -1050,537 +1073,676 @@ function tramitarDC3() {
           </div>
 
           <Transition name="fade" mode="out-in">
-          <div v-if="selectedLeccion" :key="selectedLeccion.id">
-            <!-- Header leccion -->
-            <div class="ver-lec-header">
-              <div class="ver-lec-header-left">
-                <div class="ver-lec-breadcrumb">{{ curso?.title }}</div>
-                <h1 class="ver-lec-title">{{ selectedLeccion.title }}</h1>
-                <div class="ver-lec-meta-row">
-                  <span>{{ currentIndex + 1 }} / {{ lecciones.length }}</span>
-                  <span>{{ typeLabel(selectedLeccion.lesson_type ?? selectedLeccion.type) }}</span>
-                  <span v-if="selectedLeccion.duracion_min">{{ selectedLeccion.duracion_min }} min</span>
+            <div v-if="selectedLeccion" :key="selectedLeccion.id">
+              <!-- Header leccion -->
+              <div class="ver-lec-header">
+                <div class="ver-lec-header-left">
+                  <div class="ver-lec-breadcrumb">{{ curso?.title }}</div>
+                  <h1 class="ver-lec-title">{{ selectedLeccion.title }}</h1>
+                  <div class="ver-lec-meta-row">
+                    <span>{{ currentIndex + 1 }} / {{ lecciones.length }}</span>
+                    <span>{{ typeLabel(selectedLeccion.lesson_type ?? selectedLeccion.type) }}</span>
+                    <span v-if="selectedLeccion.duracion_min">{{ selectedLeccion.duracion_min }} min</span>
+                  </div>
+                  <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
                 </div>
-                <p v-if="selectedLeccion.description" class="ver-lec-desc">{{ selectedLeccion.description }}</p>
+                <div class="ver-lec-header-right" style="display:flex;gap:12px;align-items:center;">
+                  <button class="btn btn-secondary btn-sm" @click="focusMode = !focusMode"
+                    aria-label="Alternar modo enfoque">
+                    <svg v-if="!focusMode" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24">
+                      <path d="M4 8V4h4m12 4V4h-4M4 16v4h4m12-4v4h-4" />
+                    </svg>
+                    <svg v-else width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24">
+                      <path d="M4 14h6v6m10-10h-6V4m0 10l7 7M10 10L3 3" />
+                    </svg>
+                    {{ focusMode ? 'Salir del Enfoque' : 'Modo Enfoque' }}
+                  </button>
+                  <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo" @click="marcarCompleta"
+                    class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                      viewBox="0 0 24 24">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                    Marcar completada
+                  </button>
+                  <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
+                    style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
+                    🎬 Finaliza el 100% del video para completarla
+                  </span>
+                  <span v-else class="ver-done-chip">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                    Completada
+                  </span>
+                </div>
               </div>
-              <div class="ver-lec-header-right" style="display:flex;gap:12px;align-items:center;">
-                <button class="btn btn-secondary btn-sm" @click="focusMode = !focusMode" aria-label="Alternar modo enfoque">
-                  <svg v-if="!focusMode" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V4h4m12 4V4h-4M4 16v4h4m12-4v4h-4"/></svg>
-                  <svg v-else width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 14h6v6m10-10h-6V4m0 10l7 7M10 10L3 3"/></svg>
-                  {{ focusMode ? 'Salir del Enfoque' : 'Modo Enfoque' }}
+
+              <!-- Reproductor / contenido -->
+              <section class="ver-content-card">
+                <!-- Video subido -->
+                <div v-if="['video', '1'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))"
+                  class="ver-media-frame ver-media-video">
+                  <VideoPlayer v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)"
+                    :saved-time="savedVideoTime(selectedLeccion.id)" @timeupdate="onVideoTimeUpdate"
+                    @ended="onVideoEnded" />
+                  <div v-else class="ver-media-empty">Sin video disponible</div>
+                </div>
+
+                <!-- PDF / Documento embebido -->
+                <div
+                  v-else-if="['document', '3'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
+                  <div v-if="selectedLeccion.file_path">
+                    <iframe :src="fileUrl(selectedLeccion.file_path)" class="ver-doc-frame" />
+                    <div class="ver-resource-footer">
+                      <a :href="fileUrl(selectedLeccion.file_path)" target="_blank" class="ver-resource-link">Abrir en
+                        nueva pestaña</a>
+                    </div>
+                  </div>
+                  <p v-else class="ver-media-empty ver-media-empty-light">Sin documento adjunto</p>
+                </div>
+
+                <!-- Texto / lectura -->
+                <div v-else-if="['text', '2'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))"
+                  class="ver-reading">
+                  <div class="ver-reading-content">{{ selectedLeccion.content }}</div>
+                </div>
+
+                <!-- Enlace externo: YouTube, Vimeo, otro -->
+                <div
+                  v-else-if="['link', '4', '99'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
+                  <div v-if="selectedLeccion.content">
+                    <!-- YouTube / Vimeo: incrustar en iframe -->
+                    <div v-if="isEmbeddableLink(selectedLeccion.content)" class="ver-media-frame">
+                      <iframe :src="getEmbedUrl(selectedLeccion.content)" class="ver-media-fill"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen />
+                    </div>
+                    <!-- Enlace genérico: no se puede incrustar, mostrar tarjeta -->
+                    <div v-else class="ver-link-card">
+                      <div class="ver-link-card-icon">🔗</div>
+                      <p class="ver-link-card-label">Este contenido se abre en una nueva pestaña</p>
+                      <p class="ver-link-card-url">{{ selectedLeccion.content }}</p>
+                      <a :href="selectedLeccion.content" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-primary ver-link-card-btn">Abrir enlace →</a>
+                    </div>
+                    <div class="ver-resource-footer">
+                      <a :href="selectedLeccion.content" target="_blank" rel="noopener" class="ver-resource-link">Abrir
+                        enlace original</a>
+                    </div>
+                  </div>
+                  <p v-else class="ver-media-empty ver-media-empty-light">Sin enlace configurado</p>
+                </div>
+
+                <!-- Actividades programables por fecha (Tarea / Entrega) -->
+                <div
+                  v-else-if="['10', 'activity', 'actividad'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type).toLowerCase())"
+                  class="ver-activity-box">
+                  <div class="ver-activity-head">
+                    <div class="ver-activity-dates">
+                      <div v-if="selectedLeccion.fecha_inicio" class="ver-act-date">
+                        <span class="ver-act-date-label">📅 Apertura:</span>
+                        <span class="ver-act-date-val">{{ formatActividadFecha(selectedLeccion.fecha_inicio) }}</span>
+                      </div>
+                      <div v-if="selectedLeccion.fecha_cierre" class="ver-act-date">
+                        <span class="ver-act-date-label">⏰ Cierre:</span>
+                        <span class="ver-act-date-val"
+                          :class="{ 'ver-act-expired': isActividadCerrada(selectedLeccion.fecha_cierre) }">{{
+                            formatActividadFecha(selectedLeccion.fecha_cierre) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedLeccion.description || selectedLeccion.content" class="ver-activity-instructions">
+                    <h3 class="ver-act-sub">Instrucciones de la Actividad</h3>
+                    <p v-if="selectedLeccion.description" class="ver-act-desc">{{ selectedLeccion.description }}</p>
+                    <div v-if="selectedLeccion.content && selectedLeccion.content !== selectedLeccion.description"
+                      class="ver-act-content mt-2">{{ selectedLeccion.content }}</div>
+                  </div>
+
+                  <!-- Archivo de instrucciones si el instructor subió uno en la lección -->
+                  <div v-if="selectedLeccion.file_path" class="ver-activity-resource mt-4">
+                    <a :href="fileUrl(selectedLeccion.file_path)" target="_blank" class="btn btn-secondary btn-sm"
+                      style="display:inline-flex;align-items:center;gap:6px">
+                      Descargar archivo adjunto del instructor
+                    </a>
+                  </div>
+
+                  <hr class="ver-act-divider" />
+
+                  <!-- Entrega del estudiante -->
+                  <div class="ver-activity-submission">
+                    <h3 class="ver-act-sub">Tu Entrega</h3>
+
+                    <!-- Si ya entregó -->
+                    <div v-if="entregaActual" class="ver-submission-success">
+                      <div class="ver-sub-info">
+                        <span class="ver-sub-icon"></span>
+                        <div>
+                          <strong>{{ entregaActual.file_name || 'Archivo entregado' }}</strong>
+                          <p class="ver-sub-date">Entregado el: {{ formatActividadFecha(entregaActual.created_at) }}</p>
+                        </div>
+                      </div>
+                      <a :href="fileUrl(entregaActual.file_path)" target="_blank" class="btn btn-secondary btn-sm">Ver
+                        archivo</a>
+                    </div>
+
+                    <!-- Zona de subida -->
+                    <div v-else class="ver-upload-zone">
+                      <div v-if="isActividadCerrada(selectedLeccion.fecha_cierre)" class="ver-act-closed-alert">
+                        La fecha límite para entregar esta actividad ha finalizado.
+                      </div>
+                      <div v-else>
+                        <label class="ver-droparea" @dragover.prevent @drop.prevent="onActividadDrop">
+                          <input type="file" @change="onActividadFileChange" style="display:none" />
+                          <div class="ver-droparea-inner">
+                            <span class="ver-drop-icon"></span>
+                            <strong v-if="!actividadFile">Haz clic aquí o arrastra tu archivo para adjuntarlo</strong>
+                            <strong v-else class="ver-file-selected">{{ actividadFile.name }} ({{ (actividadFile.size /
+                              1024).toFixed(1) }} KB)</strong>
+                            <span class="ver-drop-hint">Cualquier tipo de documento permitido, excepto archivos
+                              ejecutables (.exe, .bat, .sh, etc.)</span>
+                          </div>
+                        </label>
+
+                        <div v-if="actividadFile" class="ver-upload-actions mt-3">
+                          <button class="btn btn-primary" :disabled="uploadingActividad" @click="subirActividad">
+                            <span v-if="uploadingActividad" class="btn-spinner"></span>
+                            {{ uploadingActividad ? 'Subiendo...' : 'Subir y Entregar Tarea' }}
+                          </button>
+                          <button class="btn btn-secondary" :disabled="uploadingActividad"
+                            @click="actividadFile = null">Cancelar</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Minijuegos Interactivos -->
+                <div v-else-if="isGameLesson(selectedLeccion)">
+                  <InteractiveActivity :lesson="selectedLeccion" :curso-id="cursoId" @completed="onGameCompleted" />
+                </div>
+              </section>
+
+              <div class="ver-lesson-actions">
+                <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
+                  ← Anterior
                 </button>
-                <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo"
-                  @click="marcarCompleta"
-                  class="btn btn-primary btn-sm" style="flex-shrink:0" aria-label="Marcar lección como completada">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                  Marcar completada
+                <button
+                  v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion) && !(String(selectedLeccion.lesson_type ?? selectedLeccion.type) === '10' && !entregaActual)"
+                  class="btn btn-primary" @click="marcarCompleta">
+                  ✓ Marcar completada
                 </button>
-                <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo"
-                  class="ver-video-info-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
+                <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
+                  style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
                   🎬 Finaliza el 100% del video para completarla
                 </span>
-                <span v-else class="ver-done-chip">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                  Completada
-                </span>
-              </div>
-            </div>
-
-            <!-- Reproductor / contenido -->
-            <section class="ver-content-card">
-              <!-- Video subido -->
-              <div v-if="['video', '1'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="ver-media-frame ver-media-video">
-                <VideoPlayer
-                  v-if="selectedLeccion.file_path"
-                  :src="fileUrl(selectedLeccion.file_path)"
-                  :saved-time="savedVideoTime(selectedLeccion.id)"
-                  @timeupdate="onVideoTimeUpdate"
-                  @ended="onVideoEnded"
-                />
-                <div v-else class="ver-media-empty">Sin video disponible</div>
+                <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
+                  Siguiente →
+                </button>
               </div>
 
-              <!-- PDF / Documento embebido -->
-              <div v-else-if="['document', '3'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
-                <div v-if="selectedLeccion.file_path">
-                  <iframe :src="fileUrl(selectedLeccion.file_path)" class="ver-doc-frame" />
-                  <div class="ver-resource-footer">
-                    <a :href="fileUrl(selectedLeccion.file_path)" target="_blank"
-                      class="ver-resource-link">Abrir en nueva pestaña</a>
-                  </div>
-                </div>
-                <p v-else class="ver-media-empty ver-media-empty-light">Sin documento adjunto</p>
-              </div>
-
-              <!-- Texto / lectura -->
-              <div v-else-if="['text', '2'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))" class="ver-reading">
-                <div class="ver-reading-content">{{ selectedLeccion.content }}</div>
-              </div>
-
-              <!-- Enlace externo: YouTube, Vimeo, otro -->
-              <div v-else-if="['link', '4', '99'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))">
-                <div v-if="selectedLeccion.content">
-                  <!-- YouTube / Vimeo: incrustar en iframe -->
-                  <div v-if="isEmbeddableLink(selectedLeccion.content)" class="ver-media-frame">
-                    <iframe :src="getEmbedUrl(selectedLeccion.content)"
-                      class="ver-media-fill"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen />
-                  </div>
-                  <!-- Enlace genérico: no se puede incrustar, mostrar tarjeta -->
-                  <div v-else class="ver-link-card">
-                    <div class="ver-link-card-icon">🔗</div>
-                    <p class="ver-link-card-label">Este contenido se abre en una nueva pestaña</p>
-                    <p class="ver-link-card-url">{{ selectedLeccion.content }}</p>
-                    <a :href="selectedLeccion.content" target="_blank" rel="noopener noreferrer"
-                      class="btn btn-primary ver-link-card-btn">Abrir enlace →</a>
-                  </div>
-                  <div class="ver-resource-footer">
-                    <a :href="selectedLeccion.content" target="_blank" rel="noopener"
-                      class="ver-resource-link">Abrir enlace original</a>
-                  </div>
-                </div>
-                <p v-else class="ver-media-empty ver-media-empty-light">Sin enlace configurado</p>
-              </div>
-
-              <!-- Actividades programables por fecha (Tarea / Entrega) -->
-              <div v-else-if="['10', 'activity', 'actividad'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type).toLowerCase())" class="ver-activity-box">
-                <div class="ver-activity-head">
-                  <div class="ver-activity-dates">
-                    <div v-if="selectedLeccion.fecha_inicio" class="ver-act-date">
-                      <span class="ver-act-date-label">📅 Apertura:</span>
-                      <span class="ver-act-date-val">{{ formatActividadFecha(selectedLeccion.fecha_inicio) }}</span>
-                    </div>
-                    <div v-if="selectedLeccion.fecha_cierre" class="ver-act-date">
-                      <span class="ver-act-date-label">⏰ Cierre:</span>
-                      <span class="ver-act-date-val" :class="{ 'ver-act-expired': isActividadCerrada(selectedLeccion.fecha_cierre) }">{{ formatActividadFecha(selectedLeccion.fecha_cierre) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="selectedLeccion.description || selectedLeccion.content" class="ver-activity-instructions">
-                  <h3 class="ver-act-sub">Instrucciones de la Actividad</h3>
-                  <p v-if="selectedLeccion.description" class="ver-act-desc">{{ selectedLeccion.description }}</p>
-                  <div v-if="selectedLeccion.content && selectedLeccion.content !== selectedLeccion.description" class="ver-act-content mt-2">{{ selectedLeccion.content }}</div>
-                </div>
-
-                <!-- Archivo de instrucciones si el instructor subió uno en la lección -->
-                <div v-if="selectedLeccion.file_path" class="ver-activity-resource mt-4">
-                  <a :href="fileUrl(selectedLeccion.file_path)" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px">
-                    📄 Descargar archivo adjunto del instructor
-                  </a>
-                </div>
-
-                <hr class="ver-act-divider" />
-
-                <!-- Entrega del estudiante -->
-                <div class="ver-activity-submission">
-                  <h3 class="ver-act-sub">Tu Entrega</h3>
-                  
-                  <!-- Si ya entregó -->
-                  <div v-if="entregaActual" class="ver-submission-success">
-                    <div class="ver-sub-info">
-                      <span class="ver-sub-icon">✅</span>
-                      <div>
-                        <strong>{{ entregaActual.file_name || 'Archivo entregado' }}</strong>
-                        <p class="ver-sub-date">Entregado el: {{ formatActividadFecha(entregaActual.created_at) }}</p>
-                      </div>
-                    </div>
-                    <a :href="fileUrl(entregaActual.file_path)" target="_blank" class="btn btn-secondary btn-sm">Ver archivo</a>
-                  </div>
-
-                  <!-- Zona de subida -->
-                  <div v-else class="ver-upload-zone">
-                    <div v-if="isActividadCerrada(selectedLeccion.fecha_cierre)" class="ver-act-closed-alert">
-                      ⚠️ La fecha límite para entregar esta actividad ha finalizado.
-                    </div>
-                    <div v-else>
-                      <label class="ver-droparea" @dragover.prevent @drop.prevent="onActividadDrop">
-                        <input type="file" @change="onActividadFileChange" style="display:none" />
-                        <div class="ver-droparea-inner">
-                          <span class="ver-drop-icon">📁</span>
-                          <strong v-if="!actividadFile">Haz clic aquí o arrastra tu archivo para adjuntarlo</strong>
-                          <strong v-else class="ver-file-selected">📎 {{ actividadFile.name }} ({{ (actividadFile.size / 1024).toFixed(1) }} KB)</strong>
-                          <span class="ver-drop-hint">Cualquier tipo de documento permitido, excepto archivos ejecutables (.exe, .bat, .sh, etc.)</span>
-                        </div>
-                      </label>
-
-                      <div v-if="actividadFile" class="ver-upload-actions mt-3">
-                        <button class="btn btn-primary" :disabled="uploadingActividad" @click="subirActividad">
-                          <span v-if="uploadingActividad" class="btn-spinner"></span>
-                          {{ uploadingActividad ? 'Subiendo...' : 'Subir y Entregar Tarea' }}
-                        </button>
-                        <button class="btn btn-secondary" :disabled="uploadingActividad" @click="actividadFile = null">Cancelar</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Minijuegos Interactivos -->
-              <div v-else-if="isGameLesson(selectedLeccion)">
-                <InteractiveActivity
-                  :lesson="selectedLeccion"
-                  :curso-id="cursoId"
-                  @completed="onGameCompleted"
-                />
-              </div>
-            </section>
-
-            <div class="ver-lesson-actions">
-              <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
-                ← Anterior
-              </button>
-              <button v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion) && !(String(selectedLeccion.lesson_type ?? selectedLeccion.type) === '10' && !entregaActual)" class="btn btn-primary" @click="marcarCompleta">
-                ✓ Marcar completada
-              </button>
-              <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo"
-                class="ver-video-info-chip" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
-                🎬 Finaliza el 100% del video para completarla
-              </span>
-              <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
-                Siguiente →
-              </button>
-            </div>
-
-            <!-- Mis Notas -->
-            <div class="ver-notes-section">
-              <div class="ver-notes-head">
-                <h3 class="ver-section-title">
-                  <span class="gm-icon gm-icon-notes">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"/><path d="M17.5 2.5a2.121 2.121 0 013 3L12 14l-4 1 1-4 7.5-7.5z"/></svg>
-                  </span>
-                  Mis Notas
-                </h3>
-                <span class="ver-notes-status">{{ notasPersonales[selectedLeccion.id] ? 'Guardado localmente' : 'Escribe para guardar' }}</span>
-              </div>
-              <textarea 
-                v-model="notasPersonales[selectedLeccion.id]" 
-                @input="guardarNota"
-                placeholder="Escribe tus apuntes personales para esta lección aquí..." 
-                class="field-input ver-notes-input" 
-                rows="4"
-              ></textarea>
-            </div>
-
-            <!-- Sugerencia siguiente lección -->
-            <Transition name="slide-up">
-              <div v-if="selectedLeccion.completada && nextPendingLeccion" class="ver-next-suggestion">
-                <div class="ver-next-suggestion-left">
-                  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                  <div>
-                    <strong>Siguiente lección</strong>
-                    <p>{{ nextPendingLeccion.title }}</p>
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-sm" @click="goToLesson(nextPendingLeccion)">Continuar →</button>
-              </div>
-            </Transition>
-
-            <!-- Preguntas Intermedias -->
-            <Transition name="slide-up">
-              <div v-if="showIntermedias && preguntas.length > 0" class="ver-intermedias">
-                <div class="ver-int-head">
-                  <span class="gm-icon gm-icon-brain" style="width:38px;height:38px;flex-shrink:0">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2a7 7 0 014.9 11.9c-.7.7-1.2 1.6-1.4 2.6H8.5c-.2-1-.7-1.9-1.4-2.6A7 7 0 0112 2z"/><path d="M9 18h6M10 22h4"/></svg>
-                  </span>
-                  <div>
-                    <h3 style="font-weight:700;color:var(--dark);font-size:1rem">Preguntas de la lección</h3>
-                    <p style="font-size:0.82rem;color:var(--muted)">Responde para reforzar tu aprendizaje</p>
-                  </div>
-                </div>
-                <div v-if="resultadoInt" class="ver-int-result">
-                  <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1) }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
-                  <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto</p>
-                  <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm" style="margin-top:12px">Continuar</button>
-                </div>
-                <div v-else style="display:flex;flex-direction:column;gap:16px">
-                  <div v-for="p in preguntas" :key="p.id" class="ver-int-pregunta">
-                    <p style="font-size:0.92rem;font-weight:600;color:var(--dark);margin-bottom:10px">{{ p.texto }}</p>
-                    <div v-if="p.tipo === 'open_text'">
-                      <textarea v-model="respuestas[p.id]" rows="3" placeholder="Tu respuesta..." class="field-input" style="resize:vertical" />
-                    </div>
-                    <div v-else style="display:flex;flex-direction:column;gap:8px">
-                      <label v-for="op in p.opciones" :key="op.id" class="ver-option-label">
-                        <input type="radio" :name="p.id" :value="op.id" v-model="respuestas[p.id]" style="accent-color:var(--brand)" />
-                        <span>{{ op.texto }}</span>
-                      </label>
-                    </div>
-                  </div>
-                  <button @click="submitIntermedias" class="btn btn-primary">Enviar respuestas</button>
-                </div>
-              </div>
-            </Transition>
-
-            <!-- Foro -->
-            <div class="ver-foro">
-              <!-- Foro header -->
-              <div class="ver-foro-head">
-                <h3 class="ver-section-title">
-                  <span class="gm-icon gm-icon-forum">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                  </span>
-                  Foro de la lección
-                </h3>
-                <p class="ver-foro-sub">Participa, pregunta y comparte con la comunidad</p>
-              </div>
-
-              <div v-if="foroError" class="foro-msg foro-msg-error">{{ foroError }}</div>
-              <div v-if="foroLoading" class="foro-loading">
-                <span class="btn-spinner" style="border-color:var(--brand-light);border-top-color:var(--brand)"></span>
-                <span>Cargando...</span>
-              </div>
-
-              <!-- Caja de publicación estilo mensajería -->
-              <div v-if="!foroLoading" class="msg-create-box">
-                <div class="msg-create-avatar">
-                  <img :src="getAvatarUrl(currentUser?.avatar_url, currentUser?.id || currentUser?.name)" class="avatar-img" alt="Avatar" />
-                </div>
-                <div class="msg-create-input-wrap">
-                  <div class="msg-inputs">
-                    <input v-model="nuevoPost.titulo" placeholder="Título (opcional)..." class="msg-create-title-input" />
-                    <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="1" class="msg-create-input" />
-                  </div>
-                  <div class="msg-create-actions">
-                    <button type="button" class="msg-attach-btn" @click="postFileInput?.click()" title="Adjuntar imagen o video">
-                      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <button @click="crearPost" class="msg-send-btn" :disabled="postLoading || (!nuevoPost.contenido?.trim() && !nuevoPost.titulo?.trim() && !postFile)" title="Publicar">
-                      <span v-if="postLoading" class="btn-spinner" style="width:14px;height:14px;border-width:2px;margin:0"></span>
-                      <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                  </div>
-                  <input ref="postFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onPostFile" />
-                  <input ref="comentarioFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" style="display:none" @change="onComentarioFile" />
-                </div>
-              </div>
-              <!-- Previsualización de adjunto -->
-              <div v-if="postFilePreview" class="msg-file-preview">
-                <div class="msg-preview-inner">
-                  <video v-if="postFileIsVideo" :src="postFilePreview" class="msg-preview-media" controls muted />
-                  <img v-else :src="postFilePreview" class="msg-preview-media" />
-                  <button class="msg-remove-file" @click="removePostFile" type="button" title="Quitar adjunto">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="!foroLoading && foroPosts.length === 0" class="fb-empty-foro">
-                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                <p>Aún no hay publicaciones en este foro.</p>
-                <span>¡Sé el primero en preguntar o compartir algo!</span>
-              </div>
-
-              <!-- Posts estilo Facebook -->
-              <TransitionGroup name="list-item" tag="div" class="fb-posts-list">
-                <div v-for="post in foroPosts" :key="post.id" class="fb-post-card">
-
-                  <!-- Card header: avatar, nombre, tiempo, opciones -->
-                  <div class="fb-post-header">
-                    <div class="fb-post-avatar-wrap" @click.stop="openForoProfile(post.user_id, post.user_name)" style="cursor:pointer" title="Ver perfil">
-                      <div class="fb-post-avatar">
-                        <img :src="getUserAvatar(post.user_id, post.user_name)" class="avatar-img" alt="" />
-                      </div>
-                    </div>
-                    <div class="fb-post-meta">
-                      <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name }}</router-link>
-                      <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
-                    </div>
-                    <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                  </div>
-
-                  <!-- Contenido del post -->
-                  <div class="fb-post-body">
-                    <h4 class="fb-post-title">{{ post.titulo }}</h4>
-                    <p class="fb-post-content">{{ post.contenido }}</p>
-                    <!-- Media adjunta al post -->
-                    <div v-if="post.media_url" class="fb-post-media">
-                      <video v-if="post.media_type === 'video'" :src="post.media_url" class="fb-post-media-video" controls />
-                      <img v-else :src="post.media_url" class="fb-post-media-img" @click="openMedia(post.media_url)" title="Ver imagen completa" />
-                    </div>
-                  </div>
-
-                  <!-- Contador de likes y comentarios -->
-                  <div v-if="(post.reactions && post.reactions.length > 0) || post.like_count > 0 || (comentariosMap[post.id] || []).length > 0" class="fb-post-stats">
-                    <div style="display:flex;align-items:center;gap:6px">
-                      <span v-if="post.like_count > 0" class="fb-stat-likes">
-                        <span class="fb-like-bubble">
-                          <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zm6-10A1.5 1.5 0 006.5 2v1.5a.5.5 0 01-.5.5H4a2 2 0 00-2 2v1a2 2 0 002 2h.5v1a.5.5 0 01-.5.5H3a1 1 0 000 2h.5a.5.5 0 01.5.5V17a1 1 0 001 1h8a1 1 0 001-1v-2.5a.5.5 0 01.5-.5H16a2 2 0 002-2V8a2 2 0 00-2-2h-2a.5.5 0 01-.5-.5V4a2 2 0 00-2-2h-1.5A1.5 1.5 0 008 3v-.5z"/></svg>
-                        </span>
-                        {{ post.like_count }}
-                      </span>
-                      <span v-for="r in post.reactions" :key="r.emoji" class="fb-reaction-pill-stat">{{ r.emoji }} {{ r.count }}</span>
-                    </div>
-                    <span v-if="(comentariosMap[post.id] || []).length > 0" class="fb-stat-comments" @click="togglePost(post.id)">
-                      {{ (comentariosMap[post.id] || []).length }} {{ (comentariosMap[post.id] || []).length === 1 ? 'comentario' : 'comentarios' }}
+              <!-- Mis Notas -->
+              <div class="ver-notes-section">
+                <div class="ver-notes-head">
+                  <h3 class="ver-section-title">
+                    <span class="gm-icon gm-icon-notes">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
+                        <path d="M17.5 2.5a2.121 2.121 0 013 3L12 14l-4 1 1-4 7.5-7.5z" />
+                      </svg>
                     </span>
-                  </div>
+                    Mis Notas
+                  </h3>
+                  <span class="ver-notes-status">{{ notasPersonales[selectedLeccion.id] ? 'Guardado localmente' :
+                    'Escribe para guardar' }}</span>
+                </div>
+                <textarea v-model="notasPersonales[selectedLeccion.id]" @input="guardarNota"
+                  placeholder="Escribe tus apuntes personales para esta lección aquí..."
+                  class="field-input ver-notes-input" rows="4"></textarea>
+              </div>
 
-                  <!-- Botones de acción: Me gusta y Comentar -->
-                  <div class="fb-post-actions">
-                    <div class="fb-reaction-wrap-post" @mouseenter="activeReactionPicker = 'post_' + post.id" @mouseleave="activeReactionPicker = null">
-                      <button @click="toggleLike(post.id)" :class="['fb-action-btn', post.user_liked ? 'fb-action-liked' : '']">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        {{ post.user_liked ? 'Me gusta' : 'Me gusta' }}
-                      </button>
-                      <Transition name="fade">
-                        <div v-if="activeReactionPicker === 'post_' + post.id" class="fb-reaction-picker-post">
-                          <button v-for="emoji in EMOJIS" :key="emoji" @click="togglePostReaction(post.id, emoji)">{{ emoji }}</button>
-                        </div>
-                      </Transition>
+              <!-- Sugerencia siguiente lección -->
+              <Transition name="slide-up">
+                <div v-if="selectedLeccion.completada && nextPendingLeccion" class="ver-next-suggestion">
+                  <div class="ver-next-suggestion-left">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <div>
+                      <strong>Siguiente lección</strong>
+                      <p>{{ nextPendingLeccion.title }}</p>
                     </div>
-                    <button @click="togglePost(post.id)" :class="['fb-action-btn', expandedPost === post.id ? 'fb-action-active' : '']">
-                      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      Comentar
+                  </div>
+                  <button class="btn btn-primary btn-sm" @click="goToLesson(nextPendingLeccion)">Continuar →</button>
+                </div>
+              </Transition>
+
+              <!-- Preguntas Intermedias -->
+              <Transition name="slide-up">
+                <div v-if="showIntermedias && preguntas.length > 0" class="ver-intermedias">
+                  <div class="ver-int-head">
+                    <span class="gm-icon gm-icon-brain" style="width:38px;height:38px;flex-shrink:0">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path d="M12 2a7 7 0 014.9 11.9c-.7.7-1.2 1.6-1.4 2.6H8.5c-.2-1-.7-1.9-1.4-2.6A7 7 0 0112 2z" />
+                        <path d="M9 18h6M10 22h4" />
+                      </svg>
+                    </span>
+                    <div>
+                      <h3 style="font-weight:700;color:var(--dark);font-size:1rem">Preguntas de la lección</h3>
+                      <p style="font-size:0.82rem;color:var(--muted)">Responde para reforzar tu aprendizaje</p>
+                    </div>
+                  </div>
+                  <div v-if="resultadoInt" class="ver-int-result">
+                    <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
+                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                    <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
+                    </p>
+                    <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
+                      style="margin-top:12px">Continuar</button>
+                  </div>
+                  <div v-else style="display:flex;flex-direction:column;gap:16px">
+                    <div v-for="p in preguntas" :key="p.id" class="ver-int-pregunta">
+                      <p style="font-size:0.92rem;font-weight:600;color:var(--dark);margin-bottom:10px">{{ p.texto }}
+                      </p>
+                      <div v-if="p.tipo === 'open_text'">
+                        <textarea v-model="respuestas[p.id]" rows="3" placeholder="Tu respuesta..." class="field-input"
+                          style="resize:vertical" />
+                      </div>
+                      <div v-else style="display:flex;flex-direction:column;gap:8px">
+                        <label v-for="op in p.opciones" :key="op.id" class="ver-option-label">
+                          <input type="radio" :name="p.id" :value="op.id" v-model="respuestas[p.id]"
+                            style="accent-color:var(--brand)" />
+                          <span>{{ op.texto }}</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button @click="submitIntermedias" class="btn btn-primary">Enviar respuestas</button>
+                  </div>
+                </div>
+              </Transition>
+
+              <!-- Foro -->
+              <div class="ver-foro">
+                <!-- Foro header -->
+                <div class="ver-foro-head">
+                  <h3 class="ver-section-title">
+                    <span class="gm-icon gm-icon-forum">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                      </svg>
+                    </span>
+                    Foro de la lección
+                  </h3>
+                  <p class="ver-foro-sub">Participa, pregunta y comparte con la comunidad</p>
+                </div>
+
+                <div v-if="foroError" class="foro-msg foro-msg-error">{{ foroError }}</div>
+                <div v-if="foroLoading" class="foro-loading">
+                  <span class="btn-spinner"
+                    style="border-color:var(--brand-light);border-top-color:var(--brand)"></span>
+                  <span>Cargando...</span>
+                </div>
+
+                <!-- Caja de publicación estilo mensajería -->
+                <div v-if="!foroLoading" class="msg-create-box">
+                  <div class="msg-create-avatar">
+                    <img :src="getAvatarUrl(currentUser?.avatar_url, currentUser?.id || currentUser?.name)"
+                      class="avatar-img" alt="Avatar" />
+                  </div>
+                  <div class="msg-create-input-wrap">
+                    <div class="msg-inputs">
+                      <input v-model="nuevoPost.titulo" placeholder="Título (opcional)..."
+                        class="msg-create-title-input" />
+                      <textarea v-model="nuevoPost.contenido" placeholder="Escribe tu pregunta o comentario..." rows="1"
+                        class="msg-create-input" />
+                    </div>
+                    <div class="msg-create-actions">
+                      <button type="button" class="msg-attach-btn" @click="postFileInput?.click()"
+                        title="Adjuntar imagen o video">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                      </button>
+                      <button @click="crearPost" class="msg-send-btn"
+                        :disabled="postLoading || (!nuevoPost.contenido?.trim() && !nuevoPost.titulo?.trim() && !postFile)"
+                        title="Publicar">
+                        <span v-if="postLoading" class="btn-spinner"
+                          style="width:14px;height:14px;border-width:2px;margin:0"></span>
+                        <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                          viewBox="0 0 24 24">
+                          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                      </button>
+                    </div>
+                    <input ref="postFileInput" type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                      style="display:none" @change="onPostFile" />
+                    <input ref="comentarioFileInput" type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                      style="display:none" @change="onComentarioFile" />
+                  </div>
+                </div>
+                <!-- Previsualización de adjunto -->
+                <div v-if="postFilePreview" class="msg-file-preview">
+                  <div class="msg-preview-inner">
+                    <video v-if="postFileIsVideo" :src="postFilePreview" class="msg-preview-media" controls muted />
+                    <img v-else :src="postFilePreview" class="msg-preview-media" />
+                    <button class="msg-remove-file" @click="removePostFile" type="button" title="Quitar adjunto">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                        viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
+                </div>
 
-                  <!-- Sección de comentarios -->
-                  <Transition name="slide-down">
-                    <div v-if="expandedPost === post.id" class="fb-comments-section">
-                      <div v-for="com in getMainComments(post.id)" :key="com.id" class="fb-comment-thread">
-                        <div class="fb-comment">
-                            <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)" style="cursor:pointer" title="Ver perfil">
-                              <img :src="getUserAvatar(com.user_id, com.user_name)" class="avatar-img" alt="" />
-                            </div>
-                          <div class="fb-comment-content">
-                            <div class="fb-comment-bubble">
-                              <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{ com.user_name }}</router-link>
-                              <p class="fb-comment-text">
-                                {{ com.contenido }}
-                                <span v-if="com.is_private" style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
-                              </p>
-                              <div v-if="com.media_url" class="fb-comment-media">
-                                <video v-if="com.media_type === 'video'" :src="com.media_url" class="fb-cm-video" controls />
-                                <img v-else :src="com.media_url" class="fb-cm-img" @click="openMedia(com.media_url)" title="Ver imagen completa" />
-                              </div>
-                            </div>
-                            <div class="fb-comment-actions">
-                              <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + com.id" @mouseleave="activeReactionPicker = null">
-                                <span class="fb-c-action">Reaccionar</span>
-                                <Transition name="fade">
-                                  <div v-if="activeReactionPicker === 'com_' + com.id" class="fb-reaction-picker">
-                                    <button v-for="emoji in EMOJIS" :key="emoji" @click="toggleComentarioReaction(post.id, com.id, emoji)">{{ emoji }}</button>
-                                  </div>
-                                </Transition>
-                              </div>
-                              <span class="fb-c-action" @click="replyingTo = com.id">Responder</span>
-                              <span class="fb-c-action" @click="iniciarConversacionPrivada(com.user_id, com.user_name)">Responder en privado</span>
-                              <div v-if="com.reactions && com.reactions.length" class="fb-reaction-pills">
-                                <span v-for="r in com.reactions" :key="r.emoji" class="fb-reaction-pill">{{ r.emoji }} {{ r.count }}</span>
-                              </div>
-                            </div>
-                          </div>
+                <div v-if="!foroLoading && foroPosts.length === 0" class="fb-empty-foro">
+                  <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                  </svg>
+                  <p>Aún no hay publicaciones en este foro.</p>
+                  <span>¡Sé el primero en preguntar o compartir algo!</span>
+                </div>
+
+                <!-- Posts estilo Facebook -->
+                <TransitionGroup name="list-item" tag="div" class="fb-posts-list">
+                  <div v-for="post in foroPosts" :key="post.id" class="fb-post-card">
+
+                    <!-- Card header: avatar, nombre, tiempo, opciones -->
+                    <div class="fb-post-header">
+                      <div class="fb-post-avatar-wrap" @click.stop="openForoProfile(post.user_id, post.user_name)"
+                        style="cursor:pointer" title="Ver perfil">
+                        <div class="fb-post-avatar">
+                          <img :src="getUserAvatar(post.user_id, post.user_name)" class="avatar-img" alt="" />
                         </div>
+                      </div>
+                      <div class="fb-post-meta">
+                        <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
+                          }}</router-link>
+                        <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
+                      </div>
+                      <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                          viewBox="0 0 24 24">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
 
-                        <!-- Respuestas -->
-                        <div v-if="getReplies(post.id, com.id).length" class="fb-comment-replies">
-                          <div v-for="reply in getReplies(post.id, com.id)" :key="reply.id" class="fb-comment">
-                            <div class="fb-comment-avatar" @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer" title="Ver perfil">
-                              <img :src="getUserAvatar(reply.user_id, reply.user_name)" class="avatar-img" alt="" />
+                    <!-- Contenido del post -->
+                    <div class="fb-post-body">
+                      <h4 class="fb-post-title">{{ post.titulo }}</h4>
+                      <p class="fb-post-content">{{ post.contenido }}</p>
+                      <!-- Media adjunta al post -->
+                      <div v-if="post.media_url" class="fb-post-media">
+                        <video v-if="post.media_type === 'video'" :src="post.media_url" class="fb-post-media-video"
+                          controls />
+                        <img v-else :src="post.media_url" class="fb-post-media-img" @click="openMedia(post.media_url)"
+                          title="Ver imagen completa" />
+                      </div>
+                    </div>
+
+                    <!-- Contador de likes y comentarios -->
+                    <div
+                      v-if="(post.reactions && post.reactions.length > 0) || post.like_count > 0 || (comentariosMap[post.id] || []).length > 0"
+                      class="fb-post-stats">
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span v-if="post.like_count > 0" class="fb-stat-likes">
+                          <span class="fb-like-bubble">
+                            <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zm6-10A1.5 1.5 0 006.5 2v1.5a.5.5 0 01-.5.5H4a2 2 0 00-2 2v1a2 2 0 002 2h.5v1a.5.5 0 01-.5.5H3a1 1 0 000 2h.5a.5.5 0 01.5.5V17a1 1 0 001 1h8a1 1 0 001-1v-2.5a.5.5 0 01.5-.5H16a2 2 0 002-2V8a2 2 0 00-2-2h-2a.5.5 0 01-.5-.5V4a2 2 0 00-2-2h-1.5A1.5 1.5 0 008 3v-.5z" />
+                            </svg>
+                          </span>
+                          {{ post.like_count }}
+                        </span>
+                        <span v-for="r in post.reactions" :key="r.emoji" class="fb-reaction-pill-stat">{{ r.emoji }} {{
+                          r.count }}</span>
+                      </div>
+                      <span v-if="(comentariosMap[post.id] || []).length > 0" class="fb-stat-comments"
+                        @click="togglePost(post.id)">
+                        {{ (comentariosMap[post.id] || []).length }} {{ (comentariosMap[post.id] || []).length === 1 ?
+                          'comentario' : 'comentarios' }}
+                      </span>
+                    </div>
+
+                    <!-- Botones de acción: Me gusta y Comentar -->
+                    <div class="fb-post-actions">
+                      <div class="fb-reaction-wrap-post" @mouseenter="activeReactionPicker = 'post_' + post.id"
+                        @mouseleave="activeReactionPicker = null">
+                        <button @click="toggleLike(post.id)"
+                          :class="['fb-action-btn', post.user_liked ? 'fb-action-liked' : '']">
+                          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                          {{ post.user_liked ? 'Me gusta' : 'Me gusta' }}
+                        </button>
+                        <Transition name="fade">
+                          <div v-if="activeReactionPicker === 'post_' + post.id" class="fb-reaction-picker-post">
+                            <button v-for="emoji in EMOJIS" :key="emoji" @click="togglePostReaction(post.id, emoji)">{{
+                              emoji }}</button>
+                          </div>
+                        </Transition>
+                      </div>
+                      <button @click="togglePost(post.id)"
+                        :class="['fb-action-btn', expandedPost === post.id ? 'fb-action-active' : '']">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                        Comentar
+                      </button>
+                    </div>
+
+                    <!-- Sección de comentarios -->
+                    <Transition name="slide-down">
+                      <div v-if="expandedPost === post.id" class="fb-comments-section">
+                        <div v-for="com in getMainComments(post.id)" :key="com.id" class="fb-comment-thread">
+                          <div class="fb-comment">
+                            <div class="fb-comment-avatar" @click.stop="openForoProfile(com.user_id, com.user_name)"
+                              style="cursor:pointer" title="Ver perfil">
+                              <img :src="getUserAvatar(com.user_id, com.user_name)" class="avatar-img" alt="" />
                             </div>
                             <div class="fb-comment-content">
                               <div class="fb-comment-bubble">
-                                <router-link :to="`/usuario/perfil/${reply.user_id}`" class="fb-comment-author">{{ reply.user_name }}</router-link>
+                                <router-link :to="`/usuario/perfil/${com.user_id}`" class="fb-comment-author">{{
+                                  com.user_name }}</router-link>
                                 <p class="fb-comment-text">
-                                  {{ reply.contenido }}
-                                  <span v-if="reply.is_private" style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
+                                  {{ com.contenido }}
+                                  <span v-if="com.is_private"
+                                    style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
                                 </p>
-                                <div v-if="reply.media_url" class="fb-comment-media">
-                                  <video v-if="reply.media_type === 'video'" :src="reply.media_url" class="fb-cm-video" controls />
-                                  <img v-else :src="reply.media_url" class="fb-cm-img" @click="openMedia(reply.media_url)" title="Ver imagen completa" />
+                                <div v-if="com.media_url" class="fb-comment-media">
+                                  <video v-if="com.media_type === 'video'" :src="com.media_url" class="fb-cm-video"
+                                    controls />
+                                  <img v-else :src="com.media_url" class="fb-cm-img" @click="openMedia(com.media_url)"
+                                    title="Ver imagen completa" />
                                 </div>
                               </div>
                               <div class="fb-comment-actions">
-                                <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + reply.id" @mouseleave="activeReactionPicker = null">
+                                <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + com.id"
+                                  @mouseleave="activeReactionPicker = null">
                                   <span class="fb-c-action">Reaccionar</span>
                                   <Transition name="fade">
-                                    <div v-if="activeReactionPicker === 'com_' + reply.id" class="fb-reaction-picker">
-                                      <button v-for="emoji in EMOJIS" :key="emoji" @click="toggleComentarioReaction(post.id, reply.id, emoji)">{{ emoji }}</button>
+                                    <div v-if="activeReactionPicker === 'com_' + com.id" class="fb-reaction-picker">
+                                      <button v-for="emoji in EMOJIS" :key="emoji"
+                                        @click="toggleComentarioReaction(post.id, com.id, emoji)">{{ emoji }}</button>
                                     </div>
                                   </Transition>
                                 </div>
-                                <span class="fb-c-action" @click="iniciarConversacionPrivada(reply.user_id, reply.user_name)">Responder en privado</span>
-                                <div v-if="reply.reactions && reply.reactions.length" class="fb-reaction-pills">
-                                  <span v-for="r in reply.reactions" :key="r.emoji" class="fb-reaction-pill">{{ r.emoji }} {{ r.count }}</span>
+                                <span class="fb-c-action" @click="replyingTo = com.id">Responder</span>
+                                <span class="fb-c-action"
+                                  @click="iniciarConversacionPrivada(com.user_id, com.user_name)">Responder en
+                                  privado</span>
+                                <div v-if="com.reactions && com.reactions.length" class="fb-reaction-pills">
+                                  <span v-for="r in com.reactions" :key="r.emoji" class="fb-reaction-pill">{{ r.emoji }}
+                                    {{ r.count }}</span>
                                 </div>
                               </div>
                             </div>
                           </div>
+
+                          <!-- Respuestas -->
+                          <div v-if="getReplies(post.id, com.id).length" class="fb-comment-replies">
+                            <div v-for="reply in getReplies(post.id, com.id)" :key="reply.id" class="fb-comment">
+                              <div class="fb-comment-avatar"
+                                @click.stop="openForoProfile(reply.user_id, reply.user_name)" style="cursor:pointer"
+                                title="Ver perfil">
+                                <img :src="getUserAvatar(reply.user_id, reply.user_name)" class="avatar-img" alt="" />
+                              </div>
+                              <div class="fb-comment-content">
+                                <div class="fb-comment-bubble">
+                                  <router-link :to="`/usuario/perfil/${reply.user_id}`" class="fb-comment-author">{{
+                                    reply.user_name }}</router-link>
+                                  <p class="fb-comment-text">
+                                    {{ reply.contenido }}
+                                    <span v-if="reply.is_private"
+                                      style="color:var(--brand);font-size:0.75rem;font-weight:bold;margin-left:6px">(Privado)</span>
+                                  </p>
+                                  <div v-if="reply.media_url" class="fb-comment-media">
+                                    <video v-if="reply.media_type === 'video'" :src="reply.media_url"
+                                      class="fb-cm-video" controls />
+                                    <img v-else :src="reply.media_url" class="fb-cm-img"
+                                      @click="openMedia(reply.media_url)" title="Ver imagen completa" />
+                                  </div>
+                                </div>
+                                <div class="fb-comment-actions">
+                                  <div class="fb-reaction-wrap" @mouseenter="activeReactionPicker = 'com_' + reply.id"
+                                    @mouseleave="activeReactionPicker = null">
+                                    <span class="fb-c-action">Reaccionar</span>
+                                    <Transition name="fade">
+                                      <div v-if="activeReactionPicker === 'com_' + reply.id" class="fb-reaction-picker">
+                                        <button v-for="emoji in EMOJIS" :key="emoji"
+                                          @click="toggleComentarioReaction(post.id, reply.id, emoji)">{{ emoji
+                                          }}</button>
+                                      </div>
+                                    </Transition>
+                                  </div>
+                                  <span class="fb-c-action"
+                                    @click="iniciarConversacionPrivada(reply.user_id, reply.user_name)">Responder en
+                                    privado</span>
+                                  <div v-if="reply.reactions && reply.reactions.length" class="fb-reaction-pills">
+                                    <span v-for="r in reply.reactions" :key="r.emoji" class="fb-reaction-pill">{{
+                                      r.emoji }} {{ r.count }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Input responder -->
+                          <div v-if="replyingTo === com.id" class="fb-new-comment-row reply-row" style="margin-top:8px">
+                            <div class="fb-comment-avatar me">{{ meInitials() }}</div>
+                            <div class="fb-comment-input-wrap">
+                              <input v-model="nuevoComentario[com.id]" @keydown.enter="crearComentario(post.id, com.id)"
+                                placeholder="Escribe una respuesta..." class="fb-comment-input" />
+
+                              <!-- Attach button -->
+                              <button @click="triggerComentarioFile(com.id)" class="fb-comment-attach-btn"
+                                title="Adjuntar archivo">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                                  viewBox="0 0 24 24">
+                                  <path
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                              </button>
+
+                              <label v-if="authStore.isInstructor || authStore.isAdmin" class="fb-private-toggle"
+                                title="Hacer respuesta privada (solo visible para el alumno y administradores)">
+                                <input type="checkbox" v-model="isComentarioPrivate[com.id]" />
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                                  viewBox="0 0 24 24">
+                                  <path
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                              </label>
+
+                              <button @click="crearComentario(post.id, com.id)" class="fb-comment-send"
+                                :disabled="!nuevoComentario[com.id]?.trim() && activeComentarioFileKey !== com.id"
+                                title="Enviar">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                                  viewBox="0 0 24 24">
+                                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- File preview para respuestas -->
+                          <div
+                            v-if="replyingTo === com.id && activeComentarioFileKey === com.id && activeComentarioPreview"
+                            class="fb-comment-file-preview">
+                            <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media"
+                              controls muted />
+                            <img v-else :src="activeComentarioPreview" class="fb-cfp-media" />
+                            <button @click="removeComentarioFile" class="fb-cfp-remove">✕</button>
+                          </div>
                         </div>
 
-                        <!-- Input responder -->
-                        <div v-if="replyingTo === com.id" class="fb-new-comment-row reply-row" style="margin-top:8px">
+                        <p v-if="!getMainComments(post.id).length" class="fb-no-comments">Sin comentarios aún.</p>
+
+                        <!-- Input nuevo comentario principal -->
+                        <div class="fb-new-comment-row" style="margin-top: 10px;">
                           <div class="fb-comment-avatar me">{{ meInitials() }}</div>
                           <div class="fb-comment-input-wrap">
-                            <input v-model="nuevoComentario[com.id]"
-                              @keydown.enter="crearComentario(post.id, com.id)"
-                              placeholder="Escribe una respuesta..."
-                              class="fb-comment-input" />
-                              
-                            <!-- Attach button -->
-                            <button @click="triggerComentarioFile(com.id)" class="fb-comment-attach-btn" title="Adjuntar archivo">
-                              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            
-                            <label v-if="authStore.isInstructor || authStore.isAdmin" class="fb-private-toggle" title="Hacer respuesta privada (solo visible para el alumno y administradores)">
-                              <input type="checkbox" v-model="isComentarioPrivate[com.id]" />
-                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </label>
+                            <input v-model="nuevoComentario[post.id]" @keydown.enter="crearComentario(post.id)"
+                              placeholder="Escribe un comentario..." class="fb-comment-input" />
 
-                            <button @click="crearComentario(post.id, com.id)" class="fb-comment-send" :disabled="!nuevoComentario[com.id]?.trim() && activeComentarioFileKey !== com.id" title="Enviar">
-                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <!-- Attach button -->
+                            <button @click="triggerComentarioFile(post.id)" class="fb-comment-attach-btn"
+                              title="Adjuntar archivo">
+                              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path
+                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                              </svg>
+                            </button>
+
+                            <button @click="crearComentario(post.id)" class="fb-comment-send"
+                              :disabled="!nuevoComentario[post.id]?.trim() && activeComentarioFileKey !== post.id"
+                              title="Enviar">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                                viewBox="0 0 24 24">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round"
+                                  stroke-linejoin="round" />
+                              </svg>
                             </button>
                           </div>
                         </div>
-                        
-                        <!-- File preview para respuestas -->
-                        <div v-if="replyingTo === com.id && activeComentarioFileKey === com.id && activeComentarioPreview" class="fb-comment-file-preview">
-                          <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media" controls muted />
+
+                        <!-- File preview para comentario principal -->
+                        <div v-if="activeComentarioFileKey === post.id && activeComentarioPreview"
+                          class="fb-comment-file-preview">
+                          <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media"
+                            controls muted />
                           <img v-else :src="activeComentarioPreview" class="fb-cfp-media" />
                           <button @click="removeComentarioFile" class="fb-cfp-remove">✕</button>
                         </div>
                       </div>
-
-                      <p v-if="!getMainComments(post.id).length" class="fb-no-comments">Sin comentarios aún.</p>
-                      
-                      <!-- Input nuevo comentario principal -->
-                      <div class="fb-new-comment-row" style="margin-top: 10px;">
-                        <div class="fb-comment-avatar me">{{ meInitials() }}</div>
-                        <div class="fb-comment-input-wrap">
-                          <input v-model="nuevoComentario[post.id]"
-                            @keydown.enter="crearComentario(post.id)"
-                            placeholder="Escribe un comentario..."
-                            class="fb-comment-input" />
-
-                          <!-- Attach button -->
-                          <button @click="triggerComentarioFile(post.id)" class="fb-comment-attach-btn" title="Adjuntar archivo">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                          </button>
-
-                          <button @click="crearComentario(post.id)" class="fb-comment-send" :disabled="!nuevoComentario[post.id]?.trim() && activeComentarioFileKey !== post.id" title="Enviar">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <!-- File preview para comentario principal -->
-                      <div v-if="activeComentarioFileKey === post.id && activeComentarioPreview" class="fb-comment-file-preview">
-                        <video v-if="activeComentarioIsVideo" :src="activeComentarioPreview" class="fb-cfp-media" controls muted />
-                        <img v-else :src="activeComentarioPreview" class="fb-cfp-media" />
-                        <button @click="removeComentarioFile" class="fb-cfp-remove">✕</button>
-                      </div>
-                    </div>
-                  </Transition>
-                </div>
-              </TransitionGroup>
+                    </Transition>
+                  </div>
+                </TransitionGroup>
+              </div>
             </div>
-          </div>
           </Transition>
         </div>
       </main>
@@ -1591,7 +1753,9 @@ function tramitarDC3() {
       <div v-if="foroProfileCard" class="foro-card-backdrop" @click="foroProfileCard = null">
         <div class="foro-profile-card" @click.stop>
           <button class="fpc-close" @click="foroProfileCard = null" aria-label="Cerrar">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
           </button>
           <div class="fpc-avatar">
             <img :src="getUserAvatar(foroProfileCard.id, foroProfileCard.name)" class="avatar-img" alt="" />
@@ -1600,11 +1764,16 @@ function tramitarDC3() {
           <div class="fpc-role">Participante del foro</div>
           <div class="fpc-actions">
             <button class="fpc-btn fpc-btn-primary" @click="verPerfil">
-              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
               Ver perfil
             </button>
             <button class="fpc-btn fpc-btn-secondary" @click="iniciarConversacion">
-              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
               Iniciar conversación
             </button>
           </div>
@@ -1632,16 +1801,21 @@ function tramitarDC3() {
         <div class="ver-confetti-card">
           <div class="ver-confetti-icon">
             <span class="gm-icon gm-icon-trophy">
-              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path
+                  d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
             </span>
           </div>
           <h2>¡Felicidades!</h2>
           <p>Has completado el 100% de <strong>{{ curso?.title }}</strong>.</p>
           <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button v-if="examenFinal" @click="showConfetti = false; abrirExamenEnCurso()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+            <button v-if="examenFinal" @click="showConfetti = false; abrirExamenEnCurso()" class="btn btn-primary"
+              style="display: inline-flex; align-items: center; gap: 8px;">
               🎓 Responder Examen Final
             </button>
-            <button v-if="curso?.dc3_enabled === true" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
+            <button v-if="curso?.dc3_enabled === true" class="btn btn-primary"
+              style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
               📋 Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>
@@ -1657,7 +1831,10 @@ function tramitarDC3() {
           <div class="ver-avance-head">
             <div style="display: flex; align-items: center; gap: 14px;">
               <div class="glass-icon-box glass-icon-amber">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10c1.1 0 2 .9 2 2v2c0 2.21-1.79 4-4 4h-6c-2.21 0-4-1.79-4-4V6c0-1.1.9-2 2-2zM5 6H3c0 2.21 1.79 4 4 4M19 6h2c0 2.21-1.79 4-4 4"/></svg>
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 21h8M12 17v4M7 4h10c1.1 0 2 .9 2 2v2c0 2.21-1.79 4-4 4h-6c-2.21 0-4-1.79-4-4V6c0-1.1.9-2 2-2zM5 6H3c0 2.21 1.79 4 4 4M19 6h2c0 2.21-1.79 4-4 4" />
+                </svg>
               </div>
               <div>
                 <h3>Mi Avance y Puntuaciones</h3>
@@ -1680,8 +1857,11 @@ function tramitarDC3() {
                   <div class="ver-avance-val">{{ leccionesCompletadas }} / {{ lecciones.length }}</div>
                 </div>
               </div>
-              <div class="ver-progress-bar-wrap" style="margin-top: 12px; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
-                <div :style="`width:${progreso}%; height: 100%; background: linear-gradient(90deg, #f97316, #fbbf24); border-radius: 5px; transition: width 0.4s;`"></div>
+              <div class="ver-progress-bar-wrap"
+                style="margin-top: 12px; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
+                <div
+                  :style="`width:${progreso}%; height: 100%; background: linear-gradient(90deg, #f97316, #fbbf24); border-radius: 5px; transition: width 0.4s;`">
+                </div>
               </div>
             </div>
 
@@ -1689,23 +1869,31 @@ function tramitarDC3() {
             <div class="ver-avance-ranking">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                 <span class="glass-icon-badge glass-icon-orange">
-                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                 </span>
-                <h4 style="margin: 0; font-size: 1.05rem; color: var(--dark); font-weight: 700;">Ranking de Puntuaciones del Curso</h4>
+                <h4 style="margin: 0; font-size: 1.05rem; color: var(--dark); font-weight: 700;">Ranking de Puntuaciones
+                  del Curso</h4>
               </div>
 
               <div v-if="loadingLeaderboard" style="padding: 20px; text-align: center; color: var(--muted);">
                 Cargando puntuaciones...
               </div>
-              <div v-else-if="leaderboard.length === 0" style="padding: 24px; text-align: center; color: var(--muted); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px; margin-top: 10px;">
-                Aún no hay puntuaciones registradas para este curso. ¡Completa lecciones o actividades interactivas para sumar puntos!
+              <div v-else-if="leaderboard.length === 0"
+                style="padding: 24px; text-align: center; color: var(--muted); background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px; margin-top: 10px;">
+                Aún no hay puntuaciones registradas para este curso. ¡Completa lecciones o actividades interactivas para
+                sumar puntos!
               </div>
               <div v-else class="leaderboard-list">
                 <div v-for="(entry, idx) in leaderboard" :key="entry.user_id || idx" class="leaderboard-row">
                   <div class="lb-rank" :class="{ 'lb-rank-top': (entry.rank || idx + 1) <= 3 }">
-                    <span v-if="(entry.rank || idx + 1) === 1" class="glass-rank-badge glass-rank-gold" title="1er Lugar">1</span>
-                    <span v-else-if="(entry.rank || idx + 1) === 2" class="glass-rank-badge glass-rank-silver" title="2do Lugar">2</span>
-                    <span v-else-if="(entry.rank || idx + 1) === 3" class="glass-rank-badge glass-rank-bronze" title="3er Lugar">3</span>
+                    <span v-if="(entry.rank || idx + 1) === 1" class="glass-rank-badge glass-rank-gold"
+                      title="1er Lugar">1</span>
+                    <span v-else-if="(entry.rank || idx + 1) === 2" class="glass-rank-badge glass-rank-silver"
+                      title="2do Lugar">2</span>
+                    <span v-else-if="(entry.rank || idx + 1) === 3" class="glass-rank-badge glass-rank-bronze"
+                      title="3er Lugar">3</span>
                     <span v-else>{{ entry.rank || idx + 1 }}</span>
                   </div>
                   <div class="lb-user">
@@ -1729,7 +1917,8 @@ function tramitarDC3() {
 
     <!-- Modal Examen Final integrado en el Curso -->
     <Transition name="fade">
-      <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" style="z-index: 25000;" @click.self="showExamenModal = false">
+      <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" style="z-index: 25000;"
+        @click.self="showExamenModal = false">
         <div class="ver-examen-modal" @click.stop>
           <div class="ver-examen-modal-head">
             <div>
@@ -1746,7 +1935,8 @@ function tramitarDC3() {
               </div>
               <h4>¡Has completado el examen!</h4>
               <p>Obtuviste {{ examenResultado.correctas }} de {{ examenResultado.total }} responses correctas.</p>
-              <button class="btn btn-primary" style="margin-top: 16px;" @click="showExamenModal = false">Continuar</button>
+              <button class="btn btn-primary" style="margin-top: 16px;"
+                @click="showExamenModal = false">Continuar</button>
             </div>
 
             <div v-else-if="!examenData" style="padding: 40px; text-align: center; color: var(--muted);">
@@ -1762,11 +1952,13 @@ function tramitarDC3() {
                     <h5>{{ preg.texto }}</h5>
                     <div v-if="preg.tipo !== 'open_text'" class="preg-opciones">
                       <label v-for="opc in preg.opciones" :key="opc.id" class="preg-opc-label">
-                        <input type="radio" :name="`preg-${preg.id}`" :value="opc.id" v-model="examenRespuestas[preg.id]" />
+                        <input type="radio" :name="`preg-${preg.id}`" :value="opc.id"
+                          v-model="examenRespuestas[preg.id]" />
                         <span>{{ opc.texto }}</span>
                       </label>
                     </div>
-                    <textarea v-else v-model="examenRespuestas[preg.id]" class="field-input" placeholder="Escribe tu respuesta aquí..." rows="3"></textarea>
+                    <textarea v-else v-model="examenRespuestas[preg.id]" class="field-input"
+                      placeholder="Escribe tu respuesta aquí..." rows="3"></textarea>
                   </div>
                 </div>
               </div>
@@ -1788,96 +1980,250 @@ function tramitarDC3() {
 <style scoped>
 /* Toast notification */
 .ver-toast {
-  position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
-  background: var(--dark); color: #fff; padding: 12px 28px; border-radius: 999px;
-  font-size: 0.9rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.2);
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--dark);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .2);
   pointer-events: none;
 }
 
 /* Error state */
 .ver-error-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; padding: 80px 24px; text-align: center; min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 24px;
+  text-align: center;
+  min-height: 50vh;
 }
-.ver-error-icon { color: var(--muted); }
-.ver-error-state h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); }
-.ver-error-state p { color: var(--muted); font-size: 0.92rem; max-width: 420px; }
+
+.ver-error-icon {
+  color: var(--muted);
+}
+
+.ver-error-state h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.ver-error-state p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 420px;
+}
 
 /* Back button */
 .ver-back-btn {
-  display: inline-flex; align-items: center; gap: 5px; background: none; border: none;
-  color: var(--muted); font-size: 0.75rem; font-weight: 600; cursor: pointer;
-  padding: 3px 8px 3px 4px; margin-bottom: 14px; transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 8px 3px 4px;
+  margin-bottom: 14px;
+  transition: all 0.15s;
   border-radius: 999px;
 }
-.ver-back-btn:hover { color: var(--brand); background: var(--brand-light); }
+
+.ver-back-btn:hover {
+  color: var(--brand);
+  background: var(--brand-light);
+}
 
 /* Mobile toggle */
 .ver-mobile-toggle {
-  display: none; align-items: center; gap: 8px; padding: 10px 16px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
-  font-size: 0.85rem; font-weight: 700; color: var(--dark); cursor: pointer;
-  grid-column: 1 / -1; transition: all 0.15s;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--dark);
+  cursor: pointer;
+  grid-column: 1 / -1;
+  transition: all 0.15s;
 }
-.ver-mobile-toggle:hover { border-color: var(--brand); }
+
+.ver-mobile-toggle:hover {
+  border-color: var(--brand);
+}
+
 .ver-mobile-toggle-count {
-  margin-left: auto; background: var(--brand-light); color: var(--brand-dark);
-  padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+  margin-left: auto;
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
 }
 
 /* Mobile sidebar overlay */
 .ver-sidebar-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .5);
+  z-index: 200;
 }
-.ver-sidebar-overlay.open { display: block; }
+
+.ver-sidebar-overlay.open {
+  display: block;
+}
 
 /* Next pending badge */
-.ver-nav-item.next-pending .ver-nav-icon-grid { background: rgba(249,115,22,0.15); color: var(--brand); }
+.ver-nav-item.next-pending .ver-nav-icon-grid {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--brand);
+}
+
 .ver-next-badge {
-  font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--brand-dark); background: var(--brand-light); padding: 2px 8px;
-  border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand-dark);
+  background: var(--brand-light);
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* How it works steps */
 .ver-how-it-works {
-  background: var(--surface); padding: 28px; border-radius: var(--r-lg);
-  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+  background: var(--surface);
+  padding: 28px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
-.ver-how-it-works h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 20px; }
-.ver-steps { display: flex; gap: 0; align-items: flex-start; }
+
+.ver-how-it-works h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 20px;
+}
+
+.ver-steps {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+
 .ver-step {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  text-align: center; gap: 10px; position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  position: relative;
 }
+
 .ver-step-icon {
-  width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
   background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
-.ver-step-body strong { font-size: 0.88rem; font-weight: 700; color: var(--dark); display: block; margin-bottom: 4px; }
-.ver-step-body p { font-size: 0.78rem; color: var(--muted); line-height: 1.45; max-width: 160px; margin: 0 auto; }
+
+.ver-step-body strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ver-step-body p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 160px;
+  margin: 0 auto;
+}
+
 .ver-step-arrow {
-  position: absolute; right: -6px; top: 14px;
-  font-size: 1.1rem; color: var(--border); z-index: 1;
+  position: absolute;
+  right: -6px;
+  top: 14px;
+  font-size: 1.1rem;
+  color: var(--border);
+  z-index: 1;
 }
-.ver-step-arrow.last { display: none; }
+
+.ver-step-arrow.last {
+  display: none;
+}
 
 /* Next lesson suggestion */
 .ver-next-suggestion {
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd;
-  border-radius: var(--r-lg); padding: 16px 20px; margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1.5px solid #93c5fd;
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  margin-bottom: 20px;
 }
-.ver-next-suggestion-left { display: flex; align-items: center; gap: 12px; color: var(--info); flex: 1; min-width: 0; }
-.ver-next-suggestion-left strong { font-size: 0.82rem; font-weight: 700; color: var(--dark); display: block; }
-.ver-next-suggestion-left p { font-size: 0.85rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ver-next-suggestion-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--info);
+  flex: 1;
+  min-width: 0;
+}
+
+.ver-next-suggestion-left strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: block;
+}
+
+.ver-next-suggestion-left p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Layout shell */
 .ver-curso-shell {
   min-height: calc(100vh - var(--topbar-h) - 56px);
 }
+
 .ver-layout {
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
@@ -1890,187 +2236,534 @@ function tramitarDC3() {
 }
 
 /* Skeletons */
-.ver-skeleton { display: flex; gap: 0; height: 100vh; overflow: hidden; }
-.ver-sidebar-skel { width: 280px; background: var(--surface); border-right: 1px solid var(--border); padding: 24px; flex-shrink: 0; }
-.ver-content-skel { flex: 1; padding: 36px; }
+.ver-skeleton {
+  display: flex;
+  gap: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.ver-sidebar-skel {
+  width: 280px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  flex-shrink: 0;
+}
+
+.ver-content-skel {
+  flex: 1;
+  padding: 36px;
+}
 
 /* Sidebar */
 .ver-sidebar {
-  width: 100%; background: var(--surface); border-right: 1px solid var(--border-light);
-  display: flex; flex-direction: column; min-width: 0;
+  width: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   box-shadow: 4px 0 20px rgba(96, 107, 133, 0.07);
 }
+
 .ver-sidebar-head {
   padding: 22px 20px 18px;
   border-bottom: 1px solid var(--border-light);
 }
+
 .ver-cursor-nombre-wrap {
-  display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
 }
+
 .ver-curso-nombre {
-  font-size: 1rem; font-weight: 700; color: var(--dark); line-height: 1.3;
-  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   margin: 0;
 }
-.ver-course-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-.ver-meta-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.71rem; font-weight: 600; color: var(--muted);
-  background: var(--bg); border: 1px solid var(--border-light);
-  padding: 2px 8px; border-radius: 999px;
-}
-.ver-progress-wrap { margin-top: 0; }
-.ver-progress-top {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 0.74rem; color: var(--muted); margin-bottom: 7px; font-weight: 500;
-}
-.ver-progress-pct { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
-.ver-progress-bg { height: 7px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
-.ver-progress-fill {
-  height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark));
-  border-radius: 999px; transition: width 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
-  box-shadow: 0 0 8px rgba(249,115,22,0.35);
+
+.ver-course-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 
-.ver-nav { flex: 1; padding: 8px; overflow-y: auto; }
+.ver-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.71rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.ver-progress-wrap {
+  margin-top: 0;
+}
+
+.ver-progress-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin-bottom: 7px;
+  font-weight: 500;
+}
+
+.ver-progress-pct {
+  font-weight: 800;
+  color: var(--brand);
+  font-size: 0.9rem;
+}
+
+.ver-progress-bg {
+  height: 7px;
+  background: var(--border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ver-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.35);
+}
+
+.ver-nav {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+}
+
 .ver-nav-section-label {
-  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.09em; color: var(--muted);
-  padding: 4px 12px 10px; margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  padding: 4px 12px 10px;
+  margin: 0;
 }
+
 .ver-nav-item {
-  width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px;
-  display: flex; align-items: center; gap: 14px; cursor: pointer;
-  border: none; background: none;
-  transition: background 0.15s; margin-bottom: 1px; position: relative;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: background 0.15s;
+  margin-bottom: 1px;
+  position: relative;
 }
-.ver-nav-item:hover { background: rgba(96, 107, 133, 0.07); }
-.ver-nav-item.active { background: var(--brand-light); }
-.ver-nav-item.done .ver-nav-icon-grid { background: #22c55e; color: #fff; box-shadow: 0 2px 8px rgba(34,197,94,0.3); }
-.ver-nav-item.done .ver-nav-title { color: var(--muted); }
-.ver-nav-item.active .ver-nav-icon-grid { background: var(--brand); color: #fff; box-shadow: 0 2px 10px rgba(249,115,22,0.35); }
+
+.ver-nav-item:hover {
+  background: rgba(96, 107, 133, 0.07);
+}
+
+.ver-nav-item.active {
+  background: var(--brand-light);
+}
+
+.ver-nav-item.done .ver-nav-icon-grid {
+  background: #22c55e;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.ver-nav-item.done .ver-nav-title {
+  color: var(--muted);
+}
+
+.ver-nav-item.active .ver-nav-icon-grid {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.35);
+}
 
 .ver-nav-icon-grid {
-  width: 36px; height: 36px; border-radius: 8px;
-  background: var(--bg); color: var(--muted);
-  flex-shrink: 0; display: grid; place-items: center;
-  transition: all 0.15s; font-size: 0.75rem; font-weight: 700;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
-.ver-nav-num-text { font-size: 0.75rem; font-weight: 700; }
 
-.ver-nav-info { flex: 1; min-width: 0; }
+.ver-nav-num-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ver-nav-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .ver-nav-title {
-  font-size: 0.875rem; font-weight: 500; color: var(--dark);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
-}
-.ver-nav-item.active .ver-nav-title { color: var(--brand-dark); font-weight: 600; }
-.ver-nav-meta {
-  font-size: 0.72rem; color: var(--muted); margin-top: 2px;
-  display: flex; align-items: center; gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
-.ver-type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
-.ver-type-dot.video    { background: var(--brand); }
-.ver-type-dot.document { background: #6366f1; }
-.ver-type-dot.text     { background: var(--success); }
-.ver-type-dot.link     { background: #8b5cf6; }
+.ver-nav-item.active .ver-nav-title {
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.ver-nav-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ver-type-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.ver-type-dot.video {
+  background: var(--brand);
+}
+
+.ver-type-dot.document {
+  background: #6366f1;
+}
+
+.ver-type-dot.text {
+  background: var(--success);
+}
+
+.ver-type-dot.link {
+  background: #8b5cf6;
+}
 
 .ver-nav-empty {
-  text-align: center; padding: 32px 16px; font-size: 0.84rem; color: var(--muted);
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  padding: 32px 16px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Main content */
-.ver-main { min-width: 0; background: var(--bg); }
-.ver-main-inner { max-width: 980px; margin: 0 auto; padding: 30px; }
+.ver-main {
+  min-width: 0;
+  background: var(--bg);
+}
+
+.ver-main-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 30px;
+}
 
 /* Welcome Hero */
-.ver-welcome-hero { display: flex; flex-direction: column; gap: 24px; }
+.ver-welcome-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .ver-welcome-banner {
-  position: relative; border-radius: var(--r-xl); overflow: hidden;
+  position: relative;
+  border-radius: var(--r-xl);
+  overflow: hidden;
   background: linear-gradient(135deg, var(--dark) 0%, #374151 100%);
-  color: #fff; background-size: cover; background-position: center;
+  color: #fff;
+  background-size: cover;
+  background-position: center;
   box-shadow: var(--shadow-lg);
 }
+
 .ver-welcome-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(105deg, rgba(10,10,14,0.95) 0%, rgba(10,10,14,0.88) 55%, rgba(10,10,14,0.68) 100%);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(10, 10, 14, 0.95) 0%, rgba(10, 10, 14, 0.88) 55%, rgba(10, 10, 14, 0.68) 100%);
   backdrop-filter: blur(2px);
 }
+
 .ver-progress-strip-bar {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-  background: rgba(255,255,255,0.12);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
 }
+
 .ver-progress-strip-fill {
-  height: 100%; background: var(--brand);
-  transition: width 0.6s ease; border-radius: 0 2px 2px 0;
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.6s ease;
+  border-radius: 0 2px 2px 0;
 }
+
 .ver-welcome-inner {
-  position: relative; z-index: 10;
-  display: flex; align-items: center; gap: 40px;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 40px;
   padding: 52px 44px 60px;
 }
-.ver-welcome-content { flex: 1; min-width: 0; }
+
+.ver-welcome-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .ver-welcome-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 14px; border-radius: 999px;
-  background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
-  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; margin-bottom: 18px;
-  border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
 }
-.ver-welcome-title { font-size: 2rem; font-weight: 800; line-height: 1.18; letter-spacing: -0.025em; margin-bottom: 12px; }
-.ver-welcome-desc { font-size: 0.97rem; color: rgba(255,255,255,0.72); line-height: 1.55; max-width: 520px; }
+
+.ver-welcome-title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin-bottom: 12px;
+}
+
+.ver-welcome-desc {
+  font-size: 0.97rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+  max-width: 520px;
+}
+
 .ver-welcome-aside {
-  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
+
 .ver-ring-wrap {
-  position: relative; width: 110px; height: 110px;
-  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.ver-ring-svg { width: 110px; height: 110px; }
-.ver-ring-track { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+
+.ver-ring-svg {
+  width: 110px;
+  height: 110px;
+}
+
+.ver-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 8;
+}
+
 .ver-ring-prog {
-  fill: none; stroke: var(--brand); stroke-width: 8;
-  stroke-linecap: round; stroke-dashoffset: 0;
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dashoffset: 0;
   transition: stroke-dasharray 0.6s ease;
 }
+
 .ver-ring-label {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
-.ver-ring-label strong { font-size: 1.4rem; font-weight: 800; color: #fff; line-height: 1; }
-.ver-ring-label span { font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.ver-aside-stats { display: flex; align-items: center; gap: 16px; }
-.ver-aside-stat { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.ver-aside-stat strong { font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1; }
-.ver-aside-stat span { font-size: 0.65rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.ver-aside-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.15); }
+
+.ver-ring-label strong {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.ver-ring-label span {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.ver-aside-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ver-aside-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.ver-aside-stat strong {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.ver-aside-stat span {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.ver-aside-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .ver-welcome-message {
-  background: var(--surface); padding: 20px 24px; border-radius: var(--r-lg);
-  border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
-  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--surface);
+  padding: 20px 24px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
 }
+
 .ver-wm-icon {
-  width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
-  background: var(--brand-light); color: var(--brand); display: flex;
-  align-items: center; justify-content: center; margin-top: 2px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--brand-light);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
 }
-.ver-welcome-message h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-.ver-welcome-message p { font-size: 0.9rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-.btn-large { padding: 12px 24px; font-size: 1rem; font-weight: 600; }
+
+.ver-welcome-message h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+
+.ver-welcome-message p {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.btn-large {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+}
 
 /* Lesson header */
-.ver-lec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-.ver-lec-header-left { flex: 1 1 260px; min-width: 0; }
-.ver-lec-breadcrumb { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-.ver-lec-title { font-size: clamp(1.2rem, 2.2vw, 1.45rem); font-weight: 800; color: var(--dark); letter-spacing: -0.02em; line-height: 1.28; word-break: normal; overflow-wrap: break-word; }
+.ver-lec-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ver-lec-header-left {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.ver-lec-breadcrumb {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.ver-lec-title {
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.02em;
+  line-height: 1.28;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 .ver-lec-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 8px;
 }
+
 .ver-lec-meta-row span {
   padding: 3px 9px;
   border: 1px solid var(--border);
@@ -2080,11 +2773,25 @@ function tramitarDC3() {
   font-size: 0.75rem;
   font-weight: 700;
 }
-.ver-lec-desc { font-size: 0.88rem; color: var(--muted); margin-top: 6px; line-height: 1.55; }
+
+.ver-lec-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.55;
+}
+
 .ver-done-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: var(--success-bg); color: var(--success); padding: 6px 14px;
-  border-radius: 20px; font-size: 0.82rem; font-weight: 700; flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--success-bg);
+  color: var(--success);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* Content player */
@@ -2096,23 +2803,27 @@ function tramitarDC3() {
   background: var(--surface);
   box-shadow: var(--shadow-xs);
 }
+
 .ver-media-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #0b0f19;
 }
+
 .ver-media-video {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .ver-media-fill {
   width: 100%;
   height: 100%;
   border: 0;
   display: block;
 }
+
 .ver-media-empty {
   min-height: 280px;
   display: flex;
@@ -2123,10 +2834,12 @@ function tramitarDC3() {
   font-size: 0.9rem;
   text-align: center;
 }
+
 .ver-media-empty-light {
   min-height: 180px;
   background: var(--surface);
 }
+
 .ver-doc-frame {
   width: 100%;
   height: min(72vh, 760px);
@@ -2135,6 +2848,7 @@ function tramitarDC3() {
   display: block;
   background: var(--border-light);
 }
+
 .ver-resource-footer {
   display: flex;
   justify-content: flex-end;
@@ -2142,17 +2856,21 @@ function tramitarDC3() {
   border-top: 1px solid var(--border-light);
   background: var(--surface);
 }
+
 .ver-resource-link {
   color: var(--info);
   font-size: 0.82rem;
   font-weight: 700;
 }
+
 .ver-resource-link:hover {
   text-decoration: underline;
 }
+
 .ver-reading {
   padding: 28px;
 }
+
 .ver-reading-content {
   max-width: 72ch;
   color: var(--text);
@@ -2160,6 +2878,7 @@ function tramitarDC3() {
   line-height: 1.75;
   white-space: pre-wrap;
 }
+
 .ver-lesson-actions {
   display: flex;
   justify-content: space-between;
@@ -2169,268 +2888,757 @@ function tramitarDC3() {
 
 /* Preguntas intermedias */
 .ver-intermedias {
-  background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1.5px solid #fcd34d;
-  border-radius: var(--r-lg); padding: 22px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid #fcd34d;
+  border-radius: var(--r-lg);
+  padding: 22px;
+  margin-bottom: 20px;
 }
-.ver-int-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #fcd34d; }
-.ver-int-pregunta { background: rgba(255,255,255,.7); border-radius: var(--r); padding: 14px 16px; border: 1px solid #fde68a; }
+
+.ver-int-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #fcd34d;
+}
+
+.ver-int-pregunta {
+  background: rgba(255, 255, 255, .7);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  border: 1px solid #fde68a;
+}
+
 html.dark-theme .ver-intermedias {
-  background: linear-gradient(135deg, #451a03, #78350f); border-color: #d97706;
+  background: linear-gradient(135deg, #451a03, #78350f);
+  border-color: #d97706;
 }
-html.dark-theme .ver-int-head { border-color: #d97706; }
-html.dark-theme .ver-int-pregunta { background: rgba(0, 0, 0, 0.4); border-color: #b45309; }
+
+html.dark-theme .ver-int-head {
+  border-color: #d97706;
+}
+
+html.dark-theme .ver-int-pregunta {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: #b45309;
+}
+
 @media (prefers-color-scheme: dark) {
   html:not(.light-theme) .ver-intermedias {
-    background: linear-gradient(135deg, #451a03, #78350f); border-color: #d97706;
+    background: linear-gradient(135deg, #451a03, #78350f);
+    border-color: #d97706;
   }
-  html:not(.light-theme) .ver-int-head { border-color: #d97706; }
-  html:not(.light-theme) .ver-int-pregunta { background: rgba(0, 0, 0, 0.4); border-color: #b45309; }
+
+  html:not(.light-theme) .ver-int-head {
+    border-color: #d97706;
+  }
+
+  html:not(.light-theme) .ver-int-pregunta {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: #b45309;
+  }
 }
-.ver-option-label { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: var(--r-sm); cursor: pointer; transition: background 0.12s; font-size: 0.88rem; color: var(--text); }
-.ver-option-label:hover { background: rgba(249,115,22,.07); }
-.ver-int-result { text-align: center; padding: 20px 0; }
+
+.ver-option-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.ver-option-label:hover {
+  background: rgba(249, 115, 22, .07);
+}
+
+.ver-int-result {
+  text-align: center;
+  padding: 20px 0;
+}
 
 /* Foro */
-.ver-foro { background: transparent; display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
-.ver-foro-head { margin-bottom: 2px; }
-.ver-foro-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.ver-foro {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.ver-foro-head {
+  margin-bottom: 2px;
+}
+
+.ver-foro-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
 
 /* Facebook: caja crear publicación (Ahora Msg Style) */
 .msg-create-box {
-  display: flex; align-items: flex-start; gap: 12px;
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: var(--r-lg); padding: 12px 16px;
-  box-shadow: var(--shadow-sm); margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
 }
+
 .msg-create-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, var(--brand), #ef4444);
-  color: #fff; font-size: 0.85rem; font-weight: 800; margin-top: 4px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-top: 4px;
 }
+
 .msg-create-input-wrap {
-  flex: 1; display: flex; align-items: flex-end; gap: 8px;
-  background: var(--bg); border: 1px solid var(--border-light);
-  border-radius: 24px; padding: 6px 12px 6px 18px;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 6px 12px 6px 18px;
   transition: border-color 0.15s;
 }
-.msg-create-input-wrap:focus-within { border-color: var(--brand); }
-.msg-inputs { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+.msg-create-input-wrap:focus-within {
+  border-color: var(--brand);
+}
+
+.msg-inputs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .msg-create-title-input {
-  background: none; border: none; outline: none; font-size: 0.9rem; font-weight: 600; color: var(--dark);
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark);
 }
+
 .msg-create-input {
-  background: none; border: none; outline: none; font-size: 0.9rem; color: var(--text);
-  resize: vertical; min-height: 24px; max-height: 120px;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  color: var(--text);
+  resize: vertical;
+  min-height: 24px;
+  max-height: 120px;
 }
-.msg-create-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-bottom: 2px; }
+
+.msg-create-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
 .msg-attach-btn {
-  background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px;
-  border-radius: 50%; transition: color 0.15s, background 0.15s;
-  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.msg-attach-btn:hover { color: var(--brand); background: var(--surface-soft); }
+
+.msg-attach-btn:hover {
+  color: var(--brand);
+  background: var(--surface-soft);
+}
+
 .msg-send-btn {
-  width: 32px; height: 32px; border-radius: 50%; border: none;
-  background: var(--brand); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: background 0.15s;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.msg-send-btn:disabled { background: var(--border); cursor: default; }
-.msg-send-btn:not(:disabled):hover { background: var(--brand-dark); }
+
+.msg-send-btn:disabled {
+  background: var(--border);
+  cursor: default;
+}
+
+.msg-send-btn:not(:disabled):hover {
+  background: var(--brand-dark);
+}
 
 /* File Preview Msg Style */
-.msg-file-preview { margin-bottom: 14px; display: flex; padding-left: 52px; }
+.msg-file-preview {
+  margin-bottom: 14px;
+  display: flex;
+  padding-left: 52px;
+}
+
 .msg-preview-inner {
-  position: relative; border-radius: var(--r-lg); overflow: hidden;
-  max-width: 300px; border: 1px solid var(--border-light);
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  max-width: 300px;
+  border: 1px solid var(--border-light);
 }
-.msg-preview-media { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+
+.msg-preview-media {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
 .msg-remove-file {
-  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(0,0,0,.6); border: none; color: #fff; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .6);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
 }
-.msg-remove-file:hover { background: rgba(0,0,0,.8); }
-.fb-post-media { margin-top: 10px; border-radius: var(--r); overflow: hidden; }
+
+.msg-remove-file:hover {
+  background: rgba(0, 0, 0, .8);
+}
+
+.fb-post-media {
+  margin-top: 10px;
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
 .fb-post-media-img {
-  width: 100%; max-height: 360px; object-fit: contain; display: block; cursor: pointer;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
   background: var(--surface-soft);
   transition: opacity .15s;
 }
-.fb-post-media-img:hover { opacity: .9; }
-.fb-post-media-video { width: 100%; max-height: 400px; display: block; background: #000; }
+
+.fb-post-media-img:hover {
+  opacity: .9;
+}
+
+.fb-post-media-video {
+  width: 100%;
+  max-height: 400px;
+  display: block;
+  background: #000;
+}
 
 /* Facebook: estado vacío */
 .fb-empty-foro {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 40px 24px; text-align: center; color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--muted);
 }
-.fb-empty-foro p { font-size: 0.95rem; font-weight: 600; color: var(--dark); margin: 0; }
-.fb-empty-foro span { font-size: 0.83rem; }
+
+.fb-empty-foro p {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0;
+}
+
+.fb-empty-foro span {
+  font-size: 0.83rem;
+}
 
 /* Facebook: lista de posts */
-.fb-posts-list { display: flex; flex-direction: column; gap: 14px; }
+.fb-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
 /* Facebook: card de post */
 .fb-post-card {
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
 }
-.fb-post-card:hover { box-shadow: var(--shadow-md); }
 
-.fb-post-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px 10px; }
-.fb-post-avatar-wrap { flex-shrink: 0; }
+.fb-post-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.fb-post-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px 10px;
+}
+
+.fb-post-avatar-wrap {
+  flex-shrink: 0;
+}
+
 .fb-post-avatar {
-  width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 0.8rem; font-weight: 800;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
 }
-.fb-post-meta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.fb-post-author { font-size: 0.88rem; font-weight: 700; color: var(--dark); text-decoration: none; transition: color 0.15s; }
-.fb-post-author:hover { color: var(--brand); }
-.fb-post-time { font-size: 0.75rem; color: var(--muted); }
-.fb-delete-btn {
-  width: 30px; height: 30px; border-radius: 50%; border: none;
-  background: transparent; color: var(--muted); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; flex-shrink: 0;
-}
-.fb-delete-btn:hover { background: #fef2f2; color: #dc2626; }
 
-.fb-post-body { padding: 0 16px 14px; }
-.fb-post-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-.fb-post-content { font-size: 0.88rem; color: var(--text); line-height: 1.65; white-space: pre-wrap; }
+.fb-post-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fb-post-author {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--dark);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.fb-post-author:hover {
+  color: var(--brand);
+}
+
+.fb-post-time {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.fb-delete-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.fb-delete-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.fb-post-body {
+  padding: 0 16px 14px;
+}
+
+.fb-post-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+
+.fb-post-content {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
 
 /* Contadores */
 .fb-post-stats {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 16px 10px; font-size: 0.78rem; color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
-.fb-stat-likes { display: flex; align-items: center; gap: 5px; }
+
+.fb-stat-likes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .fb-like-bubble {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--brand); color: #fff;
-  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.fb-stat-comments { cursor: pointer; }
-.fb-stat-comments:hover { text-decoration: underline; }
+
+.fb-stat-comments {
+  cursor: pointer;
+}
+
+.fb-stat-comments:hover {
+  text-decoration: underline;
+}
 
 /* Styles for comment attachments and privacy */
 .fb-comment-attach-btn {
-  background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px;
-  border-radius: 50%; transition: color 0.15s, background 0.15s;
-  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.fb-comment-attach-btn:hover { color: var(--brand); background: var(--surface-soft); }
+
+.fb-comment-attach-btn:hover {
+  color: var(--brand);
+  background: var(--surface-soft);
+}
 
 .fb-private-toggle {
-  display: flex; align-items: center; justify-content: center;
-  color: var(--muted); cursor: pointer; padding: 4px; border-radius: 50%;
-  transition: all 0.15s; margin-right: 2px; position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.15s;
+  margin-right: 2px;
+  position: relative;
 }
-.fb-private-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-.fb-private-toggle:hover { background: var(--surface-soft); }
-.fb-private-toggle:has(input:checked) { color: var(--brand); }
+
+.fb-private-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.fb-private-toggle:hover {
+  background: var(--surface-soft);
+}
+
+.fb-private-toggle:has(input:checked) {
+  color: var(--brand);
+}
 
 .fb-comment-file-preview {
-  margin: 6px 0 0 52px; padding: 6px; border-radius: 8px; border: 1px solid var(--border-light);
-  display: inline-flex; position: relative; background: var(--surface);
-}
-.fb-cfp-media { max-height: 100px; max-width: 150px; border-radius: 4px; object-fit: cover; }
-.fb-cfp-remove {
-  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
-  background: var(--dark); color: #fff; border: none; font-size: 10px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);
+  margin: 6px 0 0 52px;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  display: inline-flex;
+  position: relative;
+  background: var(--surface);
 }
 
-.fb-comment-media { margin-top: 6px; }
-.fb-cm-img { max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-light); }
-.fb-cm-video { max-width: 250px; max-height: 200px; border-radius: 8px; background: #000; }
+.fb-cfp-media {
+  max-height: 100px;
+  max-width: 150px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.fb-cfp-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--dark);
+  color: #fff;
+  border: none;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.fb-comment-media {
+  margin-top: 6px;
+}
+
+.fb-cm-img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+}
+
+.fb-cm-video {
+  max-width: 250px;
+  max-height: 200px;
+  border-radius: 8px;
+  background: #000;
+}
 
 /* Botones acción */
 .fb-post-actions {
-  display: flex; border-top: 1px solid var(--border-light);
+  display: flex;
+  border-top: 1px solid var(--border-light);
   padding: 4px 8px;
 }
+
 .fb-action-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 8px 12px; border-radius: var(--r); border: none; background: transparent;
-  color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.15s;
 }
-.fb-action-btn:hover { background: var(--bg); color: var(--dark); }
-.fb-action-liked { color: var(--brand) !important; }
-.fb-action-liked:hover { background: rgba(249,115,22,.08) !important; }
-.fb-action-active { color: #3b82f6 !important; }
+
+.fb-action-btn:hover {
+  background: var(--bg);
+  color: var(--dark);
+}
+
+.fb-action-liked {
+  color: var(--brand) !important;
+}
+
+.fb-action-liked:hover {
+  background: rgba(249, 115, 22, .08) !important;
+}
+
+.fb-action-active {
+  color: #3b82f6 !important;
+}
 
 /* Sección comentarios */
 .fb-comments-section {
-  background: var(--bg); border-top: 1px solid var(--border-light);
-  padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
+  background: var(--bg);
+  border-top: 1px solid var(--border-light);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.fb-comment { display: flex; gap: 9px; align-items: flex-start; }
+
+.fb-comment {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+
 .fb-comment-avatar {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff; font-size: 0.7rem; font-weight: 800;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
 }
-.fb-comment-avatar.me { background: linear-gradient(135deg, var(--brand), #ef4444); }
+
+.fb-comment-avatar.me {
+  background: linear-gradient(135deg, var(--brand), #ef4444);
+}
+
 .fb-comment-bubble {
-  background: var(--surface); border-radius: 0 var(--r-lg) var(--r-lg) var(--r-lg);
-  padding: 8px 12px; max-width: calc(100% - 42px);
+  background: var(--surface);
+  border-radius: 0 var(--r-lg) var(--r-lg) var(--r-lg);
+  padding: 8px 12px;
+  max-width: calc(100% - 42px);
   border: 1px solid var(--border-light);
 }
-.fb-comment-author { font-size: 0.8rem; font-weight: 700; color: var(--dark); text-decoration: none; display: block; margin-bottom: 3px; }
-.fb-comment-author:hover { color: var(--brand); }
-.fb-comment-text { font-size: 0.84rem; color: var(--text); line-height: 1.5; white-space: pre-wrap; }
-.fb-no-comments { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 4px 0; }
+
+.fb-comment-author {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--dark);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.fb-comment-author:hover {
+  color: var(--brand);
+}
+
+.fb-comment-text {
+  font-size: 0.84rem;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.fb-no-comments {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 0;
+}
 
 /* Input nuevo comentario */
-.fb-new-comment-row { display: flex; gap: 9px; align-items: center; padding-top: 4px; }
+.fb-new-comment-row {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding-top: 4px;
+}
+
 .fb-comment-input-wrap {
-  flex: 1; display: flex; align-items: center; gap: 6px;
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: 999px; padding: 6px 10px 6px 14px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 6px 10px 6px 14px;
   transition: border-color 0.15s;
 }
-.fb-comment-input-wrap:focus-within { border-color: var(--brand); }
+
+.fb-comment-input-wrap:focus-within {
+  border-color: var(--brand);
+}
+
 .fb-comment-input {
-  flex: 1; background: none; border: none; outline: none;
-  font-size: 0.84rem; color: var(--dark);
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 0.84rem;
+  color: var(--dark);
 }
+
 .fb-comment-send {
-  width: 28px; height: 28px; border-radius: 50%; border: none;
-  background: var(--brand); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
 }
-.fb-comment-send:disabled { background: var(--border); cursor: default; }
-.fb-comment-send:not(:disabled):hover { background: var(--brand-dark); }
+
+.fb-comment-send:disabled {
+  background: var(--border);
+  cursor: default;
+}
+
+.fb-comment-send:not(:disabled):hover {
+  background: var(--brand-dark);
+}
 
 @media (max-width: 992px) {
   .ver-curso-shell {
     min-height: auto;
   }
+
   .ver-layout {
     grid-template-columns: 1fr;
     min-height: auto;
   }
+
   .ver-mobile-toggle {
     display: flex;
   }
+
   .ver-sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0; width: 300px; z-index: 201;
-    transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.25,0.1,0.25,1);
-    border-right: none; max-height: none; overflow-y: auto;
-    box-shadow: 4px 0 20px rgba(0,0,0,.15);
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    z-index: 201;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    border-right: none;
+    max-height: none;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, .15);
   }
+
   .ver-sidebar.open {
     transform: translateX(0);
   }
+
   .ver-main-inner {
     padding: 20px;
   }
@@ -2440,42 +3648,51 @@ html.dark-theme .ver-int-pregunta { background: rgba(0, 0, 0, 0.4); border-color
   .ver-main-inner {
     padding: 16px;
   }
+
   .ver-lec-header {
     flex-direction: column;
     align-items: stretch;
   }
+
   .ver-lec-title {
     font-size: 1.25rem;
     word-break: normal;
     overflow-wrap: break-word;
   }
+
   .ver-doc-frame {
     min-height: 360px;
   }
+
   .ver-lesson-actions,
   .fb-post-form-card {
     flex-direction: column;
     align-items: stretch;
   }
+
   .ver-next-suggestion {
     flex-direction: column;
     align-items: stretch;
   }
+
   .ver-welcome-inner {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 24px !important;
     padding: 28px 20px !important;
   }
+
   .ver-welcome-title {
     font-size: 1.5rem !important;
     word-break: normal;
     overflow-wrap: break-word;
   }
+
   .ver-welcome-desc {
     max-width: 100% !important;
     font-size: 0.92rem !important;
   }
+
   .ver-welcome-aside {
     width: 100% !important;
     flex-direction: row !important;
@@ -2484,25 +3701,30 @@ html.dark-theme .ver-int-pregunta { background: rgba(0, 0, 0, 0.4); border-color
     align-items: center !important;
     gap: 20px !important;
     padding-top: 20px !important;
-    border-top: 1px solid rgba(255,255,255,0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
   }
+
   .ver-aside-stats {
     flex-wrap: wrap !important;
     gap: 12px !important;
   }
+
   .ver-steps {
     flex-direction: column !important;
     gap: 18px !important;
   }
+
   .ver-step {
     flex-direction: row !important;
     align-items: center !important;
     text-align: left !important;
     gap: 14px !important;
   }
+
   .ver-step-arrow {
     display: none !important;
   }
+
   .ver-step-body p {
     max-width: 100% !important;
     margin: 0 !important;
@@ -2510,365 +3732,1012 @@ html.dark-theme .ver-int-pregunta { background: rgba(0, 0, 0, 0.4); border-color
 }
 
 /* Focus Mode */
-.ver-layout.focus-mode { grid-template-columns: 1fr; }
-.ver-layout.focus-mode .ver-sidebar { display: none; }
-.ver-layout.focus-mode .ver-main { width: 100%; }
-.ver-layout.focus-mode .ver-main-inner { max-width: 860px; }
-.ver-layout.focus-mode .ver-lec-header { max-width: 860px; }
-.ver-layout.focus-mode .ver-content-card { box-shadow: var(--shadow-md); }
+.ver-layout.focus-mode {
+  grid-template-columns: 1fr;
+}
+
+.ver-layout.focus-mode .ver-sidebar {
+  display: none;
+}
+
+.ver-layout.focus-mode .ver-main {
+  width: 100%;
+}
+
+.ver-layout.focus-mode .ver-main-inner {
+  max-width: 860px;
+}
+
+.ver-layout.focus-mode .ver-lec-header {
+  max-width: 860px;
+}
+
+.ver-layout.focus-mode .ver-content-card {
+  box-shadow: var(--shadow-md);
+}
+
 .ver-layout.focus-mode .ver-lesson-actions,
 .ver-layout.focus-mode .ver-next-suggestion,
 .ver-layout.focus-mode .ver-intermedias,
 .ver-layout.focus-mode .ver-notes-section,
-.ver-layout.focus-mode .ver-foro { max-width: 860px; }
+.ver-layout.focus-mode .ver-foro {
+  max-width: 860px;
+}
 
 /* Notes Section */
-.ver-notes-section { margin-top: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
-.ver-notes-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.ver-section-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0; }
-.ver-notes-status { font-size: 0.75rem; color: var(--muted); background: var(--surface-soft); padding: 4px 8px; border-radius: 4px; }
-.ver-notes-input { font-size: 0.9rem; line-height: 1.5; resize: vertical; background: var(--bg); border: 1px solid var(--border-light); }
-.ver-notes-input:focus { background: var(--surface); border-color: var(--brand); }
+.ver-notes-section {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+}
+
+.ver-notes-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ver-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.ver-notes-status {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.ver-notes-input {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+}
+
+.ver-notes-input:focus {
+  background: var(--surface);
+  border-color: var(--brand);
+}
 
 /* Glassmorphism icons */
 .gm-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
   backdrop-filter: blur(8px);
 }
+
 .gm-icon-notes {
-  background: rgba(249,115,22,.12);
-  border: 1px solid rgba(249,115,22,.25);
+  background: rgba(249, 115, 22, .12);
+  border: 1px solid rgba(249, 115, 22, .25);
   color: var(--brand);
 }
+
 .gm-icon-forum {
-  background: rgba(59,130,246,.12);
-  border: 1px solid rgba(59,130,246,.28);
+  background: rgba(59, 130, 246, .12);
+  border: 1px solid rgba(59, 130, 246, .28);
   color: #3b82f6;
 }
+
 .gm-icon-brain {
-  background: rgba(234,179,8,.12);
-  border: 1px solid rgba(234,179,8,.28);
+  background: rgba(234, 179, 8, .12);
+  border: 1px solid rgba(234, 179, 8, .28);
   color: #ca8a04;
 }
+
 .gm-icon-trophy {
-  background: rgba(249,115,22,.15);
-  border: 1px solid rgba(249,115,22,.3);
+  background: rgba(249, 115, 22, .15);
+  border: 1px solid rgba(249, 115, 22, .3);
   color: var(--brand);
-  width: 80px !important; height: 80px !important;
+  width: 80px !important;
+  height: 80px !important;
   border-radius: 20px;
 }
 
 /* Foro loading/error */
-.foro-loading { display: flex; align-items: center; gap: 10px; padding: 20px; color: var(--muted); font-size: 0.88rem; justify-content: center; }
-.foro-msg { padding: 10px 18px; font-size: 0.85rem; font-weight: 600; border-radius: var(--r-sm); margin: 8px 16px; }
-.foro-msg-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.foro-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  justify-content: center;
+}
+
+.foro-msg {
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  margin: 8px 16px;
+}
+
+.foro-msg-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
 
 /* Forum author link */
-.ver-user-link { color: var(--brand-dark); font-weight: 600; text-decoration: none; transition: color 0.15s; }
-.ver-user-link:hover { color: var(--brand); text-decoration: underline; }
+.ver-user-link {
+  color: var(--brand-dark);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.ver-user-link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
 
 /* Lec delete button */
 .lec-btn.del {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 6px; border: none;
-  background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
-.lec-btn.del:hover { background: #fef2f2; color: #dc2626; }
+
+.lec-btn.del:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
 
 /* Confetti Overlay */
 .ver-confetti-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6); z-index: 10000;
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   backdrop-filter: blur(4px);
 }
+
 .ver-confetti-card {
-  background: var(--surface); padding: 40px; border-radius: 20px;
-  text-align: center; max-width: 400px; width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  background: var(--surface);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.ver-confetti-icon { font-size: 4rem; margin-bottom: 16px; animation: bounce 2s infinite; }
-.ver-confetti-card h2 { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
-.ver-confetti-card p { font-size: 1rem; color: var(--muted); }
+
+.ver-confetti-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: bounce 2s infinite;
+}
+
+.ver-confetti-card h2 {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.ver-confetti-card p {
+  font-size: 1rem;
+  color: var(--muted);
+}
 
 @keyframes popIn {
-  0% { opacity: 0; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-20px); }
-  60% { transform: translateY(-10px); }
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-20px);
+  }
+
+  60% {
+    transform: translateY(-10px);
+  }
 }
 
 /* ── Forum Profile Card Popup ─────────────────────────── */
 .foro-card-backdrop {
-  position: fixed; inset: 0; z-index: 999;
-  background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
+
 .foro-profile-card {
   position: relative;
-  background: var(--surface); border-radius: var(--r-xl);
-  padding: 32px 24px 24px; text-align: center;
-  box-shadow: 0 24px 60px rgba(0,0,0,.18);
-  min-width: 240px; max-width: 300px; width: 100%;
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 32px 24px 24px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .18);
+  min-width: 240px;
+  max-width: 300px;
+  width: 100%;
 }
+
 .fpc-close {
-  position: absolute; top: 12px; right: 12px;
-  background: var(--surface-soft); border: none; cursor: pointer;
-  color: var(--muted); border-radius: 50%; width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--surface-soft);
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.12s;
 }
-.fpc-close:hover { background: var(--border); }
+
+.fpc-close:hover {
+  background: var(--border);
+}
+
 .fpc-avatar {
-  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px; overflow: hidden;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-  color: #fff; font-size: 1.6rem; font-weight: 900;
-  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.fpc-name { font-size: 1.05rem; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
-.fpc-role { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; }
-.fpc-actions { display: flex; flex-direction: column; gap: 8px; }
+
+.fpc-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+
+.fpc-role {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.fpc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .fpc-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px 16px; border-radius: 9999px; font-size: 0.88rem; font-weight: 600;
-  border: none; cursor: pointer; text-decoration: none; transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
 }
-.fpc-btn-primary { background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(249,115,22,.25); }
-.fpc-btn-primary:hover { background: var(--brand-dark); }
-.fpc-btn-secondary { background: var(--surface-soft); color: var(--dark); }
-.fpc-btn-secondary:hover { background: rgba(0,0,0,.06); }
+
+.fpc-btn-primary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, .25);
+}
+
+.fpc-btn-primary:hover {
+  background: var(--brand-dark);
+}
+
+.fpc-btn-secondary {
+  background: var(--surface-soft);
+  color: var(--dark);
+}
+
+.fpc-btn-secondary:hover {
+  background: rgba(0, 0, 0, .06);
+}
 
 /* Tarjeta de enlace externo (no embebible) */
 .ver-link-card {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; padding: 48px 32px; text-align: center;
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--r-xl); margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 32px;
+  text-align: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-xl);
+  margin: 0;
 }
-.ver-link-card-icon { font-size: 3rem; line-height: 1; }
-.ver-link-card-label { font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0; }
+
+.ver-link-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.ver-link-card-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
 .ver-link-card-url {
-  font-size: 0.82rem; color: var(--muted); margin: 0;
-  word-break: break-all; max-width: 480px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+  word-break: break-all;
+  max-width: 480px;
 }
-.ver-link-card-btn { font-size: 1rem; padding: 12px 28px; }
+
+.ver-link-card-btn {
+  font-size: 1rem;
+  padding: 12px 28px;
+}
 
 /* Examen final banner */
 .ver-examen-final-banner {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 14px;
-  background: var(--dark); color: #fff;
-  padding: 14px 20px 14px 18px; border-radius: var(--r-xl);
-  box-shadow: 0 8px 32px rgba(0,0,0,.35); z-index: 500;
-  max-width: 480px; width: calc(100% - 40px);
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--dark);
+  color: #fff;
+  padding: 14px 20px 14px 18px;
+  border-radius: var(--r-xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .35);
+  z-index: 500;
+  max-width: 480px;
+  width: calc(100% - 40px);
 }
-.ver-examen-final-icon { font-size: 1.8rem; flex-shrink: 0; }
-.ver-examen-final-body { flex: 1; min-width: 0; }
-.ver-examen-final-body strong { font-size: 0.95rem; font-weight: 800; display: block; }
-.ver-examen-final-body p { font-size: 0.82rem; opacity: .75; margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ver-examen-final-btn { flex-shrink: 0; font-size: 0.85rem !important; padding: 8px 16px !important; }
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(.16,1,.3,1); }
-.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateX(-50%) translateY(24px); }
+
+.ver-examen-final-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.ver-examen-final-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ver-examen-final-body strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  display: block;
+}
+
+.ver-examen-final-body p {
+  font-size: 0.82rem;
+  opacity: .75;
+  margin: 2px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ver-examen-final-btn {
+  flex-shrink: 0;
+  font-size: 0.85rem !important;
+  padding: 8px 16px !important;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(.16, 1, .3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(24px);
+}
 
 /* Reacciones y Comentarios Anidados */
-.fb-comment-thread { margin-bottom: 12px; }
-.fb-comment-content { flex: 1; min-width: 0; }
+.fb-comment-thread {
+  margin-bottom: 12px;
+}
+
+.fb-comment-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .fb-comment-actions {
-  display: flex; align-items: center; gap: 12px; padding-left: 4px; margin-top: 4px;
-  font-size: 0.75rem; font-weight: 600; color: var(--muted);
-}
-.fb-c-action { cursor: pointer; transition: color 0.15s; }
-.fb-c-action:hover { color: var(--brand); text-decoration: underline; }
-
-.fb-reaction-wrap, .fb-reaction-wrap-post { position: relative; display: inline-flex; }
-.fb-reaction-picker, .fb-reaction-picker-post {
-  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: 999px; padding: 4px; display: flex; gap: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.15); z-index: 10;
-}
-.fb-reaction-picker-post { left: 50%; transform: translateX(-50%); margin-bottom: 8px; }
-.fb-reaction-picker button, .fb-reaction-picker-post button {
-  background: none; border: none; font-size: 1.2rem; cursor: pointer;
-  padding: 4px 6px; border-radius: 50%; transition: transform 0.15s, background 0.15s;
-}
-.fb-reaction-picker button:hover, .fb-reaction-picker-post button:hover {
-  transform: scale(1.2); background: rgba(0,0,0,.05);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 4px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-.fb-reaction-pills { display: flex; gap: 4px; }
+.fb-c-action {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.fb-c-action:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.fb-reaction-wrap,
+.fb-reaction-wrap-post {
+  position: relative;
+  display: inline-flex;
+}
+
+.fb-reaction-picker,
+.fb-reaction-picker-post {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .15);
+  z-index: 10;
+}
+
+.fb-reaction-picker-post {
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+}
+
+.fb-reaction-picker button,
+.fb-reaction-picker-post button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.fb-reaction-picker button:hover,
+.fb-reaction-picker-post button:hover {
+  transform: scale(1.2);
+  background: rgba(0, 0, 0, .05);
+}
+
+.fb-reaction-pills {
+  display: flex;
+  gap: 4px;
+}
+
 .fb-reaction-pill {
-  background: var(--surface-soft); border: 1px solid var(--border-light);
-  border-radius: 999px; padding: 2px 6px; font-size: 0.7rem; font-weight: 700;
-  color: var(--dark); display: inline-flex; align-items: center; gap: 3px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
+
 .fb-reaction-pill-stat {
-  background: var(--bg); border: 1px solid var(--border-light);
-  border-radius: 999px; padding: 3px 8px; font-size: 0.75rem; font-weight: 700;
-  color: var(--dark); display: inline-flex; align-items: center; gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .fb-comment-replies {
-  margin-top: 10px; margin-left: 36px; display: flex; flex-direction: column; gap: 10px;
-  border-left: 2px solid var(--border-light); padding-left: 12px;
+  margin-top: 10px;
+  margin-left: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-left: 2px solid var(--border-light);
+  padding-left: 12px;
 }
-.reply-row { margin-left: 36px; margin-top: 10px; }
+
+.reply-row {
+  margin-left: 36px;
+  margin-top: 10px;
+}
 
 /* ── Panel Avance y Puntuación ── */
 .ver-avance-panel-modal {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-  width: 90%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
-  box-shadow: var(--shadow-lg); color: var(--text); overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  overflow: hidden;
 }
+
 .ver-avance-head {
-  padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex;
-  justify-content: space-between; align-items: center; background: var(--surface);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
 }
-.ver-avance-head h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--dark); }
-.ver-avance-head p { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
-.ver-avance-body { padding: 24px; overflow-y: auto; flex: 1; background: var(--surface); }
+
+.ver-avance-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.ver-avance-head p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ver-avance-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  background: var(--surface);
+}
+
 .ver-avance-mycard {
-  background: var(--surface-soft); border: 1px solid var(--border); border-radius: 14px;
-  padding: 18px; margin-bottom: 24px; box-shadow: var(--shadow-xs);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-xs);
 }
-.ver-avance-mycard-row { display: flex; justify-content: space-between; }
-.ver-avance-lbl { font-size: 0.82rem; font-weight: 500; color: var(--muted); }
-.ver-avance-val { font-size: 1.2rem; font-weight: 800; color: var(--dark); margin-top: 4px; }
-.ver-avance-ranking h4 { margin: 0 0 12px; font-size: 1rem; color: var(--dark); }
-.leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
+
+.ver-avance-mycard-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ver-avance-lbl {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.ver-avance-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-top: 4px;
+}
+
+.ver-avance-ranking h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--dark);
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .leaderboard-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; background: var(--surface-soft); border: 1px solid var(--border);
-  border-radius: 12px; transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s;
 }
-.leaderboard-row:hover { border-color: var(--brand); }
+
+.leaderboard-row:hover {
+  border-color: var(--brand);
+}
+
 .lb-rank {
-  width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text);
-  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
   margin-right: 12px;
 }
-.lb-rank-top { background: #f97316; color: #fff; }
-.lb-user { display: flex; align-items: center; gap: 12px; flex: 1; }
+
+.lb-rank-top {
+  background: #f97316;
+  color: #fff;
+}
+
+.lb-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
 .lb-avatar {
-  width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff;
-  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
-.lb-name { font-weight: 650; color: var(--dark); }
-.lb-points { font-weight: 700; color: #d97706; }
+
+.lb-name {
+  font-weight: 650;
+  color: var(--dark);
+}
+
+.lb-points {
+  font-weight: 700;
+  color: #d97706;
+}
+
 @media (prefers-color-scheme: dark) {
-  html:not(.light-theme) .lb-points { color: #fbbf24; }
+  html:not(.light-theme) .lb-points {
+    color: #fbbf24;
+  }
 }
-html.dark-theme .lb-points { color: #fbbf24; }
+
+html.dark-theme .lb-points {
+  color: #fbbf24;
+}
+
 .ver-avance-foot {
-  padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
   background: var(--surface);
 }
 
 /* ── Examen modal en curso ── */
 .ver-examen-modal {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-  width: 90%; max-width: 720px; max-height: 88vh; display: flex; flex-direction: column;
-  box-shadow: var(--shadow-lg); color: var(--text); overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  overflow: hidden;
 }
+
 .ver-examen-modal-head {
-  padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex;
-  justify-content: space-between; align-items: center; background: var(--surface);
-}
-.ver-examen-badge {
-  font-size: 0.75rem; font-weight: 700; color: var(--brand); letter-spacing: 0.05em; display: block;
-}
-.ver-examen-modal-head h3 { margin: 4px 0 0; font-size: 1.3rem; font-weight: 700; color: var(--dark); }
-.ver-examen-close-btn {
-  background: var(--surface-soft); border: 1px solid var(--border); cursor: pointer;
-  color: var(--muted); border-radius: 50%; width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center; font-size: 1rem;
-  transition: all 0.2s;
-}
-.ver-examen-close-btn:hover { background: var(--border); color: var(--dark); }
-.ver-examen-modal-body { padding: 24px; overflow-y: auto; flex: 1; background: var(--surface); }
-.ver-examen-desc { font-size: 0.95rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
-.ver-examen-preguntas { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-.ver-examen-pregunta-card {
-  display: flex; gap: 14px; background: var(--surface-soft); border: 1px solid var(--border);
-  border-radius: 14px; padding: 18px;
-}
-.preg-num {
-  width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff;
-  display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
-}
-.preg-content { flex: 1; min-width: 0; }
-.preg-content h5 { margin: 0 0 12px; font-size: 1.02rem; color: var(--dark); font-weight: 700; line-height: 1.4; }
-.preg-opciones { display: flex; flex-direction: column; gap: 8px; }
-.preg-opc-label {
-  display: flex; align-items: center; gap: 10px; cursor: pointer;
-  padding: 10px 14px; border-radius: 10px; background: var(--surface);
-  border: 1px solid var(--border); transition: all 0.2s; color: var(--text);
-  font-size: 0.95rem; font-weight: 500;
-}
-.preg-opc-label span { color: var(--text); }
-.preg-opc-label:hover { border-color: var(--brand); background: rgba(249,115,22,0.08); }
-.ver-examen-modal-foot {
-  padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: var(--surface);
 }
-.ver-examen-res-box { text-align: center; padding: 30px; color: var(--text); }
-.ver-examen-res-box h4 { color: var(--dark); font-size: 1.3rem; margin-bottom: 8px; }
-.ver-examen-res-box p { color: var(--muted); font-size: 0.95rem; }
+
+.ver-examen-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.ver-examen-modal-head h3 {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.ver-examen-close-btn {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--muted);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.ver-examen-close-btn:hover {
+  background: var(--border);
+  color: var(--dark);
+}
+
+.ver-examen-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  background: var(--surface);
+}
+
+.ver-examen-desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.ver-examen-preguntas {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.ver-examen-pregunta-card {
+  display: flex;
+  gap: 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.preg-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.preg-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.preg-content h5 {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  color: var(--dark);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.preg-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preg-opc-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.preg-opc-label span {
+  color: var(--text);
+}
+
+.preg-opc-label:hover {
+  border-color: var(--brand);
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.ver-examen-modal-foot {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--surface);
+}
+
+.ver-examen-res-box {
+  text-align: center;
+  padding: 30px;
+  color: var(--text);
+}
+
+.ver-examen-res-box h4 {
+  color: var(--dark);
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.ver-examen-res-box p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .ver-examen-score-badge {
-  display: inline-block; font-size: 2.5rem; font-weight: 800; color: #10b981;
-  background: rgba(16,185,129,0.1); border: 2px solid #10b981; border-radius: 50%;
-  width: 100px; height: 100px; line-height: 96px; margin-bottom: 16px;
+  display: inline-block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid #10b981;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  line-height: 96px;
+  margin-bottom: 16px;
 }
 
 /* ── Glassmorphic Icons & Badges ── */
 .glass-icon-box {
-  width: 44px; height: 44px; border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
 }
+
 .glass-icon-badge {
-  width: 24px; height: 24px; border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
 }
+
 .glass-icon-amber {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.1));
   color: #fbbf24;
 }
+
 .glass-icon-blue {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.1));
   color: #60a5fa;
 }
+
 .glass-icon-orange {
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.1));
   color: #f97316;
 }
+
 .glass-rank-badge {
-  width: 28px; height: 28px; border-radius: 50%; display: inline-flex;
-  align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
+
 .glass-rank-gold {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.85), rgba(217, 119, 6, 0.65));
   color: #fff;
 }
+
 .glass-rank-silver {
   background: linear-gradient(135deg, rgba(148, 163, 184, 0.85), rgba(100, 116, 139, 0.65));
   color: #fff;
 }
+
 .glass-rank-bronze {
   background: linear-gradient(135deg, rgba(217, 119, 6, 0.75), rgba(180, 83, 9, 0.65));
   color: #fff;
@@ -2881,6 +4750,7 @@ html.dark-theme .lb-points { color: #fbbf24; }
   padding: 24px;
   border: 1px solid var(--border-color, #e2e8f0);
 }
+
 .ver-activity-head {
   display: flex;
   justify-content: space-between;
@@ -2893,39 +4763,47 @@ html.dark-theme .lb-points { color: #fbbf24; }
   border-radius: 12px;
   border: 1px solid rgba(99, 102, 241, 0.15);
 }
+
 .ver-activity-dates {
   display: flex;
   gap: 24px;
   flex-wrap: wrap;
 }
+
 .ver-act-date {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.9rem;
 }
+
 .ver-act-date-label {
   font-weight: 600;
   color: var(--text-muted, #64748b);
 }
+
 .ver-act-date-val {
   font-weight: 700;
   color: var(--brand, #6366f1);
 }
+
 .ver-act-expired {
   color: #ef4444 !important;
 }
+
 .ver-act-sub {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-dark, #1e293b);
   margin-bottom: 10px;
 }
+
 .ver-act-desc {
   font-size: 0.98rem;
   color: var(--text-main, #334155);
   line-height: 1.6;
 }
+
 .ver-act-content {
   font-size: 0.95rem;
   color: var(--text-muted, #475569);
@@ -2934,14 +4812,17 @@ html.dark-theme .lb-points { color: #fbbf24; }
   padding: 12px;
   border-radius: 8px;
 }
+
 .ver-act-divider {
   border: none;
   border-top: 1px dashed var(--border-color, #cbd5e1);
   margin: 24px 0;
 }
+
 .ver-activity-submission {
   margin-top: 16px;
 }
+
 .ver-submission-success {
   display: flex;
   justify-content: space-between;
@@ -2953,19 +4834,23 @@ html.dark-theme .lb-points { color: #fbbf24; }
   padding: 16px 20px;
   border-radius: 12px;
 }
+
 .ver-sub-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .ver-sub-icon {
   font-size: 1.6rem;
 }
+
 .ver-sub-date {
   font-size: 0.8rem;
   color: var(--text-muted, #64748b);
   margin: 2px 0 0;
 }
+
 .ver-act-closed-alert {
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -2975,6 +4860,7 @@ html.dark-theme .lb-points { color: #fbbf24; }
   font-weight: 600;
   text-align: center;
 }
+
 .ver-droparea {
   display: block;
   border: 2px dashed var(--brand, #6366f1);
@@ -2985,28 +4871,34 @@ html.dark-theme .lb-points { color: #fbbf24; }
   background: rgba(99, 102, 241, 0.02);
   transition: all 0.2s ease;
 }
+
 .ver-droparea:hover {
   background: rgba(99, 102, 241, 0.06);
   border-color: #4f46e5;
 }
+
 .ver-droparea-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
 }
+
 .ver-drop-icon {
   font-size: 2.2rem;
 }
+
 .ver-file-selected {
   color: var(--brand, #6366f1);
   font-size: 1.05rem;
 }
+
 .ver-drop-hint {
   font-size: 0.8rem;
   color: var(--text-muted, #64748b);
   max-width: 450px;
 }
+
 .ver-upload-actions {
   display: flex;
   gap: 12px;
