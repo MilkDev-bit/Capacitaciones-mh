@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
+	cursospb "Prueba-Go/gen/cursos"
 	leccionespb "Prueba-Go/gen/lecciones"
 	usuariospb "Prueba-Go/gen/usuarios"
 
@@ -598,6 +600,63 @@ func (h *LeccionesHandler) InstructorDeletePreguntaIntermedia(ctx *gin.Context) 
 
 // ── Entregas de Actividades / Tareas ──────────────────────────────────────────
 
+func (h *LeccionesHandler) enrichEntrega(ctx context.Context, e *leccionespb.EntregaResponse) {
+	if e == nil {
+		return
+	}
+	if e.UserId != "" && (e.UserName == "" || e.UserEmail == "") {
+		if uResp, err := h.c.Usuarios.GetPublicPerfil(ctx, &usuariospb.UserIDRequest{UserId: e.UserId}); err == nil && uResp != nil {
+			e.UserName = uResp.Name
+			e.UserEmail = uResp.Email
+			e.AvatarUrl = uResp.AvatarUrl
+		}
+	}
+	if e.CapacitacionId != "" && e.CursoTitle == "" {
+		if cResp, err := h.c.Cursos.GetCursoPublico(ctx, &cursospb.CursoIDRequest{CursoId: e.CapacitacionId}); err == nil && cResp != nil {
+			e.CursoTitle = cResp.Title
+		}
+	}
+}
+
+func (h *LeccionesHandler) enrichEntregasSlice(ctx context.Context, entregas []*leccionespb.EntregaResponse) {
+	usersCache := make(map[string]*usuariospb.PerfilResponse)
+	cursosCache := make(map[string]string)
+
+	for _, e := range entregas {
+		if e == nil {
+			continue
+		}
+		if e.UserId != "" && (e.UserName == "" || e.UserEmail == "") {
+			u, ok := usersCache[e.UserId]
+			if !ok {
+				uResp, err := h.c.Usuarios.GetPublicPerfil(ctx, &usuariospb.UserIDRequest{UserId: e.UserId})
+				if err == nil && uResp != nil {
+					u = uResp
+					usersCache[e.UserId] = u
+				}
+			}
+			if u != nil {
+				e.UserName = u.Name
+				e.UserEmail = u.Email
+				e.AvatarUrl = u.AvatarUrl
+			}
+		}
+		if e.CapacitacionId != "" && e.CursoTitle == "" {
+			title, ok := cursosCache[e.CapacitacionId]
+			if !ok {
+				cResp, err := h.c.Cursos.GetCursoPublico(ctx, &cursospb.CursoIDRequest{CursoId: e.CapacitacionId})
+				if err == nil && cResp != nil {
+					title = cResp.Title
+					cursosCache[e.CapacitacionId] = title
+				}
+			}
+			if title != "" {
+				e.CursoTitle = title
+			}
+		}
+	}
+}
+
 // POST /api/capacitaciones/:id/lecciones/:leccion_id/entrega
 func (h *LeccionesHandler) SubmitEntregaActividad(ctx *gin.Context) {
 	var body struct {
@@ -622,6 +681,9 @@ func (h *LeccionesHandler) SubmitEntregaActividad(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+	if resp != nil {
+		h.enrichEntrega(ctx.Request.Context(), resp)
+	}
 	ctx.JSON(http.StatusOK, resp)
 }
 
@@ -635,6 +697,9 @@ func (h *LeccionesHandler) GetEntregaActividadUsuario(ctx *gin.Context) {
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
+	}
+	if resp != nil {
+		h.enrichEntrega(ctx.Request.Context(), resp)
 	}
 	ctx.JSON(http.StatusOK, resp)
 }
@@ -656,6 +721,9 @@ func (h *LeccionesHandler) InstructorListEntregas(ctx *gin.Context) {
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
+	}
+	if resp != nil {
+		h.enrichEntregasSlice(ctx.Request.Context(), resp.Entregas)
 	}
 	ctx.JSON(http.StatusOK, resp)
 }

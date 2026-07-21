@@ -848,19 +848,17 @@ func (r *postgresLeccionesRepository) GetUserBadgeSlugs(ctx context.Context, use
 
 const selectEntregaCols = `
 	e.id, e.leccion_id, e.capacitacion_id, e.user_id,
-	COALESCE(u.name, '')       AS user_name,
-	COALESCE(u.email, '')      AS user_email,
-	COALESCE(u.avatar_url, '') AS avatar_url,
-	COALESCE(c.title, '')      AS curso_title,
-	COALESCE(l.title, '')      AS leccion_title,
+	'' AS user_name,
+	'' AS user_email,
+	'' AS avatar_url,
+	'' AS curso_title,
+	COALESCE(l.title, '') AS leccion_title,
 	e.file_path, e.file_name,
-	COALESCE(e.file_size, 0)   AS file_size,
+	COALESCE(e.file_size, 0) AS file_size,
 	e.created_at, e.updated_at`
 
 const fromEntregaJoin = `
 	FROM entregas_actividad e
-	LEFT JOIN users u ON u.id = e.user_id
-	LEFT JOIN capacitaciones c ON c.id = e.capacitacion_id
 	LEFT JOIN lecciones l ON l.id = e.leccion_id`
 
 func (r *postgresLeccionesRepository) SubmitEntrega(ctx context.Context, req *leccionespb.SubmitEntregaRequest) (*EntregaActividad, error) {
