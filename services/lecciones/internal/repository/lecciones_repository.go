@@ -137,10 +137,10 @@ func (l *Leccion) ToProto() *leccionespb.LeccionResponse {
 		resp.SubmoduloId = *l.SubmoduloID
 	}
 	if l.FechaInicio != nil {
-		resp.FechaInicio = l.FechaInicio.Format("2006-01-02T15:04:05Z")
+		resp.FechaInicio = l.FechaInicio.UTC().Format(time.RFC3339)
 	}
 	if l.FechaCierre != nil {
-		resp.FechaCierre = l.FechaCierre.Format("2006-01-02T15:04:05Z")
+		resp.FechaCierre = l.FechaCierre.UTC().Format(time.RFC3339)
 	}
 	if l.MiEntrega != nil {
 		resp.MiEntrega = l.MiEntrega.ToProto()
@@ -516,8 +516,13 @@ func (r *postgresLeccionesRepository) FindByID(ctx context.Context, leccionID st
 }
 
 func parseOptionalDate(s string) (time.Time, error) {
+	if s == "" {
+		return time.Time{}, errors.New("empty date string")
+	}
 	formats := []string{
+		time.RFC3339Nano,
 		time.RFC3339,
+		"2006-01-02T15:04:05.999Z",
 		"2006-01-02T15:04:05Z",
 		"2006-01-02T15:04:05",
 		"2006-01-02T15:04",

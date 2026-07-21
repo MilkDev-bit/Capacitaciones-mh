@@ -54,6 +54,21 @@ const panelForm = ref<any>({})
 const panelFile = ref<File | null>(null)
 const panelSaving = ref(false)
 
+function toDateTimeLocalString(dtInput: string): string {
+  if (!dtInput) return ''
+  const dt = new Date(dtInput)
+  if (isNaN(dt.getTime())) return typeof dtInput === 'string' ? dtInput.slice(0, 16) : ''
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`
+}
+
+function toIsoFromLocal(dtInput: string): string {
+  if (!dtInput) return ''
+  const dt = new Date(dtInput)
+  if (isNaN(dt.getTime())) return dtInput
+  return dt.toISOString()
+}
+
 function openPanel(mode: PanelMode, ctx: any = {}, form: any = {}) {
   if ((mode === 'edit-lesson') && (!ctx.leccionId || ctx.leccionId === 'undefined')) {
     toast.warning('No se encontró el ID de la lección a editar')
@@ -63,10 +78,10 @@ function openPanel(mode: PanelMode, ctx: any = {}, form: any = {}) {
   panelCtx.value = ctx
   const formattedForm = { ...form }
   if (formattedForm.fecha_inicio && typeof formattedForm.fecha_inicio === 'string') {
-    formattedForm.fecha_inicio = formattedForm.fecha_inicio.slice(0, 16)
+    formattedForm.fecha_inicio = toDateTimeLocalString(formattedForm.fecha_inicio)
   }
   if (formattedForm.fecha_cierre && typeof formattedForm.fecha_cierre === 'string') {
-    formattedForm.fecha_cierre = formattedForm.fecha_cierre.slice(0, 16)
+    formattedForm.fecha_cierre = toDateTimeLocalString(formattedForm.fecha_cierre)
   }
   panelForm.value = { type: '1', lesson_type: '1', duracion_min: 0, points_reward: 100, fecha_inicio: '', fecha_cierre: '', ...formattedForm }
   panelFile.value = null
@@ -197,8 +212,8 @@ async function saveLesson() {
     submodulo_id: panelCtx.value.submoduloId ?? '',
     game_config_json: finalConfigJson,
     points_reward: Number(form.points_reward || 0),
-    fecha_inicio: form.fecha_inicio || '',
-    fecha_cierre: form.fecha_cierre || '',
+    fecha_inicio: toIsoFromLocal(form.fecha_inicio || ''),
+    fecha_cierre: toIsoFromLocal(form.fecha_cierre || ''),
   }
 
   if (panelFile.value && (type === '1' || type === '3')) {
