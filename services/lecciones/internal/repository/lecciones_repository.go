@@ -912,7 +912,7 @@ func (r *postgresLeccionesRepository) InstructorListEntregas(ctx context.Context
 		query = `SELECT ` + selectEntregaCols + fromEntregaJoin + ` WHERE e.capacitacion_id=$1 ORDER BY e.updated_at DESC`
 		args = append(args, cursoID)
 	} else {
-		return nil, errors.New("debe proporcionar curso_id o leccion_id")
+		query = `SELECT ` + selectEntregaCols + fromEntregaJoin + ` ORDER BY e.updated_at DESC`
 	}
 	return list, r.db.SelectContext(ctx, &list, query, args...)
 }
