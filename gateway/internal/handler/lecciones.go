@@ -715,14 +715,32 @@ func (h *LeccionesHandler) InstructorListEntregas(ctx *gin.Context) {
 		leccionID = ctx.Query("leccion_id")
 	}
 	resp, err := h.c.Lecciones.InstructorListEntregas(ctx.Request.Context(), &leccionespb.InstructorListEntregasRequest{
-		CursoId:   cursoID,
-		LeccionId: leccionID,
+		CursoId:      cursoID,
+		LeccionId:    leccionID,
+		InstructorId: ctx.GetString("userID"),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
 	if resp != nil {
+		if cursoID == "" && leccionID == "" {
+			userID := ctx.GetString("userID")
+			cursosResp, cErr := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID})
+			if cErr == nil && cursosResp != nil {
+				instructorCursos := make(map[string]bool)
+				for _, c := range cursosResp.Cursos {
+					instructorCursos[c.Id] = true
+				}
+				var filtered []*leccionespb.EntregaResponse
+				for _, e := range resp.Entregas {
+					if instructorCursos[e.CapacitacionId] {
+						filtered = append(filtered, e)
+					}
+				}
+				resp.Entregas = filtered
+			}
+		}
 		h.enrichEntregasSlice(ctx.Request.Context(), resp.Entregas)
 	}
 	ctx.JSON(http.StatusOK, resp)

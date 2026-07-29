@@ -252,8 +252,9 @@ message GetEntregaRequest {
 }
 
 message InstructorListEntregasRequest {
-  string curso_id   = 1;
-  string leccion_id = 2;
+  string curso_id      = 1;
+  string leccion_id    = 2;
+  string instructor_id = 3;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1843,6 +1843,7 @@ type InstructorListEntregasRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CursoId       string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
 	LeccionId     string                 `protobuf:"bytes,2,opt,name=leccion_id,json=leccionId,proto3" json:"leccion_id,omitempty"`
+	InstructorId  string                 `protobuf:"bytes,3,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1887,6 +1888,13 @@ func (x *InstructorListEntregasRequest) GetCursoId() string {
 func (x *InstructorListEntregasRequest) GetLeccionId() string {
 	if x != nil {
 		return x.LeccionId
+	}
+	return ""
+}
+
+func (x *InstructorListEntregasRequest) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
 	}
 	return ""
 }
@@ -3424,11 +3432,12 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x11GetEntregaRequest\x12\x1d\n" +
 	"\n" +
 	"leccion_id\x18\x01 \x01(\tR\tleccionId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"Y\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"~\n" +
 	"\x1dInstructorListEntregasRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x1d\n" +
 	"\n" +
-	"leccion_id\x18\x02 \x01(\tR\tleccionId\"\x9d\x01\n" +
+	"leccion_id\x18\x02 \x01(\tR\tleccionId\x12#\n" +
+	"\rinstructor_id\x18\x03 \x01(\tR\finstructorId\"\x9d\x01\n" +
 	"\x11CursoTreeResponse\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x123\n" +
 	"\amodulos\x18\x02 \x03(\v2\x19.lecciones.ModuloResponseR\amodulos\x128\n" +
