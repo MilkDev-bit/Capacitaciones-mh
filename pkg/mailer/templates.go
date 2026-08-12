@@ -250,7 +250,7 @@ func (c *Client) ParticipantAccess(nombreParticipante, empresaONombreComprador, 
 	}
 
 	body := fmt.Sprintf(`
-<h2 style="margin:0 0 10px;font-size:20px;font-weight:800;color:#111827">🎓 Te inscribieron a una capacitación</h2>
+<h2 style="margin:0 0 10px;font-size:20px;font-weight:800;color:#111827">Te inscribieron a una capacitación</h2>
 <p style="margin:0 0 8px;color:#374151;font-size:15px;line-height:1.65">%s,</p>
 <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.65">
   <strong>%s</strong> reservó un lugar para ti en <strong>%s</strong>.
