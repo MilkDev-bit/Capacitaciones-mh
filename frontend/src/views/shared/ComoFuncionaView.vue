@@ -320,13 +320,25 @@ onUnmounted(() => {
 <style scoped>
 .cf {
   --tinta: #f4f1ea;
-  --tinta-suave: rgba(244, 241, 234, 0.62);
+  /* 0.82 en vez de 0.62: sobre el panel da ~9:1, holgado por encima del 4.5:1
+     de la AA. A 0.62 el cuerpo se caía justo cuando el cielo oscurecía. */
+  --tinta-suave: rgba(244, 241, 234, 0.82);
   --acento: #f5c54e;
+  /* Fondo del panel fijo y casi opaco. La escena cambia de la tarde a la noche,
+     así que el contraste del texto NO puede depender de qué haya detrás: se
+     resuelve contra el panel y sale igual al 0% que al 100% del recorrido. */
+  --panel: rgba(13, 11, 30, 0.92);
+  --panel-borde: rgba(245, 197, 78, 0.34);
   --hueco: clamp(1rem, 4vw, 2rem);
   position: relative;
   color: var(--tinta);
   background: #0f1030;
 }
+
+/* main.css declara `h1..h6 { color: var(--dark) }` a nivel global. Una regla
+   directa gana siempre a la herencia, así que dentro de la escena hay que
+   devolver el color de forma explícita en lugar de confiar en heredarlo. */
+.cf :is(h1, h2, h3) { color: var(--tinta); }
 
 /* ── Paisaje ───────────────────────────────────────────── */
 .cf__paisaje {
@@ -375,8 +387,8 @@ onUnmounted(() => {
   background:
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 44px),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 44px),
-    rgba(14, 12, 32, 0.72);
-  border: 1px solid rgba(245, 197, 78, 0.28);
+    var(--panel);
+  border: 1px solid var(--panel-borde);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -413,18 +425,27 @@ onUnmounted(() => {
   font-size: 0.66rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--tinta-suave);
+  color: var(--tinta);
   font-variant-numeric: tabular-nums;
+  /* El HUD flota sobre el cielo desnudo, que pasa de casi blanco a casi negro.
+     La sombra es lo único que lo mantiene legible en los dos extremos. */
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
 }
 .hud__barra {
   width: 7.5rem;
-  height: 1px;
+  height: 2px;
   margin: 0.5rem 0 0 auto;
-  background: rgba(244, 241, 234, 0.25);
+  border-radius: 2px;
+  background: rgba(16, 14, 38, 0.45);
   overflow: hidden;
 }
 .hud__fill { height: 100%; background: var(--acento); }
-.hud__etiqueta { margin-top: 0.4rem; color: var(--acento); font-size: 0.62rem; }
+.hud__etiqueta {
+  margin-top: 0.4rem;
+  color: var(--acento);
+  font-size: 0.62rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
 
 .strip {
   position: fixed;
@@ -438,18 +459,26 @@ onUnmounted(() => {
 }
 .strip__dot {
   position: relative;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(244, 241, 234, 0.35);
+  /* Relleno oscuro con anillo claro: los dots flotan sobre el cielo desnudo,
+     que va de casi blanco a casi negro. Un punto de un solo color desaparece
+     en uno de los dos extremos — en claro se perdían al inicio del recorrido. */
+  background: rgba(16, 14, 38, 0.6);
+  box-shadow: 0 0 0 1.5px rgba(244, 241, 234, 0.7);
   cursor: pointer;
-  transition: background 0.3s, transform 0.3s;
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 /* Área táctil de 24px sin engordar el punto visible. */
 .strip__dot::before { content: ''; position: absolute; inset: -9px; }
-.strip__dot.is-on { background: var(--acento); transform: scale(1.7); }
+.strip__dot.is-on {
+  background: var(--acento);
+  box-shadow: 0 0 0 1.5px rgba(16, 14, 38, 0.75);
+  transform: scale(1.7);
+}
 .strip__dot:focus-visible { outline: 2px solid var(--acento); outline-offset: 5px; }
 
 .caption {
@@ -467,13 +496,18 @@ onUnmounted(() => {
   letter-spacing: 0.3em;
   color: var(--acento);
   margin-bottom: 0.15rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
 }
 .caption__nombre {
   font-size: clamp(1.6rem, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
-  color: rgba(244, 241, 234, 0.24);
+  /* Marca de agua deliberada: no transporta información —el mismo dato está en
+     el HUD y en la tarjeta—, así que se queda por debajo del umbral de lectura
+     a propósito, con aria-hidden en el marcado. */
+  color: rgba(244, 241, 234, 0.3);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Cabecera ──────────────────────────────────────────── */
@@ -524,8 +558,11 @@ onUnmounted(() => {
 .tarjeta {
   max-width: 24rem;
   padding: 2rem 1.75rem;
-  background: rgba(14, 12, 32, 0.74);
-  border-left: 1px solid rgba(245, 197, 78, 0.24);
+  background: var(--panel);
+  border-left: 2px solid var(--panel-borde);
+  /* La sombra despega el panel del cielo de noche, cuando fondo y panel llegan
+     a tener casi la misma luminancia y el borde solo ya no basta. */
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(7px) saturate(120%);
   -webkit-backdrop-filter: blur(7px) saturate(120%);
 }
@@ -533,7 +570,7 @@ onUnmounted(() => {
   margin-left: auto;
   text-align: right;
   border-left: 0;
-  border-right: 1px solid rgba(245, 197, 78, 0.24);
+  border-right: 2px solid var(--panel-borde);
 }
 .tarjeta--der .tarjeta__linea { margin-left: auto; }
 
@@ -547,6 +584,7 @@ onUnmounted(() => {
 }
 .tarjeta__titulo {
   margin: 0;
+  color: var(--tinta);
   font-size: clamp(2rem, 5.5vw, 3.4rem);
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -554,7 +592,7 @@ onUnmounted(() => {
 }
 .tarjeta__cuerpo {
   margin: 1.15rem 0 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   line-height: 1.7;
   color: var(--tinta-suave);
 }
@@ -593,8 +631,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 1.4rem 1rem;
-  background: rgba(14, 12, 32, 0.74);
-  border: 1px solid rgba(245, 197, 78, 0.24);
+  background: var(--panel);
+  border: 1px solid var(--panel-borde);
   border-radius: 14px;
   text-align: center;
 }
@@ -618,7 +656,7 @@ onUnmounted(() => {
     max-width: 100%;
     margin: 0;
     text-align: left;
-    border-left: 1px solid rgba(245, 197, 78, 0.24);
+    border-left: 2px solid var(--panel-borde);
     border-right: 0;
     padding: 1.35rem 1.15rem;
   }
