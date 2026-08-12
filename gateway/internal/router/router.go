@@ -58,19 +58,40 @@ func New(d Deps) *gin.Engine {
 		c.Next()
 	})
 
-	// Frontend estático (SPA)
-	r.Static("/assets", "./frontend/dist/assets")
-	r.StaticFile("/", "./frontend/dist/index.html")
-	r.NoRoute(func(c *gin.Context) {
-		p := c.Request.URL.Path
-		for _, prefix := range []string{"/.git", "/.env", "/actuator"} {
-			if strings.HasPrefix(p, prefix) {
-				c.AbortWithStatus(http.StatusNotFound)
-				return
-			}
-		}
-		c.File("./frontend/dist/index.html")
-	})
+    distDir := "/frontend/dist"
+    
+    // Si ejecutas en desarrollo local y la carpeta /frontend/dist no existe, cae a la ruta relativa
+    if _, err := os.Stat(distDir); os.IsNotExist(err) {
+        distDir = "./frontend/dist"
+    }
+
+    r.Static("/assets", distDir+"/assets")
+    r.StaticFile("/favicon.png", distDir+"/favicon.png")
+    r.StaticFile("/favicon.ico", distDir+"/favicon.ico")
+    r.StaticFile("/logo-capacitaciones.png", distDir+"/logo-capacitaciones.png")
+    r.StaticFile("/", distDir+"/index.html")
+
+    r.NoRoute(func(c *gin.Context) {
+        p := c.Request.URL.Path
+
+        // Bloqueo de rutas sensibles
+        for _, prefix := range []string{"/.git", "/.env", "/actuator"} {
+            if strings.HasPrefix(p, prefix) {
+                c.AbortWithStatus(http.StatusNotFound)
+                return
+            }
+        }
+
+        // Si la petición corresponde a un archivo físico en la carpeta dist (imágenes, icons, etc.)
+        filePath := filepath.Join(distDir, filepath.Clean(p))
+        if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
+            c.File(filePath)
+            return
+        }
+
+        // Fallback SPA: devolver index.html para que Vue Router maneje la vista
+        c.File(distDir + "/index.html")
+    })
 
 	api := r.Group("/api")
 	api.Use(middleware.NewRateLimiter(300, 50).Handler()) // Global Anti-DDoS (300 req/min, ráfaga 50)
