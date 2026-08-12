@@ -273,8 +273,9 @@ async function resetPassword() {
               </div>
               <div class="pass-wrap">
                 <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
-                <button type="button" class="pass-toggle" @click="showPass = !showPass">
-                  {{ showPass ? 'Ocultar' : 'Ver' }}
+                <button type="button" class="pass-toggle" @click="showPass = !showPass" :title="showPass ? 'Ocultar' : 'Ver'">
+                  <svg v-if="!showPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                 </button>
               </div>
             </div>
@@ -307,8 +308,9 @@ async function resetPassword() {
                 <label>Contraseña</label>
                 <div class="pass-wrap">
                   <input class="field-input" v-model="regPassword" :type="showRegPass ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
-                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass">
-                    {{ showRegPass ? 'Ocultar' : 'Ver' }}
+                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass" :title="showRegPass ? 'Ocultar' : 'Ver'">
+                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   </button>
                 </div>
           
@@ -324,6 +326,10 @@ async function resetPassword() {
                 <label>Confirmar contraseña</label>
                 <div class="pass-wrap">
                   <input class="field-input" v-model="regConfirmPassword" :type="showRegPass ? 'text' : 'password'" placeholder="Repite tu contraseña" autocomplete="new-password" required minlength="8" />
+                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass" :title="showRegPass ? 'Ocultar' : 'Ver'">
+                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  </button>
                 </div>
                 <div v-if="regConfirmPassword && !passwordsMatch" class="form-hint error-hint">
                   Las contraseñas no coinciden
@@ -469,8 +475,8 @@ async function resetPassword() {
 .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
 .pass-wrap { position: relative; }
 .pass-wrap .field-input { padding-right: 78px; }
-.pass-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--border-light); border: none; border-radius: 6px; color: var(--dark); font-size: 0.76rem; font-weight: 800; cursor: pointer; line-height: 1; padding: 7px 9px; transition: all 0.2s; }
-.pass-toggle:hover { background: var(--border); }
+.pass-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--border-light); border: none; border-radius: 6px; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; transition: all 0.2s; }
+.pass-toggle:hover { background: var(--border); color: var(--dark); }
 .pass-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .pass-strength { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 10px; }
 .strength-bar { flex: 1; height: 5px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
