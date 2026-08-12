@@ -33,14 +33,21 @@ type Config struct {
 	R2SecretKey string
 	R2PublicURL string
 
-	// SMTP / Email
+	// Resend — proveedor de correo transaccional.
+	ResendAPIKey  string
+	ResendFrom    string
+	ResendReplyTo string
+
+	// SMTP — DEPRECADO, sustituido por Resend. Se conserva para no romper
+	// despliegues que aún inyectan estas variables.
 	SMTPHost string
 	SMTPPort string
 	SMTPUser string
 	SMTPPass string
 	SMTPFrom string
-	AppURL   string
-	AppName  string
+
+	AppURL  string
+	AppName string
 
 	// Entorno
 	GinMode            string
@@ -70,6 +77,10 @@ func Load() *Config {
 		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
 		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
 		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
+
+		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+		ResendFrom:    getEnvAny("RESEND_FROM", "SMTP_FROM"),
+		ResendReplyTo: os.Getenv("RESEND_REPLY_TO"),
 
 		SMTPHost: os.Getenv("SMTP_HOST"),
 		SMTPPort: getEnvOr("SMTP_PORT", "587"),

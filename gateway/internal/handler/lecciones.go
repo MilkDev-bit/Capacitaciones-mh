@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -14,9 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type LeccionesHandler struct{ c *clients.Clients }
+type LeccionesHandler struct {
+	c *clients.Clients
+	// dc3 avisa al representante de la licencia cuando alguien termina el curso.
+	dc3 *DC3Notifier
+}
 
-func NewLeccionesHandler(c *clients.Clients) *LeccionesHandler { return &LeccionesHandler{c: c} }
+func NewLeccionesHandler(c *clients.Clients, dc3 *DC3Notifier) *LeccionesHandler {
+	return &LeccionesHandler{c: c, dc3: dc3}
+}
 
 // ── Árbol del curso ───────────────────────────────────────────────────────────
 
@@ -231,21 +239,83 @@ func (h *LeccionesHandler) GetLeccionesConProgreso(ctx *gin.Context) {
 
 // POST /api/lecciones/:leccion_id/completar
 func (h *LeccionesHandler) MarcarLeccionCompleta(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
+
 	resp, err := h.c.Lecciones.MarcarLeccionCompleta(ctx.Request.Context(), &leccionespb.MarcarRequest{
 		LeccionId: ctx.Param("leccion_id"),
-		UserId:    ctx.GetString(middleware.CtxUserID),
+		UserId:    userID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	// curso_id es una pista del cliente para saber qué curso revisar; la
+	// comprobación de que realmente está terminado ocurre en el servidor, así
+	// que un valor falseado no dispara ningún correo.
+	var body struct {
+		CursoID string `json:"curso_id"`
+	}
+	_ = ctx.ShouldBindJSON(&body)
+	if body.CursoID != "" {
+		go h.avisarSiCursoCompletado(body.CursoID, userID)
+	}
+
 	// Devuelve puntos ganados e insignia desbloqueada (si la hay)
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":       "lección marcada como completa",
-		"points_earned": resp.PointsEarned,
-		"total_points":  resp.TotalPoints,
+		"message":        "lección marcada como completa",
+		"points_earned":  resp.PointsEarned,
+		"total_points":   resp.TotalPoints,
 		"badge_unlocked": resp.BadgeUnlocked,
 	})
+}
+
+// avisarSiCursoCompletado notifica al representante de la licencia para que
+// tramite las constancias DC-3 cuando un participante termina el contenido.
+//
+// Antes este aviso se disparaba al cerrar una videollamada; al retirarse ese
+// flujo, la finalización del curso es el equivalente natural. La deduplicación
+// vive en cursos-service (tabla dc3_avisos), así que el representante recibe un
+// solo correo por licencia y curso aunque terminen veinte participantes.
+func (h *LeccionesHandler) avisarSiCursoCompletado(cursoID, userID string) {
+	bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	lecciones, err := h.c.Lecciones.GetLeccionesConProgreso(bg, &leccionespb.CursoUserRequest{
+		CursoId: cursoID,
+		UserId:  userID,
+	})
+	if err != nil || lecciones == nil || len(lecciones.Lecciones) == 0 {
+		return
+	}
+	for _, l := range lecciones.Lecciones {
+		if !l.Completada {
+			return
+		}
+	}
+
+	aviso, err := h.c.Cursos.NotificarCursoCompletado(bg, &cursospb.CursoCompletadoRequest{
+		UserId:         userID,
+		CapacitacionId: cursoID,
+	})
+	if err != nil {
+		slog.Error("DC-3: no se pudo registrar el aviso", "error", err, "curso_id", cursoID)
+		return
+	}
+	if !aviso.Avisar {
+		return
+	}
+
+	perfil, err := h.c.Usuarios.GetPublicPerfil(bg, &usuariospb.UserIDRequest{UserId: aviso.RepresentanteId})
+	if err != nil || perfil == nil || perfil.Email == "" {
+		slog.Warn("DC-3: sin correo del representante", "representante_id", aviso.RepresentanteId, "error", err)
+		return
+	}
+
+	slog.Info("DC-3: avisando al representante", "email", perfil.Email, "curso", aviso.CapacitacionTitulo)
+	if err := h.dc3.EnviarAvisoDC3(perfil.Email, perfil.Name, aviso.CapacitacionTitulo, int(aviso.DuracionMinutos)); err != nil {
+		slog.Error("DC-3: fallo al enviar el aviso", "email", perfil.Email, "error", err)
+	}
 }
 
 // POST /api/lecciones/:leccion_id/progreso-video
@@ -421,7 +491,7 @@ func (h *LeccionesHandler) InstructorCreateLeccion(ctx *gin.Context) {
 	var body struct {
 		Title          string `json:"title"           binding:"required"`
 		Description    string `json:"description"`
-		LessonType     int32  `json:"lesson_type"`     // valor del enum LessonType
+		LessonType     int32  `json:"lesson_type"` // valor del enum LessonType
 		FilePath       string `json:"file_path"`
 		Content        string `json:"content"`
 		Orden          int32  `json:"orden"`

@@ -30,6 +30,15 @@ service AuthService {
 
   // Invalida todas las sesiones de un usuario (solo admin).
   rpc RevokeUserSessions(RevokeRequest) returns (EmptyResponse);
+
+  // Confirma la propiedad del buzón con el código de 6 dígitos enviado en el
+  // registro. Devuelve el JWT definitivo: hasta este punto el usuario no tiene
+  // sesión válida.
+  rpc VerifyEmail(VerifyEmailRequest) returns (AuthResponse);
+
+  // Reenvía el código de verificación. El servicio aplica cooldown para evitar
+  // que se use como amplificador de correo.
+  rpc ResendVerificationCode(ResendVerificationRequest) returns (EmptyResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -69,11 +78,24 @@ message RevokeRequest {
   string user_id = 1;
 }
 
+message VerifyEmailRequest {
+  string email = 1;
+  string code  = 2; // 6 dígitos
+}
+
+message ResendVerificationRequest {
+  string email = 1;
+}
+
 // ── Responses ────────────────────────────────────────────────────────────────
 
 message AuthResponse {
   string      token = 1;
   UserProfile user  = 2;
+
+  // requires_verification = true cuando el alta se completó pero falta confirmar
+  // el correo. En ese caso `token` viene vacío y el Gateway NO debe emitir cookie.
+  bool requires_verification = 3;
 }
 
 // UserClaims: lo que el Gateway extrae del JWT validado.
@@ -95,6 +117,7 @@ message UserProfile {
   string phone      = 8;
   string specialty  = 9;
   string created_at = 10;
+  bool   email_verified = 11;
 }
 
 message EmptyResponse {}

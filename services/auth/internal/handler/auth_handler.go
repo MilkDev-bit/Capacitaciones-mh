@@ -39,7 +39,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *authpb.RegisterRequest)
 	if err != nil {
 		return nil, mapError(err, "Register")
 	}
-	return &authpb.AuthResponse{Token: result.Token, User: userToProto(result.User)}, nil
+	return toAuthResponse(result), nil
 }
 
 func (h *AuthHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.AuthResponse, error) {
@@ -47,7 +47,24 @@ func (h *AuthHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*aut
 	if err != nil {
 		return nil, mapError(err, "Login")
 	}
-	return &authpb.AuthResponse{Token: result.Token, User: userToProto(result.User)}, nil
+	return toAuthResponse(result), nil
+}
+
+// VerifyEmail confirma el código de 6 dígitos y devuelve el JWT definitivo.
+func (h *AuthHandler) VerifyEmail(ctx context.Context, req *authpb.VerifyEmailRequest) (*authpb.AuthResponse, error) {
+	result, err := h.svc.VerifyEmail(ctx, req.Email, req.Code)
+	if err != nil {
+		return nil, mapError(err, "VerifyEmail")
+	}
+	return toAuthResponse(result), nil
+}
+
+// ResendVerificationCode emite un código nuevo respetando el cooldown.
+func (h *AuthHandler) ResendVerificationCode(ctx context.Context, req *authpb.ResendVerificationRequest) (*authpb.EmptyResponse, error) {
+	if err := h.svc.ResendVerificationCode(ctx, req.Email); err != nil {
+		return nil, mapError(err, "ResendVerificationCode")
+	}
+	return &authpb.EmptyResponse{}, nil
 }
 
 func (h *AuthHandler) ValidateToken(ctx context.Context, req *authpb.ValidateTokenRequest) (*authpb.UserClaims, error) {
@@ -109,6 +126,19 @@ func mapError(err error, op string) error {
 		return status.Error(codes.Unauthenticated, "token inválido o expirado")
 	case errors.Is(err, service.ErrTokenRevoked):
 		return status.Error(codes.Unauthenticated, "sesión revocada")
+	// FailedPrecondition (no Unauthenticated): las credenciales son correctas,
+	// falta un paso previo. El Gateway lo traduce a 403 + código accionable en
+	// lugar de 401, que dispararía el logout automático del frontend.
+	case errors.Is(err, service.ErrEmailNotVerified):
+		return status.Error(codes.FailedPrecondition, "email_not_verified")
+	case errors.Is(err, service.ErrCodeInvalid):
+		return status.Error(codes.InvalidArgument, "el código es incorrecto")
+	case errors.Is(err, service.ErrCodeExpired):
+		return status.Error(codes.DeadlineExceeded, "el código expiró, solicita uno nuevo")
+	case errors.Is(err, service.ErrTooManyAttempts):
+		return status.Error(codes.ResourceExhausted, "demasiados intentos, solicita un código nuevo")
+	case errors.Is(err, service.ErrResendTooSoon):
+		return status.Error(codes.Unavailable, "espera unos segundos antes de solicitar otro código")
 	default:
 		slog.Error("unhandled error", "op", op, "error", err)
 		return status.Error(codes.Internal, "error interno del servidor")
@@ -117,11 +147,27 @@ func mapError(err error, op string) error {
 
 // userToProto convierte el modelo de dominio al mensaje proto.
 func userToProto(u *model.User) *authpb.UserProfile {
+	if u == nil {
+		return nil
+	}
 	return &authpb.UserProfile{
-		Id:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		Role:      u.Role,
-		CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		Id:            u.ID,
+		Name:          u.Name,
+		Email:         u.Email,
+		Role:          u.Role,
+		EmailVerified: u.EmailVerified,
+		CreatedAt:     u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+// toAuthResponse arma la respuesta común de Register/Login/VerifyEmail.
+func toAuthResponse(r *service.LoginResult) *authpb.AuthResponse {
+	if r == nil {
+		return &authpb.AuthResponse{}
+	}
+	return &authpb.AuthResponse{
+		Token:                r.Token,
+		User:                 userToProto(r.User),
+		RequiresVerification: r.RequiresVerification,
 	}
 }

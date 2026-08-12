@@ -19,13 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName           = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName              = "/auth.AuthService/Login"
-	AuthService_ValidateToken_FullMethodName      = "/auth.AuthService/ValidateToken"
-	AuthService_Logout_FullMethodName             = "/auth.AuthService/Logout"
-	AuthService_ForgotPassword_FullMethodName     = "/auth.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName      = "/auth.AuthService/ResetPassword"
-	AuthService_RevokeUserSessions_FullMethodName = "/auth.AuthService/RevokeUserSessions"
+	AuthService_Register_FullMethodName               = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName                  = "/auth.AuthService/Login"
+	AuthService_ValidateToken_FullMethodName          = "/auth.AuthService/ValidateToken"
+	AuthService_Logout_FullMethodName                 = "/auth.AuthService/Logout"
+	AuthService_ForgotPassword_FullMethodName         = "/auth.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName          = "/auth.AuthService/ResetPassword"
+	AuthService_RevokeUserSessions_FullMethodName     = "/auth.AuthService/RevokeUserSessions"
+	AuthService_VerifyEmail_FullMethodName            = "/auth.AuthService/VerifyEmail"
+	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -52,6 +54,13 @@ type AuthServiceClient interface {
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Invalida todas las sesiones de un usuario (solo admin).
 	RevokeUserSessions(ctx context.Context, in *RevokeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Confirma la propiedad del buzón con el código de 6 dígitos enviado en el
+	// registro. Devuelve el JWT definitivo: hasta este punto el usuario no tiene
+	// sesión válida.
+	VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*AuthResponse, error)
+	// Reenvía el código de verificación. El servicio aplica cooldown para evitar
+	// que se use como amplificador de correo.
+	ResendVerificationCode(ctx context.Context, in *ResendVerificationRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type authServiceClient struct {
@@ -132,6 +141,26 @@ func (c *authServiceClient) RevokeUserSessions(ctx context.Context, in *RevokeRe
 	return out, nil
 }
 
+func (c *authServiceClient) VerifyEmail(ctx context.Context, in *VerifyEmailRequest, opts ...grpc.CallOption) (*AuthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AuthResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ResendVerificationCode(ctx context.Context, in *ResendVerificationRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, AuthService_ResendVerificationCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -156,6 +185,13 @@ type AuthServiceServer interface {
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
 	// Invalida todas las sesiones de un usuario (solo admin).
 	RevokeUserSessions(context.Context, *RevokeRequest) (*EmptyResponse, error)
+	// Confirma la propiedad del buzón con el código de 6 dígitos enviado en el
+	// registro. Devuelve el JWT definitivo: hasta este punto el usuario no tiene
+	// sesión válida.
+	VerifyEmail(context.Context, *VerifyEmailRequest) (*AuthResponse, error)
+	// Reenvía el código de verificación. El servicio aplica cooldown para evitar
+	// que se use como amplificador de correo.
+	ResendVerificationCode(context.Context, *ResendVerificationRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -186,6 +222,12 @@ func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPassw
 }
 func (UnimplementedAuthServiceServer) RevokeUserSessions(context.Context, *RevokeRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeUserSessions not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyEmail(context.Context, *VerifyEmailRequest) (*AuthResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyEmail not implemented")
+}
+func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *ResendVerificationRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResendVerificationCode not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -334,6 +376,42 @@ func _AuthService_RevokeUserSessions_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyEmail(ctx, req.(*VerifyEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ResendVerificationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResendVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ResendVerificationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ResendVerificationCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ResendVerificationCode(ctx, req.(*ResendVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -368,6 +446,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeUserSessions",
 			Handler:    _AuthService_RevokeUserSessions_Handler,
+		},
+		{
+			MethodName: "VerifyEmail",
+			Handler:    _AuthService_VerifyEmail_Handler,
+		},
+		{
+			MethodName: "ResendVerificationCode",
+			Handler:    _AuthService_ResendVerificationCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

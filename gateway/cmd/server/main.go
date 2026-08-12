@@ -17,6 +17,7 @@ import (
 	"Prueba-Go/gateway/internal/middleware"
 	"Prueba-Go/gateway/internal/router"
 	"Prueba-Go/gateway/internal/storage"
+	"Prueba-Go/pkg/mailer"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,13 +58,25 @@ func main() {
 	// ── 4c. Storage R2 ───────────────────────────────────────────────────────
 	storage.Init(cfg)
 
+	// ── 4d. Correo transaccional (Resend) ─────────────────────────────────────
+	mail := mailer.New(mailer.Config{
+		APIKey:  cfg.ResendAPIKey,
+		From:    cfg.ResendFrom,
+		ReplyTo: cfg.ResendReplyTo,
+		AppName: cfg.AppName,
+		AppURL:  cfg.AppURL,
+	})
+	if !mail.Enabled() {
+		slog.Warn("RESEND_API_KEY vacía — no se enviarán accesos ni confirmaciones de compra")
+	}
+
 	// ── 5. Inyección de dependencias ──────────────────────────────────────────
 	r := router.New(router.Deps{
 		Cfg:          cfg,
 		AuthH:        handler.NewAuthHandler(svc, cfg),
 		UsuariosH:    handler.NewUsuariosHandler(svc),
-		CursosH:      handler.NewCursosHandler(svc),
-		LeccionesH:   handler.NewLeccionesHandler(svc),
+		CursosH:      handler.NewCursosHandler(svc, cfg, mail),
+		LeccionesH:   handler.NewLeccionesHandler(svc, handler.NewDC3Notifier(mail)),
 		ExamenesH:    handler.NewExamenesHandler(svc),
 		ForosH:       handler.NewForosHandler(svc),
 		MensajesH:    handler.NewMensajesHandler(svc, h),

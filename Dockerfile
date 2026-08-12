@@ -18,6 +18,9 @@ FROM golang:1.26-alpine AS backend
 WORKDIR /app
 
 COPY go.mod go.sum ./
+# pkg/mailer se resuelve por 'replace' local: su go.mod debe existir antes del
+# 'go mod download' o la resolución de módulos falla.
+COPY pkg/mailer/go.mod pkg/mailer/go.sum* ./pkg/mailer/
 RUN go mod download
 
 COPY . .

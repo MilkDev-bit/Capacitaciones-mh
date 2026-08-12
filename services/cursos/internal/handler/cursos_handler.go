@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
+	"Prueba-Go/services/cursos/internal/repository"
 	"Prueba-Go/services/cursos/internal/service"
 
 	"google.golang.org/grpc/codes"
@@ -91,7 +92,7 @@ func (h *CursosHandler) UnirseConLicencia(ctx context.Context, req *cursospb.Uni
 	return &cursospb.EmptyResponse{}, nil
 }
 
-func (h *CursosHandler) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EmptyResponse, error) {
+func (h *CursosHandler) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EnrollResponse, error) {
 	resp, err := h.svc.WebhookEnroll(ctx, req)
 	if err != nil {
 		return nil, mapErr(err)
@@ -103,8 +104,68 @@ func (h *CursosHandler) WebhookComprarLicencia(ctx context.Context, req *cursosp
 	return h.svc.WebhookComprarLicencia(ctx, req)
 }
 
-func (h *CursosHandler) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.EmptyResponse, error) {
+func (h *CursosHandler) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.ComprarB2BDirectResponse, error) {
 	return h.svc.WebhookComprarB2BDirect(ctx, req)
+}
+
+// AsignarAccesosLicencia reparte accesos de una licencia entre participantes.
+func (h *CursosHandler) AsignarAccesosLicencia(ctx context.Context, req *cursospb.AsignarAccesosLicenciaRequest) (*cursospb.AsignarAccesosLicenciaResponse, error) {
+	if req.LicenciaId == "" || req.CompradorId == "" {
+		return nil, status.Error(codes.InvalidArgument, "licencia_id y comprador_id son requeridos")
+	}
+	resp, err := h.svc.AsignarAccesosLicencia(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+// NotificarCursoCompletado decide si toca avisar al representante sobre el DC-3.
+func (h *CursosHandler) NotificarCursoCompletado(ctx context.Context, req *cursospb.CursoCompletadoRequest) (*cursospb.CursoCompletadoResponse, error) {
+	if req.UserId == "" || req.CapacitacionId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id y capacitacion_id son requeridos")
+	}
+	resp, err := h.svc.NotificarCursoCompletado(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+// RegistrarEventoStripe deduplica los webhooks entrantes.
+func (h *CursosHandler) RegistrarEventoStripe(ctx context.Context, req *cursospb.EventoStripeRequest) (*cursospb.EventoStripeResponse, error) {
+	if req.EventId == "" {
+		return nil, status.Error(codes.InvalidArgument, "event_id es requerido")
+	}
+	resp, err := h.svc.RegistrarEventoStripe(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+// ActualizarEstadoOrden mueve la orden por su máquina de estados.
+func (h *CursosHandler) ActualizarEstadoOrden(ctx context.Context, req *cursospb.ActualizarEstadoOrdenRequest) (*cursospb.EmptyResponse, error) {
+	if req.StripeSessionId == "" || req.Estado == "" {
+		return nil, status.Error(codes.InvalidArgument, "stripe_session_id y estado son requeridos")
+	}
+	resp, err := h.svc.ActualizarEstadoOrden(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
+// ListInvitacionesLicencia devuelve el estado de entrega de los accesos.
+func (h *CursosHandler) ListInvitacionesLicencia(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.ListInvitacionesLicenciaResponse, error) {
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "licencia_id es requerido")
+	}
+	resp, err := h.svc.ListInvitacionesLicencia(ctx, req)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
 }
 
 func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
@@ -143,24 +204,6 @@ func (h *CursosHandler) ListLicenciasCompradas(ctx context.Context, req *cursosp
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
-
-func (h *CursosHandler) ListLicenciaTickets(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.ListLicenciaTicketsResponse, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "licencia_id es requerido")
-	}
-
-	tickets, err := h.svc.ListTicketsByLicencia(ctx, req.Id)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error al obtener tickets: %v", err)
-	}
-
-	var pbTickets []*cursospb.VideocallTicket
-	for _, t := range tickets {
-		pbTickets = append(pbTickets, t.ToProto())
-	}
-
-	return &cursospb.ListLicenciaTicketsResponse{Tickets: pbTickets}, nil
-}
 
 func (h *CursosHandler) InstructorListCapacitaciones(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListCursosResponse, error) {
 	list, err := h.svc.InstructorListCapacitaciones(ctx, req.UserId)
@@ -294,86 +337,7 @@ func (h *CursosHandler) AdminDesAsignar(ctx context.Context, req *cursospb.Asign
 
 // ── error mapper ──────────────────────────────────────────────────────────────
 
-// ── Videocalls ────────────────────────────────────────────────────────────
-
-func (h *CursosHandler) JoinVideocall(ctx context.Context, req *cursospb.JoinVideocallRequest) (*cursospb.JoinVideocallResponse, error) {
-	res, err := h.svc.JoinVideocall(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return res, nil
-}
-
-func (h *CursosHandler) LeaveVideocall(ctx context.Context, req *cursospb.LeaveVideocallRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.LeaveVideocall(ctx, req); err != nil {
-		return nil, mapErr(err)
-	}
-	return &cursospb.EmptyResponse{}, nil
-}
-
-func (h *CursosHandler) EndVideocall(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.EndVideocall(ctx, req); err != nil {
-		return nil, mapErr(err)
-	}
-	return &cursospb.EmptyResponse{}, nil
-}
-
-func (h *CursosHandler) GetMyVideocallTicket(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.VideocallTicketResponse, error) {
-	resp, err := h.svc.GetMyVideocallTicket(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return resp, nil
-}
-
-func (h *CursosHandler) InstructorGetCurrentRoom(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.CurrentRoomResponse, error) {
-	resp, err := h.svc.InstructorGetCurrentRoom(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return resp, nil
-}
-
 // ── Horarios Instructores ────────────────────────────────────────────────
-
-func (h *CursosHandler) ListPublicSchedules(ctx context.Context, req *cursospb.ListPublicSchedulesRequest) (*cursospb.ListPublicSchedulesResponse, error) {
-	list, err := h.svc.ListPublicSchedules(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return list, nil
-}
-
-func (h *CursosHandler) AdminListSchedules(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListSchedulesResponse, error) {
-	list, err := h.svc.AdminListSchedules(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return list, nil
-}
-
-func (h *CursosHandler) AdminCreateSchedule(ctx context.Context, req *cursospb.CreateScheduleRequest) (*cursospb.InstructorSchedule, error) {
-	s, err := h.svc.AdminCreateSchedule(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return s, nil
-}
-
-func (h *CursosHandler) AdminUpdateSchedule(ctx context.Context, req *cursospb.UpdateScheduleRequest) (*cursospb.InstructorSchedule, error) {
-	s, err := h.svc.AdminUpdateSchedule(ctx, req)
-	if err != nil {
-		return nil, mapErr(err)
-	}
-	return s, nil
-}
-
-func (h *CursosHandler) AdminDeleteSchedule(ctx context.Context, req *cursospb.ScheduleIDRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.AdminDeleteSchedule(ctx, req); err != nil {
-		return nil, mapErr(err)
-	}
-	return &cursospb.EmptyResponse{}, nil
-}
 
 func mapErr(err error) error {
 	if err == nil {
@@ -386,6 +350,12 @@ func mapErr(err error) error {
 		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, service.ErrConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
+	// La licencia se quedó sin lugares por repartir: es un error del usuario,
+	// no del servidor, y el frontend debe mostrar el mensaje tal cual.
+	case errors.Is(err, repository.ErrOrdenYaPagada):
+		return status.Error(codes.AlreadyExists, err.Error())
+	case errors.Is(err, repository.ErrSinAccesosDisponibles):
+		return status.Error(codes.FailedPrecondition, err.Error())
 	case strings.Contains(err.Error(), "no es válido") || strings.Contains(err.Error(), "inválido") || strings.Contains(err.Error(), "capacidad máxima") || strings.Contains(err.Error(), "no corresponde") || strings.Contains(err.Error(), "de pago") || strings.Contains(err.Error(), "requerido") || strings.Contains(err.Error(), "invalid input syntax"):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:

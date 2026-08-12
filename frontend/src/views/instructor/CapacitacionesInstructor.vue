@@ -175,10 +175,6 @@ function copyCode(code: string) {
 
             <div
               style="display:flex;gap:8px;align-items:center;margin-left:auto;width:100%;justify-content:space-between;margin-top:4px;">
-              <button v-if="c.type === 'videocall'" class="btn btn-primary btn-sm"
-                @click="$router.push(`/instructor/videocall/${c.id}`)">
-                Iniciar Videollamada
-              </button>
               <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                 <span style="font-size:0.8rem;color:var(--muted);font-weight:600;">{{ c.is_public ? 'Público' :
                   'Privado'

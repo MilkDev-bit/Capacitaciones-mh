@@ -193,27 +193,34 @@ func runMigrations(db *sqlx.DB) error {
 		       UNIQUE (user_id, capacitacion_id);
 		   END IF;
 		 END $$`,
-		`CREATE TABLE IF NOT EXISTS instructor_schedules (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			instructor_id UUID NOT NULL,
-			start_time TIMESTAMPTZ NOT NULL,
-			end_time TIMESTAMPTZ NOT NULL,
-			status VARCHAR(20) NOT NULL DEFAULT 'available',
-			created_at TIMESTAMPTZ DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS videocall_tickets (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
-			licencia_id UUID REFERENCES curso_licencias(id) ON DELETE CASCADE,
-			codigo VARCHAR(50) UNIQUE NOT NULL,
-			in_use_by_user_id UUID,
-			is_valid BOOLEAN NOT NULL DEFAULT true,
-			created_at TIMESTAMPTZ DEFAULT NOW()
-		)`,
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS videocall_status VARCHAR(20) DEFAULT 'pending'`,
-		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS schedule_id UUID REFERENCES instructor_schedules(id) ON DELETE CASCADE`,
-		`ALTER TABLE videocall_tickets ADD COLUMN IF NOT EXISTS owner_id UUID`,
+		// Las videollamadas se retiraron: los cursos que quedaron con ese tipo se
+		// despublican para que no aparezcan en la tienda ni en el catálogo.
+		`UPDATE capacitaciones SET is_public = false WHERE type = 'videocall' AND is_public = true`,
+		// Reparto de accesos corporativos: una fila por participante invitado.
+		// La crea este servicio porque es quien la lee y escribe.
+		`CREATE TABLE IF NOT EXISTS licencia_invitaciones (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			licencia_id UUID NOT NULL REFERENCES curso_licencias(id) ON DELETE CASCADE,
+			nombre VARCHAR(120) NOT NULL DEFAULT '',
+			email VARCHAR(200) NOT NULL,
+			codigo VARCHAR(50) NOT NULL,
+			estado VARCHAR(20) NOT NULL DEFAULT 'enviado',
+			enviado_at TIMESTAMPTZ DEFAULT NOW(),
+			UNIQUE(licencia_id, email)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_licencia_invitaciones_licencia_id ON licencia_invitaciones(licencia_id)`,
+		// Despliegues previos crearon ticket_id apuntando a videocall_tickets.
+		// Se suelta la columna para poder retirar esa tabla sin romper la FK.
+		`ALTER TABLE licencia_invitaciones DROP COLUMN IF EXISTS ticket_id`,
+		// Aviso DC-3: una fila por (licencia, curso). La PK compuesta deduplica el
+		// correo al representante aunque terminen todos los participantes.
+		`CREATE TABLE IF NOT EXISTS dc3_avisos (
+			licencia_id UUID NOT NULL REFERENCES curso_licencias(id) ON DELETE CASCADE,
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			enviado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (licencia_id, capacitacion_id)
+		)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ`,

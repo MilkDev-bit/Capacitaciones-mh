@@ -3,6 +3,9 @@ WORKDIR /app
 
 COPY gen/go.mod gen/go.mod
 COPY gen/go.sum* gen/
+# pkg/money se resuelve por 'replace' local: su go.mod debe existir antes del
+# 'go mod download' o la resolución de módulos falla.
+COPY pkg/money/go.mod pkg/money/go.sum* ./pkg/money/
 COPY services/cursos/go.mod services/cursos/go.sum* ./services/cursos/
 
 WORKDIR /app/services/cursos
@@ -10,6 +13,7 @@ RUN GOWORK=off go mod download
 
 WORKDIR /app
 COPY gen/             gen/
+COPY pkg/money/       pkg/money/
 COPY services/cursos/ services/cursos/
 
 WORKDIR /app/services/cursos

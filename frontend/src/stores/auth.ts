@@ -37,17 +37,35 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isInstructor = computed(() => user.value?.role === 'instructor')
 
+  /** Guarda el perfil devuelto por el backend (la cookie HttpOnly ya viene puesta). */
+  function setUser(profile: UserProfile) {
+    user.value = profile
+    localStorage.setItem('user', JSON.stringify(profile))
+  }
+
+  /** Envía al usuario a su panel según el rol. */
+  function redirectToHome() {
+    if (user.value?.role === 'admin') router.push('/admin')
+    else if (user.value?.role === 'instructor') router.push('/instructor')
+    else router.push('/usuario')
+  }
+
   async function login(email: string, password: string) {
-    const res = await api.post<LoginResponse>('/login', { email, password })
-    // El servidor ya seteó la cookie HttpOnly; solo guardamos el perfil.
-    user.value = res.data.user
-    localStorage.setItem('user', JSON.stringify(res.data.user))
-    if (user.value?.role === 'admin') {
-      router.push('/admin')
-    } else if (user.value?.role === 'instructor') {
-      router.push('/instructor')
-    } else {
-      router.push('/usuario')
+    try {
+      const res = await api.post<LoginResponse>('/login', { email, password })
+      // El servidor ya seteó la cookie HttpOnly; solo guardamos el perfil.
+      setUser(res.data.user)
+      redirectToHome()
+    } catch (err: any) {
+      // 403 + email_not_verified: las credenciales son correctas pero falta
+      // confirmar el buzón. Se lleva al usuario a la pantalla de verificación
+      // en lugar de mostrarle un error que no sabría cómo resolver.
+      if (err.response?.status === 403 && err.response?.data?.code === 'email_not_verified') {
+        localStorage.setItem('pending_verification_email', email)
+        router.push({ path: '/verificar-correo', query: { email } })
+        return
+      }
+      throw err
     }
   }
 
@@ -87,5 +105,15 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  return { user, isLoggedIn, isAdmin, isInstructor, login, logout, handleSessionExpired }
+  return {
+    user,
+    isLoggedIn,
+    isAdmin,
+    isInstructor,
+    login,
+    logout,
+    handleSessionExpired,
+    setUser,
+    redirectToHome,
+  }
 })

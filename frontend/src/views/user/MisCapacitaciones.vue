@@ -167,12 +167,7 @@ onMounted(async () => {
 })
 
 async function openCourse(id: string) {
-  const course = capacitaciones.value.find(c => c.id === id)
-  if (course && course.type === 'videocall') {
-    router.push(`/join?code=${course.codigo_acceso || ''}`)
-  } else {
-    router.push('/usuario/capacitaciones/' + id)
-  }
+  router.push('/usuario/capacitaciones/' + id)
 }
 
 function tramitarDC3(c: any) {
@@ -206,13 +201,7 @@ async function unirseConCodigo() {
   codigoLoading.value = true
 
   try {
-    if (code.startsWith('VC-')) {
-      const res = await api.post('/videocalls/join', { codigo: code })
-      if (res.data && res.data.token) {
-        toast.success('Uniéndose a la videollamada...')
-        router.push(`/usuario/videocall/${res.data.room_name}?codigo=${code}`)
-      }
-    } else {
+    {
       const res = await api.post('/inscripciones', { codigo: code })
       codigoSuccess.value = `Te uniste a "${res.data.title}"`
       codigoInput.value = ''
@@ -361,7 +350,7 @@ function copyCode(code: string) {
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
             <p class="course-desc">{{ c.description || 'Sin descripcion disponible.' }}</p>
-            <div class="progress-wrap" v-if="c.type !== 'videocall'">
+            <div class="progress-wrap">
               <div class="progress-top">
                 <span class="progress-label">{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
                 <span class="progress-pct">{{ courseProgress(c) }}%</span>
@@ -371,8 +360,8 @@ function copyCode(code: string) {
               </div>
             </div>
             
-            <div class="course-code-display" v-if="c.codigo_acceso || c.type === 'videocall'">
-              <span class="code-label">{{ c.type === 'videocall' ? 'Tu código de videollamada:' : 'Código de acceso:' }}</span>
+            <div class="course-code-display" v-if="c.codigo_acceso">
+              <span class="code-label">Código de acceso:</span>
               <div class="code-value" @click.stop="copyCode(c.codigo_acceso || '')" title="Haz clic para copiar">
                 <strong style="font-weight: 900; font-size: 1.15em;">{{ c.codigo_acceso || 'Generando...' }}</strong>
                 <button v-if="c.codigo_acceso" class="btn-copy-mini" @click.stop="copyCode(c.codigo_acceso)" title="Copiar al portapapeles">
@@ -380,10 +369,10 @@ function copyCode(code: string) {
                   Copiar
                 </button>
               </div>
-              <span class="code-hint">{{ c.type === 'videocall' ? 'Deberás ingresarlo en la sala.' : 'Comparte o usa este código para acceder.' }}</span>
+              <span class="code-hint">Comparte o usa este código para acceder.</span>
             </div>
 
-            <div v-if="courseProgress(c) === 100 && c.type !== 'videocall' && c.dc3_enabled === true" style="margin-top: 12px; margin-bottom: -4px;">
+            <div v-if="courseProgress(c) === 100 && c.dc3_enabled === true" style="margin-top: 12px; margin-bottom: -4px;">
               <button
                 class="btn btn-secondary btn-sm"
                 style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;"
@@ -394,12 +383,7 @@ function copyCode(code: string) {
             </div>
 
             <div class="course-cta">
-              <template v-if="c.type === 'videocall'">
-                Ir a la sala
-              </template>
-              <template v-else>
-                {{ courseProgress(c) === 100 ? 'Repasar contenido' : 'Continuar aprendiendo' }}
-              </template>
+              {{ courseProgress(c) === 100 ? 'Repasar contenido' : 'Continuar aprendiendo' }}
               <span aria-hidden="true">&rarr;</span>
             </div>
           </div>

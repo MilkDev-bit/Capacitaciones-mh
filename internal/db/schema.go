@@ -308,11 +308,10 @@ CREATE INDEX IF NOT EXISTS idx_entregas_actividad_user    ON entregas_actividad(
 -- Revocación de JWT: token_version permite invalidar tokens activos al cambiar contraseña o al banear usuario
 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1;
 
--- Capacitaciones: precio, duración, videollamadas
+-- Capacitaciones: precio, duración y fecha programada
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS precio NUMERIC(10,2) NOT NULL DEFAULT 0.00;
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS duration INT NOT NULL DEFAULT 0;
 ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ DEFAULT NULL;
-ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS videocall_status VARCHAR(20) DEFAULT NULL;
 
 -- Asignaciones: información del usuario
 ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_name VARCHAR(120) DEFAULT '';
@@ -322,32 +321,56 @@ ALTER TABLE asignaciones ADD COLUMN IF NOT EXISTS user_email VARCHAR(200) DEFAUL
 ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20) DEFAULT NULL;
 ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT DEFAULT NULL;
 
--- Horarios disponibles de instructores para videollamadas
-CREATE TABLE IF NOT EXISTS instructor_schedules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    instructor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'available',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_instructor_schedules_instructor_id ON instructor_schedules(instructor_id);
+-- Las capacitaciones por videollamada se retiraron del producto. Las tablas
+-- instructor_schedules y videocall_tickets ya no las crea ni las consulta la
+-- app; su eliminación va aparte en migrations/001_retirar_videollamadas.sql
+-- para que puedas respaldar antes de borrar nada.
 
--- Tickets de acceso a videollamadas (códigos únicos para participantes)
-CREATE TABLE IF NOT EXISTS videocall_tickets (
+-- Los cursos que quedaron con type='videocall' se despublican: sin el flujo no
+-- son utilizables, pero se conserva su contenido e inscripciones.
+UPDATE capacitaciones SET is_public = false WHERE type = 'videocall' AND is_public = true;
+
+-- ── Verificación de correo electrónico ───────────────────────────────────────
+-- El DEFAULT true en el ADD COLUMN y el cambio inmediato a false es intencional:
+-- las cuentas que ya existían quedan verificadas (no podemos exigirles un código
+-- que nunca recibieron) mientras que toda cuenta nueva nace sin verificar.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_hash CHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMPTZ;
+
+-- ── Reparto de accesos corporativos por correo ───────────────────────────────
+-- Una fila por participante al que se le envió un acceso de una licencia.
+-- Todos los participantes de una licencia comparten su codigo_acceso.
+CREATE TABLE IF NOT EXISTS licencia_invitaciones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
-    licencia_id UUID REFERENCES curso_licencias(id) ON DELETE SET NULL,
-    schedule_id UUID REFERENCES instructor_schedules(id) ON DELETE SET NULL,
-    codigo VARCHAR(50) UNIQUE NOT NULL,
-    in_use_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    is_valid BOOLEAN NOT NULL DEFAULT true,
-    owner_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    licencia_id UUID NOT NULL REFERENCES curso_licencias(id) ON DELETE CASCADE,
+    nombre VARCHAR(120) NOT NULL DEFAULT '',
+    email VARCHAR(200) NOT NULL,
+    codigo VARCHAR(50) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'enviado',
+    enviado_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(licencia_id, email)
 );
-CREATE INDEX IF NOT EXISTS idx_videocall_tickets_capacitacion_id ON videocall_tickets(capacitacion_id);
-CREATE INDEX IF NOT EXISTS idx_videocall_tickets_licencia_id ON videocall_tickets(licencia_id);
-CREATE INDEX IF NOT EXISTS idx_videocall_tickets_codigo ON videocall_tickets(codigo);
+CREATE INDEX IF NOT EXISTS idx_licencia_invitaciones_licencia_id ON licencia_invitaciones(licencia_id);
+CREATE INDEX IF NOT EXISTS idx_licencia_invitaciones_email ON licencia_invitaciones(email);
+
+-- Despliegues previos crearon ticket_id apuntando a videocall_tickets. Se suelta
+-- la columna para poder retirar esa tabla sin que la llave foránea lo impida.
+ALTER TABLE licencia_invitaciones DROP COLUMN IF EXISTS ticket_id;
+
+-- ── Aviso DC-3 al representante ──────────────────────────────────────────────
+-- Una fila por (licencia, curso) la primera vez que un participante termina.
+-- La clave primaria compuesta es la que hace la deduplicación: el representante
+-- recibe un solo correo aunque terminen los 50 participantes de su licencia.
+CREATE TABLE IF NOT EXISTS dc3_avisos (
+    licencia_id UUID NOT NULL REFERENCES curso_licencias(id) ON DELETE CASCADE,
+    capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+    enviado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (licencia_id, capacitacion_id)
+);
 `
 
 func Migrate() {

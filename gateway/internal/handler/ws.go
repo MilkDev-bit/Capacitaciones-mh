@@ -2,9 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"sync"
 	"time"
 
+	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/hub"
 	mw "Prueba-Go/gateway/internal/middleware"
 
@@ -15,7 +18,15 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		for _, allowed := range config.C.AllowedOrigins {
+			if origin == allowed {
+				return true
+			}
+		}
+		return false
+	},
 }
 
 // WsHandler gestiona conexiones WebSocket autenticadas.
@@ -52,13 +63,20 @@ func (wh *WsHandler) Handle(c *gin.Context) {
 	}
 	wh.hub.Register(client)
 
+	var cleanup sync.Once
+	cleanupFn := func() {
+		cleanup.Do(func() {
+			wh.hub.Unregister(client)
+			conn.Close()
+		})
+	}
+
 	// Goroutine escritora: drena el canal Send y envía pings periódicos.
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer func() {
 			ticker.Stop()
-			wh.hub.Unregister(client)
-			conn.Close()
+			cleanupFn()
 		}()
 		for {
 			select {
@@ -99,7 +117,8 @@ func (wh *WsHandler) Handle(c *gin.Context) {
 			Type   string `json:"type"`
 			PeerID string `json:"peer_id"`
 		}
-		if json.Unmarshal(raw, &ev) != nil {
+		if err := json.Unmarshal(raw, &ev); err != nil {
+			log.Printf("error unmarshal: %v", err)
 			continue
 		}
 
@@ -115,6 +134,5 @@ func (wh *WsHandler) Handle(c *gin.Context) {
 		}
 	}
 
-	wh.hub.Unregister(client)
-	conn.Close()
+	cleanupFn()
 }

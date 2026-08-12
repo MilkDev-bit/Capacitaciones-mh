@@ -19,16 +19,47 @@ service CursosService {
   rpc Inscribirse(InscribirseRequest) returns (EmptyResponse);
   rpc UnirseConCodigo(UnirseRequest) returns (EmptyResponse);
   rpc UnirseConLicencia(UnirseConLicenciaRequest) returns (EmptyResponse);
-  rpc WebhookEnroll(WebhookEnrollRequest) returns (EmptyResponse);
+  // Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
+  // el Gateway necesita esos datos para construir el correo de confirmación y
+  // la pantalla de éxito sin hacer una segunda ronda de consultas.
+  rpc WebhookEnroll(WebhookEnrollRequest) returns (EnrollResponse);
   rpc WebhookComprarLicencia(WebhookComprarLicenciaRequest) returns (EmptyResponse);
-  rpc WebhookComprarB2BDirect(WebhookComprarB2BDirectRequest) returns (EmptyResponse);
+  rpc WebhookComprarB2BDirect(WebhookComprarB2BDirectRequest) returns (ComprarB2BDirectResponse);
+
+  // Reparto de accesos corporativos por correo.
+  rpc AsignarAccesosLicencia(AsignarAccesosLicenciaRequest) returns (AsignarAccesosLicenciaResponse);
+  rpc ListInvitacionesLicencia(LicenciaIDRequest) returns (ListInvitacionesLicenciaResponse);
+
+  // Registra que un participante terminó el curso y decide si toca avisar al
+  // representante de su licencia para que tramite las constancias DC-3.
+  // La deduplicación vive en la BD: solo devuelve avisar=true la primera vez.
+  rpc NotificarCursoCompletado(CursoCompletadoRequest) returns (CursoCompletadoResponse);
+  // Deduplicación de webhooks de Stripe. Devuelve primera_vez=false si el
+  // evento ya se había procesado: la entrega es al-menos-una-vez.
+  rpc RegistrarEventoStripe(EventoStripeRequest) returns (EventoStripeResponse);
+  // Transición de estado de una orden tras el resultado del cobro.
+  rpc ActualizarEstadoOrden(ActualizarEstadoOrdenRequest) returns (EmptyResponse);
+
+  // ── Suscripciones ─────────────────────────────────────────────────────────
+  rpc ListPlanes(EmptyRequest) returns (ListPlanesResponse);
+  rpc GetMiSuscripcion(UserRequest) returns (SuscripcionResponse);
+  rpc CrearCheckoutSuscripcion(CheckoutSuscripcionRequest) returns (CheckoutSessionResponse);
+  // Aplica el estado que reporta Stripe. Nunca se infiere localmente: el
+  // ciclo de vida lo manda el PSP.
+  rpc SincronizarSuscripcion(SincronizarSuscripcionRequest) returns (EmptyResponse);
+  rpc RegistrarFacturaSuscripcion(FacturaSuscripcionRequest) returns (EmptyResponse);
+  // Acceso derivado de una suscripción viva (titular o asiento ocupado).
+  rpc TieneAccesoPorSuscripcion(UserRequest) returns (AccesoSuscripcionResponse);
+  rpc AsignarAsientos(AsignarAsientosRequest) returns (ListAsientosResponse);
+  rpc ListAsientos(SuscripcionIDRequest) returns (ListAsientosResponse);
+  rpc RevocarAsiento(RevocarAsientoRequest) returns (EmptyResponse);
+
   rpc CreateCheckoutSession(CheckoutSessionRequest) returns (CheckoutSessionResponse);
   rpc CreateCheckoutSessionB2BDirect(CreateCheckoutSessionB2BDirectRequest) returns (CheckoutSessionResponse);
   rpc CreateCheckoutSessionCart(CheckoutCartRequest) returns (CheckoutSessionResponse);
   rpc ListLicencias(ListLicenciasRequest) returns (ListLicenciasResponse);
   rpc GetLicenciaPublica(LicenciaIDRequest) returns (LicenciaPublicaResponse);
   rpc ListLicenciasCompradas(UserRequest) returns (ListLicenciasResponse);
-  rpc ListLicenciaTickets(LicenciaIDRequest) returns (ListLicenciaTicketsResponse);
 
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
@@ -54,20 +85,6 @@ service CursosService {
   rpc AdminAsignar(AsignarRequest) returns (EmptyResponse);
   rpc AdminDesAsignar(AsignacionIDRequest) returns (EmptyResponse);
 
-  // Videocall & Schedules
-  rpc JoinVideocall(JoinVideocallRequest) returns (JoinVideocallResponse);
-  rpc LeaveVideocall(LeaveVideocallRequest) returns (EmptyResponse);
-  rpc EndVideocall(CursoIDRequest) returns (EmptyResponse);
-  rpc GetMyVideocallTicket(CursoIDRequest) returns (VideocallTicketResponse);
-  rpc InstructorGetCurrentRoom(CursoIDRequest) returns (CurrentRoomResponse);
-
-  rpc AdminListSchedules(UserRequest) returns (ListSchedulesResponse);
-  rpc AdminCreateSchedule(CreateScheduleRequest) returns (InstructorSchedule);
-  rpc AdminUpdateSchedule(UpdateScheduleRequest) returns (InstructorSchedule);
-  rpc AdminDeleteSchedule(ScheduleIDRequest) returns (EmptyResponse);
-
-  rpc ListPublicSchedules(ListPublicSchedulesRequest) returns (ListPublicSchedulesResponse);
-
   // Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
   rpc GetAdminDashboardStats(EmptyRequest) returns (AdminDashboardStatsResponse);
 }
@@ -76,10 +93,9 @@ service CursosService {
 
 message EmptyRequest  {}
 message UserRequest   { string user_id = 1; }
-message CursoIDRequest { 
-  string curso_id = 1; 
-  string user_id = 2; 
-  string schedule_id = 3; 
+message CursoIDRequest {
+  string curso_id = 1;
+  string user_id = 2;
 }
 message CodigoRequest { string codigo = 1; }
 message AsignacionIDRequest { string asignacion_id = 1; }
@@ -115,7 +131,6 @@ message UpdateCursoRequest {
   string color           = 11;
   double precio          = 12;
   string scheduled_at    = 13;
-  string videocall_status = 14;
   int32  duration        = 15;
   bool   dc3_enabled     = 16;
 }
@@ -155,7 +170,6 @@ message CursoResponse {
   string created_at      = 13;
   double precio          = 14;
   string scheduled_at    = 15;
-  string videocall_status = 16;
   int32  duration        = 17;
   int32  total_lecciones = 18;
   int32  lecciones_completadas = 19;
@@ -206,6 +220,10 @@ message Licencia {
   string created_at = 11;
   string curso_type = 12;
   int32 curso_duracion = 13;
+  // Título de la capacitación asociada — evita que el frontend haga N+1 fetches.
+  string capacitacion_titulo = 14;
+  // Accesos ya repartidos por correo (invitaciones enviadas).
+  int32 accesos_enviados = 15;
 }
 
 message LicenciaPublicaResponse {
@@ -255,14 +273,12 @@ message WebhookEnrollRequest {
   string user_id = 1;
   string capacitacion_id = 2;
   string licencia_id = 3;
-  string schedule_id = 4;
 }
 
 message CartItem {
   string curso_id = 1;
   int32 cantidad = 2;
   string type = 3; // "b2c" | "b2b_direct"
-  string schedule_id = 4;
 }
 
 message CheckoutCartRequest {
@@ -283,11 +299,150 @@ message CheckoutSessionRequest {
   string success_url = 3;
   string cancel_url = 4;
   string curso_id = 5; // optional, used for individual B2C course purchase
-  string schedule_id = 6; // optional, for videocall bookings
 }
 
 message CheckoutSessionResponse {
   string url = 1;
+  // Id de la orden creada antes de redirigir a Stripe. Permite rastrear el
+  // intento de cobro aunque el usuario nunca vuelva.
+  string orden_id = 2;
+}
+
+// ── Suscripciones ────────────────────────────────────────────────────────────
+
+message Plan {
+  string id              = 1;
+  string codigo          = 2;
+  string nombre          = 3;
+  string descripcion     = 4;
+  string modalidad       = 5;  // "individual" | "asientos"
+  string intervalo       = 6;  // "mes" | "anio"
+  int64  precio_centavos = 7;  // por asiento cuando modalidad="asientos"
+  string moneda          = 8;
+  int32  dias_prueba     = 9;
+  bool   activo          = 10;
+}
+
+message ListPlanesResponse {
+  repeated Plan planes = 1;
+}
+
+message SuscripcionResponse {
+  string id         = 1;
+  string plan_id    = 2;
+  string plan_nombre = 3;
+  string modalidad  = 4;
+  string intervalo  = 5;
+  int64  precio_centavos = 6;
+  // incompleta | en_prueba | activa | vencida | cancelada | impagada
+  string estado     = 7;
+  int32  asientos   = 8;
+  int32  asientos_ocupados = 9;
+  string periodo_inicio = 10;
+  string periodo_fin    = 11;
+  string prueba_fin     = 12;
+  bool   cancelar_al_terminar = 13;
+  // true mientras el acceso siga vivo, incluido el periodo de gracia.
+  bool   acceso_vigente = 14;
+  // Necesario para abrir el Billing Portal. El Gateway NO lo reenvía al
+  // navegador: se usa solo para firmar la sesión del portal.
+  string stripe_customer_id = 15;
+}
+
+message CheckoutSuscripcionRequest {
+  string user_id     = 1;
+  string plan_codigo = 2;
+  int32  asientos    = 3;
+  string success_url = 4;
+  string cancel_url  = 5;
+}
+
+message SincronizarSuscripcionRequest {
+  string stripe_subscription_id = 1;
+  string stripe_customer_id     = 2;
+  string user_id                = 3;  // solo en el alta inicial
+  string plan_codigo            = 4;  // solo en el alta inicial
+  string estado                 = 5;  // estado ya traducido desde Stripe
+  int32  asientos               = 6;
+  string periodo_inicio         = 7;  // RFC3339
+  string periodo_fin            = 8;
+  string prueba_fin             = 9;
+  bool   cancelar_al_terminar   = 10;
+}
+
+message FacturaSuscripcionRequest {
+  string stripe_subscription_id = 1;
+  string stripe_invoice_id      = 2;
+  string estado                 = 3;  // pagada | fallida | abierta
+  int64  total_centavos         = 4;
+  string moneda                 = 5;
+  int32  intento_cobro          = 6;
+  string url_pdf                = 7;
+  string periodo_inicio         = 8;
+  string periodo_fin            = 9;
+}
+
+message AccesoSuscripcionResponse {
+  bool   tiene_acceso   = 1;
+  string origen         = 2;  // "titular" | "asiento" | ""
+  string suscripcion_id = 3;
+  string estado         = 4;
+}
+
+message ParticipanteAsiento {
+  string nombre = 1;
+  string email  = 2;
+}
+
+message AsignarAsientosRequest {
+  string suscripcion_id = 1;
+  string titular_id     = 2;
+  repeated ParticipanteAsiento participantes = 3;
+}
+
+message SuscripcionIDRequest {
+  string suscripcion_id = 1;
+  string titular_id     = 2;
+}
+
+message RevocarAsientoRequest {
+  string suscripcion_id = 1;
+  string titular_id     = 2;
+  string email          = 3;
+}
+
+message Asiento {
+  string id     = 1;
+  string email  = 2;
+  string user_id = 3;
+  string estado = 4;  // invitado | activo | revocado
+  string invitado_at = 5;
+}
+
+message ListAsientosResponse {
+  repeated Asiento asientos = 1;
+  int32 total     = 2;
+  int32 ocupados  = 3;
+  int32 libres    = 4;
+}
+
+// ── Órdenes y webhooks ───────────────────────────────────────────────────────
+
+message EventoStripeRequest {
+  string event_id = 1;
+  string tipo     = 2;
+}
+
+message EventoStripeResponse {
+  // false cuando el evento ya estaba registrado (reenvío de Stripe).
+  bool primera_vez = 1;
+}
+
+message ActualizarEstadoOrdenRequest {
+  string stripe_session_id     = 1;
+  string estado                = 2; // 'pagada' | 'cumplida' | 'fallida'
+  string motivo_fallo          = 3;
+  string stripe_payment_intent = 4;
 }
 
 message AdminDashboardStatsResponse {
@@ -304,89 +459,99 @@ message CreateCheckoutSessionB2BDirectRequest {
   int32 cantidad = 3;
   string success_url = 4;
   string cancel_url = 5;
-  string schedule_id = 6; // optional, for videocall bookings
 }
 
 message WebhookComprarB2BDirectRequest {
   string user_id = 1;
   string curso_id = 2;
   int32 cantidad = 3;
-  string schedule_id = 4;
 }
 
-message ListLicenciaTicketsResponse {
-  repeated VideocallTicket tickets = 1;
+
+// ── Resultado de una compra (para correo de confirmación y pantalla de éxito) ─
+
+message EnrollResponse {
+  string capacitacion_id     = 1;
+  string capacitacion_titulo = 2;
+  string capacitacion_type   = 3; // "video" | "document" | "text" | "link"
 }
 
-message InstructorSchedule {
-  string id = 1;
-  string instructor_id = 2;
-  string start_time = 3;
-  string end_time = 4;
-  string status = 5;
-  string created_at = 6;
+message ComprarB2BDirectResponse {
+  string licencia_id         = 1;
+  string capacitacion_id     = 2;
+  string capacitacion_titulo = 3;
+  string capacitacion_type   = 4;
+  // codigo_acceso se usa en cursos asíncronos (un código compartido).
+  string codigo_acceso       = 5;
+  int32  lugares             = 6;
+  double total               = 7;
 }
 
-message ScheduleIDRequest {
-  string schedule_id = 1;
+// ── Reparto de accesos a participantes ───────────────────────────────────────
+
+message ParticipanteInput {
+  string nombre = 1;
+  string email  = 2;
 }
 
-message ListSchedulesResponse {
-  repeated InstructorSchedule schedules = 1;
+message AsignarAccesosLicenciaRequest {
+  string licencia_id  = 1;
+  string comprador_id = 2; // se valida contra curso_licencias.comprador_id
+  repeated ParticipanteInput participantes = 3;
 }
 
-message CreateScheduleRequest {
-  string instructor_id = 1;
-  string start_time = 2;
-  string end_time = 3;
+message AccesoParticipante {
+  string nombre              = 1;
+  string email               = 2;
+  string codigo              = 3;
+  string capacitacion_id     = 4;
+  string capacitacion_titulo = 5;
+  string capacitacion_type   = 6;
 }
 
-message UpdateScheduleRequest {
-  string schedule_id = 1;
-  string start_time = 2;
-  string end_time = 3;
-  string status = 4;
+message AsignarAccesosLicenciaResponse {
+  repeated AccesoParticipante accesos = 1;
 }
 
-message JoinVideocallRequest {
-  string user_id = 1;
-  string codigo = 2;
+message InvitacionLicencia {
+  string id          = 1;
+  string licencia_id = 2;
+  string nombre      = 3;
+  string email       = 4;
+  string codigo      = 5;
+  string estado      = 6; // "enviado" | "usado"
+  string enviado_at  = 7;
 }
 
-message JoinVideocallResponse {
-  string room_name = 1;
-  string token = 2;
+message ListInvitacionesLicenciaResponse {
+  repeated InvitacionLicencia invitaciones = 1;
 }
 
-message LeaveVideocallRequest {
-  string user_id = 1;
-  string codigo = 2;
-}
+// ── Aviso DC-3 al representante ──────────────────────────────────────────────
 
-message VideocallTicket {
-  string id = 1;
+message CursoCompletadoRequest {
+  string user_id         = 1;
   string capacitacion_id = 2;
-  string licencia_id = 3;
-  string codigo = 4;
-  string in_use_by_user = 5;
-  bool is_valid = 6;
 }
 
-message ListPublicSchedulesRequest {
-  string instructor_id = 1;
+message CursoCompletadoResponse {
+  // false cuando no aplica: compra individual sin licencia, curso con DC-3
+  // desactivado, o aviso ya enviado antes.
+  bool   avisar              = 1;
+  string representante_id    = 2;
+  string capacitacion_titulo = 3;
+  int32  duracion_minutos    = 4;
 }
 
-message ListPublicSchedulesResponse {
-  repeated InstructorSchedule schedules = 1;
-}
 
-message VideocallTicketResponse {
-  string id = 1;
-  string codigo = 2;
-  string schedule_id = 3;
-}
 
-message CurrentRoomResponse {
-  string room_name = 1;
-  string schedule_id = 2;
-}
+
+
+
+
+
+
+
+
+
+

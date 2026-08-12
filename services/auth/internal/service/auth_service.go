@@ -3,17 +3,22 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"math/big"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
+	"Prueba-Go/pkg/mailer"
 	"Prueba-Go/services/auth/internal/config"
 	"Prueba-Go/services/auth/internal/model"
 	"Prueba-Go/services/auth/internal/repository"
@@ -32,7 +37,18 @@ var (
 	ErrInvalidRecaptcha   = errors.New("verificación de reCAPTCHA fallida")
 	ErrTokenInvalid       = errors.New("token inválido o expirado")
 	ErrTokenRevoked       = errors.New("sesión revocada")
+
+	// Verificación de correo
+	ErrEmailNotVerified = errors.New("correo no verificado")
+	ErrCodeInvalid      = errors.New("código de verificación incorrecto")
+	ErrCodeExpired      = errors.New("código de verificación expirado")
+	ErrTooManyAttempts  = errors.New("demasiados intentos fallidos")
+	ErrResendTooSoon    = errors.New("espera antes de solicitar otro código")
 )
+
+// maxVerificationAttempts limita el fuerza-bruta sobre un código de 6 dígitos
+// (10^6 combinaciones). Al agotarse hay que pedir un código nuevo.
+const maxVerificationAttempts = 5
 
 type tvCacheItem struct {
 	version   int
@@ -54,6 +70,9 @@ type RegisterInput struct {
 type LoginResult struct {
 	Token string
 	User  *model.User
+	// RequiresVerification indica que la cuenta existe pero aún no confirmó su
+	// correo. Cuando es true, Token viene vacío a propósito.
+	RequiresVerification bool
 }
 
 // Claims son los datos que el auth service extrae de un JWT válido.
@@ -72,10 +91,11 @@ type Claims struct {
 type AuthService struct {
 	users repository.UserRepository
 	cfg   *config.Config
+	mail  *mailer.Client
 }
 
-func NewAuthService(users repository.UserRepository, cfg *config.Config) *AuthService {
-	return &AuthService{users: users, cfg: cfg}
+func NewAuthService(users repository.UserRepository, cfg *config.Config, mail *mailer.Client) *AuthService {
+	return &AuthService{users: users, cfg: cfg, mail: mail}
 }
 
 // Register valida reCAPTCHA, hashea la contraseña, persiste el usuario y devuelve JWT.
@@ -97,12 +117,13 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 	}
 
 	u := &model.User{
-		ID:           uuid.New().String(),
-		Name:         in.Name,
-		Email:        in.Email,
-		PasswordHash: string(hash),
-		Role:         role,
-		TokenVersion: 1,
+		ID:            uuid.New().String(),
+		Name:          in.Name,
+		Email:         normalizeEmail(in.Email),
+		PasswordHash:  string(hash),
+		Role:          role,
+		TokenVersion:  1,
+		EmailVerified: false,
 	}
 
 	if err := s.users.Create(ctx, u); err != nil {
@@ -113,12 +134,118 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 		return nil, fmt.Errorf("create user: %w", err)
 	}
 
+	// No se emite JWT todavía: la cuenta no vale nada hasta confirmar el buzón.
+	// Un fallo al enviar el correo no revierte el alta — el usuario puede pedir
+	// un reenvío desde la pantalla de verificación.
+	if err := s.issueVerificationCode(ctx, u); err != nil {
+		slog.Error("Register: no se pudo enviar el código de verificación",
+			"user_id", u.ID, "error", err)
+	}
+
+	return &LoginResult{User: u, RequiresVerification: true}, nil
+}
+
+// issueVerificationCode genera un código de 6 dígitos, guarda su hash y lo envía.
+// El código nunca se persiste en claro: si se filtra la BD no sirve para activar
+// cuentas ajenas.
+func (s *AuthService) issueVerificationCode(ctx context.Context, u *model.User) error {
+	code, err := generateNumericCode(6)
+	if err != nil {
+		return fmt.Errorf("generar código: %w", err)
+	}
+
+	ttl := time.Duration(s.cfg.EmailVerificationTTLMinutes) * time.Minute
+	if err := s.users.StoreEmailVerification(ctx, u.ID, hashCode(u.ID, code), time.Now().Add(ttl)); err != nil {
+		return fmt.Errorf("guardar código: %w", err)
+	}
+
+	msg := s.mail.VerificationCode(u.Name, code, s.cfg.EmailVerificationTTLMinutes)
+	msg.To = []string{u.Email}
+	s.mail.SendAsync(msg)
+	return nil
+}
+
+// VerifyEmail valida el código de 6 dígitos y, si es correcto, activa la cuenta
+// y devuelve el JWT — es el único punto donde una cuenta nueva obtiene sesión.
+func (s *AuthService) VerifyEmail(ctx context.Context, email, code string) (*LoginResult, error) {
+	u, err := s.users.FindByEmail(ctx, normalizeEmail(email))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrCodeInvalid // no revelamos si el correo existe
+		}
+		return nil, fmt.Errorf("find user: %w", err)
+	}
+
+	// Idempotencia: si ya estaba verificado devolvemos sesión en lugar de error,
+	// así un doble clic en "Verificar" no bloquea al usuario.
+	if u.EmailVerified {
+		token, err := s.generateToken(u)
+		if err != nil {
+			return nil, fmt.Errorf("generate token: %w", err)
+		}
+		return &LoginResult{Token: token, User: u}, nil
+	}
+
+	v, err := s.users.GetEmailVerification(ctx, u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get verification: %w", err)
+	}
+	if v.Hash == nil || v.Expires == nil {
+		return nil, ErrCodeExpired
+	}
+	if v.Attempts >= maxVerificationAttempts {
+		return nil, ErrTooManyAttempts
+	}
+	if time.Now().After(*v.Expires) {
+		return nil, ErrCodeExpired
+	}
+
+	// Comparación en tiempo constante: evita distinguir códigos por latencia.
+	expected := hashCode(u.ID, strings.TrimSpace(code))
+	if subtle.ConstantTimeCompare([]byte(expected), []byte(*v.Hash)) != 1 {
+		if err := s.users.IncrementVerificationAttempts(ctx, u.ID); err != nil {
+			slog.Error("VerifyEmail: no se pudo incrementar intentos", "user_id", u.ID, "error", err)
+		}
+		return nil, ErrCodeInvalid
+	}
+
+	if err := s.users.MarkEmailVerified(ctx, u.ID); err != nil {
+		return nil, fmt.Errorf("marcar verificado: %w", err)
+	}
+	u.EmailVerified = true
+
 	token, err := s.generateToken(u)
 	if err != nil {
 		return nil, fmt.Errorf("generate token: %w", err)
 	}
-
 	return &LoginResult{Token: token, User: u}, nil
+}
+
+// ResendVerificationCode emite un código nuevo respetando un cooldown.
+// Devuelve nil silenciosamente si el correo no existe o ya está verificado,
+// para no convertir el endpoint en un oráculo de cuentas registradas.
+func (s *AuthService) ResendVerificationCode(ctx context.Context, email string) error {
+	u, err := s.users.FindByEmail(ctx, normalizeEmail(email))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("find user: %w", err)
+	}
+	if u.EmailVerified {
+		return nil
+	}
+
+	v, err := s.users.GetEmailVerification(ctx, u.ID)
+	if err != nil {
+		return fmt.Errorf("get verification: %w", err)
+	}
+	cooldown := time.Duration(s.cfg.EmailVerificationCooldownSec) * time.Second
+	if v.SentAt != nil && time.Since(*v.SentAt) < cooldown {
+		return ErrResendTooSoon
+	}
+
+	return s.issueVerificationCode(ctx, u)
 }
 
 // Login verifica credenciales y devuelve JWT + perfil.
@@ -130,7 +257,7 @@ func (s *AuthService) Login(ctx context.Context, email, password, recaptchaToken
 		}
 	}
 
-	u, err := s.users.FindByEmail(ctx, email)
+	u, err := s.users.FindByEmail(ctx, normalizeEmail(email))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrInvalidCredentials
@@ -140,6 +267,17 @@ func (s *AuthService) Login(ctx context.Context, email, password, recaptchaToken
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
+	}
+
+	// La verificación se comprueba DESPUÉS de la contraseña: de lo contrario el
+	// endpoint revelaría qué correos están registrados sin conocer credenciales.
+	if !u.EmailVerified {
+		// Reenvío best-effort para que el usuario tenga un código fresco al
+		// aterrizar en la pantalla de verificación. El cooldown evita el abuso.
+		if err := s.ResendVerificationCode(ctx, u.Email); err != nil && !errors.Is(err, ErrResendTooSoon) {
+			slog.Error("Login: fallo al reenviar código", "user_id", u.ID, "error", err)
+		}
+		return nil, ErrEmailNotVerified
 	}
 
 	token, err := s.generateToken(u)
@@ -221,7 +359,10 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 		return fmt.Errorf("store reset token: %w", err)
 	}
 
-	go s.sendResetEmail(u.Email, u.Name, token) // fire-and-forget
+	link := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.AppURL, url.QueryEscape(token))
+	msg := s.mail.PasswordResetLink(u.Name, link)
+	msg.To = []string{u.Email}
+	s.mail.SendAsync(msg) // fire-and-forget
 	return nil
 }
 
@@ -313,95 +454,27 @@ func verifyRecaptcha(token, secretKey string) error {
 	return nil
 }
 
-// ── Email helper ──────────────────────────────────────────────────────────────
+// ── Helpers de verificación ───────────────────────────────────────────────────
 
-func (s *AuthService) sendResetEmail(email, name, token string) {
-	if s.cfg.SMTPHost == "" {
-		return // SMTP no configurado
-	}
-
-	link := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.AppURL, token)
-	subject := fmt.Sprintf("Restablecer contraseña — %s", s.cfg.AppName)
-	body := buildResetEmailHTML(s.cfg.AppURL, s.cfg.AppName, name, link)
-
-	msg := strings.Join([]string{
-		"From: " + s.cfg.SMTPFrom,
-		"To: " + email,
-		"Subject: " + subject,
-		"MIME-Version: 1.0",
-		"Content-Type: text/html; charset=UTF-8",
-		"",
-		body,
-	}, "\r\n")
-
-	addr := fmt.Sprintf("%s:%s", s.cfg.SMTPHost, s.cfg.SMTPPort)
-	_ = sendSMTP(addr, s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPFrom, []string{email}, []byte(msg))
+// normalizeEmail evita cuentas duplicadas por mayúsculas o espacios pegados.
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }
 
-func buildResetEmailHTML(appURL, appName, name, link string) string {
-	logoURL := appURL + "/logo-capacitaciones.png"
-	return fmt.Sprintf(`<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:48px 0">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%%">
+// generateNumericCode produce un código decimal criptográficamente aleatorio.
+// Se usa crypto/rand (no math/rand) porque el código es una credencial.
+func generateNumericCode(digits int) (string, error) {
+	maxVal := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(digits)), nil)
+	n, err := rand.Int(rand.Reader, maxVal)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%0*d", digits, n), nil
+}
 
-        <!-- Header -->
-        <tr><td style="background:#1c1d1f;border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
-          <img src="%s" width="60" height="60" alt="%s" style="display:block;margin:0 auto 14px;border-radius:12px" />
-          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.4px">%s</h1>
-        </td></tr>
-
-        <!-- Body -->
-        <tr><td style="background:#ffffff;padding:40px 40px 32px">
-          <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#111827">
-            Restablecer contraseña
-          </h2>
-          <p style="margin:0 0 6px;color:#6b7280;font-size:15px">
-            Hola, <strong style="color:#111827">%s</strong>
-          </p>
-          <p style="margin:0 0 28px;color:#6b7280;font-size:15px;line-height:1.65">
-            Recibimos una solicitud para restablecer la contraseña de tu cuenta.
-            Haz clic en el botón de abajo para continuar.
-            <strong style="color:#374151">El enlace expira en 1 hora.</strong>
-          </p>
-
-          <!-- CTA Button -->
-          <table width="100%%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:4px 0 28px">
-              <a href="%s"
-                style="display:inline-block;background:#f97316;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:15px 40px;border-radius:12px;letter-spacing:-0.1px">
-                Restablecer mi contraseña →
-              </a>
-            </td></tr>
-          </table>
-
-          <!-- Alt link -->
-          <p style="margin:0 0 24px;font-size:13px;color:#9ca3af;line-height:1.6">
-            Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
-            <a href="%s" style="color:#f97316;word-break:break-all;font-size:12px">%s</a>
-          </p>
-
-          <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 24px">
-
-          <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6">
-            Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.
-            Tu contraseña permanecerá sin cambios.
-          </p>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="background:#f9fafb;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;border-top:1px solid #f3f4f6">
-          <p style="margin:0;font-size:12px;color:#9ca3af">
-            © %s &nbsp;·&nbsp; Este correo fue generado automáticamente, no respondas a este mensaje.
-          </p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`, logoURL, appName, appName, name, link, link, link, appName)
+// hashCode deriva el hash almacenado. Se mezcla el userID para que dos usuarios
+// con el mismo código no compartan hash (y una tabla precalculada no sirva).
+func hashCode(userID, code string) string {
+	sum := sha256.Sum256([]byte(userID + ":" + code))
+	return hex.EncodeToString(sum[:])
 }

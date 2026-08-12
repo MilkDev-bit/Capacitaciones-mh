@@ -9,7 +9,10 @@ import { getRecaptchaToken } from '../utils/recaptcha'
 
 const auth = useAuthStore()
 const route = useRoute()
-const tab = ref<'login' | 'register' | 'forgot'>('login')
+// ?tab=register permite que el botón "Registrarse" de la tienda abra
+// directamente el formulario de alta en lugar del de inicio de sesión.
+const tabInicial = route.query.tab === 'register' ? 'register' : 'login'
+const tab = ref<'login' | 'register' | 'forgot'>(tabInicial)
 
 const email = ref('')
 const password = ref('')
@@ -102,6 +105,14 @@ async function submit() {
       window.location.href = redirectPath
     })
   } catch (e: any) {
+    // Credenciales correctas pero correo sin confirmar: el usuario no tiene que
+    // volver a teclear nada, se le lleva directo a capturar el código.
+    if (e.response?.status === 403 && e.response?.data?.code === 'email_not_verified') {
+      localStorage.setItem('pending_verification_email', email.value)
+      toast.info('Confirma tu correo para continuar. Te enviamos un código.')
+      router.push({ path: '/verificar-correo', query: { email: email.value } })
+      return
+    }
     toast.error(e.response?.data?.error || 'Correo o contraseña incorrectos')
   } finally {
     loading.value = false
@@ -125,14 +136,14 @@ async function register() {
   regLoading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('register')
-    await api.post('/register', { name: regName.value, email: regEmail.value, password: regPassword.value, recaptchaToken: recaptcha_token })
-    toast.success('¡Cuenta creada! Redirigiendo...')
-    setTimeout(() => { 
-      tab.value = 'login'
-      email.value = regEmail.value
-      password.value = regPassword.value
-      regName.value = ''; regEmail.value = ''; regPassword.value = ''; regConfirmPassword.value = '';
-    }, 1500)
+    const nuevoEmail = regEmail.value
+    await api.post('/register', { name: regName.value, email: nuevoEmail, password: regPassword.value, recaptchaToken: recaptcha_token })
+
+    // El alta ya no inicia sesión: hay que confirmar el correo primero.
+    regName.value = ''; regEmail.value = ''; regPassword.value = ''; regConfirmPassword.value = ''
+    localStorage.setItem('pending_verification_email', nuevoEmail)
+    toast.success('¡Cuenta creada! Te enviamos un código de 6 dígitos.')
+    router.push({ path: '/verificar-correo', query: { email: nuevoEmail } })
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al registrarse')
   } finally {

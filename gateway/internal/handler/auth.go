@@ -51,8 +51,65 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
+	// El alta ya no inicia sesión: sin correo verificado no hay cookie ni JWT.
+	if resp.RequiresVerification {
+		ctx.JSON(http.StatusCreated, gin.H{
+			"user":                  resp.User,
+			"requires_verification": true,
+			"email":                 body.Email,
+			"message":               "te enviamos un código de 6 dígitos para confirmar tu correo",
+		})
+		return
+	}
+
 	h.setAuthCookie(ctx, resp.Token)
 	ctx.JSON(http.StatusCreated, gin.H{"user": resp.User})
+}
+
+// POST /api/verify-email
+func (h *AuthHandler) VerifyEmail(ctx *gin.Context) {
+	var body struct {
+		Email string `json:"email" binding:"required,email"`
+		Code  string `json:"code"  binding:"required,len=6,numeric"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ingresa el código de 6 dígitos"})
+		return
+	}
+
+	resp, err := h.c.Auth.VerifyEmail(ctx.Request.Context(), &authpb.VerifyEmailRequest{
+		Email: body.Email,
+		Code:  body.Code,
+	})
+	if err != nil {
+		h.handleGRPCError(ctx, err)
+		return
+	}
+
+	// Verificar equivale a iniciar sesión: el usuario entra directo.
+	h.setAuthCookie(ctx, resp.Token)
+	ctx.JSON(http.StatusOK, gin.H{"user": resp.User})
+}
+
+// POST /api/resend-verification
+func (h *AuthHandler) ResendVerification(ctx *gin.Context) {
+	var body struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := h.c.Auth.ResendVerificationCode(ctx.Request.Context(), &authpb.ResendVerificationRequest{
+		Email: body.Email,
+	})
+	if err != nil {
+		h.handleGRPCError(ctx, err)
+		return
+	}
+	// Respuesta genérica: no revelamos si el correo existe o ya está verificado.
+	ctx.JSON(http.StatusOK, gin.H{"message": "si la cuenta existe y está pendiente, enviamos un código nuevo"})
 }
 
 // POST /api/login
@@ -153,6 +210,20 @@ func (h *AuthHandler) handleGRPCError(ctx *gin.Context, err error) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": st.Message()})
 	case codes.NotFound:
 		ctx.JSON(http.StatusNotFound, gin.H{"error": st.Message()})
+
+	// 403 y NO 401: el interceptor de axios trata cualquier 401 como sesión
+	// expirada y expulsa al usuario. Aquí queremos redirigirlo a verificación.
+	case codes.FailedPrecondition:
+		ctx.JSON(http.StatusForbidden, gin.H{
+			"error": "debes verificar tu correo antes de iniciar sesión",
+			"code":  "email_not_verified",
+		})
+	case codes.DeadlineExceeded:
+		ctx.JSON(http.StatusGone, gin.H{"error": st.Message(), "code": "code_expired"})
+	case codes.ResourceExhausted:
+		ctx.JSON(http.StatusTooManyRequests, gin.H{"error": st.Message(), "code": "too_many_attempts"})
+	case codes.Unavailable:
+		ctx.JSON(http.StatusTooManyRequests, gin.H{"error": st.Message(), "code": "resend_cooldown"})
 	default:
 		slog.Error("gRPC error", "code", st.Code(), "message", st.Message(), "path", ctx.FullPath())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})

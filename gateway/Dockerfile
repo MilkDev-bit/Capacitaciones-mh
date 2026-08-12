@@ -21,14 +21,18 @@ WORKDIR /app
 
 COPY gen/go.mod gen/go.mod
 COPY gen/go.sum* gen/
+# pkg/mailer es un módulo local referenciado por 'replace': su go.mod debe
+# existir antes del 'go mod download' o la resolución falla.
+COPY pkg/mailer/go.mod pkg/mailer/go.sum* ./pkg/mailer/
 COPY gateway/go.mod gateway/go.sum* ./gateway/
 
 WORKDIR /app/gateway
 RUN GOWORK=off go mod download && GOWORK=off go mod tidy
 
 WORKDIR /app
-COPY gen/     gen/
-COPY gateway/ gateway/
+COPY gen/         gen/
+COPY pkg/mailer/  pkg/mailer/
+COPY gateway/     gateway/
 
 WORKDIR /app/gateway
 RUN GOMAXPROCS=1 GOWORK=off CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /gateway ./cmd/server

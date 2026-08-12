@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	Prueba-Go/gen v0.0.0
+	Prueba-Go/pkg/mailer v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.17
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.102.0
@@ -58,3 +59,5 @@ require (
 )
 
 replace Prueba-Go/gen => ../gen
+
+replace Prueba-Go/pkg/mailer => ../pkg/mailer

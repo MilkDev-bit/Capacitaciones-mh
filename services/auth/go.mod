@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	Prueba-Go/gen v0.0.0
+	Prueba-Go/pkg/mailer v0.0.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2
@@ -26,3 +27,5 @@ require (
 )
 
 replace Prueba-Go/gen => ../../gen
+
+replace Prueba-Go/pkg/mailer => ../../pkg/mailer

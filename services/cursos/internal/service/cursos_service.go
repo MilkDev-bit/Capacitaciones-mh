@@ -7,15 +7,30 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"strings"
 
 	cursospb "Prueba-Go/gen/cursos"
 	mensajespb "Prueba-Go/gen/mensajes"
+	"Prueba-Go/pkg/money"
 	"Prueba-Go/services/cursos/internal/repository"
 
 	"github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/checkout/session"
 	"google.golang.org/grpc/metadata"
 )
+
+// precioDe devuelve el importe a cobrar priorizando la columna en centavos.
+//
+// El respaldo a float64 existe solo para filas anteriores a la migración, donde
+// precio_centavos todavía vale 0: math.Round dentro de money.FromFloat recupera
+// el valor correcto, a diferencia del int64(precio*100) que se usaba antes y
+// truncaba (8.20 → 819 centavos).
+func precioDe(centavos int64, legacy float64) money.Amount {
+	if centavos > 0 {
+		return money.MXNAmount(money.Cents(centavos))
+	}
+	return money.MXNAmount(money.MustFromFloat(legacy))
+}
 
 // Errores de dominio.
 var (
@@ -69,20 +84,9 @@ func (s *CursosService) ListMisCapacitaciones(ctx context.Context, userID string
 		slog.Error("ListMisCapacitaciones repo error", "error", err, "userId", userID)
 		return nil, err
 	}
-	
+
 	slog.Info("ListMisCapacitaciones success", "count", len(cursos), "userId", userID)
-	protos := toProtoSlice(cursos)
-	// Para los cursos que son videollamadas, adjuntar su ticket_codigo en codigo_acceso
-	for _, p := range protos {
-		if p.Type == "videocall" {
-			ticket, _ := s.repo.GetTicketForUserAndCourse(ctx, userID, p.Id)
-			if ticket != nil {
-				p.CodigoAcceso = ticket.Codigo
-			}
-		}
-	}
-	
-	return protos, nil
+	return toProtoSlice(cursos), nil
 }
 
 func (s *CursosService) GetCurso(ctx context.Context, cursoID, userID string) (*cursospb.CursoResponse, error) {
@@ -364,34 +368,22 @@ func (s *CursosService) UnirseConLicencia(ctx context.Context, userID, capID, co
 	return err
 }
 
-func (s *CursosService) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EmptyResponse, error) {
+// WebhookEnroll inscribe al comprador tras un pago B2C confirmado y devuelve
+// los datos del curso para que el Gateway pueda redirigir y enviar el acuse.
+func (s *CursosService) WebhookEnroll(ctx context.Context, req *cursospb.WebhookEnrollRequest) (*cursospb.EnrollResponse, error) {
 	err := s.repo.InscribirseConLicencia(ctx, req.UserId, req.CapacitacionId, req.LicenciaId)
 	if err == nil && req.LicenciaId != "" {
 		_ = s.repo.IncrementarUsoLicencia(ctx, req.LicenciaId)
 	}
-	if err == nil && req.ScheduleId != "" {
-		_, _ = s.repo.UpdateSchedule(ctx, &cursospb.UpdateScheduleRequest{
-			ScheduleId: req.ScheduleId,
-			Status: "booked",
-		})
-	}
-
-	// Fix B2C: Si es un curso en vivo, generar su ticket personal si no tiene licencia
-	if err == nil && req.LicenciaId == "" {
-		curso, errC := s.repo.FindByID(ctx, req.CapacitacionId)
-		if errC == nil && curso.Type == "videocall" {
-			var schID *string
-			if req.ScheduleId != "" {
-				schID = &req.ScheduleId
-			}
-			tickets, errT := s.repo.CreateVideocallTickets(ctx, req.CapacitacionId, nil, schID, 1)
-			if errT == nil && len(tickets) > 0 {
-				_ = s.repo.AssignTicketToUser(ctx, tickets[0].ID, req.UserId)
-			}
+	resp := &cursospb.EnrollResponse{CapacitacionId: req.CapacitacionId}
+	if err == nil {
+		if curso, errC := s.repo.FindByID(ctx, req.CapacitacionId); errC == nil {
+			resp.CapacitacionTitulo = curso.Title
+			resp.CapacitacionType = curso.Type
 		}
 	}
 
-	return &cursospb.EmptyResponse{}, err
+	return resp, err
 }
 
 func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
@@ -407,15 +399,13 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		if err != nil {
 			return nil, err
 		}
-		if curso.Precio <= 0 {
+		importe := precioDe(curso.PrecioCentavos, curso.Precio)
+		if !importe.IsPositive() {
 			return nil, errors.New("el curso no tiene precio")
 		}
 		productName = curso.Title
-		amount = int64(curso.Precio * 100)
+		amount = importe.StripeAmount()
 		clientRef = "curso||" + req.UserId + "||" + curso.ID
-		if req.ScheduleId != "" {
-			clientRef += "||" + req.ScheduleId
-		}
 	} else {
 		// B2B License Purchase
 		lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
@@ -425,8 +415,9 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		if lic.CapacidadMaxima > 0 && lic.Usadas >= lic.CapacidadMaxima {
 			return nil, errors.New("licencia agotada")
 		}
+		importe := precioDe(lic.PrecioCentavos, lic.Precio)
 		productName = lic.Nombre
-		amount = int64(lic.Precio * 100)
+		amount = importe.StripeAmount()
 		clientRef = req.UserId + "||" + lic.CapacitacionID + "||" + lic.ID
 	}
 
@@ -445,9 +436,9 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 				Quantity: stripe.Int64(1),
 			},
 		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(req.SuccessUrl),
-		CancelURL:  stripe.String(req.CancelUrl),
+		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:        stripe.String(req.SuccessUrl),
+		CancelURL:         stripe.String(req.CancelUrl),
 		ClientReferenceID: stripe.String(clientRef),
 		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
 			Enabled: stripe.Bool(true),
@@ -491,12 +482,12 @@ func (s *CursosService) GetLicenciaPublica(ctx context.Context, req *cursospb.Li
 		return nil, err
 	}
 	return &cursospb.LicenciaPublicaResponse{
-		Id:                   lic.ID,
-		Nombre:               lic.Nombre,
-		Precio:               lic.Precio,
-		CapacidadMaxima:      lic.CapacidadMaxima,
-		CapacitacionId:       curso.ID,
-		CapacitacionTitulo:   curso.Title,
+		Id:                    lic.ID,
+		Nombre:                lic.Nombre,
+		Precio:                lic.Precio,
+		CapacidadMaxima:       lic.CapacidadMaxima,
+		CapacitacionId:        curso.ID,
+		CapacitacionTitulo:    curso.Title,
 		CapacitacionThumbnail: curso.ThumbnailURL,
 	}, nil
 }
@@ -520,16 +511,21 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	if err != nil {
 		return nil, err
 	}
-	if curso.Precio <= 0 {
+	unitario := precioDe(curso.PrecioCentavos, curso.Precio)
+	if !unitario.IsPositive() {
 		return nil, errors.New("el curso no tiene precio")
+	}
+	if req.Cantidad < 1 {
+		return nil, errors.New("la cantidad debe ser al menos 1")
 	}
 
 	productName := "Licencias Corporativas: " + curso.Title
-	amount := int64(curso.Precio * float64(req.Cantidad) * 100)
-	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
-	if req.ScheduleId != "" {
-		clientRef += "||" + req.ScheduleId
+	total, err := unitario.Mul(int64(req.Cantidad))
+	if err != nil {
+		return nil, fmt.Errorf("total inválido: %w", err)
 	}
+	amount := total.StripeAmount()
+	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
 
 	// Crear sesión
 	params := &stripe.CheckoutSessionParams{
@@ -546,9 +542,9 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 				Quantity: stripe.Int64(1),
 			},
 		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(req.SuccessUrl),
-		CancelURL:  stripe.String(req.CancelUrl),
+		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:        stripe.String(req.SuccessUrl),
+		CancelURL:         stripe.String(req.CancelUrl),
 		ClientReferenceID: stripe.String(clientRef),
 		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
 			Enabled: stripe.Bool(true),
@@ -577,40 +573,159 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
 }
 
-func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.EmptyResponse, error) {
+// WebhookComprarB2BDirect crea la licencia corporativa tras el pago y devuelve
+// los códigos generados para que el Gateway se los mande por correo al comprador.
+func (s *CursosService) WebhookComprarB2BDirect(ctx context.Context, req *cursospb.WebhookComprarB2BDirectRequest) (*cursospb.ComprarB2BDirectResponse, error) {
 	// Verificar que el curso existe
 	curso, err := s.repo.FindByID(ctx, req.CursoId)
 	if err != nil {
 		return nil, err
 	}
-	
-	precioTotal := curso.Precio * float64(req.Cantidad)
-	
+
+	// El total se recalcula en centavos y solo al final se convierte a float
+	// para la columna NUMERIC legacy.
+	unitario := precioDe(curso.PrecioCentavos, curso.Precio)
+	totalLic, err := unitario.Mul(int64(req.Cantidad))
+	if err != nil {
+		return nil, fmt.Errorf("total inválido: %w", err)
+	}
+	precioTotal := totalLic.Float()
+
 	// Crear licencia
 	lic, err := s.repo.CreateLicenciaB2BDirect(ctx, req, precioTotal)
 	if err != nil {
 		return nil, err
 	}
-	
-	// Si es videollamada, generar N tickets únicos en lugar de usar un solo código de licencia
-	if curso.Type == "videocall" {
-		var schID *string
-		if req.ScheduleId != "" {
-			schID = &req.ScheduleId
-		}
-		_, err = s.repo.CreateVideocallTickets(ctx, req.CursoId, &lic.ID, schID, int(req.Cantidad))
-		if err != nil {
-			return nil, err
-		}
-		if req.ScheduleId != "" {
-			_, _ = s.repo.UpdateSchedule(ctx, &cursospb.UpdateScheduleRequest{
-				ScheduleId: req.ScheduleId,
-				Status: "booked",
-			})
-		}
+
+	resp := &cursospb.ComprarB2BDirectResponse{
+		LicenciaId:         lic.ID,
+		CapacitacionId:     curso.ID,
+		CapacitacionTitulo: curso.Title,
+		CapacitacionType:   curso.Type,
+		Lugares:            req.Cantidad,
+		Total:              precioTotal,
 	}
-	
-	return &cursospb.EmptyResponse{}, nil
+	if lic.CodigoAcceso != nil {
+		resp.CodigoAcceso = *lic.CodigoAcceso
+	}
+
+	return resp, nil
+}
+
+// AsignarAccesosLicencia reparte los accesos de una licencia entre los correos
+// que capturó el comprador. Solo devuelve los datos: el envío del correo lo hace
+// el Gateway, que es quien tiene el cliente de Resend.
+func (s *CursosService) AsignarAccesosLicencia(ctx context.Context, req *cursospb.AsignarAccesosLicenciaRequest) (*cursospb.AsignarAccesosLicenciaResponse, error) {
+	if len(req.Participantes) == 0 {
+		return nil, errors.New("no se recibieron participantes")
+	}
+
+	lic, err := s.repo.FindLicenciaByID(ctx, req.LicenciaId)
+	if err != nil {
+		return nil, err
+	}
+	// Autorización: solo el comprador reparte los accesos que pagó.
+	if lic.CompradorID == nil || *lic.CompradorID != req.CompradorId {
+		return nil, ErrForbidden
+	}
+
+	curso, err := s.repo.FindByID(ctx, lic.CapacitacionID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Todos los participantes comparten el código de acceso de la licencia.
+	codigoCompartido := ""
+	if lic.CodigoAcceso != nil {
+		codigoCompartido = *lic.CodigoAcceso
+	}
+
+	participantes := make([]repository.Participante, 0, len(req.Participantes))
+	for _, p := range req.Participantes {
+		email := strings.ToLower(strings.TrimSpace(p.Email))
+		if email == "" {
+			continue
+		}
+		participantes = append(participantes, repository.Participante{
+			Nombre: strings.TrimSpace(p.Nombre),
+			Email:  email,
+		})
+	}
+	if len(participantes) == 0 {
+		return nil, errors.New("ningún correo válido en la lista")
+	}
+
+	invs, err := s.repo.AsignarAccesos(ctx, lic.ID, codigoCompartido, participantes)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &cursospb.AsignarAccesosLicenciaResponse{}
+	for _, inv := range invs {
+		resp.Accesos = append(resp.Accesos, &cursospb.AccesoParticipante{
+			Nombre:             inv.Nombre,
+			Email:              inv.Email,
+			Codigo:             inv.Codigo,
+			CapacitacionId:     curso.ID,
+			CapacitacionTitulo: curso.Title,
+			CapacitacionType:   curso.Type,
+		})
+	}
+	return resp, nil
+}
+
+// NotificarCursoCompletado decide si hay que avisar al representante de la
+// licencia para que tramite las constancias DC-3.
+//
+// Antes esto se disparaba al terminar una videollamada. Al desaparecer ese
+// flujo, el punto natural es que un participante complete el contenido.
+func (s *CursosService) NotificarCursoCompletado(ctx context.Context, req *cursospb.CursoCompletadoRequest) (*cursospb.CursoCompletadoResponse, error) {
+	resp := &cursospb.CursoCompletadoResponse{}
+
+	curso, err := s.repo.FindByID(ctx, req.CapacitacionId)
+	if err != nil {
+		return nil, err
+	}
+	if !curso.DC3Enabled {
+		return resp, nil
+	}
+
+	lic, err := s.repo.FindLicenciaDeInscripcion(ctx, req.UserId, req.CapacitacionId)
+	if err != nil {
+		return nil, err
+	}
+	// Compra individual: el propio participante tramita su constancia desde la
+	// plataforma, no hay representante a quien escribir.
+	if lic == nil || lic.CompradorID == nil || *lic.CompradorID == "" {
+		return resp, nil
+	}
+
+	primeraVez, err := s.repo.RegistrarAvisoDC3(ctx, lic.ID, req.CapacitacionId)
+	if err != nil {
+		return nil, err
+	}
+	if !primeraVez {
+		return resp, nil
+	}
+
+	resp.Avisar = true
+	resp.RepresentanteId = *lic.CompradorID
+	resp.CapacitacionTitulo = curso.Title
+	resp.DuracionMinutos = curso.Duration
+	return resp, nil
+}
+
+// ListInvitacionesLicencia devuelve el estado de entrega de los accesos.
+func (s *CursosService) ListInvitacionesLicencia(ctx context.Context, req *cursospb.LicenciaIDRequest) (*cursospb.ListInvitacionesLicenciaResponse, error) {
+	invs, err := s.repo.ListInvitacionesLicencia(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	resp := &cursospb.ListInvitacionesLicenciaResponse{}
+	for _, i := range invs {
+		resp.Invitaciones = append(resp.Invitaciones, i.ToProto())
+	}
+	return resp, nil
 }
 
 func (s *CursosService) GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error) {
@@ -626,13 +741,18 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 	metadataMap := make(map[string]string)
+	// Los renglones alimentan la orden: el precio se congela al momento de
+	// comprar, así que una subida posterior no altera la compra histórica.
+	var renglones []repository.OrdenItem
+	total := money.MXNAmount(0)
 
 	for i, item := range req.Items {
 		curso, err := s.repo.FindByID(ctx, item.CursoId)
 		if err != nil {
 			return nil, fmt.Errorf("curso no encontrado: %s", item.CursoId)
 		}
-		if curso.Precio <= 0 {
+		unitario := precioDe(curso.PrecioCentavos, curso.Precio)
+		if !unitario.IsPositive() {
 			return nil, fmt.Errorf("el curso %s no tiene precio", curso.Title)
 		}
 
@@ -643,14 +763,14 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 		if item.Type == "b2c" {
 			productName = curso.Title
-			amount = int64(curso.Precio * 100)
+			amount = unitario.StripeAmount()
 			quantity = 1
-			itemMeta = fmt.Sprintf("b2c||%s||%s", curso.ID, item.ScheduleId)
+			itemMeta = fmt.Sprintf("b2c||%s", curso.ID)
 		} else if item.Type == "b2b_direct" {
 			productName = "Licencia Corporativa: " + curso.Title
-			amount = int64(curso.Precio * 100)
+			amount = unitario.StripeAmount()
 			quantity = int64(item.Cantidad)
-			itemMeta = fmt.Sprintf("b2b_direct||%s||%d||%s", curso.ID, item.Cantidad, item.ScheduleId)
+			itemMeta = fmt.Sprintf("b2b_direct||%s||%d", curso.ID, item.Cantidad)
 		} else {
 			return nil, fmt.Errorf("tipo de ítem no válido: %s", item.Type)
 		}
@@ -668,6 +788,42 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 		// Stripe metadata limit is 50 keys
 		metadataMap[fmt.Sprintf("item_%d", i)] = itemMeta
+
+		subtotal, err := unitario.Mul(quantity)
+		if err != nil {
+			return nil, fmt.Errorf("subtotal inválido en %s: %w", curso.Title, err)
+		}
+		if total, err = total.Add(subtotal); err != nil {
+			return nil, fmt.Errorf("total del carrito inválido: %w", err)
+		}
+		renglones = append(renglones, repository.OrdenItem{
+			CapacitacionID:         curso.ID,
+			Tipo:                   item.Type,
+			Titulo:                 curso.Title,
+			Cantidad:               int32(quantity),
+			PrecioUnitarioCentavos: unitario.StripeAmount(),
+			SubtotalCentavos:       subtotal.StripeAmount(),
+		})
+	}
+
+	// La orden se crea ANTES de hablar con Stripe. Si el usuario abandona el
+	// pago, queda el registro del intento; si hace doble clic, cae en la misma
+	// orden y se reutiliza su sesión en lugar de abrir una segunda.
+	orden, reutilizada, err := s.repo.CrearOAbrirOrden(
+		ctx, req.UserId, total.StripeAmount(), string(money.MXN), renglones)
+	if err != nil {
+		return nil, err
+	}
+	if reutilizada && orden.StripeSessionID != nil {
+		sess, err := session.Get(*orden.StripeSessionID, nil)
+		if err == nil && sess.URL != "" {
+			slog.Info("checkout: reutilizando sesión existente",
+				"orden_id", orden.ID, "session_id", sess.ID)
+			return &cursospb.CheckoutSessionResponse{Url: sess.URL, OrdenId: orden.ID}, nil
+		}
+		// Si Stripe ya no la reconoce, se sigue y se crea una nueva.
+		slog.Warn("checkout: la sesión guardada ya no sirve, se crea otra",
+			"orden_id", orden.ID, "error", err)
 	}
 
 	clientRef := "cart||" + req.UserId
@@ -698,11 +854,43 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 		}
 	}
 
+	// La clave de idempotencia deriva de la orden y su intento, no de un UUID
+	// por petición: si esta llamada se reintenta (timeout de red, reintento del
+	// cliente), Stripe devuelve la MISMA sesión en lugar de crear otra.
+	params.IdempotencyKey = stripe.String(fmt.Sprintf("%s-intento-%d", orden.ID, orden.Intento))
+	params.AddMetadata("orden_id", orden.ID)
+
 	sess, err := session.New(params)
 	if err != nil {
 		log.Printf("Error de Stripe al crear sesión de carrito: %v", err)
+		// La orden queda 'pendiente': el siguiente intento la reabre en lugar
+		// de generar una huérfana.
 		return nil, fmt.Errorf("error al conectar con Stripe: %v", err)
 	}
 
-	return &cursospb.CheckoutSessionResponse{Url: sess.URL}, nil
+	if err := s.repo.GuardarSesionStripe(ctx, orden.ID, sess.ID); err != nil {
+		// No se aborta: el cobro ya puede ocurrir. Pero sin esta asociación el
+		// webhook no sabrá qué orden cerrar, así que se registra como error.
+		slog.Error("no se pudo asociar la sesión de Stripe con la orden",
+			"orden_id", orden.ID, "session_id", sess.ID, "error", err)
+	}
+
+	return &cursospb.CheckoutSessionResponse{Url: sess.URL, OrdenId: orden.ID}, nil
+}
+
+// ── Órdenes y webhooks ───────────────────────────────────────────────────────
+
+// RegistrarEventoStripe deduplica los webhooks. Stripe entrega al-menos-una-vez.
+func (s *CursosService) RegistrarEventoStripe(ctx context.Context, req *cursospb.EventoStripeRequest) (*cursospb.EventoStripeResponse, error) {
+	primeraVez, err := s.repo.RegistrarEventoStripe(ctx, req.EventId, req.Tipo)
+	if err != nil {
+		return nil, err
+	}
+	return &cursospb.EventoStripeResponse{PrimeraVez: primeraVez}, nil
+}
+
+// ActualizarEstadoOrden aplica la transición tras el resultado del cobro.
+func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb.ActualizarEstadoOrdenRequest) (*cursospb.EmptyResponse, error) {
+	err := s.repo.ActualizarEstadoOrden(ctx, req.StripeSessionId, req.Estado, req.MotivoFallo, req.StripePaymentIntent)
+	return &cursospb.EmptyResponse{}, err
 }

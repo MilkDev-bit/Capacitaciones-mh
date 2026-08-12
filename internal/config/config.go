@@ -50,7 +50,13 @@ type Config struct {
 	// URL pública de la app (para logos e hipervínculos en emails)
 	AppURL string
 
-	// SMTP (correo)
+	// Resend (correo transaccional)
+	ResendAPIKey  string
+	ResendFrom    string
+	ResendReplyTo string
+
+	// SMTP — DEPRECADO, sustituido por Resend. Se conserva para no romper
+	// despliegues que aún inyectan estas variables.
 	SMTPHost string
 	SMTPPort string
 	SMTPUser string
@@ -127,7 +133,12 @@ func Load() {
 		// URL pública
 		AppURL: getEnv("APP_URL", ""),
 
-		// SMTP
+		// Resend
+		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+		ResendFrom:    os.Getenv("RESEND_FROM"),
+		ResendReplyTo: os.Getenv("RESEND_REPLY_TO"),
+
+		// SMTP (deprecado)
 		SMTPHost: os.Getenv("SMTP_HOST"),
 		SMTPPort: getEnv("SMTP_PORT", "587"),
 		SMTPUser: os.Getenv("SMTP_USER"),

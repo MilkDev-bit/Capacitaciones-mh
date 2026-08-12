@@ -4,12 +4,16 @@ import { useAuthStore } from '../stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/login' },
+    // La raíz es la tienda: un visitante nuevo aterriza en el catálogo, no en
+    // un muro de login. La sesión se pide solo al pagar o entrar al panel.
+    { path: '/', component: () => import('../views/shared/StoreView.vue') },
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/reset-password', component: () => import('../views/ResetPasswordView.vue') },
+    { path: '/verificar-correo', component: () => import('../views/VerifyEmailView.vue') },
+    // Pantalla de retorno de Stripe. Pública a propósito: si la cookie tarda en
+    // propagarse, el usuario ve la confirmación en vez de un rebote al login.
+    { path: '/checkout/exito', component: () => import('../views/CheckoutSuccessView.vue') },
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
-    { path: '/invitacion/:id', component: () => import('../views/InvitacionVideollamada.vue') },
-    { path: '/join', component: () => import('../views/JoinVideocallView.vue') },
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
@@ -23,7 +27,6 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/admin/CapacitacionesView.vue') },
         { path: 'examenes', component: () => import('../views/admin/ExamenesView.vue') },
         { path: 'usuarios', component: () => import('../views/admin/UsuariosView.vue') },
-        { path: 'schedules', component: () => import('../views/admin/SchedulesView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
@@ -42,7 +45,6 @@ const router = createRouter({
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
         { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
-        { path: 'videocall/:id', component: () => import('../views/instructor/InstructorVideocallView.vue') },
       ],
     },
     {
@@ -61,7 +63,6 @@ const router = createRouter({
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },
         { path: 'mensajes/:peer_id', component: () => import('../views/shared/MensajesView.vue') },
-        { path: 'videocall/:id', component: () => import('../views/user/VideocallView.vue') },
       ],
     },
   ],

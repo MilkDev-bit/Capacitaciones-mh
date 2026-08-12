@@ -8,7 +8,6 @@ export interface CartItem {
   precio: number
   cantidad: number
   type: 'b2c' | 'b2b_direct'
-  schedule_id?: string
 }
 
 export const useCartStore = defineStore('cart', () => {
@@ -38,6 +37,30 @@ export const useCartStore = defineStore('cart', () => {
     saveToStorage()
   }
 
+  /**
+   * Ajusta el número de lugares de un ítem corporativo.
+   * Antes había que borrar la línea y volver a la tienda para cambiar la
+   * cantidad; ahora se edita en el propio carrito.
+   */
+  function setCantidad(index: number, cantidad: number) {
+    const item = items.value[index]
+    if (!item) return
+    const n = Math.floor(cantidad)
+    if (!Number.isFinite(n) || n < 1) return
+    item.cantidad = Math.min(n, 500)
+    saveToStorage()
+  }
+
+  /** Alterna entre inscripción individual (1 lugar) y compra corporativa. */
+  function setTipo(index: number, tipo: CartItem['type']) {
+    const item = items.value[index]
+    if (!item || item.type === tipo) return
+    item.type = tipo
+    if (tipo === 'b2c') item.cantidad = 1
+    else if (item.cantidad < 2) item.cantidad = 2
+    saveToStorage()
+  }
+
   function clearCart() {
     items.value = []
     saveToStorage()
@@ -64,6 +87,8 @@ export const useCartStore = defineStore('cart', () => {
     items,
     addItem,
     removeItem,
+    setCantidad,
+    setTipo,
     clearCart,
     totalItems,
     totalPrice,

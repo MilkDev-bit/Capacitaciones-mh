@@ -17,26 +17,29 @@ import (
 
 // Curso es el modelo interno del servicio de cursos.
 type Curso struct {
-	ID             string    `db:"id"`
-	Title          string    `db:"title"`
-	Description    string    `db:"description"`
-	Type           string    `db:"type"`
-	FilePath       string    `db:"file_path"`
-	Content        string    `db:"content"`
-	InstructorID   *string   `db:"instructor_id"`
-	IsPublic       bool      `db:"is_public"`
-	CodigoAcceso   string    `db:"codigo_acceso"`
-	WelcomeMessage string    `db:"welcome_message"`
-	ThumbnailURL   string    `db:"thumbnail_url"`
-	Color          string     `db:"color"`
-	Precio         float64    `db:"precio"`
-	ScheduledAt    *time.Time `db:"scheduled_at"`
-	Duration       int32      `db:"duration"`
-	DC3Enabled     bool       `db:"dc3_enabled"`
-	VideocallStatus *string   `db:"videocall_status"`
-	CreatedAt      time.Time  `db:"created_at"`
-	TotalLecciones       int32 `db:"total_lecciones"`
-	LeccionesCompletadas int32 `db:"lecciones_completadas"`
+	ID             string  `db:"id"`
+	Title          string  `db:"title"`
+	Description    string  `db:"description"`
+	Type           string  `db:"type"`
+	FilePath       string  `db:"file_path"`
+	Content        string  `db:"content"`
+	InstructorID   *string `db:"instructor_id"`
+	IsPublic       bool    `db:"is_public"`
+	CodigoAcceso   string  `db:"codigo_acceso"`
+	WelcomeMessage string  `db:"welcome_message"`
+	ThumbnailURL   string  `db:"thumbnail_url"`
+	Color          string  `db:"color"`
+	Precio         float64 `db:"precio"`
+	// PrecioCentavos es la fuente de verdad para cobrar. Precio (NUMERIC leído
+	// como float64) se conserva solo para respuestas legacy: convertirlo con
+	// int64(precio*100) truncaba y cobraba de menos.
+	PrecioCentavos       int64      `db:"precio_centavos"`
+	ScheduledAt          *time.Time `db:"scheduled_at"`
+	Duration             int32      `db:"duration"`
+	DC3Enabled           bool       `db:"dc3_enabled"`
+	CreatedAt            time.Time  `db:"created_at"`
+	TotalLecciones       int32      `db:"total_lecciones"`
+	LeccionesCompletadas int32      `db:"lecciones_completadas"`
 }
 
 func (c *Curso) ToProto() *cursospb.CursoResponse {
@@ -45,12 +48,12 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		FilePath: c.FilePath, Content: c.Content, IsPublic: c.IsPublic,
 		CodigoAcceso: c.CodigoAcceso, WelcomeMessage: c.WelcomeMessage,
 		ThumbnailUrl: c.ThumbnailURL, Color: c.Color,
-		Precio:    c.Precio,
-		Duration:  c.Duration,
-		Dc3Enabled: c.DC3Enabled,
+		Precio:               c.Precio,
+		Duration:             c.Duration,
+		Dc3Enabled:           c.DC3Enabled,
 		TotalLecciones:       c.TotalLecciones,
 		LeccionesCompletadas: c.LeccionesCompletadas,
-		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:            c.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if c.InstructorID != nil {
 		r.InstructorId = *c.InstructorID
@@ -87,6 +90,7 @@ type Licencia struct {
 	CapacitacionID  string    `db:"capacitacion_id"`
 	Nombre          string    `db:"nombre"`
 	Precio          float64   `db:"precio"`
+	PrecioCentavos  int64     `db:"precio_centavos"`
 	CapacidadMaxima int32     `db:"capacidad_maxima"`
 	Usadas          int32     `db:"usadas"`
 	CodigoAcceso    *string   `db:"codigo_acceso"`
@@ -96,6 +100,9 @@ type Licencia struct {
 	CreatedAt       time.Time `db:"created_at"`
 	CursoType       *string   `db:"curso_type"`
 	CursoDuracion   *int32    `db:"curso_duracion"`
+	// Campos derivados del JOIN en ListLicenciasCompradas.
+	CapacitacionTitulo *string `db:"capacitacion_titulo"`
+	AccesosEnviados    *int32  `db:"accesos_enviados"`
 }
 
 func (l *Licencia) ToProto() *cursospb.Licencia {
@@ -123,57 +130,40 @@ func (l *Licencia) ToProto() *cursospb.Licencia {
 	if l.StripePriceID != nil {
 		r.StripePriceId = *l.StripePriceID
 	}
-	return r
-}
-
-// InstructorSchedule representa el horario disponible de un instructor
-type InstructorSchedule struct {
-	ID           string    `db:"id"`
-	InstructorID string    `db:"instructor_id"`
-	StartTime    time.Time `db:"start_time"`
-	EndTime      time.Time `db:"end_time"`
-	Status       string    `db:"status"`
-	CreatedAt    time.Time `db:"created_at"`
-}
-
-func (s *InstructorSchedule) ToProto() *cursospb.InstructorSchedule {
-	return &cursospb.InstructorSchedule{
-		Id:           s.ID,
-		InstructorId: s.InstructorID,
-		StartTime:    s.StartTime.Format(time.RFC3339),
-		EndTime:      s.EndTime.Format(time.RFC3339),
-		Status:       s.Status,
-		CreatedAt:    s.CreatedAt.Format(time.RFC3339),
+	if l.CompradorID != nil {
+		r.CompradorId = *l.CompradorID
 	}
-}
-
-// VideocallTicket representa un acceso concurrente a una videollamada
-type VideocallTicket struct {
-	ID             string    `db:"id"`
-	CapacitacionID string    `db:"capacitacion_id"`
-	LicenciaID     *string   `db:"licencia_id"`
-	Codigo         string    `db:"codigo"`
-	InUseByUserID  *string   `db:"in_use_by_user_id"`
-	IsValid        bool      `db:"is_valid"`
-	CreatedAt      time.Time `db:"created_at"`
-	ScheduleID     *string   `db:"schedule_id"`
-	OwnerID        *string   `db:"owner_id"`
-}
-
-func (t *VideocallTicket) ToProto() *cursospb.VideocallTicket {
-	r := &cursospb.VideocallTicket{
-		Id:             t.ID,
-		CapacitacionId: t.CapacitacionID,
-		Codigo:         t.Codigo,
-		IsValid:        t.IsValid,
+	if l.CapacitacionTitulo != nil {
+		r.CapacitacionTitulo = *l.CapacitacionTitulo
 	}
-	if t.LicenciaID != nil {
-		r.LicenciaId = *t.LicenciaID
-	}
-	if t.InUseByUserID != nil {
-		r.InUseByUser = *t.InUseByUserID
+	if l.AccesosEnviados != nil {
+		r.AccesosEnviados = *l.AccesosEnviados
 	}
 	return r
+}
+
+// InvitacionLicencia es un acceso de una licencia corporativa ya enviado por
+// correo a un participante concreto.
+type InvitacionLicencia struct {
+	ID         string    `db:"id"`
+	LicenciaID string    `db:"licencia_id"`
+	Nombre     string    `db:"nombre"`
+	Email      string    `db:"email"`
+	Codigo     string    `db:"codigo"`
+	Estado     string    `db:"estado"`
+	EnviadoAt  time.Time `db:"enviado_at"`
+}
+
+func (i *InvitacionLicencia) ToProto() *cursospb.InvitacionLicencia {
+	return &cursospb.InvitacionLicencia{
+		Id:         i.ID,
+		LicenciaId: i.LicenciaID,
+		Nombre:     i.Nombre,
+		Email:      i.Email,
+		Codigo:     i.Codigo,
+		Estado:     i.Estado,
+		EnviadoAt:  i.EnviadoAt.Format(time.RFC3339),
+	}
 }
 
 // EstudianteRow para listar estudiantes de un curso.
@@ -196,6 +186,11 @@ func metaVal(ctx context.Context, key string) string {
 
 // CursosRepository define el contrato de acceso a datos.
 type CursosRepository interface {
+	// Órdenes, idempotencia y deduplicación de webhooks.
+	OrdenesRepository
+	// Planes, suscripciones y asientos.
+	SuscripcionesRepository
+
 	List(ctx context.Context) ([]*Curso, error)
 	ListPublicos(ctx context.Context) ([]*Curso, error)
 	ListByUser(ctx context.Context, userID string) ([]*Curso, error)
@@ -227,27 +222,24 @@ type CursosRepository interface {
 	ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error)
 	FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error)
 	FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error)
-	
 
-	// Horarios y Videollamadas
-	ListSchedules(ctx context.Context, instructorID *string) ([]*InstructorSchedule, error)
-	CreateSchedule(ctx context.Context, req *cursospb.CreateScheduleRequest) (*InstructorSchedule, error)
-	UpdateSchedule(ctx context.Context, req *cursospb.UpdateScheduleRequest) (*InstructorSchedule, error)
-	DeleteSchedule(ctx context.Context, scheduleID string) error
-	
-	CreateVideocallTickets(ctx context.Context, capacitacionID string, licenciaID *string, scheduleID *string, count int) ([]*VideocallTicket, error)
-	JoinVideocall(ctx context.Context, codigo, userID string) (string, error) // retorna el room
-	LeaveVideocall(ctx context.Context, codigo, userID string) error
-	EndVideocall(ctx context.Context, cursoID string, scheduleID *string) error
-	ListTicketsByLicencia(ctx context.Context, licenciaID string) ([]*VideocallTicket, error)
-	AssignTicketToUser(ctx context.Context, ticketID, userID string) error
-	GetTicketForUserAndCourse(ctx context.Context, userID, cursoID string) (*VideocallTicket, error)
-	GetCurrentScheduleForInstructor(ctx context.Context, instructorID, cursoID string) (*string, error)
-	
 	IncrementarUsoLicencia(ctx context.Context, licenciaID string) error
 	InscribirseConLicencia(ctx context.Context, userID, cursoID, licenciaID string) error
 	ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error)
 	AsignarCompradorLicencia(ctx context.Context, licenciaID, userID string) error
+
+	// Reparto de accesos corporativos por correo
+	ListInvitacionesLicencia(ctx context.Context, licenciaID string) ([]*InvitacionLicencia, error)
+	// AsignarAccesos registra una invitación por participante en una sola
+	// transacción, validando el cupo de la licencia.
+	AsignarAccesos(ctx context.Context, licenciaID, codigoCompartido string, participantes []Participante) ([]*InvitacionLicencia, error)
+
+	// FindLicenciaDeInscripcion devuelve la licencia con la que un usuario se
+	// inscribió a un curso. Devuelve nil si fue una compra individual.
+	FindLicenciaDeInscripcion(ctx context.Context, userID, cursoID string) (*Licencia, error)
+	// RegistrarAvisoDC3 marca el aviso como enviado y devuelve true solo la
+	// primera vez, para no spamear al representante en cada participante.
+	RegistrarAvisoDC3(ctx context.Context, licenciaID, cursoID string) (bool, error)
 
 	GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error)
 }
@@ -262,7 +254,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(file_path,'') file_path, COALESCE(content,'') content,
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
-	COALESCE(color,'#f97316') color, precio, scheduled_at, duration, videocall_status, COALESCE(dc3_enabled, true) dc3_enabled, created_at,
+	COALESCE(color,'#f97316') color, precio, COALESCE(precio_centavos, 0) precio_centavos, scheduled_at, duration, COALESCE(dc3_enabled, true) dc3_enabled, created_at,
 	0 as total_lecciones,
 	0 as lecciones_completadas
 	FROM capacitaciones`
@@ -285,7 +277,7 @@ func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string
 		       COALESCE(c.file_path,'') file_path, COALESCE(c.content,'') content,
 		       c.instructor_id, c.is_public, COALESCE(c.codigo_acceso,'') codigo_acceso,
 		       COALESCE(c.welcome_message,'') welcome_message, COALESCE(c.thumbnail_url,'') thumbnail_url,
-		       COALESCE(c.color,'#f97316') color, c.precio, c.scheduled_at, c.duration, c.videocall_status, COALESCE(c.dc3_enabled, true) dc3_enabled, c.created_at,
+		       COALESCE(c.color,'#f97316') color, c.precio, COALESCE(c.precio_centavos, 0) precio_centavos, c.scheduled_at, c.duration, COALESCE(c.dc3_enabled, true) dc3_enabled, c.created_at,
 		       0 as total_lecciones,
 		       0 as lecciones_completadas
 		FROM capacitaciones c
@@ -326,8 +318,10 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	codigoAcceso := strings.ToUpper(uuid.New().String()[:8])
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, duration, dc3_enabled, codigo_acceso)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+		// precio_centavos se deriva en SQL: ROUND sobre NUMERIC es exacto en
+		// decimal, a diferencia de int64(precio*100) en Go, que truncaba.
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, precio_centavos, duration, dc3_enabled, codigo_acceso)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,ROUND($11::NUMERIC*100)::BIGINT,$12,$13,$14) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, codigoAcceso,
 	).Scan(&id)
@@ -342,7 +336,7 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 	if color == "" {
 		color = "#f97316"
 	}
-	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, duration=$11, dc3_enabled=$12`
+	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12`
 	args := []interface{}{
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
@@ -506,8 +500,8 @@ func (r *postgresCursosRepository) CreateLicencia(ctx context.Context, req *curs
 	codigo := uuid.New().String()[:12]
 	var id string
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso)
-		 VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, precio_centavos, capacidad_maxima, codigo_acceso)
+		 VALUES($1,$2,$3,ROUND($3::NUMERIC*100)::BIGINT,$4,$5) RETURNING id`,
 		req.CapacitacionId, req.Nombre, req.Precio, req.CapacidadMaxima, codigo,
 	).Scan(&id)
 	if err != nil {
@@ -552,7 +546,7 @@ func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, 
 
 func (r *postgresCursosRepository) UpdateLicencia(ctx context.Context, req *cursospb.UpdateLicenciaRequest) (*Licencia, error) {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE curso_licencias SET nombre=$1, precio=$2, capacidad_maxima=$3 WHERE id=$4`,
+		`UPDATE curso_licencias SET nombre=$1, precio=$2, precio_centavos=ROUND($2::NUMERIC*100)::BIGINT, capacidad_maxima=$3 WHERE id=$4`,
 		req.Nombre, req.Precio, req.CapacidadMaxima, req.Id,
 	)
 	if err != nil {
@@ -569,18 +563,18 @@ func (r *postgresCursosRepository) DeleteLicencia(ctx context.Context, licenciaI
 func (r *postgresCursosRepository) ListLicencias(ctx context.Context, cursoID string) ([]*Licencia, error) {
 	var lics []*Licencia
 	return lics, r.db.SelectContext(ctx, &lics,
-		`SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE capacitacion_id=$1 ORDER BY created_at DESC`, cursoID)
+		`SELECT id, capacitacion_id, nombre, precio, COALESCE(precio_centavos, 0) precio_centavos, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE capacitacion_id=$1 ORDER BY created_at DESC`, cursoID)
 }
 
 func (r *postgresCursosRepository) FindLicenciaByID(ctx context.Context, licenciaID string) (*Licencia, error) {
 	l := &Licencia{}
-	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE id=$1`, licenciaID)
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, COALESCE(precio_centavos, 0) precio_centavos, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE id=$1`, licenciaID)
 }
 
 func (r *postgresCursosRepository) FindLicenciaByCodigo(ctx context.Context, codigo string) (*Licencia, error) {
 	l := &Licencia{}
 	cleanCode := strings.ToUpper(strings.TrimSpace(codigo))
-	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE UPPER(TRIM(codigo_acceso))=$1`, cleanCode)
+	return l, r.db.GetContext(ctx, l, `SELECT id, capacitacion_id, nombre, precio, COALESCE(precio_centavos, 0) precio_centavos, capacidad_maxima, usadas, codigo_acceso, stripe_product_id, stripe_price_id, comprador_id, created_at FROM curso_licencias WHERE UPPER(TRIM(codigo_acceso))=$1`, cleanCode)
 }
 
 func (r *postgresCursosRepository) IncrementarUsoLicencia(ctx context.Context, licenciaID string) error {
@@ -606,10 +600,13 @@ func (r *postgresCursosRepository) InscribirseConLicencia(ctx context.Context, u
 func (r *postgresCursosRepository) ListLicenciasCompradas(ctx context.Context, userID string) ([]*Licencia, error) {
 	var lics []*Licencia
 	return lics, r.db.SelectContext(ctx, &lics,
-		`SELECT l.id, l.capacitacion_id, l.nombre, l.precio, l.capacidad_maxima, l.usadas, l.codigo_acceso, l.stripe_product_id, l.stripe_price_id, l.comprador_id, l.created_at, c.type as curso_type, c.duration as curso_duracion
+		`SELECT l.id, l.capacitacion_id, l.nombre, l.precio, COALESCE(l.precio_centavos, 0) precio_centavos, l.capacidad_maxima, l.usadas,
+		        l.codigo_acceso, l.stripe_product_id, l.stripe_price_id, l.comprador_id, l.created_at,
+		        c.type AS curso_type, c.duration AS curso_duracion, c.title AS capacitacion_titulo,
+		        (SELECT COUNT(*) FROM licencia_invitaciones i WHERE i.licencia_id = l.id)::int AS accesos_enviados
 		 FROM curso_licencias l
 		 LEFT JOIN capacitaciones c ON c.id = l.capacitacion_id
-		 WHERE l.comprador_id=$1 
+		 WHERE l.comprador_id=$1
 		 ORDER BY l.created_at DESC`, userID)
 }
 
@@ -620,14 +617,159 @@ func (r *postgresCursosRepository) AsignarCompradorLicencia(ctx context.Context,
 			stripeSessionID = &vals[0]
 		}
 	}
-	
+
 	if stripeSessionID != nil {
 		_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET comprador_id=$1, stripe_product_id=CAST($2 AS VARCHAR) WHERE id=$3`, userID, stripeSessionID, licenciaID)
 		return err
 	}
-	
+
 	_, err := r.db.ExecContext(ctx, `UPDATE curso_licencias SET comprador_id=$1 WHERE id=$2`, userID, licenciaID)
 	return err
+}
+
+// ── Reparto de accesos corporativos ───────────────────────────────────────────
+
+func (r *postgresCursosRepository) ListInvitacionesLicencia(ctx context.Context, licenciaID string) ([]*InvitacionLicencia, error) {
+	var invs []*InvitacionLicencia
+	return invs, r.db.SelectContext(ctx, &invs,
+		`SELECT i.id, i.licencia_id, i.nombre, i.email, i.codigo, i.estado, i.enviado_at
+		   FROM licencia_invitaciones i
+		  WHERE i.licencia_id = $1
+		  ORDER BY i.enviado_at DESC`, licenciaID)
+}
+
+// ErrSinAccesosDisponibles indica que la licencia ya repartió todos sus lugares.
+var ErrSinAccesosDisponibles = errors.New("no quedan accesos disponibles en esta licencia")
+
+// Participante es la entrada mínima para repartir un acceso.
+type Participante struct {
+	Nombre string
+	Email  string
+}
+
+// AsignarAccesos reparte accesos de forma atómica.
+//
+// Todos los participantes comparten el código de acceso de la licencia; lo que
+// se controla aquí es el cupo. Va en una transacción porque el conteo de
+// invitaciones y la inserción tienen que ver la misma foto: sin ella, dos
+// envíos simultáneos podrían rebasar capacidad_maxima entre el SELECT y el
+// INSERT. El SELECT ... FOR UPDATE sobre la licencia serializa esos envíos.
+func (r *postgresCursosRepository) AsignarAccesos(ctx context.Context, licenciaID, codigoCompartido string, participantes []Participante) ([]*InvitacionLicencia, error) {
+	if len(participantes) == 0 {
+		return nil, nil
+	}
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback() //nolint:errcheck // no-op si ya se hizo Commit
+
+	var capacidad int32
+	if err := tx.GetContext(ctx, &capacidad,
+		`SELECT capacidad_maxima FROM curso_licencias WHERE id = $1 FOR UPDATE`, licenciaID); err != nil {
+		return nil, err
+	}
+
+	// Un correo que ya tiene invitación conserva su código: reenviar no consume
+	// un lugar nuevo de la licencia.
+	yaInvitados := map[string]*InvitacionLicencia{}
+	var previas []*InvitacionLicencia
+	if err := tx.SelectContext(ctx, &previas,
+		`SELECT id, licencia_id, nombre, email, codigo, estado, enviado_at
+		   FROM licencia_invitaciones WHERE licencia_id = $1`, licenciaID); err != nil {
+		return nil, err
+	}
+	for _, p := range previas {
+		yaInvitados[strings.ToLower(p.Email)] = p
+	}
+
+	nuevos := 0
+	for _, p := range participantes {
+		if _, ok := yaInvitados[strings.ToLower(p.Email)]; !ok {
+			nuevos++
+		}
+	}
+
+	// capacidad_maxima <= 0 significa licencia sin límite.
+	if capacidad > 0 {
+		disponibles := int(capacidad) - len(previas)
+		if nuevos > disponibles {
+			return nil, fmt.Errorf("%w: quedan %d de %d solicitados",
+				ErrSinAccesosDisponibles, max(disponibles, 0), nuevos)
+		}
+	}
+
+	resultado := make([]*InvitacionLicencia, 0, len(participantes))
+	for _, p := range participantes {
+		codigo := codigoCompartido
+		if prev, ok := yaInvitados[strings.ToLower(p.Email)]; ok {
+			codigo = prev.Codigo // reenvío: se respeta el código ya entregado
+		}
+
+		inv := &InvitacionLicencia{
+			LicenciaID: licenciaID,
+			Nombre:     p.Nombre,
+			Email:      p.Email,
+			Codigo:     codigo,
+			Estado:     "enviado",
+		}
+		if err := tx.QueryRowContext(ctx,
+			`INSERT INTO licencia_invitaciones (licencia_id, nombre, email, codigo, estado)
+			 VALUES ($1, $2, $3, $4, 'enviado')
+			 ON CONFLICT (licencia_id, email) DO UPDATE
+			    SET nombre     = EXCLUDED.nombre,
+			        codigo     = EXCLUDED.codigo,
+			        enviado_at = NOW()
+			 RETURNING id, enviado_at`,
+			inv.LicenciaID, inv.Nombre, inv.Email, inv.Codigo,
+		).Scan(&inv.ID, &inv.EnviadoAt); err != nil {
+			return nil, err
+		}
+		resultado = append(resultado, inv)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return resultado, nil
+}
+
+// ── Aviso DC-3 ────────────────────────────────────────────────────────────────
+
+func (r *postgresCursosRepository) FindLicenciaDeInscripcion(ctx context.Context, userID, cursoID string) (*Licencia, error) {
+	l := &Licencia{}
+	err := r.db.GetContext(ctx, l,
+		`SELECT l.id, l.capacitacion_id, l.nombre, l.precio, COALESCE(l.precio_centavos, 0) precio_centavos, l.capacidad_maxima, l.usadas,
+		        l.codigo_acceso, l.stripe_product_id, l.stripe_price_id, l.comprador_id, l.created_at
+		   FROM inscripciones i
+		   JOIN curso_licencias l ON l.id = i.licencia_id
+		  WHERE i.user_id = $1 AND i.capacitacion_id = $2`, userID, cursoID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil // compra individual: no hay representante a quien avisar
+	}
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
+// RegistrarAvisoDC3 se apoya en la clave primaria compuesta de dc3_avisos: el
+// ON CONFLICT DO NOTHING hace la deduplicación atómica sin necesidad de leer
+// primero, así que dos participantes que terminan a la vez no generan dos avisos.
+func (r *postgresCursosRepository) RegistrarAvisoDC3(ctx context.Context, licenciaID, cursoID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx,
+		`INSERT INTO dc3_avisos (licencia_id, capacitacion_id)
+		 VALUES ($1, $2)
+		 ON CONFLICT (licencia_id, capacitacion_id) DO NOTHING`, licenciaID, cursoID)
+	if err != nil {
+		return false, err
+	}
+	filas, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return filas > 0, nil
 }
 
 // errForbidden es un error de dominio para acceso denegado.
@@ -666,7 +808,7 @@ func (r *postgresCursosRepository) GetAdminDashboardStats(ctx context.Context) (
 	}
 
 	stats.TotalVentasBrutas = float32(ventasB2B.Total + ventasB2C.Total)
-	
+
 	// Calcular netas aproximadas (Bruto - 3.6% - 3 MXN por transacción)
 	totalTransacciones := ventasB2B.Count + ventasB2C.Count
 	var totalNeto float64 = 0

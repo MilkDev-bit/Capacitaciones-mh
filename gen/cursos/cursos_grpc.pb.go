@@ -30,13 +30,26 @@ const (
 	CursosService_WebhookEnroll_FullMethodName                  = "/cursos.CursosService/WebhookEnroll"
 	CursosService_WebhookComprarLicencia_FullMethodName         = "/cursos.CursosService/WebhookComprarLicencia"
 	CursosService_WebhookComprarB2BDirect_FullMethodName        = "/cursos.CursosService/WebhookComprarB2BDirect"
+	CursosService_AsignarAccesosLicencia_FullMethodName         = "/cursos.CursosService/AsignarAccesosLicencia"
+	CursosService_ListInvitacionesLicencia_FullMethodName       = "/cursos.CursosService/ListInvitacionesLicencia"
+	CursosService_NotificarCursoCompletado_FullMethodName       = "/cursos.CursosService/NotificarCursoCompletado"
+	CursosService_RegistrarEventoStripe_FullMethodName          = "/cursos.CursosService/RegistrarEventoStripe"
+	CursosService_ActualizarEstadoOrden_FullMethodName          = "/cursos.CursosService/ActualizarEstadoOrden"
+	CursosService_ListPlanes_FullMethodName                     = "/cursos.CursosService/ListPlanes"
+	CursosService_GetMiSuscripcion_FullMethodName               = "/cursos.CursosService/GetMiSuscripcion"
+	CursosService_CrearCheckoutSuscripcion_FullMethodName       = "/cursos.CursosService/CrearCheckoutSuscripcion"
+	CursosService_SincronizarSuscripcion_FullMethodName         = "/cursos.CursosService/SincronizarSuscripcion"
+	CursosService_RegistrarFacturaSuscripcion_FullMethodName    = "/cursos.CursosService/RegistrarFacturaSuscripcion"
+	CursosService_TieneAccesoPorSuscripcion_FullMethodName      = "/cursos.CursosService/TieneAccesoPorSuscripcion"
+	CursosService_AsignarAsientos_FullMethodName                = "/cursos.CursosService/AsignarAsientos"
+	CursosService_ListAsientos_FullMethodName                   = "/cursos.CursosService/ListAsientos"
+	CursosService_RevocarAsiento_FullMethodName                 = "/cursos.CursosService/RevocarAsiento"
 	CursosService_CreateCheckoutSession_FullMethodName          = "/cursos.CursosService/CreateCheckoutSession"
 	CursosService_CreateCheckoutSessionB2BDirect_FullMethodName = "/cursos.CursosService/CreateCheckoutSessionB2BDirect"
 	CursosService_CreateCheckoutSessionCart_FullMethodName      = "/cursos.CursosService/CreateCheckoutSessionCart"
 	CursosService_ListLicencias_FullMethodName                  = "/cursos.CursosService/ListLicencias"
 	CursosService_GetLicenciaPublica_FullMethodName             = "/cursos.CursosService/GetLicenciaPublica"
 	CursosService_ListLicenciasCompradas_FullMethodName         = "/cursos.CursosService/ListLicenciasCompradas"
-	CursosService_ListLicenciaTickets_FullMethodName            = "/cursos.CursosService/ListLicenciaTickets"
 	CursosService_InstructorListCapacitaciones_FullMethodName   = "/cursos.CursosService/InstructorListCapacitaciones"
 	CursosService_InstructorCreateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorCreateCapacitacion"
 	CursosService_InstructorUpdateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorUpdateCapacitacion"
@@ -56,16 +69,6 @@ const (
 	CursosService_AdminListAsignaciones_FullMethodName          = "/cursos.CursosService/AdminListAsignaciones"
 	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
 	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
-	CursosService_JoinVideocall_FullMethodName                  = "/cursos.CursosService/JoinVideocall"
-	CursosService_LeaveVideocall_FullMethodName                 = "/cursos.CursosService/LeaveVideocall"
-	CursosService_EndVideocall_FullMethodName                   = "/cursos.CursosService/EndVideocall"
-	CursosService_GetMyVideocallTicket_FullMethodName           = "/cursos.CursosService/GetMyVideocallTicket"
-	CursosService_InstructorGetCurrentRoom_FullMethodName       = "/cursos.CursosService/InstructorGetCurrentRoom"
-	CursosService_AdminListSchedules_FullMethodName             = "/cursos.CursosService/AdminListSchedules"
-	CursosService_AdminCreateSchedule_FullMethodName            = "/cursos.CursosService/AdminCreateSchedule"
-	CursosService_AdminUpdateSchedule_FullMethodName            = "/cursos.CursosService/AdminUpdateSchedule"
-	CursosService_AdminDeleteSchedule_FullMethodName            = "/cursos.CursosService/AdminDeleteSchedule"
-	CursosService_ListPublicSchedules_FullMethodName            = "/cursos.CursosService/ListPublicSchedules"
 	CursosService_GetAdminDashboardStats_FullMethodName         = "/cursos.CursosService/GetAdminDashboardStats"
 )
 
@@ -87,16 +90,43 @@ type CursosServiceClient interface {
 	Inscribirse(ctx context.Context, in *InscribirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	UnirseConLicencia(ctx context.Context, in *UnirseConLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
+	// el Gateway necesita esos datos para construir el correo de confirmación y
+	// la pantalla de éxito sin hacer una segunda ronda de consultas.
+	WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EnrollResponse, error)
 	WebhookComprarLicencia(ctx context.Context, in *WebhookComprarLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*ComprarB2BDirectResponse, error)
+	// Reparto de accesos corporativos por correo.
+	AsignarAccesosLicencia(ctx context.Context, in *AsignarAccesosLicenciaRequest, opts ...grpc.CallOption) (*AsignarAccesosLicenciaResponse, error)
+	ListInvitacionesLicencia(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListInvitacionesLicenciaResponse, error)
+	// Registra que un participante terminó el curso y decide si toca avisar al
+	// representante de su licencia para que tramite las constancias DC-3.
+	// La deduplicación vive en la BD: solo devuelve avisar=true la primera vez.
+	NotificarCursoCompletado(ctx context.Context, in *CursoCompletadoRequest, opts ...grpc.CallOption) (*CursoCompletadoResponse, error)
+	// Deduplicación de webhooks de Stripe. Devuelve primera_vez=false si el
+	// evento ya se había procesado: la entrega es al-menos-una-vez.
+	RegistrarEventoStripe(ctx context.Context, in *EventoStripeRequest, opts ...grpc.CallOption) (*EventoStripeResponse, error)
+	// Transición de estado de una orden tras el resultado del cobro.
+	ActualizarEstadoOrden(ctx context.Context, in *ActualizarEstadoOrdenRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Suscripciones ─────────────────────────────────────────────────────────
+	ListPlanes(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListPlanesResponse, error)
+	GetMiSuscripcion(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*SuscripcionResponse, error)
+	CrearCheckoutSuscripcion(ctx context.Context, in *CheckoutSuscripcionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
+	// Aplica el estado que reporta Stripe. Nunca se infiere localmente: el
+	// ciclo de vida lo manda el PSP.
+	SincronizarSuscripcion(ctx context.Context, in *SincronizarSuscripcionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	RegistrarFacturaSuscripcion(ctx context.Context, in *FacturaSuscripcionRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Acceso derivado de una suscripción viva (titular o asiento ocupado).
+	TieneAccesoPorSuscripcion(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*AccesoSuscripcionResponse, error)
+	AsignarAsientos(ctx context.Context, in *AsignarAsientosRequest, opts ...grpc.CallOption) (*ListAsientosResponse, error)
+	ListAsientos(ctx context.Context, in *SuscripcionIDRequest, opts ...grpc.CallOption) (*ListAsientosResponse, error)
+	RevocarAsiento(ctx context.Context, in *RevocarAsientoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	CreateCheckoutSession(ctx context.Context, in *CheckoutSessionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionB2BDirect(ctx context.Context, in *CreateCheckoutSessionB2BDirectRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionCart(ctx context.Context, in *CheckoutCartRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error)
 	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
-	ListLicenciaTickets(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListLicenciaTicketsResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -118,17 +148,6 @@ type CursosServiceClient interface {
 	AdminListAsignaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListAsignacionesResponse, error)
 	AdminAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	AdminDesAsignar(ctx context.Context, in *AsignacionIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	// Videocall & Schedules
-	JoinVideocall(ctx context.Context, in *JoinVideocallRequest, opts ...grpc.CallOption) (*JoinVideocallResponse, error)
-	LeaveVideocall(ctx context.Context, in *LeaveVideocallRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	EndVideocall(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	GetMyVideocallTicket(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*VideocallTicketResponse, error)
-	InstructorGetCurrentRoom(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CurrentRoomResponse, error)
-	AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error)
-	AdminCreateSchedule(ctx context.Context, in *CreateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
-	AdminUpdateSchedule(ctx context.Context, in *UpdateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error)
-	AdminDeleteSchedule(ctx context.Context, in *ScheduleIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	ListPublicSchedules(ctx context.Context, in *ListPublicSchedulesRequest, opts ...grpc.CallOption) (*ListPublicSchedulesResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error)
 }
@@ -221,9 +240,9 @@ func (c *cursosServiceClient) UnirseConLicencia(ctx context.Context, in *UnirseC
 	return out, nil
 }
 
-func (c *cursosServiceClient) WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *cursosServiceClient) WebhookEnroll(ctx context.Context, in *WebhookEnrollRequest, opts ...grpc.CallOption) (*EnrollResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(EnrollResponse)
 	err := c.cc.Invoke(ctx, CursosService_WebhookEnroll_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -241,10 +260,150 @@ func (c *cursosServiceClient) WebhookComprarLicencia(ctx context.Context, in *We
 	return out, nil
 }
 
-func (c *cursosServiceClient) WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *cursosServiceClient) WebhookComprarB2BDirect(ctx context.Context, in *WebhookComprarB2BDirectRequest, opts ...grpc.CallOption) (*ComprarB2BDirectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ComprarB2BDirectResponse)
+	err := c.cc.Invoke(ctx, CursosService_WebhookComprarB2BDirect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AsignarAccesosLicencia(ctx context.Context, in *AsignarAccesosLicenciaRequest, opts ...grpc.CallOption) (*AsignarAccesosLicenciaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AsignarAccesosLicenciaResponse)
+	err := c.cc.Invoke(ctx, CursosService_AsignarAccesosLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListInvitacionesLicencia(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListInvitacionesLicenciaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListInvitacionesLicenciaResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListInvitacionesLicencia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) NotificarCursoCompletado(ctx context.Context, in *CursoCompletadoRequest, opts ...grpc.CallOption) (*CursoCompletadoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CursoCompletadoResponse)
+	err := c.cc.Invoke(ctx, CursosService_NotificarCursoCompletado_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) RegistrarEventoStripe(ctx context.Context, in *EventoStripeRequest, opts ...grpc.CallOption) (*EventoStripeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EventoStripeResponse)
+	err := c.cc.Invoke(ctx, CursosService_RegistrarEventoStripe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ActualizarEstadoOrden(ctx context.Context, in *ActualizarEstadoOrdenRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, CursosService_WebhookComprarB2BDirect_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CursosService_ActualizarEstadoOrden_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListPlanes(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListPlanesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPlanesResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListPlanes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) GetMiSuscripcion(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*SuscripcionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuscripcionResponse)
+	err := c.cc.Invoke(ctx, CursosService_GetMiSuscripcion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) CrearCheckoutSuscripcion(ctx context.Context, in *CheckoutSuscripcionRequest, opts ...grpc.CallOption) (*CheckoutSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutSessionResponse)
+	err := c.cc.Invoke(ctx, CursosService_CrearCheckoutSuscripcion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) SincronizarSuscripcion(ctx context.Context, in *SincronizarSuscripcionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_SincronizarSuscripcion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) RegistrarFacturaSuscripcion(ctx context.Context, in *FacturaSuscripcionRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_RegistrarFacturaSuscripcion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) TieneAccesoPorSuscripcion(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*AccesoSuscripcionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AccesoSuscripcionResponse)
+	err := c.cc.Invoke(ctx, CursosService_TieneAccesoPorSuscripcion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AsignarAsientos(ctx context.Context, in *AsignarAsientosRequest, opts ...grpc.CallOption) (*ListAsientosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAsientosResponse)
+	err := c.cc.Invoke(ctx, CursosService_AsignarAsientos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListAsientos(ctx context.Context, in *SuscripcionIDRequest, opts ...grpc.CallOption) (*ListAsientosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAsientosResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListAsientos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) RevocarAsiento(ctx context.Context, in *RevocarAsientoRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_RevocarAsiento_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -305,16 +464,6 @@ func (c *cursosServiceClient) ListLicenciasCompradas(ctx context.Context, in *Us
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListLicenciasResponse)
 	err := c.cc.Invoke(ctx, CursosService_ListLicenciasCompradas_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) ListLicenciaTickets(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*ListLicenciaTicketsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListLicenciaTicketsResponse)
-	err := c.cc.Invoke(ctx, CursosService_ListLicenciaTickets_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -511,106 +660,6 @@ func (c *cursosServiceClient) AdminDesAsignar(ctx context.Context, in *Asignacio
 	return out, nil
 }
 
-func (c *cursosServiceClient) JoinVideocall(ctx context.Context, in *JoinVideocallRequest, opts ...grpc.CallOption) (*JoinVideocallResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(JoinVideocallResponse)
-	err := c.cc.Invoke(ctx, CursosService_JoinVideocall_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) LeaveVideocall(ctx context.Context, in *LeaveVideocallRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, CursosService_LeaveVideocall_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) EndVideocall(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, CursosService_EndVideocall_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) GetMyVideocallTicket(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*VideocallTicketResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(VideocallTicketResponse)
-	err := c.cc.Invoke(ctx, CursosService_GetMyVideocallTicket_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) InstructorGetCurrentRoom(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CurrentRoomResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CurrentRoomResponse)
-	err := c.cc.Invoke(ctx, CursosService_InstructorGetCurrentRoom_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) AdminListSchedules(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListSchedulesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListSchedulesResponse)
-	err := c.cc.Invoke(ctx, CursosService_AdminListSchedules_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) AdminCreateSchedule(ctx context.Context, in *CreateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(InstructorSchedule)
-	err := c.cc.Invoke(ctx, CursosService_AdminCreateSchedule_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) AdminUpdateSchedule(ctx context.Context, in *UpdateScheduleRequest, opts ...grpc.CallOption) (*InstructorSchedule, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(InstructorSchedule)
-	err := c.cc.Invoke(ctx, CursosService_AdminUpdateSchedule_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) AdminDeleteSchedule(ctx context.Context, in *ScheduleIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, CursosService_AdminDeleteSchedule_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cursosServiceClient) ListPublicSchedules(ctx context.Context, in *ListPublicSchedulesRequest, opts ...grpc.CallOption) (*ListPublicSchedulesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListPublicSchedulesResponse)
-	err := c.cc.Invoke(ctx, CursosService_ListPublicSchedules_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *cursosServiceClient) GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminDashboardStatsResponse)
@@ -639,16 +688,43 @@ type CursosServiceServer interface {
 	Inscribirse(context.Context, *InscribirseRequest) (*EmptyResponse, error)
 	UnirseConCodigo(context.Context, *UnirseRequest) (*EmptyResponse, error)
 	UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error)
-	WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EmptyResponse, error)
+	// Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
+	// el Gateway necesita esos datos para construir el correo de confirmación y
+	// la pantalla de éxito sin hacer una segunda ronda de consultas.
+	WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EnrollResponse, error)
 	WebhookComprarLicencia(context.Context, *WebhookComprarLicenciaRequest) (*EmptyResponse, error)
-	WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*EmptyResponse, error)
+	WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*ComprarB2BDirectResponse, error)
+	// Reparto de accesos corporativos por correo.
+	AsignarAccesosLicencia(context.Context, *AsignarAccesosLicenciaRequest) (*AsignarAccesosLicenciaResponse, error)
+	ListInvitacionesLicencia(context.Context, *LicenciaIDRequest) (*ListInvitacionesLicenciaResponse, error)
+	// Registra que un participante terminó el curso y decide si toca avisar al
+	// representante de su licencia para que tramite las constancias DC-3.
+	// La deduplicación vive en la BD: solo devuelve avisar=true la primera vez.
+	NotificarCursoCompletado(context.Context, *CursoCompletadoRequest) (*CursoCompletadoResponse, error)
+	// Deduplicación de webhooks de Stripe. Devuelve primera_vez=false si el
+	// evento ya se había procesado: la entrega es al-menos-una-vez.
+	RegistrarEventoStripe(context.Context, *EventoStripeRequest) (*EventoStripeResponse, error)
+	// Transición de estado de una orden tras el resultado del cobro.
+	ActualizarEstadoOrden(context.Context, *ActualizarEstadoOrdenRequest) (*EmptyResponse, error)
+	// ── Suscripciones ─────────────────────────────────────────────────────────
+	ListPlanes(context.Context, *EmptyRequest) (*ListPlanesResponse, error)
+	GetMiSuscripcion(context.Context, *UserRequest) (*SuscripcionResponse, error)
+	CrearCheckoutSuscripcion(context.Context, *CheckoutSuscripcionRequest) (*CheckoutSessionResponse, error)
+	// Aplica el estado que reporta Stripe. Nunca se infiere localmente: el
+	// ciclo de vida lo manda el PSP.
+	SincronizarSuscripcion(context.Context, *SincronizarSuscripcionRequest) (*EmptyResponse, error)
+	RegistrarFacturaSuscripcion(context.Context, *FacturaSuscripcionRequest) (*EmptyResponse, error)
+	// Acceso derivado de una suscripción viva (titular o asiento ocupado).
+	TieneAccesoPorSuscripcion(context.Context, *UserRequest) (*AccesoSuscripcionResponse, error)
+	AsignarAsientos(context.Context, *AsignarAsientosRequest) (*ListAsientosResponse, error)
+	ListAsientos(context.Context, *SuscripcionIDRequest) (*ListAsientosResponse, error)
+	RevocarAsiento(context.Context, *RevocarAsientoRequest) (*EmptyResponse, error)
 	CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionB2BDirect(context.Context, *CreateCheckoutSessionB2BDirectRequest) (*CheckoutSessionResponse, error)
 	CreateCheckoutSessionCart(context.Context, *CheckoutCartRequest) (*CheckoutSessionResponse, error)
 	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(context.Context, *LicenciaIDRequest) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error)
-	ListLicenciaTickets(context.Context, *LicenciaIDRequest) (*ListLicenciaTicketsResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
@@ -670,17 +746,6 @@ type CursosServiceServer interface {
 	AdminListAsignaciones(context.Context, *EmptyRequest) (*ListAsignacionesResponse, error)
 	AdminAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error)
 	AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error)
-	// Videocall & Schedules
-	JoinVideocall(context.Context, *JoinVideocallRequest) (*JoinVideocallResponse, error)
-	LeaveVideocall(context.Context, *LeaveVideocallRequest) (*EmptyResponse, error)
-	EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error)
-	GetMyVideocallTicket(context.Context, *CursoIDRequest) (*VideocallTicketResponse, error)
-	InstructorGetCurrentRoom(context.Context, *CursoIDRequest) (*CurrentRoomResponse, error)
-	AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error)
-	AdminCreateSchedule(context.Context, *CreateScheduleRequest) (*InstructorSchedule, error)
-	AdminUpdateSchedule(context.Context, *UpdateScheduleRequest) (*InstructorSchedule, error)
-	AdminDeleteSchedule(context.Context, *ScheduleIDRequest) (*EmptyResponse, error)
-	ListPublicSchedules(context.Context, *ListPublicSchedulesRequest) (*ListPublicSchedulesResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error)
 	mustEmbedUnimplementedCursosServiceServer()
@@ -717,14 +782,56 @@ func (UnimplementedCursosServiceServer) UnirseConCodigo(context.Context, *Unirse
 func (UnimplementedCursosServiceServer) UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UnirseConLicencia not implemented")
 }
-func (UnimplementedCursosServiceServer) WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EmptyResponse, error) {
+func (UnimplementedCursosServiceServer) WebhookEnroll(context.Context, *WebhookEnrollRequest) (*EnrollResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WebhookEnroll not implemented")
 }
 func (UnimplementedCursosServiceServer) WebhookComprarLicencia(context.Context, *WebhookComprarLicenciaRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WebhookComprarLicencia not implemented")
 }
-func (UnimplementedCursosServiceServer) WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*EmptyResponse, error) {
+func (UnimplementedCursosServiceServer) WebhookComprarB2BDirect(context.Context, *WebhookComprarB2BDirectRequest) (*ComprarB2BDirectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WebhookComprarB2BDirect not implemented")
+}
+func (UnimplementedCursosServiceServer) AsignarAccesosLicencia(context.Context, *AsignarAccesosLicenciaRequest) (*AsignarAccesosLicenciaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AsignarAccesosLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) ListInvitacionesLicencia(context.Context, *LicenciaIDRequest) (*ListInvitacionesLicenciaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInvitacionesLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) NotificarCursoCompletado(context.Context, *CursoCompletadoRequest) (*CursoCompletadoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method NotificarCursoCompletado not implemented")
+}
+func (UnimplementedCursosServiceServer) RegistrarEventoStripe(context.Context, *EventoStripeRequest) (*EventoStripeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegistrarEventoStripe not implemented")
+}
+func (UnimplementedCursosServiceServer) ActualizarEstadoOrden(context.Context, *ActualizarEstadoOrdenRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ActualizarEstadoOrden not implemented")
+}
+func (UnimplementedCursosServiceServer) ListPlanes(context.Context, *EmptyRequest) (*ListPlanesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPlanes not implemented")
+}
+func (UnimplementedCursosServiceServer) GetMiSuscripcion(context.Context, *UserRequest) (*SuscripcionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMiSuscripcion not implemented")
+}
+func (UnimplementedCursosServiceServer) CrearCheckoutSuscripcion(context.Context, *CheckoutSuscripcionRequest) (*CheckoutSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CrearCheckoutSuscripcion not implemented")
+}
+func (UnimplementedCursosServiceServer) SincronizarSuscripcion(context.Context, *SincronizarSuscripcionRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SincronizarSuscripcion not implemented")
+}
+func (UnimplementedCursosServiceServer) RegistrarFacturaSuscripcion(context.Context, *FacturaSuscripcionRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegistrarFacturaSuscripcion not implemented")
+}
+func (UnimplementedCursosServiceServer) TieneAccesoPorSuscripcion(context.Context, *UserRequest) (*AccesoSuscripcionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TieneAccesoPorSuscripcion not implemented")
+}
+func (UnimplementedCursosServiceServer) AsignarAsientos(context.Context, *AsignarAsientosRequest) (*ListAsientosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AsignarAsientos not implemented")
+}
+func (UnimplementedCursosServiceServer) ListAsientos(context.Context, *SuscripcionIDRequest) (*ListAsientosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAsientos not implemented")
+}
+func (UnimplementedCursosServiceServer) RevocarAsiento(context.Context, *RevocarAsientoRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevocarAsiento not implemented")
 }
 func (UnimplementedCursosServiceServer) CreateCheckoutSession(context.Context, *CheckoutSessionRequest) (*CheckoutSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCheckoutSession not implemented")
@@ -743,9 +850,6 @@ func (UnimplementedCursosServiceServer) GetLicenciaPublica(context.Context, *Lic
 }
 func (UnimplementedCursosServiceServer) ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLicenciasCompradas not implemented")
-}
-func (UnimplementedCursosServiceServer) ListLicenciaTickets(context.Context, *LicenciaIDRequest) (*ListLicenciaTicketsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListLicenciaTickets not implemented")
 }
 func (UnimplementedCursosServiceServer) InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListCapacitaciones not implemented")
@@ -803,36 +907,6 @@ func (UnimplementedCursosServiceServer) AdminAsignar(context.Context, *AsignarRe
 }
 func (UnimplementedCursosServiceServer) AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminDesAsignar not implemented")
-}
-func (UnimplementedCursosServiceServer) JoinVideocall(context.Context, *JoinVideocallRequest) (*JoinVideocallResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method JoinVideocall not implemented")
-}
-func (UnimplementedCursosServiceServer) LeaveVideocall(context.Context, *LeaveVideocallRequest) (*EmptyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method LeaveVideocall not implemented")
-}
-func (UnimplementedCursosServiceServer) EndVideocall(context.Context, *CursoIDRequest) (*EmptyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method EndVideocall not implemented")
-}
-func (UnimplementedCursosServiceServer) GetMyVideocallTicket(context.Context, *CursoIDRequest) (*VideocallTicketResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetMyVideocallTicket not implemented")
-}
-func (UnimplementedCursosServiceServer) InstructorGetCurrentRoom(context.Context, *CursoIDRequest) (*CurrentRoomResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method InstructorGetCurrentRoom not implemented")
-}
-func (UnimplementedCursosServiceServer) AdminListSchedules(context.Context, *UserRequest) (*ListSchedulesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AdminListSchedules not implemented")
-}
-func (UnimplementedCursosServiceServer) AdminCreateSchedule(context.Context, *CreateScheduleRequest) (*InstructorSchedule, error) {
-	return nil, status.Error(codes.Unimplemented, "method AdminCreateSchedule not implemented")
-}
-func (UnimplementedCursosServiceServer) AdminUpdateSchedule(context.Context, *UpdateScheduleRequest) (*InstructorSchedule, error) {
-	return nil, status.Error(codes.Unimplemented, "method AdminUpdateSchedule not implemented")
-}
-func (UnimplementedCursosServiceServer) AdminDeleteSchedule(context.Context, *ScheduleIDRequest) (*EmptyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AdminDeleteSchedule not implemented")
-}
-func (UnimplementedCursosServiceServer) ListPublicSchedules(context.Context, *ListPublicSchedulesRequest) (*ListPublicSchedulesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListPublicSchedules not implemented")
 }
 func (UnimplementedCursosServiceServer) GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAdminDashboardStats not implemented")
@@ -1056,6 +1130,258 @@ func _CursosService_WebhookComprarB2BDirect_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_AsignarAccesosLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AsignarAccesosLicenciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AsignarAccesosLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AsignarAccesosLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AsignarAccesosLicencia(ctx, req.(*AsignarAccesosLicenciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListInvitacionesLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LicenciaIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListInvitacionesLicencia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListInvitacionesLicencia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListInvitacionesLicencia(ctx, req.(*LicenciaIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_NotificarCursoCompletado_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoCompletadoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).NotificarCursoCompletado(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_NotificarCursoCompletado_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).NotificarCursoCompletado(ctx, req.(*CursoCompletadoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_RegistrarEventoStripe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EventoStripeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).RegistrarEventoStripe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_RegistrarEventoStripe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).RegistrarEventoStripe(ctx, req.(*EventoStripeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ActualizarEstadoOrden_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActualizarEstadoOrdenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ActualizarEstadoOrden(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ActualizarEstadoOrden_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ActualizarEstadoOrden(ctx, req.(*ActualizarEstadoOrdenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListPlanes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListPlanes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListPlanes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListPlanes(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_GetMiSuscripcion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetMiSuscripcion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetMiSuscripcion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetMiSuscripcion(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_CrearCheckoutSuscripcion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckoutSuscripcionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).CrearCheckoutSuscripcion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_CrearCheckoutSuscripcion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).CrearCheckoutSuscripcion(ctx, req.(*CheckoutSuscripcionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_SincronizarSuscripcion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SincronizarSuscripcionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).SincronizarSuscripcion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_SincronizarSuscripcion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).SincronizarSuscripcion(ctx, req.(*SincronizarSuscripcionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_RegistrarFacturaSuscripcion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FacturaSuscripcionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).RegistrarFacturaSuscripcion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_RegistrarFacturaSuscripcion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).RegistrarFacturaSuscripcion(ctx, req.(*FacturaSuscripcionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_TieneAccesoPorSuscripcion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).TieneAccesoPorSuscripcion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_TieneAccesoPorSuscripcion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).TieneAccesoPorSuscripcion(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AsignarAsientos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AsignarAsientosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AsignarAsientos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AsignarAsientos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AsignarAsientos(ctx, req.(*AsignarAsientosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListAsientos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuscripcionIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListAsientos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListAsientos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListAsientos(ctx, req.(*SuscripcionIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_RevocarAsiento_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevocarAsientoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).RevocarAsiento(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_RevocarAsiento_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).RevocarAsiento(ctx, req.(*RevocarAsientoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_CreateCheckoutSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckoutSessionRequest)
 	if err := dec(in); err != nil {
@@ -1160,24 +1486,6 @@ func _CursosService_ListLicenciasCompradas_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).ListLicenciasCompradas(ctx, req.(*UserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_ListLicenciaTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LicenciaIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).ListLicenciaTickets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_ListLicenciaTickets_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).ListLicenciaTickets(ctx, req.(*LicenciaIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1524,186 +1832,6 @@ func _CursosService_AdminDesAsignar_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CursosService_JoinVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JoinVideocallRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).JoinVideocall(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_JoinVideocall_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).JoinVideocall(ctx, req.(*JoinVideocallRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_LeaveVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LeaveVideocallRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).LeaveVideocall(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_LeaveVideocall_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).LeaveVideocall(ctx, req.(*LeaveVideocallRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_EndVideocall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CursoIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).EndVideocall(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_EndVideocall_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).EndVideocall(ctx, req.(*CursoIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_GetMyVideocallTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CursoIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).GetMyVideocallTicket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_GetMyVideocallTicket_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).GetMyVideocallTicket(ctx, req.(*CursoIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_InstructorGetCurrentRoom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CursoIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).InstructorGetCurrentRoom(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_InstructorGetCurrentRoom_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).InstructorGetCurrentRoom(ctx, req.(*CursoIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_AdminListSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).AdminListSchedules(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_AdminListSchedules_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).AdminListSchedules(ctx, req.(*UserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_AdminCreateSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateScheduleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).AdminCreateSchedule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_AdminCreateSchedule_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).AdminCreateSchedule(ctx, req.(*CreateScheduleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_AdminUpdateSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateScheduleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).AdminUpdateSchedule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_AdminUpdateSchedule_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).AdminUpdateSchedule(ctx, req.(*UpdateScheduleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_AdminDeleteSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ScheduleIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).AdminDeleteSchedule(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_AdminDeleteSchedule_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).AdminDeleteSchedule(ctx, req.(*ScheduleIDRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CursosService_ListPublicSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListPublicSchedulesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CursosServiceServer).ListPublicSchedules(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CursosService_ListPublicSchedules_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CursosServiceServer).ListPublicSchedules(ctx, req.(*ListPublicSchedulesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _CursosService_GetAdminDashboardStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmptyRequest)
 	if err := dec(in); err != nil {
@@ -1774,6 +1902,62 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CursosService_WebhookComprarB2BDirect_Handler,
 		},
 		{
+			MethodName: "AsignarAccesosLicencia",
+			Handler:    _CursosService_AsignarAccesosLicencia_Handler,
+		},
+		{
+			MethodName: "ListInvitacionesLicencia",
+			Handler:    _CursosService_ListInvitacionesLicencia_Handler,
+		},
+		{
+			MethodName: "NotificarCursoCompletado",
+			Handler:    _CursosService_NotificarCursoCompletado_Handler,
+		},
+		{
+			MethodName: "RegistrarEventoStripe",
+			Handler:    _CursosService_RegistrarEventoStripe_Handler,
+		},
+		{
+			MethodName: "ActualizarEstadoOrden",
+			Handler:    _CursosService_ActualizarEstadoOrden_Handler,
+		},
+		{
+			MethodName: "ListPlanes",
+			Handler:    _CursosService_ListPlanes_Handler,
+		},
+		{
+			MethodName: "GetMiSuscripcion",
+			Handler:    _CursosService_GetMiSuscripcion_Handler,
+		},
+		{
+			MethodName: "CrearCheckoutSuscripcion",
+			Handler:    _CursosService_CrearCheckoutSuscripcion_Handler,
+		},
+		{
+			MethodName: "SincronizarSuscripcion",
+			Handler:    _CursosService_SincronizarSuscripcion_Handler,
+		},
+		{
+			MethodName: "RegistrarFacturaSuscripcion",
+			Handler:    _CursosService_RegistrarFacturaSuscripcion_Handler,
+		},
+		{
+			MethodName: "TieneAccesoPorSuscripcion",
+			Handler:    _CursosService_TieneAccesoPorSuscripcion_Handler,
+		},
+		{
+			MethodName: "AsignarAsientos",
+			Handler:    _CursosService_AsignarAsientos_Handler,
+		},
+		{
+			MethodName: "ListAsientos",
+			Handler:    _CursosService_ListAsientos_Handler,
+		},
+		{
+			MethodName: "RevocarAsiento",
+			Handler:    _CursosService_RevocarAsiento_Handler,
+		},
+		{
 			MethodName: "CreateCheckoutSession",
 			Handler:    _CursosService_CreateCheckoutSession_Handler,
 		},
@@ -1796,10 +1980,6 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLicenciasCompradas",
 			Handler:    _CursosService_ListLicenciasCompradas_Handler,
-		},
-		{
-			MethodName: "ListLicenciaTickets",
-			Handler:    _CursosService_ListLicenciaTickets_Handler,
 		},
 		{
 			MethodName: "InstructorListCapacitaciones",
@@ -1876,46 +2056,6 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminDesAsignar",
 			Handler:    _CursosService_AdminDesAsignar_Handler,
-		},
-		{
-			MethodName: "JoinVideocall",
-			Handler:    _CursosService_JoinVideocall_Handler,
-		},
-		{
-			MethodName: "LeaveVideocall",
-			Handler:    _CursosService_LeaveVideocall_Handler,
-		},
-		{
-			MethodName: "EndVideocall",
-			Handler:    _CursosService_EndVideocall_Handler,
-		},
-		{
-			MethodName: "GetMyVideocallTicket",
-			Handler:    _CursosService_GetMyVideocallTicket_Handler,
-		},
-		{
-			MethodName: "InstructorGetCurrentRoom",
-			Handler:    _CursosService_InstructorGetCurrentRoom_Handler,
-		},
-		{
-			MethodName: "AdminListSchedules",
-			Handler:    _CursosService_AdminListSchedules_Handler,
-		},
-		{
-			MethodName: "AdminCreateSchedule",
-			Handler:    _CursosService_AdminCreateSchedule_Handler,
-		},
-		{
-			MethodName: "AdminUpdateSchedule",
-			Handler:    _CursosService_AdminUpdateSchedule_Handler,
-		},
-		{
-			MethodName: "AdminDeleteSchedule",
-			Handler:    _CursosService_AdminDeleteSchedule_Handler,
-		},
-		{
-			MethodName: "ListPublicSchedules",
-			Handler:    _CursosService_ListPublicSchedules_Handler,
 		},
 		{
 			MethodName: "GetAdminDashboardStats",

@@ -24,7 +24,17 @@ type Config struct {
 	// reCAPTCHA (opcional — se omite si está vacío)
 	RecaptchaSecretKey string
 
-	// SMTP para emails de recuperación de contraseña
+	// Resend — proveedor de correo transaccional (sustituye a SMTP).
+	ResendAPIKey  string
+	ResendFrom    string
+	ResendReplyTo string
+
+	// Verificación de correo en el registro
+	EmailVerificationTTLMinutes  int // vigencia del código de 6 dígitos
+	EmailVerificationCooldownSec int // espera mínima entre reenvíos
+
+	// SMTP — DEPRECADO. Se conserva solo para no romper despliegues que aún
+	// inyectan estas variables; el envío real pasa por Resend.
 	SMTPHost string
 	SMTPPort string
 	SMTPUser string
@@ -50,14 +60,22 @@ func Load() *Config {
 		JWTSecret:          requireEnv("JWT_SECRET"),
 		JWTExpiryHours:     getEnvInt("JWT_EXPIRY_HOURS", 720),
 		RecaptchaSecretKey: os.Getenv("RECAPTCHA_SECRET_KEY"),
-		SMTPHost:           os.Getenv("SMTP_HOST"),
-		SMTPPort:           getEnvOr("SMTP_PORT", "587"),
-		SMTPUser:           os.Getenv("SMTP_USER"),
-		SMTPPass:           os.Getenv("SMTP_PASS"),
-		SMTPFrom:           os.Getenv("SMTP_FROM"),
-		AppURL:             normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
-		AppName:            getEnvOr("APP_NAME", "Capacitaciones"),
-		LogLevel:           getEnvOr("LOG_LEVEL", "info"),
+
+		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+		ResendFrom:    getEnvAny("RESEND_FROM", "SMTP_FROM"),
+		ResendReplyTo: os.Getenv("RESEND_REPLY_TO"),
+
+		EmailVerificationTTLMinutes:  getEnvInt("EMAIL_VERIFICATION_TTL_MINUTES", 15),
+		EmailVerificationCooldownSec: getEnvInt("EMAIL_VERIFICATION_COOLDOWN_SECONDS", 60),
+
+		SMTPHost: os.Getenv("SMTP_HOST"),
+		SMTPPort: getEnvOr("SMTP_PORT", "587"),
+		SMTPUser: os.Getenv("SMTP_USER"),
+		SMTPPass: os.Getenv("SMTP_PASS"),
+		SMTPFrom: os.Getenv("SMTP_FROM"),
+		AppURL:   normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
+		AppName:  getEnvOr("APP_NAME", "Capacitaciones"),
+		LogLevel: getEnvOr("LOG_LEVEL", "info"),
 	}
 	return &C
 }
@@ -92,6 +110,17 @@ func getEnvOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// getEnvAny devuelve el primer valor no vacío entre varias claves.
+// Permite migrar de SMTP_FROM a RESEND_FROM sin romper despliegues existentes.
+func getEnvAny(keys ...string) string {
+	for _, k := range keys {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func getEnvInt(key string, fallback int) int {

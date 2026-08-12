@@ -11,6 +11,7 @@ import (
 	"time"
 
 	authpb "Prueba-Go/gen/auth"
+	"Prueba-Go/pkg/mailer"
 	"Prueba-Go/services/auth/internal/config"
 	"Prueba-Go/services/auth/internal/handler"
 	"Prueba-Go/services/auth/internal/repository"
@@ -52,8 +53,21 @@ func main() {
 	}
 
 	// ── 5. Inyección de dependencias: Repo → Service → Handler ───────────────
+	mail := mailer.New(mailer.Config{
+		APIKey:  cfg.ResendAPIKey,
+		From:    cfg.ResendFrom,
+		ReplyTo: cfg.ResendReplyTo,
+		AppName: cfg.AppName,
+		AppURL:  cfg.AppURL,
+	})
+	if !mail.Enabled() {
+		// No es fatal: en desarrollo se puede trabajar sin correo, pero conviene
+		// que quede muy visible en los logs porque el registro depende de ello.
+		slog.Warn("RESEND_API_KEY vacía — no se enviarán correos de verificación")
+	}
+
 	userRepo := repository.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, cfg)
+	authSvc := service.NewAuthService(userRepo, cfg, mail)
 	authHandler := handler.NewAuthHandler(authSvc)
 
 	// ── 5. Servidor gRPC ──────────────────────────────────────────────────────
@@ -128,6 +142,15 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_total INT NOT NULL DEFAULT 0`,
+		// Verificación de correo. El DEFAULT true seguido del cambio a false es
+		// intencional: las cuentas preexistentes quedan verificadas (nunca
+		// recibieron un código) y las nuevas nacen sin verificar.
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT true`,
+		`ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT false`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_hash CHAR(64)`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMPTZ`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_attempts INT NOT NULL DEFAULT 0`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMPTZ`,
 	}
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {

@@ -82,6 +82,11 @@ func New(d Deps) *gin.Engine {
 		authStrict.POST("/register", d.AuthH.Register)
 		authStrict.POST("/login", d.AuthH.Login)
 		authStrict.POST("/forgot-password", d.AuthH.ForgotPassword)
+		// Verificación de correo — públicas: el usuario aún no tiene sesión.
+		// Van bajo authStrict porque son adivinables por fuerza bruta (6 dígitos)
+		// y porque el reenvío podría usarse para spamear buzones ajenos.
+		authStrict.POST("/verify-email", d.AuthH.VerifyEmail)
+		authStrict.POST("/resend-verification", d.AuthH.ResendVerification)
 
 		api.POST("/logout", d.AuthH.Logout)
 		api.POST("/reset-password", d.AuthH.ResetPassword)
@@ -90,7 +95,8 @@ func New(d Deps) *gin.Engine {
 		api.GET("/preview-curso/:codigo", d.CursosH.PreviewCurso)
 		api.GET("/cursos-publicos", d.CursosH.ListCursosPublicos)
 		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
-		api.GET("/schedules/public/:instructor_id", d.CursosH.GetPublicSchedules)
+		// Catálogo de planes: público, alimenta la página de precios.
+		api.GET("/planes", d.CursosH.ListPlanes)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 
@@ -114,7 +120,6 @@ func New(d Deps) *gin.Engine {
 			// Cursos y capacitaciones
 			auth.GET("/mis-capacitaciones", d.CursosH.ListMisCapacitaciones)
 			auth.GET("/capacitaciones/:id", d.CursosH.GetCurso)
-			auth.GET("/cursos/:id/videocall/ticket", d.CursosH.GetMyVideocallTicket)
 			auth.POST("/cursos/:id/inscripciones", d.CursosH.Inscribirse)
 			auth.POST("/inscripciones", d.CursosH.UnirseConCodigo)
 			auth.POST("/inscripciones-licencia", d.CursosH.UnirseConLicencia)
@@ -124,9 +129,16 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/verify-checkout-session", d.CursosH.VerifyCheckoutSession)
 			auth.GET("/licencias-compradas", d.CursosH.ListLicenciasCompradas)
 			auth.GET("/licencias/:id/invoice", d.CursosH.GetLicenciaInvoicePDF)
-			auth.GET("/licencias/:id/tickets", d.CursosH.GetLicenciaTickets)
-			auth.POST("/videocalls/join", d.CursosH.JoinVideocall)
-			auth.POST("/videocalls/leave", d.CursosH.LeaveVideocall)
+			auth.POST("/licencias/:id/enviar-accesos", d.CursosH.EnviarAccesosLicencia)
+			auth.GET("/licencias/:id/invitaciones", d.CursosH.ListInvitacionesLicencia)
+
+			// Suscripciones
+			auth.GET("/mi-suscripcion", d.CursosH.GetMiSuscripcion)
+			auth.POST("/suscripcion/checkout", d.CursosH.CrearCheckoutSuscripcion)
+			auth.POST("/suscripcion/portal", d.CursosH.PortalFacturacion)
+			auth.GET("/suscripcion/:id/asientos", d.CursosH.ListAsientos)
+			auth.POST("/suscripcion/:id/asientos", d.CursosH.AsignarAsientos)
+			auth.DELETE("/suscripcion/:id/asientos", d.CursosH.RevocarAsiento)
 
 			// Lecciones — lista plana (compatibilidad)
 			auth.GET("/capacitaciones/:id/lecciones", d.LeccionesH.GetLeccionesConProgreso)
@@ -209,8 +221,6 @@ func New(d Deps) *gin.Engine {
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
 				inst.GET("/users", d.UsuariosH.ListUsers)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
-				inst.GET("/capacitaciones/:id/current-room", d.CursosH.InstructorGetCurrentRoom)
-				inst.POST("/videocalls/:id/end", d.CursosH.EndVideocall)
 
 				inst.GET("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorListPreguntasIntermedias)
 				inst.POST("/capacitaciones/:id/intermedias", d.LeccionesH.InstructorCreatePreguntaIntermedia)
@@ -246,11 +256,6 @@ func New(d Deps) *gin.Engine {
 				adm.DELETE("/capacitaciones/:id", d.CursosH.AdminDeleteCapacitacion)
 				adm.POST("/capacitaciones/:id/reset-codigo", d.CursosH.AdminResetCodigo)
 				adm.GET("/asignaciones", d.CursosH.AdminListAsignaciones)
-
-				adm.GET("/schedules", d.CursosH.AdminListSchedules)
-				adm.POST("/schedules", d.CursosH.AdminCreateSchedule)
-				adm.PUT("/schedules/:id", d.CursosH.AdminUpdateSchedule)
-				adm.DELETE("/schedules/:id", d.CursosH.AdminDeleteSchedule)
 
 				adm.GET("/examenes", d.ExamenesH.AdminListExamenes)
 				adm.POST("/examenes", d.ExamenesH.AdminCreateExamen)

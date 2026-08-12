@@ -1,77 +1,5 @@
-<template>
-  <div class="cart-wrapper">
-    <Transition name="cart">
-      <div v-if="cart.isDrawerOpen" class="cart-overlay" @click.self="cart.closeDrawer">
-        <div class="cart-drawer">
-          <div class="cart-header">
-            <h3>Tu Carrito</h3>
-            <button class="btn-close" @click="cart.closeDrawer" aria-label="Cerrar carrito">
-              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="cart-body">
-            <div v-if="cart.items.length === 0" class="empty-cart">
-              <div class="empty-icon">
-                <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-              </div>
-              <p>Tu carrito está vacío</p>
-              <span>Agrega cursos o licencias para comenzar.</span>
-            </div>
-
-            <TransitionGroup name="list" tag="div" v-else class="cart-items">
-              <div v-for="(item, index) in cart.items" :key="item.curso_id + index" class="cart-item">
-                <div class="item-img" :style="{ backgroundImage: 'url(' + (item.thumbnail ? fileUrl(item.thumbnail) : '') + ')' }">
-                  <span v-if="!item.thumbnail" class="fallback-icon">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                  </span>
-                </div>
-                <div class="item-info">
-                  <h4>{{ item.title }}</h4>
-                  <span class="item-type">{{ item.type === 'b2b_direct' ? 'Licencias Corporativas' : 'Inscripción Individual' }} <span v-if="item.cantidad > 1" class="qty-badge">x{{ item.cantidad }} lugares</span></span>
-                  <p class="item-price">{{ formatPrice(item.precio * item.cantidad) }}</p>
-                </div>
-                <button class="btn-remove" @click="cart.removeItem(index)" aria-label="Eliminar item">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
-                </button>
-              </div>
-            </TransitionGroup>
-          </div>
-
-          <div class="cart-footer" v-if="cart.items.length > 0">
-            <div class="cart-total">
-              <span>Total a pagar</span>
-              <strong>{{ formatPrice(cart.totalPrice) }}</strong>
-            </div>
-            <button 
-              class="btn-checkout" 
-              @click="checkout" 
-              :disabled="loading"
-            >
-              <span class="btn-content">
-                {{ loading ? 'Procesando...' : 'Proceder al Pago Seguro' }}
-                <svg v-if="!loading" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                </svg>
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
@@ -84,27 +12,34 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 
-const fileUrl = (path: string) => `http://100.64.0.2:8080${path}`
-const formatPrice = (p: number) => `$${p.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`
+const fileUrl = (path?: string) => (path ? `${import.meta.env.VITE_API_URL || ''}${path}` : '')
 
-// Deshabilitar scroll del body cuando el carrito está abierto
-watch(() => cart.isDrawerOpen, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
+const money = (v: number) =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 }).format(v)
+
+const totalLugares = computed(() => cart.items.reduce((a, i) => a + i.cantidad, 0))
+const hayCorporativas = computed(() => cart.items.some((i) => i.type === 'b2b_direct'))
+
+/** Bloquea el scroll del fondo mientras el panel está abierto. */
+watch(
+  () => cart.isDrawerOpen,
+  (abierto) => {
+    document.body.style.overflow = abierto ? 'hidden' : ''
   }
-})
+)
+// Si el componente se destruye con el panel abierto, el body se quedaría bloqueado.
+onUnmounted(() => { document.body.style.overflow = '' })
 
-// Cleanup
-onMounted(() => {
-  document.body.style.overflow = ''
-})
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') cart.closeDrawer()
+}
 
 async function checkout() {
+  if (!cart.items.length) return
+
   if (!auth.isLoggedIn) {
     cart.closeDrawer()
-    toast.info('Inicia sesión o regístrate para continuar con la compra.')
+    toast.info('Inicia sesión o regístrate para completar tu compra.')
     router.push({ path: '/login', query: { redirect: route.fullPath, opencart: '1' } })
     return
   }
@@ -112,114 +47,417 @@ async function checkout() {
   loading.value = true
   try {
     const res = await api.post('/checkout-session-cart', {
-      items: cart.items.map(i => ({
+      items: cart.items.map((i) => ({
         curso_id: i.curso_id,
         cantidad: i.cantidad,
         type: i.type,
-        schedule_id: i.schedule_id || ''
       })),
-      success_url: window.location.origin + '/usuario/capacitaciones?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: window.location.origin + '/tienda'
+      // Pantalla de confirmación propia: decide a dónde mandar al comprador
+      // según lo que compró (curso individual vs. licencias corporativas).
+      success_url: window.location.origin + '/checkout/exito?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: window.location.origin + '/tienda',
     })
     window.location.href = res.data.url
   } catch (e: any) {
-    toast.error(e.response?.data?.error || 'Error al iniciar pago')
+    toast.error(e.response?.data?.error || 'No pudimos iniciar el pago')
   } finally {
     loading.value = false
   }
 }
+
+function seguirComprando() {
+  cart.closeDrawer()
+  if (route.path !== '/tienda' && route.path !== '/') router.push('/tienda')
+}
 </script>
 
+<template>
+  <Transition name="cart">
+    <div
+      v-if="cart.isDrawerOpen"
+      class="overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Carrito de compras"
+      tabindex="-1"
+      @click.self="cart.closeDrawer"
+      @keydown="onKeydown"
+    >
+      <aside class="drawer">
+        <!-- ── Encabezado ── -->
+        <header class="head">
+          <div>
+            <h2 class="head__title">Tu carrito</h2>
+            <p class="head__sub">
+              <template v-if="cart.items.length">
+                {{ totalLugares }} {{ totalLugares === 1 ? 'lugar' : 'lugares' }} ·
+                {{ cart.items.length }} {{ cart.items.length === 1 ? 'curso' : 'cursos' }}
+              </template>
+              <template v-else>Todavía no has agregado nada</template>
+            </p>
+          </div>
+          <button class="close" aria-label="Cerrar carrito" @click="cart.closeDrawer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </header>
+
+        <!-- ── Cuerpo ── -->
+        <div class="body">
+          <!-- Vacío -->
+          <div v-if="!cart.items.length" class="empty">
+            <div class="empty__icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>
+            </div>
+            <h3>Tu carrito está vacío</h3>
+            <p>Explora el catálogo y agrega las capacitaciones que necesita tu equipo.</p>
+            <button class="btn btn--solid" @click="seguirComprando">Ver catálogo</button>
+          </div>
+
+          <!-- Con artículos -->
+          <TransitionGroup v-else tag="ul" name="row" class="items">
+            <li v-for="(item, index) in cart.items" :key="item.curso_id + '-' + index" class="item">
+              <div class="item__thumb">
+                <img v-if="item.thumbnail" :src="fileUrl(item.thumbnail)" :alt="`Portada de ${item.title}`" />
+                <span v-else class="item__thumb-letter">{{ item.title.charAt(0).toUpperCase() }}</span>
+              </div>
+
+              <div class="item__main">
+                <div class="item__top">
+                  <h3 class="item__title">{{ item.title }}</h3>
+                  <button class="item__remove" :aria-label="`Quitar ${item.title}`" @click="cart.removeItem(index)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+
+                <!-- Tipo de compra: explicado, no solo etiquetado -->
+                <div class="modo">
+                  <div class="modo__switch" role="group" aria-label="Tipo de compra">
+                    <button
+                      :class="['modo__opt', item.type === 'b2c' && 'modo__opt--on']"
+                      :aria-pressed="item.type === 'b2c'"
+                      @click="cart.setTipo(index, 'b2c')"
+                    >Para mí</button>
+                    <button
+                      :class="['modo__opt', item.type === 'b2b_direct' && 'modo__opt--on']"
+                      :aria-pressed="item.type === 'b2b_direct'"
+                      @click="cart.setTipo(index, 'b2b_direct')"
+                    >Para mi equipo</button>
+                  </div>
+                  <p class="modo__hint">
+                    <template v-if="item.type === 'b2b_direct'">
+                      Compras {{ item.cantidad }} accesos y los repartes por correo.
+                    </template>
+                    <template v-else>Una inscripción a tu nombre.</template>
+                  </p>
+                </div>
+
+                <!-- Cantidad -->
+                <div v-if="item.type === 'b2b_direct'" class="qty">
+                  <span class="qty__label">Lugares</span>
+                  <div class="qty__ctrl">
+                    <button
+                      :disabled="item.cantidad <= 1"
+                      aria-label="Quitar un lugar"
+                      @click="cart.setCantidad(index, item.cantidad - 1)"
+                    >−</button>
+                    <input
+                      type="number"
+                      min="1"
+                      max="500"
+                      :value="item.cantidad"
+                      :aria-label="`Lugares para ${item.title}`"
+                      @change="cart.setCantidad(index, Number(($event.target as HTMLInputElement).value))"
+                    />
+                    <button
+                      :disabled="item.cantidad >= 500"
+                      aria-label="Agregar un lugar"
+                      @click="cart.setCantidad(index, item.cantidad + 1)"
+                    >+</button>
+                  </div>
+                </div>
+
+                <!-- Precio desglosado: el total nunca aparece sin explicar de dónde sale -->
+                <div class="precio">
+                  <span v-if="item.cantidad > 1" class="precio__calc">
+                    {{ money(item.precio) }} × {{ item.cantidad }}
+                  </span>
+                  <strong class="precio__total">{{ money(item.precio * item.cantidad) }}</strong>
+                </div>
+              </div>
+            </li>
+          </TransitionGroup>
+
+          <p v-if="hayCorporativas" class="nota">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+            Al terminar el pago recibirás los accesos por correo y podrás repartirlos
+            entre tu equipo desde <strong>Mis Licencias</strong>.
+          </p>
+        </div>
+
+        <!-- ── Pie ── -->
+        <footer v-if="cart.items.length" class="foot">
+          <dl class="resumen">
+            <div>
+              <dt>Subtotal</dt>
+              <dd>{{ money(cart.totalPrice) }}</dd>
+            </div>
+            <div class="resumen__nota">
+              <dt>Impuestos y factura</dt>
+              <dd>Se calculan en el pago</dd>
+            </div>
+            <div class="resumen__total">
+              <dt>Total</dt>
+              <dd>{{ money(cart.totalPrice) }}</dd>
+            </div>
+          </dl>
+
+          <button class="btn btn--solid btn--block" :disabled="loading" @click="checkout">
+            <template v-if="loading">Procesando…</template>
+            <template v-else-if="!auth.isLoggedIn">Inicia sesión para pagar</template>
+            <template v-else>
+              Pagar {{ money(cart.totalPrice) }}
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </template>
+          </button>
+
+          <div class="foot__links">
+            <button class="linkish" @click="seguirComprando">Seguir explorando</button>
+            <span class="seguro">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              Pago seguro con Stripe
+            </span>
+          </div>
+        </footer>
+      </aside>
+    </div>
+  </Transition>
+</template>
+
 <style scoped>
-.cart-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
-  z-index: 1000; display: flex; justify-content: flex-end;
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-.cart-overlay.cart-enter-active, .cart-overlay.cart-leave-active { transition: opacity 0.3s; }
-.cart-overlay.cart-enter-from, .cart-overlay.cart-leave-to { opacity: 0; }
 
-.cart-drawer {
-  width: 100%; max-width: 420px;
-  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
-  display: flex; flex-direction: column;
-  transform: translateX(0); border-left: 1px solid rgba(255, 255, 255, 0.4);
+.drawer {
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.16);
 }
-.cart-enter-active .cart-drawer, .cart-leave-active .cart-drawer { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.cart-enter-from .cart-drawer, .cart-leave-to .cart-drawer { transform: translateX(100%); }
 
-.cart-header {
+/* ── Transiciones ──────────────────────────────────────── */
+.cart-enter-active, .cart-leave-active { transition: opacity 0.28s var(--ease-apple); }
+.cart-enter-from, .cart-leave-to { opacity: 0; }
+.cart-enter-active .drawer, .cart-leave-active .drawer { transition: transform 0.36s var(--ease-apple); }
+.cart-enter-from .drawer, .cart-leave-to .drawer { transform: translateX(100%); }
+
+.row-enter-active, .row-leave-active { transition: opacity 0.24s, transform 0.24s var(--ease-apple); }
+.row-enter-from, .row-leave-to { opacity: 0; transform: translateX(22px); }
+.row-leave-active { position: absolute; }
+
+/* ── Encabezado ────────────────────────────────────────── */
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.head__title { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+.head__sub { margin: 3px 0 0; font-size: 0.81rem; color: var(--muted); }
+
+.close {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 9px;
+  background: var(--bg); color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.close:hover { background: var(--surface-soft); color: var(--text); }
+
+/* ── Cuerpo ────────────────────────────────────────────── */
+.body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+
+.empty { text-align: center; padding: 52px 8px; }
+.empty__icon {
+  width: 66px; height: 66px; margin: 0 auto 18px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--brand-light); color: var(--brand);
+}
+.empty h3 { margin: 0 0 8px; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.empty p { margin: 0 auto 22px; font-size: 0.87rem; line-height: 1.55; color: var(--muted); max-width: 30ch; }
+
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; position: relative; }
+
+.item {
+  display: flex; gap: 13px;
+  padding: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  transition: border-color 0.2s;
+}
+.item:hover { border-color: var(--brand-border); }
+
+.item__thumb {
+  flex-shrink: 0;
+  width: 62px; height: 62px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(140deg, var(--brand), var(--brand-darker));
+}
+.item__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.item__thumb-letter { font-size: 1.5rem; font-weight: 800; color: rgba(255, 255, 255, 0.92); }
+
+.item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+
+.item__top { display: flex; align-items: flex-start; gap: 8px; }
+.item__title {
+  flex: 1; margin: 0;
+  font-size: 0.92rem; font-weight: 700; line-height: 1.35; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.item__remove {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border: none; border-radius: 7px;
+  background: transparent; color: var(--subtle);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.item__remove:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* ── Modo de compra ────────────────────────────────────── */
+.modo { display: flex; flex-direction: column; gap: 5px; }
+.modo__switch {
+  display: inline-flex; align-self: flex-start;
+  padding: 2px;
+  background: var(--surface-soft);
+  border-radius: 9px;
+}
+.modo__opt {
+  border: none; background: transparent;
+  padding: 5px 11px; border-radius: 7px;
+  font-size: 0.75rem; font-weight: 700; color: var(--muted);
+  cursor: pointer; font-family: inherit;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.modo__opt:hover { color: var(--text); }
+.modo__opt--on { background: var(--surface); color: var(--brand); box-shadow: var(--shadow-xs); }
+.modo__hint { margin: 0; font-size: 0.74rem; line-height: 1.45; color: var(--subtle); }
+
+/* ── Cantidad ──────────────────────────────────────────── */
+.qty { display: flex; align-items: center; gap: 10px; }
+.qty__label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.qty__ctrl {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--border); border-radius: 9px;
+  overflow: hidden; background: var(--bg);
+}
+.qty__ctrl button {
+  width: 28px; height: 28px;
+  border: none; background: transparent;
+  color: var(--brand); font-size: 1rem; font-weight: 700; line-height: 1;
+  cursor: pointer; transition: background 0.18s;
+}
+.qty__ctrl button:hover:not(:disabled) { background: var(--brand-light); }
+.qty__ctrl button:disabled { color: var(--subtle); cursor: not-allowed; }
+.qty__ctrl input {
+  width: 46px; height: 28px;
+  border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  background: transparent; text-align: center;
+  font-size: 0.83rem; font-weight: 700; color: var(--text); font-family: inherit;
+  -moz-appearance: textfield; appearance: textfield;
+}
+.qty__ctrl input::-webkit-outer-spin-button,
+.qty__ctrl input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty__ctrl input:focus { outline: none; background: var(--brand-light); }
+
+/* ── Precio ────────────────────────────────────────────── */
+.precio { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.precio__calc { font-size: 0.75rem; color: var(--subtle); }
+.precio__total { margin-left: auto; font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+
+.nota {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 16px 0 0; padding: 12px 14px;
+  background: var(--info-bg); border-radius: var(--r-sm);
+  font-size: 0.78rem; line-height: 1.5; color: var(--text);
+}
+.nota svg { flex-shrink: 0; margin-top: 1px; color: var(--info); }
+
+/* ── Pie ───────────────────────────────────────────────── */
+.foot {
+  padding: 18px 22px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.resumen { margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.resumen > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.resumen dt { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.resumen dd { margin: 0; font-size: 0.88rem; font-weight: 600; color: var(--text); }
+.resumen__nota dt, .resumen__nota dd { font-size: 0.76rem; color: var(--subtle); font-weight: 500; }
+.resumen__total {
+  padding-top: 10px; margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+.resumen__total dt { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.resumen__total dd { font-size: 1.3rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; border: none; border-radius: 11px;
+  font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.2s, transform 0.2s var(--ease-apple), box-shadow 0.2s, opacity 0.2s;
+}
+.btn--solid { background: var(--brand); color: #fff; box-shadow: 0 6px 18px rgba(249, 115, 22, 0.28); }
+.btn--solid:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); }
+.btn--solid:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn--block { width: 100%; padding: 14px 20px; font-size: 0.97rem; }
+
+.foot__links {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 24px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 12px; margin-top: 13px; flex-wrap: wrap;
 }
-.cart-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1f2937; }
-.btn-close {
-  background: rgba(0, 0, 0, 0.04); border: none; width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4b5563;
-  transition: all 0.2s ease;
+.linkish {
+  background: none; border: none; padding: 0;
+  font-size: 0.81rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; font-family: inherit;
 }
-.btn-close:hover { background: rgba(0, 0, 0, 0.08); transform: rotate(90deg); }
+.linkish:hover { color: var(--text); text-decoration: underline; }
+.seguro { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; color: var(--subtle); }
 
-.cart-body {
-  flex: 1; overflow-y: auto; padding: 24px;
+/* ── Responsivo ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .drawer { max-width: 100%; }
+  .head, .body, .foot { padding-left: 16px; padding-right: 16px; }
+  .item__thumb { width: 52px; height: 52px; }
 }
-.empty-cart {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
-  color: #6b7280; text-align: center; padding: 20px;
-}
-.empty-icon {
-  background: rgba(249, 115, 22, 0.1); color: #f97316; width: 80px; height: 80px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
-}
-.empty-cart p { margin: 0; font-weight: 600; font-size: 1.1rem; color: #374151; }
-.empty-cart span { font-size: 0.9rem; margin-top: 4px; }
 
-.cart-items { display: flex; flex-direction: column; gap: 16px; }
-.cart-item {
-  display: flex; gap: 16px; align-items: center; background: rgba(255, 255, 255, 0.6);
-  padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); transition: transform 0.2s, box-shadow 0.2s; position: relative;
+@media (prefers-reduced-motion: reduce) {
+  .cart-enter-active, .cart-leave-active,
+  .cart-enter-active .drawer, .cart-leave-active .drawer,
+  .row-enter-active, .row-leave-active,
+  .btn, .item { transition: none; }
+  .btn--solid:hover:not(:disabled) { transform: none; }
 }
-.cart-item:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06); }
-.item-img {
-  width: 72px; height: 72px; border-radius: 12px; background-size: cover; background-position: center;
-  background-color: rgba(0, 0, 0, 0.03); display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
-}
-.fallback-icon { color: #9ca3af; opacity: 0.5; }
-
-.item-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.item-info h4 { margin: 0 0 4px 0; font-size: 1rem; color: #1f2937; line-height: 1.3; }
-.item-type { font-size: 0.8rem; color: #f97316; font-weight: 600; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 6px;}
-.qty-badge { background: #f97316; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
-.item-price { margin: 0; font-weight: 700; color: #111827; font-size: 1.05rem; }
-
-.btn-remove {
-  background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 32px; height: 32px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-  transition: all 0.2s; flex-shrink: 0;
-}
-.btn-remove:hover { background: #ef4444; color: #fff; transform: scale(1.1); }
-
-.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
-.list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
-
-.cart-footer {
-  padding: 24px; border-top: 1px solid rgba(0, 0, 0, 0.05);
-  background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px);
-}
-.cart-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.cart-total span { color: #6b7280; font-size: 1.1rem; }
-.cart-total strong { font-size: 1.6rem; color: #111827; font-weight: 800; }
-
-.btn-checkout {
-  width: 100%; padding: 16px; border: none; border-radius: 12px;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer;
-  transition: all 0.3s; position: relative; overflow: hidden;
-  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);
-}
-.btn-checkout:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(249, 115, 22, 0.35); }
-.btn-checkout:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
-.btn-content { display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; z-index: 2; }
 </style>

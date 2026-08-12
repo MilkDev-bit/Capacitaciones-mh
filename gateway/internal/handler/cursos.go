@@ -7,14 +7,14 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"Prueba-Go/gateway/internal/clients"
+	"Prueba-Go/gateway/internal/config"
 	"Prueba-Go/gateway/internal/middleware"
 	cursospb "Prueba-Go/gen/cursos"
 	leccionespb "Prueba-Go/gen/lecciones"
-	usuariospb "Prueba-Go/gen/usuarios"
+	"Prueba-Go/pkg/mailer"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v78"
@@ -42,12 +42,19 @@ func toASCII(s string) string {
 }
 
 // CursosHandler traduce peticiones HTTP ↔ RPC del cursos service.
+//
+// Es también el punto donde se envía el correo transaccional de compras: el
+// Gateway es el único componente que conoce la sesión de Stripe completa y el
+// perfil del comprador, así que centralizar aquí el envío evita duplicar
+// credenciales de Resend en cada microservicio.
 type CursosHandler struct {
-	c *clients.Clients
+	c    *clients.Clients
+	cfg  *config.Config
+	mail *mailer.Client
 }
 
-func NewCursosHandler(c *clients.Clients) *CursosHandler {
-	return &CursosHandler{c: c}
+func NewCursosHandler(c *clients.Clients, cfg *config.Config, mail *mailer.Client) *CursosHandler {
+	return &CursosHandler{c: c, cfg: cfg, mail: mail}
 }
 
 // func genMetadata(ctx *gin.Context) context.Context
@@ -79,7 +86,6 @@ func cursoToJSON(resp *cursospb.CursoResponse) gin.H {
 		"created_at":            resp.CreatedAt,
 		"precio":                resp.Precio,
 		"scheduled_at":          resp.ScheduledAt,
-		"videocall_status":      resp.VideocallStatus,
 		"duration":              resp.Duration,
 		"total_lecciones":       resp.TotalLecciones,
 		"lecciones_completadas": resp.LeccionesCompletadas,
@@ -250,7 +256,6 @@ func (h *CursosHandler) UnirseConLicencia(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Inscrito con licencia correctamente"})
 }
 
-
 // GET /api/usuario/licencias-compradas
 func (h *CursosHandler) ListLicenciasCompradas(ctx *gin.Context) {
 	resp, err := h.c.Cursos.ListLicenciasCompradas(genMetadata(ctx), &cursospb.UserRequest{
@@ -270,7 +275,6 @@ func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 		LicenciaID string `json:"licencia_id"`
 		SuccessUrl string `json:"success_url" binding:"required"`
 		CancelUrl  string `json:"cancel_url" binding:"required"`
-		ScheduleID string `json:"schedule_id"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -282,7 +286,6 @@ func (h *CursosHandler) CreateCheckoutSession(ctx *gin.Context) {
 		LicenciaId: req.LicenciaID,
 		SuccessUrl: req.SuccessUrl,
 		CancelUrl:  req.CancelUrl,
-		ScheduleId: req.ScheduleID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -298,7 +301,6 @@ func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx *gin.Context) {
 		Cantidad   int32  `json:"cantidad" binding:"required"`
 		SuccessUrl string `json:"success_url" binding:"required"`
 		CancelUrl  string `json:"cancel_url" binding:"required"`
-		ScheduleID string `json:"schedule_id"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -310,7 +312,6 @@ func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx *gin.Context) {
 		Cantidad:   req.Cantidad,
 		SuccessUrl: req.SuccessUrl,
 		CancelUrl:  req.CancelUrl,
-		ScheduleId: req.ScheduleID,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -323,10 +324,9 @@ func (h *CursosHandler) CreateCheckoutSessionB2BDirect(ctx *gin.Context) {
 func (h *CursosHandler) CreateCheckoutSessionCart(ctx *gin.Context) {
 	var req struct {
 		Items []struct {
-			CursoID    string `json:"curso_id"`
-			Cantidad   int32  `json:"cantidad"`
-			Type       string `json:"type"`
-			ScheduleID string `json:"schedule_id"`
+			CursoID  string `json:"curso_id"`
+			Cantidad int32  `json:"cantidad"`
+			Type     string `json:"type"`
 		} `json:"items" binding:"required"`
 		SuccessUrl string `json:"success_url" binding:"required"`
 		CancelUrl  string `json:"cancel_url" binding:"required"`
@@ -339,10 +339,9 @@ func (h *CursosHandler) CreateCheckoutSessionCart(ctx *gin.Context) {
 	var protoItems []*cursospb.CartItem
 	for _, it := range req.Items {
 		protoItems = append(protoItems, &cursospb.CartItem{
-			CursoId:    it.CursoID,
-			Cantidad:   it.Cantidad,
-			Type:       it.Type,
-			ScheduleId: it.ScheduleID,
+			CursoId:  it.CursoID,
+			Cantidad: it.Cantidad,
+			Type:     it.Type,
 		})
 	}
 
@@ -360,6 +359,9 @@ func (h *CursosHandler) CreateCheckoutSessionCart(ctx *gin.Context) {
 }
 
 // POST /api/webhooks/stripe
+//
+// Camino autoritativo: Stripe confirma el pago aunque el usuario cierre la
+// pestaña al volver del checkout.
 func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
@@ -377,109 +379,142 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 		return
 	}
 
-	if event.Type == "checkout.session.completed" {
-		var session stripe.CheckoutSession
-		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+	// Deduplicación por event.ID ANTES de procesar. Stripe entrega
+	// al-menos-una-vez y reintenta ante cualquier respuesta que no sea 2xx: sin
+	// esto, un reenvío repetiría el correo de confirmación.
+	dedupe, errDedupe := h.c.Cursos.RegistrarEventoStripe(c.Request.Context(), &cursospb.EventoStripeRequest{
+		EventId: event.ID,
+		Tipo:    string(event.Type),
+	})
+	if errDedupe != nil {
+		// Si no se puede deduplicar, es preferible fallar y dejar que Stripe
+		// reintente antes que procesar a ciegas y arriesgar un doble efecto.
+		slog.Error("webhook: fallo al registrar el evento", "error", errDedupe, "event_id", event.ID)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no se pudo registrar el evento"})
+		return
+	}
+	if !dedupe.PrimeraVez {
+		slog.Info("webhook: evento ya procesado, se descarta", "event_id", event.ID, "tipo", event.Type)
+		c.Status(http.StatusOK)
+		return
+	}
+
+	switch event.Type {
+	case "checkout.session.completed":
+		var sess stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
 			return
 		}
 
-		ref := session.ClientReferenceID
-		parts := strings.Split(ref, "||")
-		if len(parts) >= 3 && parts[0] == "curso" {
-			// Es una compra de curso individual (B2C)
-			// Formato: curso||userID||cursoID[||scheduleID]
-			userID := parts[1]
-			capID := parts[2]
-			scheduleID := ""
-			if len(parts) == 4 {
-				scheduleID = parts[3]
-			}
-			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
-			_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
-				UserId:         userID,
-				CapacitacionId: capID,
-				LicenciaId:     "", // no hay licencia, es directo
-				ScheduleId:     scheduleID,
-			})
-		} else if len(parts) == 3 && parts[0] == "licencia" {
-			// Es una compra de licencia corporativa (B2B)
-			// Formato: licencia||userID||licenciaID
-			userID := parts[1]
-			licID := parts[2]
-			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
-			_, _ = h.c.Cursos.WebhookComprarLicencia(grpcCtx, &cursospb.WebhookComprarLicenciaRequest{
-				UserId:     userID,
-				LicenciaId: licID,
-			})
-		} else if len(parts) >= 4 && parts[0] == "b2b_direct" {
-			// Es una compra de licencia corporativa en autoservicio (B2B Direct)
-			// Formato: b2b_direct||userID||cursoID||cantidad[||scheduleID]
-			userID := parts[1]
-			cursoID := parts[2]
-			cantidadStr := parts[3]
-			cantidad, _ := strconv.Atoi(cantidadStr)
-			scheduleID := ""
-			if len(parts) == 5 {
-				scheduleID = parts[4]
-			}
-			grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID))
-			_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
-				UserId:     userID,
-				CursoId:    cursoID,
-				Cantidad:   int32(cantidad),
-				ScheduleId: scheduleID,
-			})
-		} else if len(parts) >= 2 && parts[0] == "cart" {
-			userID := parts[1]
-			for k, v := range session.Metadata {
-				if strings.HasPrefix(k, "item_") {
-					itemParts := strings.Split(v, "||")
-					if len(itemParts) >= 2 {
-						if itemParts[0] == "b2c" {
-							cursoID := itemParts[1]
-							scheduleID := ""
-							if len(itemParts) == 3 {
-								scheduleID = itemParts[2]
-							}
-							grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID+"_"+k))
-							_, err := h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
-								UserId:         userID,
-								CapacitacionId: cursoID,
-								ScheduleId:     scheduleID,
-							})
-							if err != nil {
-								slog.Error("WebhookEnroll failed in webhook", "error", err, "item", v)
-							}
-						} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
-							cursoID := itemParts[1]
-							cantidadStr := itemParts[2]
-							cantidad, _ := strconv.Atoi(cantidadStr)
-							scheduleID := ""
-							if len(itemParts) == 4 {
-								scheduleID = itemParts[3]
-							}
-							grpcCtx := metadata.NewOutgoingContext(c.Request.Context(), metadata.Pairs("x-stripe-session-id", session.ID+"_"+k))
-							_, err := h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
-								UserId:     userID,
-								CursoId:    cursoID,
-								Cantidad:   int32(cantidad),
-								ScheduleId: scheduleID,
-							})
-							if err != nil {
-								slog.Error("WebhookComprarB2BDirect failed in webhook", "error", err, "item", v)
-							}
-						}
-					}
-				}
-			}
+		h.cerrarOrden(c.Request.Context(), sess.ID, "pagada", "", intentIDDe(&sess))
+
+		// Se responde 200 a Stripe pase lo que pase con el correo: un fallo de
+		// Resend no debe provocar reintentos del webhook ni altas duplicadas.
+		res := h.procesarSesion(c.Request.Context(), &sess, "")
+
+		h.cerrarOrden(c.Request.Context(), sess.ID, "cumplida", "", "")
+
+		nombre, email := datosComprador(&sess)
+		h.notificarCompra(&sess, res, nombre, email)
+
+	case "checkout.session.expired":
+		var sess stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
 		}
+		// El usuario abandonó el pago. La orden queda 'fallida' para que la
+		// conciliación distinga el abandono de un cobro perdido.
+		h.cerrarOrden(c.Request.Context(), sess.ID, "fallida", "sesión expirada sin pago", "")
+
+	case "customer.subscription.created",
+		"customer.subscription.updated",
+		"customer.subscription.deleted":
+		var sub stripe.Subscription
+		if err := json.Unmarshal(event.Data.Raw, &sub); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		h.sincronizarDesdeStripe(c.Request.Context(), &sub)
+
+	case "invoice.paid":
+		var inv stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &inv); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		h.registrarFactura(c.Request.Context(), &inv, "pagada")
+
+	case "invoice.payment_failed":
+		var inv stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &inv); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		// El acceso NO se corta aquí: Stripe moverá la suscripción a past_due
+		// y mandará customer.subscription.updated. El dunning sigue corriendo.
+		h.registrarFactura(c.Request.Context(), &inv, "fallida")
+		slog.Warn("cobro recurrente fallido",
+			"invoice", inv.ID, "intento", inv.AttemptCount, "total", inv.Total)
+
+	case "charge.refunded":
+		var ch stripe.Charge
+		if err := json.Unmarshal(event.Data.Raw, &ch); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		slog.Info("webhook: reembolso recibido", "charge_id", ch.ID, "payment_intent", ch.PaymentIntent)
 	}
+
 	c.Status(http.StatusOK)
 }
 
-// POST /api/verify-checkout-session  ← llamado desde el frontend al volver de Stripe
-// Permite crear la licencia sin depender del webhook cuando el usuario regresa del pago.
+// cerrarOrden aplica una transición de estado sin abortar el webhook si falla:
+// perder el registro de la orden es malo, pero peor sería que Stripe reintentara
+// y volviéramos a otorgar los accesos.
+func (h *CursosHandler) cerrarOrden(ctx context.Context, sessionID, estado, motivo, paymentIntent string) {
+	if sessionID == "" {
+		return
+	}
+	if _, err := h.c.Cursos.ActualizarEstadoOrden(ctx, &cursospb.ActualizarEstadoOrdenRequest{
+		StripeSessionId:     sessionID,
+		Estado:              estado,
+		MotivoFallo:         motivo,
+		StripePaymentIntent: paymentIntent,
+	}); err != nil {
+		slog.Error("no se pudo actualizar el estado de la orden",
+			"session_id", sessionID, "estado", estado, "error", err)
+	}
+}
+
+// intentIDDe extrae el PaymentIntent de la sesión, que es lo que se necesita
+// para conciliar contra los cobros de Stripe.
+func intentIDDe(sess *stripe.CheckoutSession) string {
+	if sess.PaymentIntent != nil {
+		return sess.PaymentIntent.ID
+	}
+	return ""
+}
+
+// datosComprador extrae nombre y correo de la sesión de Stripe.
+// En el webhook no hay JWT, así que es la única fuente disponible.
+func datosComprador(sess *stripe.CheckoutSession) (nombre, email string) {
+	if sess.CustomerDetails != nil {
+		nombre = sess.CustomerDetails.Name
+		email = sess.CustomerDetails.Email
+	}
+	if email == "" {
+		email = sess.CustomerEmail
+	}
+	return nombre, email
+}
+
+// POST /api/verify-checkout-session  ← llamado desde la pantalla de éxito
+//
+// Respaldo del webhook: permite completar el alta en cuanto el usuario vuelve
+// de Stripe, sin esperar a que llegue el evento. Devuelve el resumen de la
+// compra para pintar la confirmación y saber a dónde redirigir.
 func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 	var req struct {
 		SessionID string `json:"session_id" binding:"required"`
@@ -507,84 +542,32 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 		return
 	}
 
-	ref := sess.ClientReferenceID
-	parts := strings.Split(ref, "||")
-
+	// El user_id sale del JWT, no de la referencia de Stripe: así una sesión
+	// ajena no puede usarse para inscribir a otra cuenta.
 	userID := ctx.GetString(middleware.CtxUserID)
-
-	// Pasar el session_id via metadata para que el servicio lo pueda guardar en la BD
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs(
-		"x-stripe-session-id", req.SessionID,
 		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
 		"x-user-name", toASCII(ctx.GetString(middleware.CtxUserName)),
 	))
 
-	if len(parts) == 3 && parts[0] == "curso" {
-		capID := parts[2]
-		_, _ = h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
-			UserId:         userID,
-			CapacitacionId: capID,
-			LicenciaId:     "",
-		})
-	} else if len(parts) == 3 && parts[0] == "licencia" {
-		licID := parts[2]
-		_, _ = h.c.Cursos.WebhookComprarLicencia(grpcCtx, &cursospb.WebhookComprarLicenciaRequest{
-			UserId:     userID,
-			LicenciaId: licID,
-		})
-	} else if len(parts) == 4 && parts[0] == "b2b_direct" {
-		cursoID := parts[2]
-		cantidad, _ := strconv.Atoi(parts[3])
-		_, _ = h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
-			UserId:   userID,
-			CursoId:  cursoID,
-			Cantidad: int32(cantidad),
-		})
-	} else if len(parts) >= 2 && parts[0] == "cart" {
-		for k, v := range sess.Metadata {
-			if strings.HasPrefix(k, "item_") {
-				itemParts := strings.Split(v, "||")
-				if len(itemParts) >= 2 {
-					if itemParts[0] == "b2c" {
-						cursoID := itemParts[1]
-						scheduleID := ""
-						if len(itemParts) == 3 {
-							scheduleID = itemParts[2]
-						}
-						grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs("x-stripe-session-id", sess.ID+"_"+k))
-						_, err := h.c.Cursos.WebhookEnroll(grpcCtx, &cursospb.WebhookEnrollRequest{
-							UserId:         userID,
-							CapacitacionId: cursoID,
-							ScheduleId:     scheduleID,
-						})
-						if err != nil {
-							slog.Error("WebhookEnroll failed in verify", "error", err, "item", v)
-						}
-					} else if itemParts[0] == "b2b_direct" && len(itemParts) >= 3 {
-						cursoID := itemParts[1]
-						cantidadStr := itemParts[2]
-						cantidad, _ := strconv.Atoi(cantidadStr)
-						scheduleID := ""
-						if len(itemParts) == 4 {
-							scheduleID = itemParts[3]
-						}
-						grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), metadata.Pairs("x-stripe-session-id", sess.ID+"_"+k))
-						_, err := h.c.Cursos.WebhookComprarB2BDirect(grpcCtx, &cursospb.WebhookComprarB2BDirectRequest{
-							UserId:     userID,
-							CursoId:    cursoID,
-							Cantidad:   int32(cantidad),
-							ScheduleId: scheduleID,
-						})
-						if err != nil {
-							slog.Error("WebhookComprarB2BDirect failed in verify: " + err.Error(), "item", v)
-						}
-					}
-				}
-			}
-		}
-	}
+	h.cerrarOrden(ctx.Request.Context(), sess.ID, "pagada", "", intentIDDe(sess))
+	res := h.procesarSesion(grpcCtx, sess, userID)
+	h.cerrarOrden(ctx.Request.Context(), sess.ID, "cumplida", "", "")
 
-	ctx.JSON(http.StatusOK, gin.H{"ok": true})
+	nombre := ctx.GetString(middleware.CtxUserName)
+	email := ctx.GetString(middleware.CtxUserEmail)
+	if email == "" {
+		nombre, email = datosComprador(sess)
+	}
+	h.notificarCompra(sess, res, nombre, email)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"ok":       true,
+		"items":    res.Items,
+		"total":    res.Total,
+		"redirect": res.Redirect,
+		"etiqueta": res.Etiqueta,
+	})
 }
 
 // GET /api/licencias/:id/invoice  — devuelve la URL del PDF de la factura de Stripe
@@ -613,12 +596,12 @@ func (h *CursosHandler) GetLicenciaInvoicePDF(ctx *gin.Context) {
 	}
 
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-	
+
 	cleanSessionID := sessionID
 	if idx := strings.Index(cleanSessionID, "_item_"); idx != -1 {
 		cleanSessionID = cleanSessionID[:idx]
 	}
-	
+
 	params := &stripe.CheckoutSessionParams{}
 	params.AddExpand("invoice")
 	s, err := stripeSession.Get(cleanSessionID, params)
@@ -636,18 +619,6 @@ func (h *CursosHandler) GetLicenciaInvoicePDF(ctx *gin.Context) {
 		"invoice_pdf": s.Invoice.InvoicePDF,
 		"invoice_url": s.Invoice.HostedInvoiceURL,
 	})
-}
-
-// GET /api/licencias/:id/tickets
-func (h *CursosHandler) GetLicenciaTickets(ctx *gin.Context) {
-	licenciaID := ctx.Param("id")
-
-	resp, err := h.c.Cursos.ListLicenciaTickets(genMetadata(ctx), &cursospb.LicenciaIDRequest{Id: licenciaID})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, resp.Tickets)
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────
@@ -945,14 +916,14 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 	var body struct {
 		Title          string `json:"title"`
 		Description    string `json:"description"`
-		Type           string  `json:"type"`
-		Content        string  `json:"content"`
-		IsPublic       bool    `json:"is_public"`
-		WelcomeMessage string  `json:"welcome_message"`
-		ThumbnailURL   string  `json:"thumbnail_url"`
-		Color          string  `json:"color"`
-		Duration       int32   `json:"duration"`
-		Dc3Enabled     *bool   `json:"dc3_enabled"`
+		Type           string `json:"type"`
+		Content        string `json:"content"`
+		IsPublic       bool   `json:"is_public"`
+		WelcomeMessage string `json:"welcome_message"`
+		ThumbnailURL   string `json:"thumbnail_url"`
+		Color          string `json:"color"`
+		Duration       int32  `json:"duration"`
+		Dc3Enabled     *bool  `json:"dc3_enabled"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1058,211 +1029,6 @@ func (h *CursosHandler) AdminDesAsignar(ctx *gin.Context) {
 		return
 	}
 	ctx.Status(http.StatusNoContent)
-}
-
-// ── Videocalls ────────────────────────────────────────────────────────────────
-
-func (h *CursosHandler) JoinVideocall(ctx *gin.Context) {
-	var body struct {
-		Codigo string `json:"codigo" binding:"required"`
-	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	res, err := h.c.Cursos.JoinVideocall(ctx.Request.Context(), &cursospb.JoinVideocallRequest{
-		Codigo: body.Codigo,
-		UserId: ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, res)
-}
-
-func (h *CursosHandler) LeaveVideocall(ctx *gin.Context) {
-	var body struct {
-		Codigo string `json:"codigo" binding:"required"`
-	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	_, err := h.c.Cursos.LeaveVideocall(ctx.Request.Context(), &cursospb.LeaveVideocallRequest{
-		Codigo: body.Codigo,
-		UserId: ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Has salido de la videollamada"})
-}
-
-// GET /api/instructor/capacitaciones/:id/current-room
-func (h *CursosHandler) InstructorGetCurrentRoom(ctx *gin.Context) {
-	// Llamamos al servicio para encontrar la sala activa
-	resp, err := h.c.Cursos.InstructorGetCurrentRoom(ctx.Request.Context(), &cursospb.CursoIDRequest{
-		CursoId: ctx.Param("id"),
-		UserId:  ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, resp)
-}
-
-// GET /api/cursos/:id/videocall/ticket
-func (h *CursosHandler) GetMyVideocallTicket(ctx *gin.Context) {
-	resp, err := h.c.Cursos.GetMyVideocallTicket(ctx.Request.Context(), &cursospb.CursoIDRequest{
-		CursoId: ctx.Param("id"),
-		UserId:  ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, resp)
-}
-
-// POST /api/instructor/videocalls/:id/end
-func (h *CursosHandler) EndVideocall(ctx *gin.Context) {
-	scheduleID := ctx.Query("schedule_id")
-	cursoID := ctx.Param("id")
-	_, err := h.c.Cursos.EndVideocall(ctx.Request.Context(), &cursospb.CursoIDRequest{
-		CursoId:    cursoID,
-		UserId:     ctx.GetString(middleware.CtxUserID),
-		ScheduleId: scheduleID,
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-
-	// Notificar asíncronamente al representante legal (comprador de las licencias) con el enlace DC-3
-	go func(cId string) {
-		bgCtx := context.Background()
-		curso, errC := h.c.Cursos.GetCurso(bgCtx, &cursospb.CursoIDRequest{CursoId: cId})
-		if errC != nil || curso == nil {
-			slog.Error("EndVideocall email: error obteniendo curso", "error", errC)
-			return
-		}
-
-		licsResp, errL := h.c.Cursos.ListLicencias(bgCtx, &cursospb.ListLicenciasRequest{
-			CapacitacionId: cId,
-		})
-		if errL != nil || licsResp == nil {
-			slog.Error("EndVideocall email: error listando licencias", "error", errL)
-			return
-		}
-
-		notified := make(map[string]bool)
-		for _, lic := range licsResp.Licencias {
-			if lic.CompradorId != "" && !notified[lic.CompradorId] {
-				notified[lic.CompradorId] = true
-				userPerfil, errU := h.c.Usuarios.GetPublicPerfil(bgCtx, &usuariospb.UserIDRequest{
-					UserId: lic.CompradorId,
-				})
-				if errU == nil && userPerfil != nil && userPerfil.Email != "" {
-					slog.Info("Enviando correo DC-3 a representante", "email", userPerfil.Email, "curso", curso.Title)
-					if errSend := sendDC3RepresentativeEmail(userPerfil.Email, userPerfil.Name, curso.Title, int(curso.Duration)); errSend != nil {
-						slog.Error("Error enviando correo DC-3", "email", userPerfil.Email, "error", errSend)
-					}
-				} else {
-					slog.Warn("No se pudo obtener perfil o email para comprador_id", "comprador_id", lic.CompradorId, "error", errU)
-				}
-			}
-		}
-	}(cursoID)
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Videollamada finalizada para todos"})
-}
-
-// ── Horarios Instructores (Admin) ─────────────────────────────────────────────
-
-func (h *CursosHandler) AdminListSchedules(ctx *gin.Context) {
-	// Se puede pasar instructor_id opcional por query parameter
-	instructorID := ctx.Query("instructor_id")
-	
-	res, err := h.c.Cursos.AdminListSchedules(ctx.Request.Context(), &cursospb.UserRequest{
-		UserId: instructorID,
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, res.Schedules)
-}
-
-func (h *CursosHandler) AdminCreateSchedule(ctx *gin.Context) {
-	var body struct {
-		InstructorId string `json:"instructor_id" binding:"required"`
-		StartTime    string `json:"start_time" binding:"required"`
-		EndTime      string `json:"end_time" binding:"required"`
-	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	res, err := h.c.Cursos.AdminCreateSchedule(ctx.Request.Context(), &cursospb.CreateScheduleRequest{
-		InstructorId: body.InstructorId,
-		StartTime:    body.StartTime,
-		EndTime:      body.EndTime,
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusCreated, res)
-}
-
-func (h *CursosHandler) AdminUpdateSchedule(ctx *gin.Context) {
-	var body struct {
-		StartTime string `json:"start_time"`
-		EndTime   string `json:"end_time"`
-		Status    string `json:"status"`
-	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	res, err := h.c.Cursos.AdminUpdateSchedule(ctx.Request.Context(), &cursospb.UpdateScheduleRequest{
-		ScheduleId: ctx.Param("id"),
-		StartTime:  body.StartTime,
-		EndTime:    body.EndTime,
-		Status:     body.Status,
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, res)
-}
-
-func (h *CursosHandler) AdminDeleteSchedule(ctx *gin.Context) {
-	_, err := h.c.Cursos.AdminDeleteSchedule(ctx.Request.Context(), &cursospb.ScheduleIDRequest{
-		ScheduleId: ctx.Param("id"),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.Status(http.StatusNoContent)
-}
-
-// GET /api/schedules/public/:instructor_id
-func (h *CursosHandler) GetPublicSchedules(ctx *gin.Context) {
-	instructorID := ctx.Param("instructor_id")
-	resp, err := h.c.Cursos.ListPublicSchedules(ctx.Request.Context(), &cursospb.ListPublicSchedulesRequest{
-		InstructorId: instructorID,
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, resp.Schedules)
 }
 
 // ── Shared error helper ───────────────────────────────────────────────────────

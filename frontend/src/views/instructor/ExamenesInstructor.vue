@@ -306,7 +306,7 @@ async function eliminar(id: string) {
           </TransitionGroup>
 
           <div v-if="form.preguntas.length === 0" class="empty-state" style="padding:24px;background:var(--bg);border-radius:var(--r);border:1px dashed var(--border)">
-            <span class="empty-icon">❓</span>
+            <span class="empty-icon"></span>
             <p>Sin preguntas aún. Haz clic en "Agregar pregunta" para comenzar.</p>
           </div>
 

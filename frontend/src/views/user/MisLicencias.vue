@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { toast } from '../../utils/toast'
@@ -51,29 +51,14 @@ onMounted(async () => {
   await fetchLicencias()
 })
 const selectedLic = ref<any>(null)
-const selectedTickets = ref<any[]>([])
-const loadingTickets = ref(false)
 const invoiceLoading = ref(false)
 
-async function openDetails(lic: any) {
+function openDetails(lic: any) {
   selectedLic.value = lic
-  selectedTickets.value = []
-  loadingTickets.value = true
-  try {
-    const res = await api.get(`/licencias/${lic.id}/tickets`)
-    selectedTickets.value = res.data || []
-  } catch {
-    selectedTickets.value = []
-  } finally {
-    loadingTickets.value = false
-  }
 }
-
-const baseOrigin = ref(window.location.origin)
 
 function closeModal() {
   selectedLic.value = null
-  selectedTickets.value = []
 }
 
 async function downloadInvoice(lic: any) {
@@ -93,18 +78,116 @@ async function downloadInvoice(lic: any) {
   }
 }
 
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    toast.success('Copiado al portapapeles')
-  } catch (err) {
-    toast.error('Error al copiar')
-  }
-}
-
 async function copyCode(codigo: string) {
   navigator.clipboard.writeText(codigo)
   toast.success('Código copiado al portapapeles')
+}
+
+// ── Reparto de accesos por correo ──────────────────────────────────────────
+// El comprador captura los correos de su equipo y cada persona recibe su
+// acceso individual, en lugar de tener que copiar códigos a mano desde aquí.
+
+interface FilaParticipante { nombre: string; email: string }
+
+const envioLic = ref<any>(null)
+const participantes = ref<FilaParticipante[]>([{ nombre: '', email: '' }])
+const enviando = ref(false)
+const invitaciones = ref<any[]>([])
+const loadingInvitaciones = ref(false)
+const pegadoMasivo = ref('')
+
+const lugaresLicencia = computed(() =>
+  envioLic.value?.capacidad_maxima > 0 ? envioLic.value.capacidad_maxima : Infinity
+)
+const yaEnviados = computed(() => invitaciones.value.length)
+const disponibles = computed(() =>
+  lugaresLicencia.value === Infinity ? Infinity : Math.max(0, lugaresLicencia.value - yaEnviados.value)
+)
+const correosValidos = computed(() =>
+  participantes.value.filter((p) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()))
+)
+const excedeCupo = computed(() => correosValidos.value.length > disponibles.value)
+
+async function abrirEnvio(lic: any) {
+  envioLic.value = lic
+  participantes.value = [{ nombre: '', email: '' }]
+  pegadoMasivo.value = ''
+  await cargarInvitaciones(lic.id)
+}
+
+async function cargarInvitaciones(licenciaId: string) {
+  loadingInvitaciones.value = true
+  try {
+    const res = await api.get(`/licencias/${licenciaId}/invitaciones`)
+    invitaciones.value = res.data || []
+  } catch {
+    invitaciones.value = []
+  } finally {
+    loadingInvitaciones.value = false
+  }
+}
+
+function cerrarEnvio() {
+  envioLic.value = null
+  participantes.value = [{ nombre: '', email: '' }]
+  invitaciones.value = []
+}
+
+function agregarFila() {
+  participantes.value.push({ nombre: '', email: '' })
+}
+
+function quitarFila(i: number) {
+  participantes.value.splice(i, 1)
+  if (participantes.value.length === 0) agregarFila()
+}
+
+/** Convierte una lista pegada (uno por línea, o "Nombre <correo>") en filas. */
+function procesarPegado() {
+  const lineas = pegadoMasivo.value.split(/[\n,;]+/).map((l) => l.trim()).filter(Boolean)
+  if (!lineas.length) return
+
+  const nuevas: FilaParticipante[] = []
+  for (const linea of lineas) {
+    const match = linea.match(/^(.*?)[<\s]*([^\s<>]+@[^\s<>]+)>?$/)
+    if (!match?.[2]) continue
+    nuevas.push({ nombre: (match[1] ?? '').replace(/["']/g, '').trim(), email: match[2].trim() })
+  }
+  if (!nuevas.length) {
+    toast.error('No encontramos correos válidos en el texto pegado')
+    return
+  }
+  // Se conservan las filas que el usuario ya había llenado a mano.
+  const existentes = participantes.value.filter((p) => p.email.trim())
+  participantes.value = [...existentes, ...nuevas]
+  pegadoMasivo.value = ''
+  toast.success(`${nuevas.length} participante(s) agregado(s)`)
+}
+
+async function enviarAccesos() {
+  if (!correosValidos.value.length) {
+    toast.error('Captura al menos un correo válido')
+    return
+  }
+  if (excedeCupo.value) {
+    toast.error(`Solo quedan ${disponibles.value} accesos disponibles en esta licencia`)
+    return
+  }
+
+  enviando.value = true
+  try {
+    const res = await api.post(`/licencias/${envioLic.value.id}/enviar-accesos`, {
+      participantes: correosValidos.value.map((p) => ({ nombre: p.nombre.trim(), email: p.email.trim() })),
+    })
+    toast.success(`Enviamos ${res.data.enviados} acceso(s) por correo`)
+    participantes.value = [{ nombre: '', email: '' }]
+    await cargarInvitaciones(envioLic.value.id)
+    await fetchLicencias()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No pudimos enviar los accesos')
+  } finally {
+    enviando.value = false
+  }
 }
 
 function tramitarDC3Licencia(lic: any) {
@@ -161,11 +244,7 @@ function tramitarDC3Licencia(lic: any) {
             </div>
           </div>
 
-          <div class="code-section" v-if="lic.curso_type === 'videocall'">
-            <p class="code-instruction">Esta es una capacitación por <strong>Videollamada</strong> ({{ lic.curso_duracion }} min). En lugar de un solo código, se generaron códigos únicos para cada participante.</p>
-            <p class="code-instruction" style="margin-top: 8px;">Abre los detalles para ver y copiar los códigos individuales.</p>
-          </div>
-          <div class="code-section" v-else>
+          <div class="code-section">
             <p class="code-instruction">Envía este código a tu equipo para que puedan acceder al curso:</p>
             <div class="code-box" @click="copyCode(lic.codigo_acceso)">
               {{ lic.codigo_acceso }}
@@ -173,7 +252,16 @@ function tramitarDC3Licencia(lic: any) {
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <!-- Acción principal: repartir los accesos por correo -->
+          <button class="btn-enviar" @click="abrirEnvio(lic)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            Enviar accesos por correo
+          </button>
+          <p v-if="lic.accesos_enviados > 0" class="enviados-hint">
+            {{ lic.accesos_enviados }} acceso(s) ya enviados
+          </p>
+
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button class="btn-details" style="margin-top: 0; flex: 1;" @click="openDetails(lic)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
               Ver Detalles
@@ -210,32 +298,6 @@ function tramitarDC3Licencia(lic: any) {
                 </button>
               </span></div>
 
-              <div v-if="selectedTickets && selectedTickets.length > 0" class="tickets-section">
-                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-color);">Enlace de Invitación</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Comparte este enlace junto con los códigos a tus participantes.</p>
-                <div class="invite-link-box">
-                  <span class="mono link-text">{{ baseOrigin }}/invitacion/{{ selectedLic.capacitacion_id }}</span>
-                  <button class="btn-copy-small" @click="copyText(`${baseOrigin}/invitacion/${selectedLic.capacitacion_id}`)" title="Copiar enlace">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  </button>
-                </div>
-
-                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-color);">Códigos Únicos para Videollamada</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Envía un código distinto a cada participante de la videollamada.</p>
-                <div v-if="loadingTickets" class="loading" style="font-size: 0.9rem;">Cargando códigos...</div>
-                <div v-else class="tickets-list">
-                  <div v-for="(t, i) in selectedTickets" :key="t.id" class="ticket-item">
-                    <span class="ticket-num">#{{ i + 1 }}</span>
-                    <span class="ticket-code mono">{{ t.codigo }}</span>
-                    <span :class="['ticket-status', t.in_use_by_user ? 'status-used' : 'status-free']">
-                      {{ t.in_use_by_user ? 'En uso' : 'Disponible' }}
-                    </span>
-                    <button class="btn-copy-small" @click="copyCode(t.codigo)" title="Copiar código">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
             <div class="modal-footer">
               <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #10b981; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;" @click="tramitarDC3Licencia(selectedLic)">
@@ -247,6 +309,92 @@ function tramitarDC3Licencia(lic: any) {
                 <span v-else>Recibo</span>
               </button>
               <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Modal: repartir accesos por correo -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="envioLic" class="modal-overlay" @click.self="cerrarEnvio">
+          <div class="modal-card modal-wide">
+            <div class="modal-header">
+              <div>
+                <h3>Enviar accesos por correo</h3>
+                <p class="modal-sub">{{ envioLic.capacitacion_titulo || envioLic.nombre }}</p>
+              </div>
+              <button class="modal-close" @click="cerrarEnvio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <div class="cupo-bar">
+                <span><strong>{{ disponibles === Infinity ? '∞' : disponibles }}</strong> accesos disponibles</span>
+                <span class="cupo-sep">·</span>
+                <span>{{ yaEnviados }} enviados</span>
+              </div>
+
+              <!-- Pegado masivo: lo normal es que RR. HH. tenga la lista en un correo -->
+              <details class="bulk">
+                <summary>Pegar una lista de correos</summary>
+                <textarea
+                  v-model="pegadoMasivo"
+                  class="bulk-input"
+                  rows="4"
+                  placeholder="ana@empresa.com&#10;Luis Pérez <luis@empresa.com>&#10;maria@empresa.com"
+                ></textarea>
+                <button class="btn-secondary btn-sm" :disabled="!pegadoMasivo.trim()" @click="procesarPegado">
+                  Agregar a la lista
+                </button>
+              </details>
+
+              <div class="participantes">
+                <div v-for="(p, i) in participantes" :key="i" class="participante-row">
+                  <input v-model="p.nombre" class="input-nombre" type="text" placeholder="Nombre (opcional)" />
+                  <input v-model="p.email" class="input-email" type="email" placeholder="correo@empresa.com" />
+                  <button class="btn-quitar" :aria-label="`Quitar participante ${i + 1}`" @click="quitarFila(i)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button class="btn-agregar" @click="agregarFila">+ Agregar participante</button>
+
+              <p v-if="excedeCupo" class="alerta">
+                Capturaste {{ correosValidos.length }} correos pero solo quedan {{ disponibles }} accesos.
+              </p>
+
+              <div v-if="invitaciones.length" class="historial">
+                <h4>Accesos ya enviados</h4>
+                <div v-if="loadingInvitaciones" class="loading" style="font-size: 0.85rem;">Cargando…</div>
+                <div v-else class="historial-list">
+                  <div v-for="inv in invitaciones" :key="inv.id" class="historial-item">
+                    <div class="historial-info">
+                      <span class="historial-email">{{ inv.email }}</span>
+                      <span v-if="inv.nombre" class="historial-nombre">{{ inv.nombre }}</span>
+                    </div>
+                    <span class="mono historial-codigo">{{ inv.codigo }}</span>
+                    <span :class="['ticket-status', inv.estado === 'usado' ? 'status-used' : 'status-free']">
+                      {{ inv.estado === 'usado' ? 'Activado' : 'Enviado' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;" @click="cerrarEnvio">Cerrar</button>
+              <button
+                class="btn-enviar"
+                style="margin: 0; flex: 1;"
+                :disabled="enviando || !correosValidos.length || excedeCupo"
+                @click="enviarAccesos"
+              >
+                {{ enviando ? 'Enviando…' : `Enviar ${correosValidos.length || ''} acceso(s)` }}
+              </button>
             </div>
           </div>
         </div>
@@ -567,50 +715,11 @@ function tramitarDC3Licencia(lic: any) {
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 
-.tickets-section {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  padding: 1.25rem;
-  border-radius: 12px;
-  margin-top: 1.5rem;
-}
 
-.invite-link-box {
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 12px; margin-bottom: 1rem;
-}
-.link-text {
-  font-size: 0.85rem; color: var(--brand); word-break: break-all; padding-right: 10px;
-}
 
-.tickets-list {
-  display: flex; flex-direction: column; gap: 8px;
-}
 
-.ticket-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  gap: 1rem;
-  font-size: 0.9rem;
-}
 
-.ticket-num {
-  font-weight: 700;
-  color: var(--text-muted);
-  width: 30px;
-}
 
-.ticket-code {
-  font-family: monospace;
-  font-weight: 600;
-  flex: 1;
-}
 
 .ticket-status {
   padding: 0.25rem 0.5rem;
@@ -630,21 +739,93 @@ function tramitarDC3Licencia(lic: any) {
   color: #ef4444;
 }
 
-.btn-copy-small {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+
+
+/* ── Reparto de accesos por correo ─────────────────────────────────────── */
+
+.btn-enviar {
+  width: 100%;
+  margin-top: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 14px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.22);
+}
+.btn-enviar:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(249, 115, 22, 0.3); }
+.btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+
+.enviados-hint { margin: 8px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; }
+
+.modal-wide { max-width: 640px; }
+.modal-sub { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.cupo-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: rgba(249, 115, 22, 0.07); border-radius: 10px;
+  padding: 10px 14px; font-size: 0.85rem; color: var(--text-muted, #6b7280);
+  margin-bottom: 16px;
+}
+.cupo-bar strong { color: #ea580c; font-size: 1rem; }
+.cupo-sep { opacity: 0.4; }
+
+.bulk { margin-bottom: 16px; }
+.bulk summary {
+  cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #f97316;
+  padding: 6px 0; user-select: none;
+}
+.bulk-input {
+  width: 100%; margin: 10px 0 8px; padding: 10px 12px; font-size: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; resize: vertical;
+  font-family: inherit; box-sizing: border-box;
+}
+.bulk-input:focus { outline: none; border-color: #f97316; }
+
+.participantes { display: flex; flex-direction: column; gap: 8px; }
+.participante-row { display: flex; gap: 8px; align-items: center; }
+.input-nombre, .input-email {
+  padding: 10px 12px; font-size: 0.87rem; border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9px; font-family: inherit; min-width: 0;
+}
+.input-nombre { flex: 0 1 38%; }
+.input-email { flex: 1 1 auto; }
+.input-nombre:focus, .input-email:focus { outline: none; border-color: #f97316; }
+
+.btn-quitar {
+  flex-shrink: 0; width: 32px; height: 32px; border: none; border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08); color: #ef4444; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+}
+.btn-quitar:hover { background: rgba(239, 68, 68, 0.18); }
+
+.btn-agregar {
+  margin-top: 10px; background: none; border: 1px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 9px; padding: 9px 14px; width: 100%;
+  font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-agregar:hover { border-color: #f97316; color: #f97316; }
+
+.alerta {
+  margin: 14px 0 0; padding: 10px 14px; border-radius: 9px;
+  background: rgba(239, 68, 68, 0.08); color: #b91c1c; font-size: 0.83rem;
 }
 
-.btn-copy-small:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--primary-color);
+.historial { margin-top: 24px; }
+.historial h4 { margin: 0 0 10px; font-size: 0.9rem; color: var(--text-color); }
+.historial-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.historial-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(0, 0, 0, 0.02); border-radius: 9px; padding: 9px 12px;
+}
+.historial-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.historial-email { font-size: 0.85rem; color: var(--text-color); overflow: hidden; text-overflow: ellipsis; }
+.historial-nombre { font-size: 0.75rem; color: var(--muted); }
+.historial-codigo { font-size: 0.8rem; color: var(--muted); }
+
+@media (max-width: 560px) {
+  .participante-row { flex-wrap: wrap; }
+  .input-nombre { flex: 1 1 100%; }
 }
 </style>
