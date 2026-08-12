@@ -881,3 +881,39 @@ html.dark-theme .grecaptcha-badge iframe {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65) !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Aparición al hacer scroll (directiva v-reveal)
+
+   El estado inicial se aplica SOLO cuando la directiva añade .reveal, nunca
+   por selector de etiqueta. Si el JS falla o la hidratación no llega, el
+   contenido queda visible en lugar de invisible para siempre.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  /* Solo transform y opacity: ambas se resuelven en el compositor y no
+     provocan reflow, que es lo que haría saltar el scroll en móvil. */
+  transition:
+    opacity 0.55s var(--ease-apple),
+    transform 0.55s var(--ease-apple);
+  will-change: opacity, transform;
+}
+.reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* Red de seguridad: si el usuario pide menos movimiento a mitad de sesión,
+   el CSS lo cubre aunque la directiva ya se haya montado. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    transition-delay: 0ms !important;
+  }
+}

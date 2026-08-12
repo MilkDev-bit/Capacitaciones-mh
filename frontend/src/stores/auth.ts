@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/vue'
 import api from '../api'
 import router from '../router'
 import { toast } from '../utils/toast'
+import { useSuscripcionStore } from './suscripcion'
 
 interface UserProfile {
   id: string
@@ -76,6 +77,9 @@ export const useAuthStore = defineStore('auth', () => {
     }) // limpia la cookie en el servidor
     user.value = null
     localStorage.removeItem('user')
+    // La membresía es del usuario, no del navegador: si no se limpia, el
+    // siguiente en iniciar sesión vería el catálogo como si estuviera pagado.
+    useSuscripcionStore().limpiar()
     toast.success('¡Hasta pronto! Sesión cerrada correctamente.', 'Hasta pronto')
     router.push('/login')
   }
@@ -84,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
     const hadUser = !!user.value
     user.value = null
     localStorage.removeItem('user')
+    useSuscripcionStore().limpiar()
     if (hadUser) {
       toast.warning('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'Sesión expirada')
       setTimeout(() => router.push('/login'), 2000)

@@ -20,8 +20,10 @@ const props = withDefaults(
     /** 'grid' se estira al contenedor; 'carousel' usa ancho fijo para el scroll horizontal. */
     variant?: 'grid' | 'carousel'
     inCart?: boolean
+    /** El usuario tiene una suscripción vigente: el curso ya está pagado. */
+    incluidoEnPlan?: boolean
   }>(),
-  { variant: 'grid', inCart: false }
+  { variant: 'grid', inCart: false, incluidoEnPlan: false }
 )
 
 const emit = defineEmits<{
@@ -39,8 +41,12 @@ const TYPE_META: Record<string, { label: string; tint: string }> = {
 const meta = computed(() => TYPE_META[props.course.type ?? ''] ?? { label: 'Curso', tint: '#f97316' })
 const esGratis = computed(() => !props.course.precio || props.course.precio <= 0)
 
-/** Los gratuitos se inscriben desde el detalle, no se compran. */
-const puedeAgregarDirecto = computed(() => !esGratis.value)
+/**
+ * Los gratuitos se inscriben desde el detalle, no se compran. Con suscripción
+ * vigente tampoco: mostrar "Agregar al carrito" sobre algo que el usuario ya
+ * paga cada mes es el camino más corto a un cobro duplicado y a un reembolso.
+ */
+const puedeAgregarDirecto = computed(() => !esGratis.value && !props.incluidoEnPlan)
 
 const imagen = computed(() => {
   const path = props.course.thumbnail_url
@@ -102,6 +108,7 @@ const esNuevo = computed(() => {
       </div>
 
       <span v-if="esGratis" class="badge badge--free">Gratis</span>
+      <span v-else-if="incluidoEnPlan" class="badge badge--plan">Incluido en tu plan</span>
 
       <!-- Acción rápida: aparece en hover/focus en escritorio, siempre visible en táctil -->
       <div v-if="puedeAgregarDirecto" class="tile__quick">
@@ -133,11 +140,14 @@ const esNuevo = computed(() => {
       </ul>
 
       <div class="tile__foot">
-        <span :class="['tile__price', esGratis && 'tile__price--free']">
+        <span v-if="incluidoEnPlan && !esGratis" class="tile__price tile__price--plan">
+          Incluido en tu plan
+        </span>
+        <span v-else :class="['tile__price', esGratis && 'tile__price--free']">
           {{ esGratis ? 'Gratis' : precioTexto }}
         </span>
         <span class="tile__link">
-          Ver detalle
+          {{ incluidoEnPlan && !esGratis ? 'Entrar' : 'Ver detalle' }}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
         </span>
       </div>
@@ -172,6 +182,16 @@ const esNuevo = computed(() => {
   outline: none;
 }
 .tile:focus-visible { box-shadow: 0 0 0 3px var(--brand-light), var(--shadow-md); }
+
+.badge--plan {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(16, 185, 129, 0.95);
+  color: #fff;
+  font-weight: 700;
+}
+.tile__price--plan { color: #10b981; font-size: 0.95rem; }
 
 /* ── Media ─────────────────────────────────────────────── */
 .tile__media {

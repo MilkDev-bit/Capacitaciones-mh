@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import { useSuscripcionStore, precioDesdeCentavos } from '../stores/suscripcion'
 import { toast } from '../utils/toast'
 import logoSrc from '../assets/logo-capacitaciones.png'
 
@@ -11,6 +12,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const cart = useCartStore()
+const susc = useSuscripcionStore()
 
 const id = route.params.id as string
 const curso = ref<any>(null)
@@ -51,9 +53,49 @@ const formattedPrice = computed(() => {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(curso.value.precio)
 })
 
+/** Curso de pago que el plan vigente del usuario ya cubre. */
+const incluidoEnPlan = computed(() => susc.accesoVigente && (curso.value?.precio ?? 0) > 0)
+
+/** Plan individual más barato, para comparar contra el precio suelto. */
+const planMasBarato = computed(() => {
+  const mensuales = susc.planesIndividuales.filter((p) => p.intervalo === 'mes')
+  const base = mensuales.length ? mensuales : susc.planesIndividuales
+  return [...base].sort((a, b) => a.precio_centavos - b.precio_centavos)[0] || null
+})
+const precioPlanTexto = computed(() =>
+  planMasBarato.value
+    ? precioDesdeCentavos(planMasBarato.value.precio_centavos, planMasBarato.value.moneda)
+    : ''
+)
+
+/** Inscribe sin cobrar usando la suscripción; el backend revalida el derecho. */
+async function entrarConPlan() {
+  if (!curso.value) return
+  enrolling.value = true
+  try {
+    await api.post(`/cursos/${id}/inscripciones`)
+    toast.success('Curso agregado a tus capacitaciones')
+    router.push('/usuario/capacitaciones')
+  } catch (e: any) {
+    // 409 = ya inscrito: no es un error para el usuario, ya tiene el acceso.
+    if (e.response?.status === 409) {
+      router.push('/usuario/capacitaciones')
+      return
+    }
+    toast.error(e.response?.data?.error || 'No pudimos abrir el curso con tu plan')
+  } finally {
+    enrolling.value = false
+  }
+}
+
 function fileUrl(path: string) {
   return path ? `${import.meta.env.VITE_API_URL || ''}${path}` : ''
 }
+
+onMounted(() => {
+  susc.cargarPlanes()
+  if (auth.isLoggedIn) susc.cargarMia()
+})
 
 onMounted(async () => {
   try {
@@ -91,6 +133,10 @@ async function enrollFree() {
 
 function buyCourse() {
   if (!curso.value) return
+  if (incluidoEnPlan.value) {
+    entrarConPlan()
+    return
+  }
   cart.addItem({
     curso_id: curso.value.id,
     title: curso.value.title,
@@ -236,12 +282,16 @@ function buyB2B() {
             <span v-if="!curso.precio || curso.precio === 0" class="cpv-chip free">Gratis</span>
             <span v-else class="cpv-chip paid">Premium</span>
           </div>
-          <h1 class="cpv-title">{{ curso.title }}</h1>
-          <p class="cpv-subtitle">{{ curso.description || 'Desarrolla tus habilidades profesionales con este curso de expertos.' }}</p>
+          <h1 class="cpv-title" v-reveal>{{ curso.title }}</h1>
+          <p class="cpv-subtitle" v-reveal="1">{{ curso.description || 'Desarrolla tus habilidades profesionales con este curso de expertos.' }}</p>
 
           <!-- Mobile CTA -->
           <div class="cpv-mobile-cta">
-            <button v-if="curso.precio > 0" class="cpv-btn-buy" @click="buyCourse" :disabled="buying">
+            <button v-if="incluidoEnPlan" class="cpv-btn-free" @click="entrarConPlan" :disabled="enrolling">
+              <span v-if="enrolling" class="cpv-btn-spinner"></span>
+              <span v-else>Incluido en tu plan — Entrar</span>
+            </button>
+            <button v-else-if="curso.precio > 0" class="cpv-btn-buy" @click="buyCourse" :disabled="buying">
               <span v-if="buying" class="cpv-btn-spinner"></span>
               <span v-else>{{ formattedPrice }} — Comprar ahora</span>
             </button>
@@ -324,7 +374,29 @@ function buyB2B() {
             <!-- Glow orb -->
             <div class="purchase-orb" :class="{ 'orb-green': !curso.precio || curso.precio === 0 }"></div>
 
-            <div v-if="curso.precio > 0">
+            <!-- Suscriptor: ni precio ni carrito, ya está pagado -->
+            <div v-if="incluidoEnPlan">
+              <div class="purchase-label free-label">Incluido en tu plan</div>
+              <div class="purchase-price free-price">Sin costo extra</div>
+              <div class="purchase-period">{{ susc.mia?.plan_nombre || 'Suscripción activa' }}</div>
+
+              <button class="cpv-btn-free w-full mt-4" @click="entrarConPlan" :disabled="enrolling">
+                <span v-if="enrolling" class="cpv-btn-spinner"></span>
+                <template v-else>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                  </svg>
+                  Empezar el curso
+                </template>
+              </button>
+
+              <p class="plan-nota">
+                Mientras tu plan siga activo tienes acceso a este y a todos los demás cursos.
+              </p>
+            </div>
+
+            <div v-else-if="curso.precio > 0">
               <div class="purchase-label">Precio del curso</div>
               <div class="purchase-price">{{ formattedPrice }}</div>
               <div class="purchase-period">Pago único</div>
@@ -350,6 +422,17 @@ function buyB2B() {
                 </svg>
                 Comprar Licencias Corporativas
               </button>
+
+              <!-- La alternativa se ofrece aquí, junto al precio: es donde el
+                   usuario está decidiendo, no en una página aparte. -->
+              <div class="plan-alt">
+                <span class="plan-alt__o">o</span>
+                <p class="plan-alt__txt">
+                  Accede a <strong>este y a todos los cursos</strong> con una suscripción
+                  <template v-if="precioPlanTexto"> desde <strong>{{ precioPlanTexto }}</strong>/mes</template>.
+                </p>
+                <button class="plan-alt__btn" @click="router.push('/planes')">Ver planes</button>
+              </div>
             </div>
 
             <div v-else>
@@ -1115,5 +1198,50 @@ function buyB2B() {
   .cpv-mobile-cta { display: block; }
   .learn-grid { grid-template-columns: 1fr; }
   .code-row { flex-direction: column; }
+}
+
+/* ── Alternativa de suscripción junto al precio ─────────── */
+.plan-alt {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  text-align: center;
+}
+.plan-alt__o {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.plan-alt__txt {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.plan-alt__txt strong { color: var(--text); font-weight: 650; }
+.plan-alt__btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--brand-border, var(--border));
+  background: transparent;
+  color: var(--brand);
+  font-size: 0.92rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.plan-alt__btn:hover { background: var(--brand); color: #fff; }
+
+.plan-nota {
+  margin-top: 14px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
 }
 </style>

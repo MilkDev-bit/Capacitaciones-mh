@@ -37,6 +37,9 @@ var (
 	ErrNotFound  = errors.New("no encontrado")
 	ErrForbidden = errors.New("sin permisos")
 	ErrConflict  = errors.New("ya inscrito")
+	// ErrRequierePago: curso de pago y el usuario no tiene suscripción vigente.
+	// El frontend lo traduce en "cómpralo suelto o suscríbete".
+	ErrRequierePago = errors.New("este curso requiere compra individual o una suscripción activa")
 )
 
 // CursosService contiene la lógica de negocio del servicio de cursos.
@@ -98,13 +101,23 @@ func (s *CursosService) GetCurso(ctx context.Context, cursoID, userID string) (*
 	if err != nil {
 		return nil, ErrNotFound
 	}
-	// Si no está inscrito, solo puede ver si es público.
-	if !enrolled && !c.IsPublic {
-		return nil, ErrForbidden
+	if enrolled || c.IsPublic {
+		return c.ToProto(), nil
 	}
-	return c.ToProto(), nil
+	// Una suscripción viva abre todo el catálogo: es justo lo que se vende.
+	if conSuscripcion, _, _, _, errS := s.repo.AccesoPorSuscripcion(ctx, userID); errS == nil && conSuscripcion {
+		return c.ToProto(), nil
+	}
+	return nil, ErrForbidden
 }
 
+// Inscribirse da acceso sin cobrar. Vale para cursos gratuitos y para
+// suscriptores con el plan al corriente.
+//
+// Se inscribe de verdad (fila en `inscripciones`) en lugar de solo dejar ver el
+// contenido: así el progreso, los exámenes y la constancia DC-3 funcionan igual
+// que en una compra individual. Si la suscripción caduca, el usuario conserva
+// su historial pero deja de poder abrir cursos nuevos.
 func (s *CursosService) Inscribirse(ctx context.Context, userID, cursoID string) error {
 	enrolled, _ := s.repo.IsEnrolled(ctx, userID, cursoID)
 	if enrolled {
@@ -114,8 +127,18 @@ func (s *CursosService) Inscribirse(ctx context.Context, userID, cursoID string)
 	if err != nil {
 		return err
 	}
-	if curso.Precio > 0 {
-		return errors.New("este curso es de pago, usa el flujo de compra")
+
+	esDePago := precioDe(curso.PrecioCentavos, curso.Precio).IsPositive()
+	if esDePago {
+		conSuscripcion, _, _, estado, errS := s.repo.AccesoPorSuscripcion(ctx, userID)
+		if errS != nil {
+			return errS
+		}
+		if !conSuscripcion {
+			return ErrRequierePago
+		}
+		slog.Info("inscripción por suscripción",
+			"user_id", userID, "curso_id", cursoID, "estado_suscripcion", estado)
 	}
 	return s.repo.Inscribirse(ctx, userID, cursoID)
 }

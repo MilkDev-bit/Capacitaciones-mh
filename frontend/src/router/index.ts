@@ -15,6 +15,8 @@ const router = createRouter({
     { path: '/checkout/exito', component: () => import('../views/CheckoutSuccessView.vue') },
     { path: '/unirse/:codigo', component: () => import('../views/UnirseView.vue') },
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
+    // Pública: el precio es parte del argumento de venta, no se esconde tras login.
+    { path: '/planes', component: () => import('../views/shared/PlanesView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
     {

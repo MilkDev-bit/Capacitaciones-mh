@@ -348,6 +348,8 @@ func mapErr(err error) error {
 		return status.Error(codes.NotFound, "recurso o código de acceso no encontrado")
 	case errors.Is(err, service.ErrForbidden):
 		return status.Error(codes.PermissionDenied, err.Error())
+	case errors.Is(err, service.ErrRequierePago):
+		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, service.ErrConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
 	// La licencia se quedó sin lugares por repartir: es un error del usuario,

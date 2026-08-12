@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/vue'
 
 import App from './App.vue'
 import router from './router'
+import { vReveal } from './composables/useReveal'
 
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -14,6 +15,8 @@ import '@vuepic/vue-datepicker/dist/main.css'
 const app = createApp(App)
 
 app.component('VueDatePicker', VueDatePicker)
+// Directiva global: la usan la tienda, la ficha de curso y la página de planes.
+app.directive('reveal', vReveal)
 
 app.use(createPinia())
 app.use(router)

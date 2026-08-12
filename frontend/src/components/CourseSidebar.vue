@@ -46,7 +46,8 @@ const emit = defineEmits<{
 // Colapsado por módulo/submódulo
 const collapsed = ref<Set<string>>(new Set())
 function toggle(id: string) {
-  collapsed.value.has(id) ? collapsed.value.delete(id) : collapsed.value.add(id)
+  if (collapsed.value.has(id)) collapsed.value.delete(id)
+  else collapsed.value.add(id)
 }
 
 // Progreso por sección

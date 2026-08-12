@@ -255,7 +255,8 @@ async function deleteLesson(leccionId?: string) {
 // ── Helpers UI ────────────────────────────────────────────────────────────────
 const collapsed = ref<Set<string>>(new Set())
 function toggleCollapse(id: string) {
-  collapsed.value.has(id) ? collapsed.value.delete(id) : collapsed.value.add(id)
+  if (collapsed.value.has(id)) collapsed.value.delete(id)
+  else collapsed.value.add(id)
 }
 
 const LESSON_TYPE_ICONS: Record<string, string> = {

@@ -56,7 +56,7 @@ function initJitsi() {
     }
   }
 
-  // eslint-disable-next-line no-undef
+   
   api = new (window as any).JitsiMeetExternalAPI(domain, options)
 
   api.addListener('videoConferenceLeft', () => {

@@ -96,7 +96,7 @@ const doughnutOptions = computed(() => ({
 
 const barData = computed(() => {
   const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  const counts = new Array(12).fill(0)
+  const counts = Array.from({ length: 12 }, () => 0)
   
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
@@ -104,8 +104,9 @@ const barData = computed(() => {
   if (props.asignaciones) {
     props.asignaciones.forEach(a => {
       const d = new Date(a.assigned_at)
-      if (d.getFullYear() === currentYear) {
-        counts[d.getMonth()]++
+      const mes = d.getMonth()
+      if (d.getFullYear() === currentYear && counts[mes] !== undefined) {
+        counts[mes]++
       }
     })
   }

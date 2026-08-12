@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import { useSuscripcionStore, precioDesdeCentavos } from '../stores/suscripcion'
 import { useAuthStore } from '../stores/auth'
 import { toast } from '../utils/toast'
 import api from '../api'
 
 const cart = useCartStore()
+const susc = useSuscripcionStore()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +70,37 @@ async function checkout() {
 function seguirComprando() {
   cart.closeDrawer()
   if (route.path !== '/tienda' && route.path !== '/') router.push('/tienda')
+}
+
+// ── Suscripción como alternativa ────────────────────────────────────────────
+
+onMounted(() => susc.cargarPlanes())
+
+/** Plan individual mensual más barato. */
+const planMasBarato = computed(() => {
+  const mensuales = susc.planesIndividuales.filter((p) => p.intervalo === 'mes')
+  const base = mensuales.length ? mensuales : susc.planesIndividuales
+  return [...base].sort((a, b) => a.precio_centavos - b.precio_centavos)[0] || null
+})
+const precioPlanTexto = computed(() =>
+  planMasBarato.value
+    ? precioDesdeCentavos(planMasBarato.value.precio_centavos, planMasBarato.value.moneda)
+    : ''
+)
+
+/**
+ * Se sugiere el plan solo si el carrito ya supera su costo mensual y el usuario
+ * aún no está suscrito. Así el aviso siempre le ahorra dinero de verdad.
+ */
+const convienePlan = computed(() => {
+  if (susc.tieneSuscripcion || !planMasBarato.value) return false
+  if (cart.items.length < 2) return false
+  return cart.totalPrice * 100 > planMasBarato.value.precio_centavos
+})
+
+function verPlanes() {
+  cart.closeDrawer()
+  router.push('/planes')
 }
 </script>
 
@@ -196,6 +229,18 @@ function seguirComprando() {
 
         <!-- ── Pie ── -->
         <footer v-if="cart.items.length" class="foot">
+          <!--
+            Solo se sugiere el plan cuando el carrito ya cuesta más que un mes
+            de suscripción. Ofrecerlo siempre sería ruido; ofrecerlo aquí es
+            información útil justo antes de pagar.
+          -->
+          <div v-if="convienePlan" class="nudge">
+            <div class="nudge__txt">
+              Con una suscripción de <strong>{{ precioPlanTexto }}/mes</strong> tendrías
+              estos {{ cart.items.length }} cursos y todo el catálogo.
+            </div>
+            <button class="nudge__btn" @click="verPlanes">Comparar planes</button>
+          </div>
           <dl class="resumen">
             <div>
               <dt>Subtotal</dt>
@@ -460,4 +505,31 @@ function seguirComprando() {
   .btn, .item { transition: none; }
   .btn--solid:hover:not(:disabled) { transform: none; }
 }
+
+/* ── Sugerencia de suscripción ──────────────────────────── */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--r-sm);
+  background: var(--brand-light);
+  border: 1px solid var(--brand-border);
+}
+.nudge__txt { flex: 1 1 190px; font-size: 0.86rem; line-height: 1.45; color: var(--text); }
+.nudge__txt strong { font-weight: 750; }
+.nudge__btn {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.nudge__btn:hover { filter: brightness(1.08); }
 </style>

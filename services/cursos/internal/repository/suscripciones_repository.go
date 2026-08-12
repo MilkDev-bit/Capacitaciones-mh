@@ -160,7 +160,14 @@ func (r *postgresCursosRepository) ListPlanesActivos(ctx context.Context) ([]*Pl
 	return planes, r.db.SelectContext(ctx, &planes,
 		`SELECT id, codigo, nombre, descripcion, modalidad, intervalo, precio_centavos,
 		        moneda, stripe_price_id, dias_prueba, activo, orden
-		   FROM planes WHERE activo = true ORDER BY orden, precio_centavos`)
+		   FROM planes
+		  WHERE activo = true
+		    -- Sin price de Stripe el plan no se puede cobrar. Se oculta en vez
+		    -- de mostrarlo y reventar en el checkout: los planes se siembran
+		    -- con este campo vacío y se completa al crearlos en el dashboard.
+		    AND stripe_price_id IS NOT NULL
+		    AND stripe_price_id <> ''
+		  ORDER BY orden, precio_centavos`)
 }
 
 func (r *postgresCursosRepository) FindPlanPorCodigo(ctx context.Context, codigo string) (*Plan, error) {
