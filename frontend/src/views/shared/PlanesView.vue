@@ -369,6 +369,7 @@ const BENEFICIOS_EQUIPO = [
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 1.8rem 1.5rem 1.5rem;
+  overflow: visible;
   transition: transform 0.3s var(--ease-apple), box-shadow 0.3s var(--ease-apple);
 }
 .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
