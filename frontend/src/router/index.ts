@@ -17,6 +17,10 @@ const router = createRouter({
     { path: '/tienda', component: () => import('../views/shared/StoreView.vue') },
     // Pública: el precio es parte del argumento de venta, no se esconde tras login.
     { path: '/planes', component: () => import('../views/shared/PlanesView.vue') },
+    // Escena guiada por scroll. Fuera de la tienda a propósito: son ~6 pantallas
+    // de recorrido y meterlas en medio del catálogo alargaría el camino a la
+    // compra para todo el mundo, incluido quien ya sabe lo que quiere.
+    { path: '/como-funciona', component: () => import('../views/shared/ComoFuncionaView.vue') },
     { path: '/curso/:id', component: () => import('../views/CursoPublicView.vue') },
     { path: '/examen/:id', component: () => import('../views/user/ExamenFormView.vue'), meta: { requiresAuth: true } },
     {
@@ -68,6 +72,20 @@ const router = createRouter({
       ],
     },
   ],
+
+  /**
+   * Al cambiar de ruta se vuelve arriba; con el botón atrás se restaura la
+   * posición guardada.
+   *
+   * Sin esto, entrar a /como-funciona desde media tienda arrancaría la escena
+   * a mitad del recorrido —el cubo ya girado, el cielo ya de noche— porque toda
+   * ella se deriva de scrollY. El anclaje por hash se respeta igual.
+   */
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to, _from, next) => {

@@ -237,6 +237,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           >
             {{ s.label }}
           </button>
+          <button class="hdr__link" @click="router.push('/como-funciona')">Cómo funciona</button>
           <button class="hdr__link hdr__link--destacado" @click="router.push('/planes')">Planes</button>
         </nav>
 
@@ -281,6 +282,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           >
             {{ s.label }}
           </button>
+          <button @click="menuAbierto = false; router.push('/como-funciona')">Cómo funciona</button>
           <button @click="menuAbierto = false; router.push('/planes')">Planes y suscripción</button>
           <button @click="menuAbierto = false; precioFiltro = 'gratis'; irACatalogo()">Cursos gratis</button>
           <button v-if="!auth.isLoggedIn" @click="menuAbierto = false; router.push('/login')">Iniciar sesión</button>
@@ -431,6 +433,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           </div>
         </article>
       </div>
+
+      <p class="vias__recorrido" v-reveal="3">
+        ¿Prefieres verlo paso a paso?
+        <button class="vias__enlace" @click="router.push('/como-funciona')">
+          Recorre el proceso completo
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </button>
+      </p>
 
       <!-- Suscriptor con el plan al corriente: el catálogo ya está pagado. -->
       <p v-if="susc.accesoVigente" class="vias__activo">
@@ -738,6 +748,26 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   color: var(--muted);
   text-transform: uppercase;
 }
+
+.vias__recorrido {
+  margin: 1.4rem 0 0;
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+.vias__enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 650;
+  color: var(--brand);
+  cursor: pointer;
+}
+.vias__enlace:hover { text-decoration: underline; }
 
 .vias__activo {
   margin: 1.5rem 0 0;
