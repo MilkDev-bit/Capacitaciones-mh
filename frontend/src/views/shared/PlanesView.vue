@@ -359,7 +359,7 @@ const BENEFICIOS_EQUIPO = [
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 1.4rem;
-  align-items: start;
+  align-items: stretch;
 }
 .card {
   position: relative;

@@ -525,8 +525,8 @@ function buyB2B() {
 /* ── ROOT ──────────────────────────────────────────────── */
 .cpv-root {
   min-height: 100vh;
-  background: #08090a;
-  color: #f1f5f9;
+  background: var(--bg);
+  color: var(--text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   position: relative;
@@ -576,8 +576,8 @@ function buyB2B() {
   z-index: 100;
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  background: rgba(8,9,10,0.75);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
 .cpv-nav-inner {
@@ -596,7 +596,7 @@ function buyB2B() {
   gap: 10px;
   background: none;
   border: none;
-  color: #f1f5f9;
+  color: var(--text);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -637,12 +637,12 @@ function buyB2B() {
 
 .cpv-nav-btn.ghost {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.75);
+  border: 1px solid var(--border);
+  color: var(--muted);
 }
 .cpv-nav-btn.ghost:hover {
-  border-color: rgba(255,255,255,0.3);
-  color: #fff;
+  border-color: var(--brand);
+  color: var(--text);
 }
 
 .cpv-nav-btn.primary {
@@ -664,7 +664,7 @@ function buyB2B() {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: rgba(255,255,255,0.5);
+  color: var(--muted);
   font-size: 1rem;
   position: relative;
   z-index: 1;
@@ -721,8 +721,8 @@ function buyB2B() {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(8,9,10,1) 0%, rgba(8,9,10,0.7) 40%, rgba(8,9,10,0.25) 100%),
-    linear-gradient(to right, rgba(8,9,10,0.5) 0%, transparent 60%);
+    linear-gradient(to top, var(--bg) 0%, transparent 80%),
+    linear-gradient(to right, var(--bg) 0%, transparent 80%);
 }
 
 .cpv-hero-content {
@@ -758,9 +758,9 @@ function buyB2B() {
 }
 
 .cpv-chip.type {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.85);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .cpv-chip.free {
@@ -780,15 +780,14 @@ function buyB2B() {
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.03em;
-  color: #fff;
+  color: var(--text);
   margin: 0 0 16px 0;
   max-width: 700px;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
 }
 
 .cpv-subtitle {
   font-size: 1.05rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--muted);
   line-height: 1.6;
   max-width: 600px;
   margin: 0 0 24px 0;
@@ -813,23 +812,21 @@ function buyB2B() {
 
 /* ── GLASS CARD ────────────────────────────────────────── */
 .glass-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 28px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   transition: border-color 0.3s;
 }
 
 .glass-card:hover {
-  border-color: rgba(255,255,255,0.14);
+  border-color: var(--brand);
 }
 
 .glass-card-title {
   font-size: 1.2rem;
   font-weight: 800;
-  color: rgba(255,255,255,0.95);
+  color: var(--text);
   margin: 0 0 12px 0;
   letter-spacing: -0.01em;
   display: flex;
@@ -839,7 +836,7 @@ function buyB2B() {
 
 .glass-card-text {
   font-size: 0.95rem;
-  color: rgba(255,255,255,0.55);
+  color: var(--muted);
   line-height: 1.7;
   margin: 0 0 20px 0;
 }
@@ -859,10 +856,10 @@ function buyB2B() {
   gap: 10px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--muted);
 }
 
 .learn-icon { font-size: 1rem; }
@@ -883,25 +880,25 @@ function buyB2B() {
 .code-icon {
   position: absolute;
   left: 14px;
-  color: rgba(255,255,255,0.3);
+  color: var(--muted);
   flex-shrink: 0;
 }
 
 .code-input {
   width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px 12px 38px;
   font-size: 0.95rem;
   font-family: inherit;
-  color: #fff;
+  color: var(--text);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   caret-color: #f97316;
 }
 
-.code-input::placeholder { color: rgba(255,255,255,0.3); }
+.code-input::placeholder { color: var(--muted); }
 
 .code-input:focus {
   border-color: rgba(249,115,22,0.5);
@@ -912,19 +909,17 @@ function buyB2B() {
 .purchase-glass {
   position: sticky;
   top: 80px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 28px;
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
   overflow: hidden;
   animation: cpv-fade-up 0.8s ease both 0.35s;
 }
 
 .purchase-glass.paid {
   border-color: rgba(249,115,22,0.18);
-  background: rgba(249,115,22,0.04);
+  background: var(--surface-soft);
 }
 
 .purchase-orb {
@@ -950,7 +945,7 @@ function buyB2B() {
 .purchase-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 8px;
@@ -961,7 +956,7 @@ function buyB2B() {
 .purchase-price {
   font-size: 2.8rem;
   font-weight: 900;
-  color: #fff;
+  color: var(--text);
   letter-spacing: -0.04em;
   line-height: 1;
   margin-bottom: 6px;
@@ -976,7 +971,7 @@ function buyB2B() {
 
 .purchase-period {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
@@ -1027,9 +1022,9 @@ function buyB2B() {
 }
 
 .cpv-btn-b2b {
-  background: rgba(255, 255, 255, 0.05);
-  color: #f1f5f9;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 600;
@@ -1040,8 +1035,8 @@ function buyB2B() {
   transition: all 0.2s;
 }
 .cpv-btn-b2b:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface);
+  border-color: var(--brand);
 }
 
 /* Modals */
@@ -1060,14 +1055,14 @@ function buyB2B() {
 .b2b-modal-content {
   width: 100%;
   max-width: 400px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .b2b-input-group label {
   display: block;
   font-size: 0.9rem;
-  color: #94a3b8;
+  color: var(--muted);
   margin-bottom: 5px;
 }
 
@@ -1080,8 +1075,8 @@ function buyB2B() {
 
 .cpv-btn-cancel {
   background: transparent;
-  color: #94a3b8;
-  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
+  border: 1px solid var(--border);
   padding: 12px;
   border-radius: 12px;
   font-weight: 600;
@@ -1089,8 +1084,8 @@ function buyB2B() {
   transition: all 0.2s;
 }
 .cpv-btn-cancel:hover {
-  background: rgba(255,255,255,0.05);
-  color: #fff;
+  background: var(--surface-soft);
+  color: var(--text);
 }
 
 .cpv-btn-spinner {
@@ -1151,9 +1146,9 @@ function buyB2B() {
 
 .badge {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 10px;
 }
@@ -1168,7 +1163,7 @@ function buyB2B() {
 .includes-title {
   font-size: 0.78rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.4);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 12px;
@@ -1179,7 +1174,7 @@ function buyB2B() {
   align-items: center;
   gap: 10px;
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.6);
+  color: var(--text);
   margin-bottom: 8px;
 }
 
