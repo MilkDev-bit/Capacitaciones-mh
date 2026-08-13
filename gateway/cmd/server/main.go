@@ -77,13 +77,18 @@ func main() {
 	llamadasH := handler.NewLlamadasHandler(svc, cfg, h, gestorLlamadas)
 	llamadasH.RegistrarPerdidas()
 
+	// El handler de constancias lo comparten dos rutas: las suyas propias y la
+	// finalización de un curso, que lo dispara en segundo plano.
+	dc3H := handler.NewDC3Handler(svc)
+
 	// ── 5. Inyección de dependencias ──────────────────────────────────────────
 	r := router.New(router.Deps{
 		Cfg:          cfg,
 		AuthH:        handler.NewAuthHandler(svc, cfg),
 		UsuariosH:    handler.NewUsuariosHandler(svc),
 		CursosH:      handler.NewCursosHandler(svc, cfg, mail),
-		LeccionesH:   handler.NewLeccionesHandler(svc, handler.NewDC3Notifier(mail)),
+		LeccionesH:   handler.NewLeccionesHandler(svc, dc3H),
+		DC3H:         dc3H,
 		ExamenesH:    handler.NewExamenesHandler(svc),
 		ForosH:       handler.NewForosHandler(svc),
 		MensajesH:    handler.NewMensajesHandler(svc, h),

@@ -37,6 +37,7 @@ const (
 	TipoMensaje        = "mensaje"         // mensaje directo
 	TipoLlamadaPerdida = "llamada_perdida" // videollamada sin respuesta
 	TipoForoRespuesta  = "foro_respuesta"  // alguien respondió al usuario en el foro
+	TipoConstancia     = "constancia"      // la DC-3 del alumno quedó emitida
 )
 
 // Ventanas de deduplicación por familia de evento.

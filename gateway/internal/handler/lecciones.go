@@ -18,11 +18,11 @@ import (
 
 type LeccionesHandler struct {
 	c *clients.Clients
-	// dc3 avisa al representante de la licencia cuando alguien termina el curso.
-	dc3 *DC3Notifier
+	// dc3 emite la constancia del alumno al completar el curso.
+	dc3 *DC3Handler
 }
 
-func NewLeccionesHandler(c *clients.Clients, dc3 *DC3Notifier) *LeccionesHandler {
+func NewLeccionesHandler(c *clients.Clients, dc3 *DC3Handler) *LeccionesHandler {
 	return &LeccionesHandler{c: c, dc3: dc3}
 }
 
@@ -294,28 +294,20 @@ func (h *LeccionesHandler) avisarSiCursoCompletado(cursoID, userID string) {
 		}
 	}
 
-	aviso, err := h.c.Cursos.NotificarCursoCompletado(bg, &cursospb.CursoCompletadoRequest{
-		UserId:         userID,
-		CapacitacionId: cursoID,
-	})
-	if err != nil {
-		slog.Error("DC-3: no se pudo registrar el aviso", "error", err, "curso_id", cursoID)
+	// La constancia se emite aquí mismo, a nombre del alumno que terminó.
+	//
+	// Antes esto mandaba un correo al representante de la licencia para que
+	// fuera a un sitio externo a teclear los datos de cada trabajador. Ahora el
+	// documento se genera solo: los datos de empresa los dejó el instructor en
+	// la capacitación y los del trabajador el propio alumno. Si falta algo, la
+	// emisión queda pendiente sin hacer ruido y el alumno ve el formulario la
+	// próxima vez que abra el curso.
+	perfil, err := h.c.Usuarios.GetPublicPerfil(bg, &usuariospb.UserIDRequest{UserId: userID})
+	if err != nil || perfil == nil {
+		slog.Warn("DC-3: sin perfil del alumno", "user_id", userID, "error", err)
 		return
 	}
-	if !aviso.Avisar {
-		return
-	}
-
-	perfil, err := h.c.Usuarios.GetPublicPerfil(bg, &usuariospb.UserIDRequest{UserId: aviso.RepresentanteId})
-	if err != nil || perfil == nil || perfil.Email == "" {
-		slog.Warn("DC-3: sin correo del representante", "representante_id", aviso.RepresentanteId, "error", err)
-		return
-	}
-
-	slog.Info("DC-3: avisando al representante", "email", perfil.Email, "curso", aviso.CapacitacionTitulo)
-	if err := h.dc3.EnviarAvisoDC3(perfil.Email, perfil.Name, aviso.CapacitacionTitulo, int(aviso.DuracionMinutos)); err != nil {
-		slog.Error("DC-3: fallo al enviar el aviso", "email", perfil.Email, "error", err)
-	}
+	h.dc3.EmitirEnSegundoPlano(userID, cursoID, perfil.Name)
 }
 
 // POST /api/lecciones/:leccion_id/progreso-video

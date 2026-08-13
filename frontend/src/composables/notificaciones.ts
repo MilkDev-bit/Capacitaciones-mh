@@ -21,7 +21,7 @@ export type Perfil = 'usuario' | 'instructor' | 'admin'
  * y con `tiposNotificacion` del usuarios-service.
  */
 export const TIPOS_POR_PERFIL: Record<Perfil, string[]> = {
-  usuario:    ['compra', 'inscripcion', 'mensaje', 'llamada_perdida', 'foro_respuesta'],
+  usuario:    ['compra', 'inscripcion', 'constancia', 'mensaje', 'llamada_perdida', 'foro_respuesta'],
   instructor: ['nuevo_alumno', 'foro_respuesta', 'mensaje', 'llamada_perdida'],
   admin:      ['nuevo_alumno', 'compra', 'mensaje', 'llamada_perdida'],
 }

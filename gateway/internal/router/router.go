@@ -30,6 +30,7 @@ type Deps struct {
 	LlamadasH    *handler.LlamadasHandler
 	WsH          *handler.WsHandler
 	PresignH     *handler.PresignHandler
+	DC3H         *handler.DC3Handler
 	AuthMW       gin.HandlerFunc
 	InstructorMW gin.HandlerFunc
 	AdminMW      gin.HandlerFunc
@@ -189,6 +190,14 @@ func New(d Deps) *gin.Engine {
 			auth.GET("/mis-examenes", d.ExamenesH.ListMisExamenes)
 			auth.GET("/examenes/:id", d.ExamenesH.GetExamen)
 			auth.POST("/examenes/:id/submit", d.ExamenesH.SubmitExamen)
+
+			// Constancias DC-3.
+			//
+			// La emisión es automática al completar el curso; estas rutas son
+			// para capturar los datos que falten y para consultarlas después.
+			auth.GET("/capacitaciones/:id/dc3", d.DC3H.EstadoConstancia)
+			auth.POST("/capacitaciones/:id/dc3", d.DC3H.GuardarDatosYEmitir)
+			auth.GET("/mis-constancias", d.DC3H.ListMisConstancias)
 
 			// Presign
 			auth.GET("/presign", d.PresignH.PresignUpload)

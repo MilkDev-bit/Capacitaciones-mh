@@ -134,6 +134,7 @@ var tiposNotificacion = map[string]bool{
 	"mensaje":         true,
 	"llamada_perdida": true,
 	"foro_respuesta":  true,
+	"constancia":      true,
 }
 
 func (s *UsuariosService) CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (*usuariospb.CreateNotificacionResponse, error) {

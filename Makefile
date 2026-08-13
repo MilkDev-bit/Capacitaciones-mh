@@ -11,7 +11,7 @@
 
 SERVICES := auth usuarios cursos lecciones examenes foros
 # Módulos compartidos que no son servicios pero sí forman parte del workspace.
-SHARED := pkg/mailer pkg/money
+SHARED := pkg/dc3 pkg/mailer pkg/money
 
 # ─────────────────────────────────────────────────────────────
 # Toolchain de Go

@@ -190,6 +190,12 @@ async function enviarAccesos() {
   }
 }
 
+// OBSOLETO — pendiente de retirar junto con sus dos botones.
+//
+// Mandaba al representante a un sitio externo a teclear a mano los datos de cada
+// trabajador. Ahora la constancia se emite sola dentro de la plataforma cuando
+// el alumno termina el curso: él captura sus datos una vez y el instructor los
+// de la empresa en la capacitación.
 function tramitarDC3Licencia(lic: any) {
   const nombreCurso = lic.nombre && lic.nombre !== 'Licencia Corporativa' ? lic.nombre : 'Capacitación'
   const duracion = Math.ceil((lic.curso_duracion || 60) / 60)

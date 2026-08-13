@@ -221,6 +221,44 @@ func runMigrations(db *sqlx.DB) error {
 			enviado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			PRIMARY KEY (licencia_id, capacitacion_id)
 		)`,
+		// ── Constancias DC-3 ────────────────────────────────────────────────
+		//
+		// Datos de empresa y agentes capacitadores, por capacitación. Van aquí
+		// y no en una configuración global porque el patrón que firma la
+		// constancia es quien emplea al trabajador: un mismo instructor puede
+		// impartir para clientes distintos y cada uno firma lo suyo.
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_razon_social VARCHAR(200)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_rfc VARCHAR(20)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_patron VARCHAR(200)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_representante_trabajadores VARCHAR(200)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_area_tematica VARCHAR(100)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_capacitador VARCHAR(200)`,
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_logo_base64 TEXT`,
+
+		// Datos del trabajador: los captura el alumno la primera vez y se
+		// reutilizan en todas sus constancias. Uno por usuario, de ahí la PK.
+		//
+		// Sin FK contra users: esa tabla vive en la base de auth/usuarios.
+		`CREATE TABLE IF NOT EXISTS dc3_datos_trabajador (
+			user_id UUID PRIMARY KEY,
+			curp VARCHAR(18) NOT NULL,
+			puesto VARCHAR(150) NOT NULL,
+			ocupacion_especifica VARCHAR(150) NOT NULL,
+			actualizado_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+
+		// Constancia emitida. La PK compuesta es lo que hace idempotente la
+		// generación automática: si el alumno vuelve a completar el curso o el
+		// webhook se repite, se reemplaza la fila en vez de duplicar el archivo.
+		`CREATE TABLE IF NOT EXISTS dc3_constancias (
+			user_id UUID NOT NULL,
+			capacitacion_id UUID NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			archivo_url TEXT NOT NULL,
+			generada_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (user_id, capacitacion_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_dc3_constancias_user ON dc3_constancias(user_id, generada_at DESC)`,
+
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,
 		`ALTER TABLE lecciones ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ`,

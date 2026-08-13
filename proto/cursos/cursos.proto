@@ -87,6 +87,19 @@ service CursosService {
 
   // Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
   rpc GetAdminDashboardStats(EmptyRequest) returns (AdminDashboardStatsResponse);
+
+  // ── Constancias DC-3 ──────────────────────────────────────────────────────
+  //
+  // La constancia se arma con tres orígenes: los datos del trabajador (los
+  // captura el alumno una vez), los de la empresa y el curso (los captura el
+  // instructor en la capacitación) y la fecha de término (la pone el sistema).
+  //
+  // GetDatosDC3 devuelve todo junto ya resuelto para que el Gateway solo tenga
+  // que generar el documento, sin conocer el modelo del foro de datos.
+  rpc GetDatosDC3(DatosDC3Request)            returns (DatosDC3Response);
+  rpc GuardarDatosTrabajador(DatosTrabajadorRequest) returns (EmptyResponse);
+  rpc RegistrarConstanciaDC3(RegistrarConstanciaRequest) returns (EmptyResponse);
+  rpc ListMisConstancias(UserRequest)         returns (ListConstanciasResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -115,6 +128,9 @@ message CreateCursoRequest {
   string scheduled_at    = 12;
   int32  duration        = 13;
   bool   dc3_enabled     = 14;
+  // Datos de empresa y agentes capacitadores para las constancias de este
+  // curso. Solo se exige cuando dc3_enabled va en true.
+  DatosEmpresaDC3 dc3_empresa = 15;
 }
 
 message UpdateCursoRequest {
@@ -133,6 +149,7 @@ message UpdateCursoRequest {
   string scheduled_at    = 13;
   int32  duration        = 15;
   bool   dc3_enabled     = 16;
+  DatosEmpresaDC3 dc3_empresa = 17;
 }
 
 message InscribirseRequest {
@@ -174,6 +191,9 @@ message CursoResponse {
   int32  total_lecciones = 18;
   int32  lecciones_completadas = 19;
   bool   dc3_enabled     = 20;
+  // Solo se rellena para el instructor y el admin: son datos fiscales de la
+  // empresa y no tienen por qué viajar al listado público ni al del alumno.
+  DatosEmpresaDC3 dc3_empresa = 21;
 }
 
 message ListCursosResponse {
@@ -558,3 +578,82 @@ message CursoCompletadoResponse {
 
 
 
+
+// ── Constancias DC-3 ─────────────────────────────────────────────────────────
+
+// DatosEmpresaDC3 son los datos que el instructor captura UNA vez por
+// capacitación y que se repiten en todas las constancias que emita ese curso.
+//
+// Van en la capacitación y no en una configuración global porque el patrón que
+// firma la constancia es quien emplea al trabajador, y un mismo instructor
+// puede impartir cursos para clientes distintos.
+message DatosEmpresaDC3 {
+  string razon_social                = 1;
+  string rfc                         = 2;
+  // Agentes que firman: el patrón o su representante legal, y el
+  // representante de los trabajadores.
+  string nombre_patron               = 3;
+  string representante_trabajadores  = 4;
+  // Área temática del catálogo STPS y capacitador acreditado.
+  string area_tematica               = 5;
+  string nombre_capacitador          = 6;
+  // Logo en base64; sustituye el de la plantilla. Vacío deja el de fábrica.
+  string logo_base64                 = 7;
+}
+
+// DatosTrabajadorDC3 lo captura el alumno al terminar su primer curso con
+// constancia y se reutiliza en las siguientes.
+message DatosTrabajadorDC3 {
+  string curp                 = 1;
+  string puesto               = 2;
+  string ocupacion_especifica = 3;
+}
+
+message DatosTrabajadorRequest {
+  string user_id = 1;
+  DatosTrabajadorDC3 datos = 2;
+}
+
+message DatosDC3Request {
+  string user_id        = 1;
+  string capacitacion_id = 2;
+}
+
+// DatosDC3Response trae todo lo necesario para generar el documento, más el
+// diagnóstico de qué falta y a quién le toca completarlo.
+message DatosDC3Response {
+  DatosEmpresaDC3    empresa    = 1;
+  DatosTrabajadorDC3 trabajador = 2;
+
+  string nombre_curso   = 3;
+  string duracion_horas = 4;
+  // Fechas en YYYY-MM-DD. El inicio es la inscripción y el fin la fecha en que
+  // se completó el curso: es lo que la constancia declara como periodo.
+  string fecha_inicio = 5;
+  string fecha_fin    = 6;
+
+  // Falsos cuando el instructor o el alumno todavía no capturaron lo suyo. El
+  // frontend los usa para saber a quién pedirle los datos en lugar de mostrar
+  // un error genérico.
+  bool empresa_completa    = 7;
+  bool trabajador_completo = 8;
+  // URL de una constancia ya emitida; vacía si aún no se ha generado.
+  string constancia_url = 9;
+}
+
+message RegistrarConstanciaRequest {
+  string user_id         = 1;
+  string capacitacion_id = 2;
+  string archivo_url     = 3;
+}
+
+message ConstanciaDC3 {
+  string capacitacion_id     = 1;
+  string capacitacion_titulo = 2;
+  string archivo_url         = 3;
+  string generada_at         = 4;
+}
+
+message ListConstanciasResponse {
+  repeated ConstanciaDC3 constancias = 1;
+}

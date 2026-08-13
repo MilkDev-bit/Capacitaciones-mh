@@ -70,6 +70,10 @@ const (
 	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
 	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
 	CursosService_GetAdminDashboardStats_FullMethodName         = "/cursos.CursosService/GetAdminDashboardStats"
+	CursosService_GetDatosDC3_FullMethodName                    = "/cursos.CursosService/GetDatosDC3"
+	CursosService_GuardarDatosTrabajador_FullMethodName         = "/cursos.CursosService/GuardarDatosTrabajador"
+	CursosService_RegistrarConstanciaDC3_FullMethodName         = "/cursos.CursosService/RegistrarConstanciaDC3"
+	CursosService_ListMisConstancias_FullMethodName             = "/cursos.CursosService/ListMisConstancias"
 )
 
 // CursosServiceClient is the client API for CursosService service.
@@ -150,6 +154,18 @@ type CursosServiceClient interface {
 	AdminDesAsignar(ctx context.Context, in *AsignacionIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error)
+	// ── Constancias DC-3 ──────────────────────────────────────────────────────
+	//
+	// La constancia se arma con tres orígenes: los datos del trabajador (los
+	// captura el alumno una vez), los de la empresa y el curso (los captura el
+	// instructor en la capacitación) y la fecha de término (la pone el sistema).
+	//
+	// GetDatosDC3 devuelve todo junto ya resuelto para que el Gateway solo tenga
+	// que generar el documento, sin conocer el modelo del foro de datos.
+	GetDatosDC3(ctx context.Context, in *DatosDC3Request, opts ...grpc.CallOption) (*DatosDC3Response, error)
+	GuardarDatosTrabajador(ctx context.Context, in *DatosTrabajadorRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	RegistrarConstanciaDC3(ctx context.Context, in *RegistrarConstanciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ListMisConstancias(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListConstanciasResponse, error)
 }
 
 type cursosServiceClient struct {
@@ -670,6 +686,46 @@ func (c *cursosServiceClient) GetAdminDashboardStats(ctx context.Context, in *Em
 	return out, nil
 }
 
+func (c *cursosServiceClient) GetDatosDC3(ctx context.Context, in *DatosDC3Request, opts ...grpc.CallOption) (*DatosDC3Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DatosDC3Response)
+	err := c.cc.Invoke(ctx, CursosService_GetDatosDC3_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) GuardarDatosTrabajador(ctx context.Context, in *DatosTrabajadorRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_GuardarDatosTrabajador_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) RegistrarConstanciaDC3(ctx context.Context, in *RegistrarConstanciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_RegistrarConstanciaDC3_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListMisConstancias(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListConstanciasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListConstanciasResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListMisConstancias_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CursosServiceServer is the server API for CursosService service.
 // All implementations must embed UnimplementedCursosServiceServer
 // for forward compatibility.
@@ -748,6 +804,18 @@ type CursosServiceServer interface {
 	AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error)
+	// ── Constancias DC-3 ──────────────────────────────────────────────────────
+	//
+	// La constancia se arma con tres orígenes: los datos del trabajador (los
+	// captura el alumno una vez), los de la empresa y el curso (los captura el
+	// instructor en la capacitación) y la fecha de término (la pone el sistema).
+	//
+	// GetDatosDC3 devuelve todo junto ya resuelto para que el Gateway solo tenga
+	// que generar el documento, sin conocer el modelo del foro de datos.
+	GetDatosDC3(context.Context, *DatosDC3Request) (*DatosDC3Response, error)
+	GuardarDatosTrabajador(context.Context, *DatosTrabajadorRequest) (*EmptyResponse, error)
+	RegistrarConstanciaDC3(context.Context, *RegistrarConstanciaRequest) (*EmptyResponse, error)
+	ListMisConstancias(context.Context, *UserRequest) (*ListConstanciasResponse, error)
 	mustEmbedUnimplementedCursosServiceServer()
 }
 
@@ -910,6 +978,18 @@ func (UnimplementedCursosServiceServer) AdminDesAsignar(context.Context, *Asigna
 }
 func (UnimplementedCursosServiceServer) GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAdminDashboardStats not implemented")
+}
+func (UnimplementedCursosServiceServer) GetDatosDC3(context.Context, *DatosDC3Request) (*DatosDC3Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDatosDC3 not implemented")
+}
+func (UnimplementedCursosServiceServer) GuardarDatosTrabajador(context.Context, *DatosTrabajadorRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GuardarDatosTrabajador not implemented")
+}
+func (UnimplementedCursosServiceServer) RegistrarConstanciaDC3(context.Context, *RegistrarConstanciaRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegistrarConstanciaDC3 not implemented")
+}
+func (UnimplementedCursosServiceServer) ListMisConstancias(context.Context, *UserRequest) (*ListConstanciasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMisConstancias not implemented")
 }
 func (UnimplementedCursosServiceServer) mustEmbedUnimplementedCursosServiceServer() {}
 func (UnimplementedCursosServiceServer) testEmbeddedByValue()                       {}
@@ -1850,6 +1930,78 @@ func _CursosService_GetAdminDashboardStats_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_GetDatosDC3_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DatosDC3Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetDatosDC3(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetDatosDC3_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetDatosDC3(ctx, req.(*DatosDC3Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_GuardarDatosTrabajador_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DatosTrabajadorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GuardarDatosTrabajador(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GuardarDatosTrabajador_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GuardarDatosTrabajador(ctx, req.(*DatosTrabajadorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_RegistrarConstanciaDC3_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegistrarConstanciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).RegistrarConstanciaDC3(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_RegistrarConstanciaDC3_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).RegistrarConstanciaDC3(ctx, req.(*RegistrarConstanciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListMisConstancias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListMisConstancias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListMisConstancias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListMisConstancias(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CursosService_ServiceDesc is the grpc.ServiceDesc for CursosService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2060,6 +2212,22 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAdminDashboardStats",
 			Handler:    _CursosService_GetAdminDashboardStats_Handler,
+		},
+		{
+			MethodName: "GetDatosDC3",
+			Handler:    _CursosService_GetDatosDC3_Handler,
+		},
+		{
+			MethodName: "GuardarDatosTrabajador",
+			Handler:    _CursosService_GuardarDatosTrabajador_Handler,
+		},
+		{
+			MethodName: "RegistrarConstanciaDC3",
+			Handler:    _CursosService_RegistrarConstanciaDC3_Handler,
+		},
+		{
+			MethodName: "ListMisConstancias",
+			Handler:    _CursosService_ListMisConstancias_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
