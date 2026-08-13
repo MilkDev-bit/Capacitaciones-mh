@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	Prueba-Go/gen v0.0.0
+	Prueba-Go/pkg/dc3 v0.0.0
 	Prueba-Go/pkg/mailer v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.17
@@ -41,6 +42,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lukasjarosch/go-docx v0.5.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -62,3 +64,5 @@ require (
 replace Prueba-Go/gen => ../gen
 
 replace Prueba-Go/pkg/mailer => ../pkg/mailer
+
+replace Prueba-Go/pkg/dc3 => ../pkg/dc3

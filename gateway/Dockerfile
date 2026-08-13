@@ -21,9 +21,14 @@ WORKDIR /app
 
 COPY gen/go.mod gen/go.mod
 COPY gen/go.sum* gen/
-# pkg/mailer es un módulo local referenciado por 'replace': su go.mod debe
-# existir antes del 'go mod download' o la resolución falla.
+# pkg/mailer y pkg/dc3 son módulos locales referenciados por 'replace': sus
+# go.mod deben existir antes del 'go mod download' o la resolución falla.
+#
+# El build corre con GOWORK=off, así que go.work NO los une aquí: lo único que
+# los enlaza son los 'replace' del go.mod del gateway. Añadir un módulo local
+# nuevo obliga siempre a tocar los dos sitios, este y el go.mod.
 COPY pkg/mailer/go.mod pkg/mailer/go.sum* ./pkg/mailer/
+COPY pkg/dc3/go.mod    pkg/dc3/go.sum*    ./pkg/dc3/
 COPY gateway/go.mod gateway/go.sum* ./gateway/
 
 WORKDIR /app/gateway
@@ -32,6 +37,8 @@ RUN GOWORK=off go mod download && GOWORK=off go mod tidy
 WORKDIR /app
 COPY gen/         gen/
 COPY pkg/mailer/  pkg/mailer/
+# Incluye plantilla/dc3.docx, que va embebida en el binario con go:embed.
+COPY pkg/dc3/     pkg/dc3/
 COPY gateway/     gateway/
 
 WORKDIR /app/gateway
