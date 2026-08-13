@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/stripe/stripe-go/v78 v78.12.0
+	github.com/stripe/stripe-go/v86 v86.1.0
 	google.golang.org/grpc v1.70.0
 )
 

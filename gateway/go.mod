@@ -14,7 +14,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/stripe/stripe-go/v78 v78.12.0
+	github.com/stripe/stripe-go/v86 v86.1.0
 	google.golang.org/grpc v1.70.0
 )
 

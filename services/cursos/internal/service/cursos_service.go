@@ -14,8 +14,8 @@ import (
 	"Prueba-Go/pkg/money"
 	"Prueba-Go/services/cursos/internal/repository"
 
-	"github.com/stripe/stripe-go/v78"
-	"github.com/stripe/stripe-go/v78/checkout/session"
+	"github.com/stripe/stripe-go/v86"
+	"github.com/stripe/stripe-go/v86/checkout/session"
 	"google.golang.org/grpc/metadata"
 )
 

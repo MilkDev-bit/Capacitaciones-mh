@@ -15,7 +15,7 @@ import (
 	"Prueba-Go/pkg/mailer"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v86"
 	"google.golang.org/grpc/metadata"
 )
 

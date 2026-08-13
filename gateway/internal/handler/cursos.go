@@ -17,9 +17,9 @@ import (
 	"Prueba-Go/pkg/mailer"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stripe/stripe-go/v78"
-	stripeSession "github.com/stripe/stripe-go/v78/checkout/session"
-	"github.com/stripe/stripe-go/v78/webhook"
+	"github.com/stripe/stripe-go/v86"
+	stripeSession "github.com/stripe/stripe-go/v86/checkout/session"
+	"github.com/stripe/stripe-go/v86/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -403,15 +403,19 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	if err != nil {
 		// Se registra el motivo real. Este 400 era mudo, y desde fuera es
 		// indistinguible de un payload corrupto: en el log de acceso solo se ve
-		// "400 POST /api/webhooks/stripe" en unos microsegundos. El fallo
-		// habitual —STRIPE_WEBHOOK_SECRET desincronizada tras recrear el destino
-		// en Stripe, porque cada destino tiene su propio whsec_— deja así toda
-		// la plataforma sin procesar cobros de forma completamente silenciosa.
+		// "400 POST /api/webhooks/stripe" en unos microsegundos, y así toda la
+		// plataforma puede quedarse sin procesar cobros en silencio.
 		//
-		// El secreto NUNCA se loguea, solo si está presente: es lo que distingue
-		// "falta la variable" de "la variable es de otro destino", que es la
-		// única duda que importa aquí.
-		slog.Error("webhook: firma inválida, el evento se descarta",
+		// El mensaje NO nombra una causa concreta a propósito. ConstructEvent
+		// rechaza por al menos dos motivos muy distintos y el texto de `error`
+		// es lo único que los separa:
+		//   · STRIPE_WEBHOOK_SECRET no corresponde a este destino
+		//   · la versión de API del destino no coincide con la de stripe-go
+		// Dar por hecho el primero manda a rotar secretos que estaban bien.
+		//
+		// El secreto NUNCA se loguea, solo si está presente: distingue "falta la
+		// variable" de "la variable es de otro destino".
+		slog.Error("webhook: evento rechazado por ConstructEvent",
 			"error", err,
 			"secreto_configurado", endpointSecret != "",
 			"cabecera_presente", signatureHeader != "",

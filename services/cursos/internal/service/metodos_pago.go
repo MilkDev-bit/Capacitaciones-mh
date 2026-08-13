@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v86"
 )
 
 // Límites de importe de OXXO, según la documentación de Stripe:

@@ -12,8 +12,8 @@ import (
 	cursospb "Prueba-Go/gen/cursos"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stripe/stripe-go/v78"
-	billingportal "github.com/stripe/stripe-go/v78/billingportal/session"
+	"github.com/stripe/stripe-go/v86"
+	billingportal "github.com/stripe/stripe-go/v86/billingportal/session"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,12 +231,13 @@ func (h *CursosHandler) sincronizarDesdeStripe(ctx context.Context, sub *stripe.
 		return
 	}
 
+	inicio, fin := periodoDeSuscripcion(sub)
 	req := &cursospb.SincronizarSuscripcionRequest{
 		StripeSubscriptionId: sub.ID,
 		Estado:               estadoSuscripcionDesdeStripe(string(sub.Status)),
 		CancelarAlTerminar:   sub.CancelAtPeriodEnd,
-		PeriodoInicio:        deUnix(sub.CurrentPeriodStart),
-		PeriodoFin:           deUnix(sub.CurrentPeriodEnd),
+		PeriodoInicio:        deUnix(inicio),
+		PeriodoFin:           deUnix(fin),
 		PruebaFin:            deUnix(sub.TrialEnd),
 	}
 	if sub.Customer != nil {
@@ -258,14 +259,47 @@ func (h *CursosHandler) sincronizarDesdeStripe(ctx context.Context, sub *stripe.
 	}
 }
 
+// periodoDeSuscripcion devuelve el periodo de facturación vigente.
+//
+// Hasta la versión 2025-03-31.basil de la API estos campos vivían en la
+// suscripción (`sub.CurrentPeriodStart/End`). Stripe los movió al ítem porque
+// una suscripción puede facturar ítems con periodos distintos.
+//
+// Se toma el del primer ítem: este dominio vende un plan con N asientos, o sea
+// un único ítem — el mismo del que ya se leía `Quantity` más abajo. Si algún día
+// se venden planes combinados, aquí habrá que decidir cuál manda.
+func periodoDeSuscripcion(sub *stripe.Subscription) (inicio, fin int64) {
+	if sub == nil || sub.Items == nil || len(sub.Items.Data) == 0 {
+		return 0, 0
+	}
+	item := sub.Items.Data[0]
+	return item.CurrentPeriodStart, item.CurrentPeriodEnd
+}
+
+// suscripcionDeFactura extrae el ID de la suscripción que originó la factura.
+//
+// Hasta 2025-03-31.basil esto era `inv.Subscription`. Ahora la factura describe
+// su origen en `Parent`, que no siempre es una suscripción (una factura suelta
+// no lo es), de ahí el recorrido con guardas en cada salto.
+func suscripcionDeFactura(inv *stripe.Invoice) string {
+	if inv == nil || inv.Parent == nil || inv.Parent.SubscriptionDetails == nil {
+		return ""
+	}
+	if sub := inv.Parent.SubscriptionDetails.Subscription; sub != nil {
+		return sub.ID
+	}
+	return ""
+}
+
 // registrarFactura guarda el resultado de un cobro recurrente.
 func (h *CursosHandler) registrarFactura(ctx context.Context, inv *stripe.Invoice, estado string) {
-	if inv == nil || inv.ID == "" || inv.Subscription == nil {
+	subID := suscripcionDeFactura(inv)
+	if inv == nil || inv.ID == "" || subID == "" {
 		return
 	}
 	moneda := strings.ToUpper(string(inv.Currency))
 	if _, err := h.c.Cursos.RegistrarFacturaSuscripcion(ctx, &cursospb.FacturaSuscripcionRequest{
-		StripeSubscriptionId: inv.Subscription.ID,
+		StripeSubscriptionId: subID,
 		StripeInvoiceId:      inv.ID,
 		Estado:               estado,
 		TotalCentavos:        inv.Total,
