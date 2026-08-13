@@ -401,9 +401,30 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	signatureHeader := c.GetHeader("Stripe-Signature")
 	event, err := webhook.ConstructEvent(payload, signatureHeader, endpointSecret)
 	if err != nil {
+		// Se registra el motivo real. Este 400 era mudo, y desde fuera es
+		// indistinguible de un payload corrupto: en el log de acceso solo se ve
+		// "400 POST /api/webhooks/stripe" en unos microsegundos. El fallo
+		// habitual —STRIPE_WEBHOOK_SECRET desincronizada tras recrear el destino
+		// en Stripe, porque cada destino tiene su propio whsec_— deja así toda
+		// la plataforma sin procesar cobros de forma completamente silenciosa.
+		//
+		// El secreto NUNCA se loguea, solo si está presente: es lo que distingue
+		// "falta la variable" de "la variable es de otro destino", que es la
+		// única duda que importa aquí.
+		slog.Error("webhook: firma inválida, el evento se descarta",
+			"error", err,
+			"secreto_configurado", endpointSecret != "",
+			"cabecera_presente", signatureHeader != "",
+			"bytes_payload", len(payload))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Webhook signature verification failed"})
 		return
 	}
+
+	// Contraparte del error de arriba: deja constancia de que el evento llegó y
+	// es auténtico. Sin esta línea, un webhook que funciona y uno que se rechaza
+	// se ven igual en el log de acceso, y no hay forma de distinguir "Stripe no
+	// está enviando nada" de "está enviando y lo estamos tirando".
+	slog.Info("webhook: evento recibido", "tipo", event.Type, "event_id", event.ID)
 
 	// Deduplicación por event.ID ANTES de procesar. Stripe entrega
 	// al-menos-una-vez y reintenta ante cualquier respuesta que no sea 2xx: sin
