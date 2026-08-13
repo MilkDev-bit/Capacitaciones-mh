@@ -11,18 +11,84 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
 )
 
 // DatosTrabajadorDC3 es lo que el alumno captura una sola vez.
+//
+// El bloque de empresa es opcional y va TODO junto: es el patrón del alumno.
+// Quien no lo declara recibe la constancia a nombre de la empresa que configuró
+// el instructor.
 type DatosTrabajadorDC3 struct {
 	UserID              string    `db:"user_id"`
 	CURP                string    `db:"curp"`
 	Puesto              string    `db:"puesto"`
 	OcupacionEspecifica string    `db:"ocupacion_especifica"`
 	ActualizadoAt       time.Time `db:"actualizado_at"`
+
+	RazonSocial     string `db:"razon_social"`
+	RFC             string `db:"rfc"`
+	NombrePatron    string `db:"nombre_patron"`
+	RepTrabajadores string `db:"representante_trabajadores"`
+}
+
+// TieneEmpresa dice si el alumno declaró un patrón propio.
+//
+// Exige el bloque completo a propósito: con media empresa saldría una constancia
+// que no corresponde a ninguna entidad real, y es preferible caer al respaldo
+// del instructor —que sí está completo— que emitir un híbrido.
+func (d *DatosTrabajadorDC3) TieneEmpresa() bool {
+	if d == nil {
+		return false
+	}
+	for _, v := range []string{d.RazonSocial, d.RFC, d.NombrePatron, d.RepTrabajadores} {
+		if strings.TrimSpace(v) == "" {
+			return false
+		}
+	}
+	return true
+}
+
+// EmpresaDelAlumno devuelve el patrón declarado por el alumno.
+func (d *DatosTrabajadorDC3) EmpresaDelAlumno() *cursospb.DatosEmpresaDC3 {
+	if !d.TieneEmpresa() {
+		return nil
+	}
+	return &cursospb.DatosEmpresaDC3{
+		RazonSocial:               d.RazonSocial,
+		Rfc:                       d.RFC,
+		NombrePatron:              d.NombrePatron,
+		RepresentanteTrabajadores: d.RepTrabajadores,
+	}
+}
+
+// EmpresaInstructorDC3 es el respaldo que configura el instructor.
+type EmpresaInstructorDC3 struct {
+	InstructorID      string    `db:"instructor_id"`
+	RazonSocial       string    `db:"razon_social"`
+	RFC               string    `db:"rfc"`
+	NombrePatron      string    `db:"nombre_patron"`
+	RepTrabajadores   string    `db:"representante_trabajadores"`
+	NombreCapacitador string    `db:"nombre_capacitador"`
+	LogoBase64        string    `db:"logo_base64"`
+	ActualizadoAt     time.Time `db:"actualizado_at"`
+}
+
+func (e *EmpresaInstructorDC3) ToProto() *cursospb.DatosEmpresaDC3 {
+	if e == nil {
+		return &cursospb.DatosEmpresaDC3{}
+	}
+	return &cursospb.DatosEmpresaDC3{
+		RazonSocial:               e.RazonSocial,
+		Rfc:                       e.RFC,
+		NombrePatron:              e.NombrePatron,
+		RepresentanteTrabajadores: e.RepTrabajadores,
+		NombreCapacitador:         e.NombreCapacitador,
+		LogoBase64:                e.LogoBase64,
+	}
 }
 
 // ConstanciaDC3 es una constancia ya emitida.
@@ -41,7 +107,8 @@ type ConstanciaDC3 struct {
 func (r *postgresCursosRepository) FindDatosTrabajador(ctx context.Context, userID string) (*DatosTrabajadorDC3, error) {
 	d := &DatosTrabajadorDC3{}
 	err := r.db.GetContext(ctx, d,
-		`SELECT user_id, curp, puesto, ocupacion_especifica, actualizado_at
+		`SELECT user_id, curp, puesto, ocupacion_especifica, actualizado_at,
+		        razon_social, rfc, nombre_patron, representante_trabajadores
 		   FROM dc3_datos_trabajador WHERE user_id = $1`, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -58,14 +125,58 @@ func (r *postgresCursosRepository) FindDatosTrabajador(ctx context.Context, user
 // la constancia— y porque los reutiliza en cada curso posterior.
 func (r *postgresCursosRepository) GuardarDatosTrabajador(ctx context.Context, d *DatosTrabajadorDC3) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO dc3_datos_trabajador (user_id, curp, puesto, ocupacion_especifica, actualizado_at)
-		 VALUES ($1::uuid, $2, $3, $4, NOW())
+		`INSERT INTO dc3_datos_trabajador
+		    (user_id, curp, puesto, ocupacion_especifica,
+		     razon_social, rfc, nombre_patron, representante_trabajadores, actualizado_at)
+		 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, NOW())
 		 ON CONFLICT (user_id) DO UPDATE
 		    SET curp = EXCLUDED.curp,
 		        puesto = EXCLUDED.puesto,
 		        ocupacion_especifica = EXCLUDED.ocupacion_especifica,
+		        razon_social = EXCLUDED.razon_social,
+		        rfc = EXCLUDED.rfc,
+		        nombre_patron = EXCLUDED.nombre_patron,
+		        representante_trabajadores = EXCLUDED.representante_trabajadores,
 		        actualizado_at = NOW()`,
-		d.UserID, d.CURP, d.Puesto, d.OcupacionEspecifica)
+		d.UserID, d.CURP, d.Puesto, d.OcupacionEspecifica,
+		d.RazonSocial, d.RFC, d.NombrePatron, d.RepTrabajadores)
+	return err
+}
+
+// FindEmpresaInstructor devuelve el respaldo configurado por un instructor, o
+// (nil, nil) si todavía no lo ha capturado.
+func (r *postgresCursosRepository) FindEmpresaInstructor(ctx context.Context, instructorID string) (*EmpresaInstructorDC3, error) {
+	e := &EmpresaInstructorDC3{}
+	err := r.db.GetContext(ctx, e,
+		`SELECT instructor_id, razon_social, rfc, nombre_patron,
+		        representante_trabajadores, nombre_capacitador, logo_base64, actualizado_at
+		   FROM dc3_empresa_instructor WHERE instructor_id = $1::uuid`, instructorID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return e, nil
+}
+
+// GuardarEmpresaInstructor crea o actualiza el respaldo del instructor.
+func (r *postgresCursosRepository) GuardarEmpresaInstructor(ctx context.Context, e *EmpresaInstructorDC3) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO dc3_empresa_instructor
+		    (instructor_id, razon_social, rfc, nombre_patron,
+		     representante_trabajadores, nombre_capacitador, logo_base64, actualizado_at)
+		 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, NOW())
+		 ON CONFLICT (instructor_id) DO UPDATE
+		    SET razon_social = EXCLUDED.razon_social,
+		        rfc = EXCLUDED.rfc,
+		        nombre_patron = EXCLUDED.nombre_patron,
+		        representante_trabajadores = EXCLUDED.representante_trabajadores,
+		        nombre_capacitador = EXCLUDED.nombre_capacitador,
+		        logo_base64 = EXCLUDED.logo_base64,
+		        actualizado_at = NOW()`,
+		e.InstructorID, e.RazonSocial, e.RFC, e.NombrePatron,
+		e.RepTrabajadores, e.NombreCapacitador, e.LogoBase64)
 	return err
 }
 

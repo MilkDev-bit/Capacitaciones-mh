@@ -223,17 +223,36 @@ func runMigrations(db *sqlx.DB) error {
 		)`,
 		// ── Constancias DC-3 ────────────────────────────────────────────────
 		//
-		// Datos de empresa y agentes capacitadores, por capacitación. Van aquí
-		// y no en una configuración global porque el patrón que firma la
-		// constancia es quien emplea al trabajador: un mismo instructor puede
-		// impartir para clientes distintos y cada uno firma lo suyo.
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_razon_social VARCHAR(200)`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_rfc VARCHAR(20)`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_patron VARCHAR(200)`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_representante_trabajadores VARCHAR(200)`,
+		// El área temática es del CURSO: "trabajos en altura" y "primeros
+		// auxilios" no comparten clave del catálogo STPS.
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_area_tematica VARCHAR(100)`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_capacitador VARCHAR(200)`,
-		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_logo_base64 TEXT`,
+
+		// Los datos de empresa vivieron un momento aquí, por capacitación. Se
+		// retiran: el patrón es de quien emplea al trabajador, no del curso.
+		// Ahora los declara el alumno y el instructor pone el respaldo.
+		//
+		// El DROP es seguro porque estas columnas nunca llegaron a escribirse:
+		// el INSERT y el UPDATE de capacitaciones jamás las incluyeron.
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_razon_social`,
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_rfc`,
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_nombre_patron`,
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_representante_trabajadores`,
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_nombre_capacitador`,
+		`ALTER TABLE capacitaciones DROP COLUMN IF EXISTS dc3_logo_base64`,
+
+		// Empresa por defecto del instructor. Es el respaldo para el alumno que
+		// no declara patrón propio: un particular que se capacita por su cuenta
+		// recibe la constancia a nombre de quien la imparte.
+		`CREATE TABLE IF NOT EXISTS dc3_empresa_instructor (
+			instructor_id UUID PRIMARY KEY,
+			razon_social VARCHAR(200) NOT NULL DEFAULT '',
+			rfc VARCHAR(20) NOT NULL DEFAULT '',
+			nombre_patron VARCHAR(200) NOT NULL DEFAULT '',
+			representante_trabajadores VARCHAR(200) NOT NULL DEFAULT '',
+			nombre_capacitador VARCHAR(200) NOT NULL DEFAULT '',
+			logo_base64 TEXT NOT NULL DEFAULT '',
+			actualizado_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
 
 		// Datos del trabajador: los captura el alumno la primera vez y se
 		// reutilizan en todas sus constancias. Uno por usuario, de ahí la PK.
@@ -246,6 +265,13 @@ func runMigrations(db *sqlx.DB) error {
 			ocupacion_especifica VARCHAR(150) NOT NULL,
 			actualizado_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		// Patrón del alumno. Opcional en bloque: o están los cuatro o ninguno.
+		// Mezclar la razón social del alumno con el representante del instructor
+		// daría un documento que no corresponde a ninguna empresa real.
+		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS razon_social VARCHAR(200) NOT NULL DEFAULT ''`,
+		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS rfc VARCHAR(20) NOT NULL DEFAULT ''`,
+		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS nombre_patron VARCHAR(200) NOT NULL DEFAULT ''`,
+		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS representante_trabajadores VARCHAR(200) NOT NULL DEFAULT ''`,
 
 		// Constancia emitida. La PK compuesta es lo que hace idempotente la
 		// generación automática: si el alumno vuelve a completar el curso o el

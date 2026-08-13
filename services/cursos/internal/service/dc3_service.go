@@ -38,19 +38,49 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 		return nil, ErrDC3NoHabilitado
 	}
 
-	empresa := curso.DC3Empresa()
-
 	trabajador, err := s.repo.FindDatosTrabajador(ctx, req.UserId)
 	if err != nil {
 		return nil, err
 	}
 
+	// Precedencia: manda el patrón que declara el alumno. Es el legalmente
+	// correcto —el patrón es quien lo emplea— y el instructor solo cubre a quien
+	// se capacita por su cuenta y no tiene empresa que lo respalde.
+	//
+	// La elección es en BLOQUE, nunca campo a campo: media empresa del alumno
+	// más media del instructor daría un documento que no corresponde a ninguna
+	// entidad real.
+	empresa, origen := trabajador.EmpresaDelAlumno(), "alumno"
+	if empresa == nil {
+		instructorID := ""
+		if curso.InstructorID != nil {
+			instructorID = *curso.InstructorID
+		}
+		respaldo, errE := s.repo.FindEmpresaInstructor(ctx, instructorID)
+		if errE != nil {
+			return nil, errE
+		}
+		empresa, origen = respaldo.ToProto(), "instructor"
+	} else {
+		// El capacitador y el logo son SIEMPRE del instructor, incluso cuando el
+		// patrón es el del alumno: quien imparte no cambia porque el trabajador
+		// tenga empleador propio.
+		if curso.InstructorID != nil {
+			if respaldo, _ := s.repo.FindEmpresaInstructor(ctx, *curso.InstructorID); respaldo != nil {
+				empresa.NombreCapacitador = respaldo.NombreCapacitador
+				empresa.LogoBase64 = respaldo.LogoBase64
+			}
+		}
+	}
+
 	resp := &cursospb.DatosDC3Response{
 		Empresa:            empresa,
+		EmpresaOrigen:      origen,
+		AreaTematica:       curso.DC3AreaTematica,
 		Trabajador:         trabajador.ToProto(),
 		NombreCurso:        curso.Title,
 		DuracionHoras:      horasDeMinutos(curso.Duration),
-		EmpresaCompleta:    empresaCompleta(empresa),
+		EmpresaCompleta:    empresaCompleta(empresa) && strings.TrimSpace(curso.DC3AreaTematica) != "",
 		TrabajadorCompleto: trabajadorCompleto(trabajador),
 	}
 
@@ -101,12 +131,63 @@ func (s *CursosService) GuardarDatosTrabajador(ctx context.Context, req *cursosp
 		return errors.New("el puesto y la ocupación específica son obligatorios")
 	}
 
-	return s.repo.GuardarDatosTrabajador(ctx, &repository.DatosTrabajadorDC3{
+	d := &repository.DatosTrabajadorDC3{
 		UserID:              req.UserId,
 		CURP:                curp,
 		Puesto:              puesto,
 		OcupacionEspecifica: ocupacion,
-	})
+	}
+
+	// El patrón del alumno se acepta entero o no se acepta. Guardar dos de los
+	// cuatro campos dejaría un bloque que TieneEmpresa() rechaza igualmente, y
+	// el alumno creería que ya declaró su empresa cuando no.
+	if e := req.Empresa; e != nil {
+		d.RazonSocial = strings.TrimSpace(e.RazonSocial)
+		d.RFC = strings.ToUpper(strings.TrimSpace(e.Rfc))
+		d.NombrePatron = strings.TrimSpace(e.NombrePatron)
+		d.RepTrabajadores = strings.TrimSpace(e.RepresentanteTrabajadores)
+
+		algunoLleno := d.RazonSocial != "" || d.RFC != "" || d.NombrePatron != "" || d.RepTrabajadores != ""
+		if algunoLleno && !d.TieneEmpresa() {
+			return errors.New("si declaras empresa, completa razón social, RFC, patrón y representante de los trabajadores")
+		}
+	}
+
+	return s.repo.GuardarDatosTrabajador(ctx, d)
+}
+
+// GetEmpresaInstructor devuelve el respaldo configurado por el instructor.
+func (s *CursosService) GetEmpresaInstructor(ctx context.Context, instructorID string) (*cursospb.DatosEmpresaDC3, error) {
+	e, err := s.repo.FindEmpresaInstructor(ctx, instructorID)
+	if err != nil {
+		return nil, err
+	}
+	return e.ToProto(), nil
+}
+
+// GuardarEmpresaInstructor valida y persiste el respaldo del instructor.
+//
+// Aquí sí se exige el bloque completo: es lo que va a firmar las constancias de
+// todo alumno sin empresa propia, y guardarlo a medias produciría documentos
+// inválidos sin que nadie se entere hasta que alguien los presente.
+func (s *CursosService) GuardarEmpresaInstructor(ctx context.Context, req *cursospb.EmpresaInstructorRequest) error {
+	if req.Empresa == nil {
+		return errors.New("faltan los datos de la empresa")
+	}
+	e := &repository.EmpresaInstructorDC3{
+		InstructorID:      req.InstructorId,
+		RazonSocial:       strings.TrimSpace(req.Empresa.RazonSocial),
+		RFC:               strings.ToUpper(strings.TrimSpace(req.Empresa.Rfc)),
+		NombrePatron:      strings.TrimSpace(req.Empresa.NombrePatron),
+		RepTrabajadores:   strings.TrimSpace(req.Empresa.RepresentanteTrabajadores),
+		NombreCapacitador: strings.TrimSpace(req.Empresa.NombreCapacitador),
+		LogoBase64:        req.Empresa.LogoBase64,
+	}
+	if e.RazonSocial == "" || e.RFC == "" || e.NombrePatron == "" ||
+		e.RepTrabajadores == "" || e.NombreCapacitador == "" {
+		return errors.New("razón social, RFC, patrón, representante de los trabajadores y capacitador son obligatorios")
+	}
+	return s.repo.GuardarEmpresaInstructor(ctx, e)
 }
 
 // RegistrarConstanciaDC3 guarda la URL del documento que generó el Gateway.
@@ -132,7 +213,7 @@ func (s *CursosService) ListMisConstancias(ctx context.Context, userID string) (
 
 // ── Ayudas ───────────────────────────────────────────────────────────────────
 
-// empresaCompleta dice si el instructor ya capturó lo suyo.
+// empresaCompleta dice si la empresa resuelta sirve para emitir.
 //
 // El logo queda fuera a propósito: es opcional, la plantilla trae uno de fábrica.
 func empresaCompleta(e *cursospb.DatosEmpresaDC3) bool {
@@ -141,7 +222,7 @@ func empresaCompleta(e *cursospb.DatosEmpresaDC3) bool {
 	}
 	for _, v := range []string{
 		e.RazonSocial, e.Rfc, e.NombrePatron,
-		e.RepresentanteTrabajadores, e.AreaTematica, e.NombreCapacitador,
+		e.RepresentanteTrabajadores, e.NombreCapacitador,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return false

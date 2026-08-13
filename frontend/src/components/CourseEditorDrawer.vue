@@ -24,18 +24,10 @@ const thumbnailFile = ref<File | null>(null)
 
 watch(() => props.show, (val) => {
   if (val && props.course) {
-    // dc3_empresa llega anidado desde el backend; se aplana al formulario para
-    // poder usar v-model directo en cada campo.
-    const emp = props.course.dc3_empresa || {}
     form.value = {
       ...props.course,
       dc3_enabled: props.course.dc3_enabled === true,
-      dc3_razon_social: emp.razon_social || '',
-      dc3_rfc: emp.rfc || '',
-      dc3_nombre_patron: emp.nombre_patron || '',
-      dc3_representante_trabajadores: emp.representante_trabajadores || '',
-      dc3_area_tematica: emp.area_tematica || '',
-      dc3_nombre_capacitador: emp.nombre_capacitador || '',
+      dc3_area_tematica: props.course.dc3_area_tematica || '',
     }
     thumbnailFile.value = null
     activeTab.value = 'info'
@@ -52,14 +44,7 @@ async function saveInfo() {
       type: form.value.type || 'course',
       is_public: form.value.is_public,
       dc3_enabled: form.value.dc3_enabled === true,
-      dc3_empresa: {
-        razon_social: form.value.dc3_razon_social || '',
-        rfc: form.value.dc3_rfc || '',
-        nombre_patron: form.value.dc3_nombre_patron || '',
-        representante_trabajadores: form.value.dc3_representante_trabajadores || '',
-        area_tematica: form.value.dc3_area_tematica || '',
-        nombre_capacitador: form.value.dc3_nombre_capacitador || '',
-      },
+      dc3_area_tematica: form.value.dc3_area_tematica || '',
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
@@ -151,47 +136,24 @@ async function saveInfo() {
           </div>
 
           <!--
-            Datos de empresa y agentes capacitadores.
-            Se capturan una vez por capacitación y se repiten en todas las
-            constancias que emita. Sin ellos la emisión queda bloqueada: el
-            alumno puede poner su CURP, pero no puede inventar al patrón que
-            firma su constancia.
+            Solo el área temática vive en el curso: cada temario tiene su clave
+            del catálogo STPS. Los datos de empresa y agentes capacitadores son
+            del instructor y se configuran una vez en su perfil, porque valen
+            para todas sus capacitaciones.
           -->
           <div v-if="form.dc3_enabled" class="dc3-empresa mt-4">
             <div class="dc3-empresa-head">
-              <strong>Datos para la constancia</strong>
-              <p>Obligatorios para emitir. Se aplican a todos los alumnos de esta capacitación.</p>
+              <strong>Área temática de la constancia</strong>
+              <p>
+                Clave del catálogo STPS de este temario. Los datos de empresa y
+                capacitador se configuran una sola vez en tu perfil.
+              </p>
             </div>
-
-            <div class="dc3-grid">
-              <label class="field">
-                <span class="field-label">Razón social <em>*</em></span>
-                <input v-model="form.dc3_razon_social" class="field-input"
-                       placeholder="Nombre o razón social de la empresa" />
-              </label>
-              <label class="field">
-                <span class="field-label">RFC <em>*</em></span>
-                <input v-model="form.dc3_rfc" class="field-input" maxlength="13"
-                       placeholder="12 o 13 caracteres" />
-              </label>
-              <label class="field">
-                <span class="field-label">Patrón o representante legal <em>*</em></span>
-                <input v-model="form.dc3_nombre_patron" class="field-input" />
-              </label>
-              <label class="field">
-                <span class="field-label">Representante de los trabajadores <em>*</em></span>
-                <input v-model="form.dc3_representante_trabajadores" class="field-input" />
-              </label>
-              <label class="field">
-                <span class="field-label">Área temática <em>*</em></span>
-                <input v-model="form.dc3_area_tematica" class="field-input"
-                       placeholder="Clave del catálogo STPS, ej: 6000" />
-              </label>
-              <label class="field">
-                <span class="field-label">Nombre del capacitador <em>*</em></span>
-                <input v-model="form.dc3_nombre_capacitador" class="field-input" />
-              </label>
-            </div>
+            <label class="field">
+              <span class="field-label">Área temática <em>*</em></span>
+              <input v-model="form.dc3_area_tematica" class="field-input"
+                     placeholder="Ej: 6000" />
+            </label>
           </div>
 
           <div class="mt-6 text-right">

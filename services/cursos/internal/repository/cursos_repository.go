@@ -41,31 +41,12 @@ type Curso struct {
 	TotalLecciones       int32      `db:"total_lecciones"`
 	LeccionesCompletadas int32      `db:"lecciones_completadas"`
 
-	// Datos de empresa y agentes capacitadores para las constancias DC-3.
+	// Área temática del catálogo STPS para la constancia. Es del curso, no del
+	// instructor ni del patrón: cada temario tiene su clave.
 	//
-	// Solo los rellenan las consultas que usan selectCurso; el listado del
-	// alumno (ListByUser) los deja vacíos a propósito: son datos fiscales del
-	// patrón y no tienen por qué viajar a la pantalla de un participante.
-	DC3RazonSocial       string `db:"dc3_razon_social"`
-	DC3RFC               string `db:"dc3_rfc"`
-	DC3NombrePatron      string `db:"dc3_nombre_patron"`
-	DC3RepTrabajadores   string `db:"dc3_representante_trabajadores"`
-	DC3AreaTematica      string `db:"dc3_area_tematica"`
-	DC3NombreCapacitador string `db:"dc3_nombre_capacitador"`
-	DC3LogoBase64        string `db:"dc3_logo_base64"`
-}
-
-// DC3Empresa agrupa los datos de la constancia que aporta el instructor.
-func (c *Curso) DC3Empresa() *cursospb.DatosEmpresaDC3 {
-	return &cursospb.DatosEmpresaDC3{
-		RazonSocial:               c.DC3RazonSocial,
-		Rfc:                       c.DC3RFC,
-		NombrePatron:              c.DC3NombrePatron,
-		RepresentanteTrabajadores: c.DC3RepTrabajadores,
-		AreaTematica:              c.DC3AreaTematica,
-		NombreCapacitador:         c.DC3NombreCapacitador,
-		LogoBase64:                c.DC3LogoBase64,
-	}
+	// Solo lo rellenan las consultas que usan selectCurso; ListByUser lo deja
+	// vacío y no pasa nada, porque la constancia se arma desde GetDatosDC3.
+	DC3AreaTematica string `db:"dc3_area_tematica"`
 }
 
 func (c *Curso) ToProto() *cursospb.CursoResponse {
@@ -77,6 +58,7 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		Precio:               c.Precio,
 		Duration:             c.Duration,
 		Dc3Enabled:           c.DC3Enabled,
+		Dc3AreaTematica:      c.DC3AreaTematica,
 		TotalLecciones:       c.TotalLecciones,
 		LeccionesCompletadas: c.LeccionesCompletadas,
 		CreatedAt:            c.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -272,6 +254,8 @@ type CursosRepository interface {
 	// "todavía no lo ha capturado" es el caso normal, no un error.
 	FindDatosTrabajador(ctx context.Context, userID string) (*DatosTrabajadorDC3, error)
 	GuardarDatosTrabajador(ctx context.Context, d *DatosTrabajadorDC3) error
+	FindEmpresaInstructor(ctx context.Context, instructorID string) (*EmpresaInstructorDC3, error)
+	GuardarEmpresaInstructor(ctx context.Context, e *EmpresaInstructorDC3) error
 	FindConstancia(ctx context.Context, userID, capacitacionID string) (*ConstanciaDC3, error)
 	RegistrarConstancia(ctx context.Context, userID, capacitacionID, archivoURL string) error
 	ListConstancias(ctx context.Context, userID string) ([]*ConstanciaDC3, error)
@@ -291,13 +275,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	instructor_id, is_public, COALESCE(codigo_acceso,'') codigo_acceso,
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
 	COALESCE(color,'#f97316') color, precio, COALESCE(precio_centavos, 0) precio_centavos, scheduled_at, duration, COALESCE(dc3_enabled, true) dc3_enabled, created_at,
-	COALESCE(dc3_razon_social,'') dc3_razon_social,
-	COALESCE(dc3_rfc,'') dc3_rfc,
-	COALESCE(dc3_nombre_patron,'') dc3_nombre_patron,
-	COALESCE(dc3_representante_trabajadores,'') dc3_representante_trabajadores,
 	COALESCE(dc3_area_tematica,'') dc3_area_tematica,
-	COALESCE(dc3_nombre_capacitador,'') dc3_nombre_capacitador,
-	COALESCE(dc3_logo_base64,'') dc3_logo_base64,
 	0 as total_lecciones,
 	0 as lecciones_completadas
 	FROM capacitaciones`
@@ -363,10 +341,11 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	err := r.db.QueryRowContext(ctx,
 		// precio_centavos se deriva en SQL: ROUND sobre NUMERIC es exacto en
 		// decimal, a diferencia de int64(precio*100) en Go, que truncaba.
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, precio_centavos, duration, dc3_enabled, codigo_acceso)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,ROUND($11::NUMERIC*100)::BIGINT,$12,$13,$14) RETURNING id`,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, precio_centavos, duration, dc3_enabled, codigo_acceso, dc3_area_tematica)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,ROUND($11::NUMERIC*100)::BIGINT,$12,$13,$14,$15) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, codigoAcceso,
+		req.Dc3AreaTematica,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -379,22 +358,25 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 	if color == "" {
 		color = "#f97316"
 	}
-	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12`
+	// Los marcadores van numerados a mano, así que añadir una columna obliga a
+	// recorrer los índices de scheduled_at y del WHERE. Es la razón por la que
+	// dc3_area_tematica se coloca al final del bloque fijo, en $13.
+	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12, dc3_area_tematica=$13`
 	args := []interface{}{
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
-		req.Precio, req.Duration, req.Dc3Enabled,
+		req.Precio, req.Duration, req.Dc3Enabled, req.Dc3AreaTematica,
 	}
 	if req.ScheduledAt != "" {
 		if t, err := time.Parse(time.RFC3339, req.ScheduledAt); err == nil {
-			query += `, scheduled_at=$13 WHERE id=$14`
+			query += `, scheduled_at=$14 WHERE id=$15`
 			args = append(args, t, req.CursoId)
 		} else {
-			query += ` WHERE id=$13`
+			query += ` WHERE id=$14`
 			args = append(args, req.CursoId)
 		}
 	} else {
-		query += `, scheduled_at=NULL WHERE id=$13`
+		query += `, scheduled_at=NULL WHERE id=$14`
 		args = append(args, req.CursoId)
 	}
 	_, err := r.db.ExecContext(ctx, query, args...)

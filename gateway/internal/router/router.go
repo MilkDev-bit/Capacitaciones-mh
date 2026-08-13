@@ -261,6 +261,11 @@ func New(d Deps) *gin.Engine {
 				inst.PATCH("/capacitaciones/:id/toggle-public", d.CursosH.InstructorTogglePublic)
 				inst.POST("/capacitaciones/:id/reset-codigo", d.CursosH.InstructorResetCodigo)
 				inst.GET("/estudiantes", d.CursosH.InstructorListEstudiantes)
+				// Empresa por defecto para las constancias: la que firma las de
+				// los alumnos que no declaran patrón propio.
+				inst.GET("/dc3-empresa", d.DC3H.GetEmpresaInstructor)
+				inst.PUT("/dc3-empresa", d.DC3H.GuardarEmpresaInstructor)
+
 				inst.GET("/users", d.UsuariosH.ListUsers)
 				inst.POST("/asignar", d.CursosH.InstructorAsignar)
 

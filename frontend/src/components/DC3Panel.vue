@@ -31,7 +31,32 @@ const trabajadorCompleto = ref(false)
 const empresaCompleta = ref(false)
 const consultado = ref(false)
 
-const form = ref({ curp: '', puesto: '', ocupacion_especifica: '' })
+const form = ref({
+  curp: '', puesto: '', ocupacion_especifica: '',
+  razon_social: '', rfc: '', nombre_patron: '', representante_trabajadores: '',
+})
+
+/** Empresa a la que saldrá la constancia si el alumno no declara la suya. */
+const empresaRespaldo = ref('')
+const tieneEmpresaPropia = ref(false)
+
+/**
+ * El bloque de empresa se acepta entero o vacío.
+ *
+ * Mezclar la razón social del alumno con el representante del instructor
+ * produciría un documento que no corresponde a ninguna empresa real, así que el
+ * backend lo rechaza y aquí se avisa antes de enviarlo.
+ */
+const camposEmpresa = computed(() => [
+  form.value.razon_social, form.value.rfc,
+  form.value.nombre_patron, form.value.representante_trabajadores,
+].map(v => v.trim()))
+
+// Ojo con el nombre: `empresaCompleta` (más abajo) es la bandera del backend
+// sobre la empresa YA RESUELTA. Estas dos miran solo lo que el alumno teclea.
+const empresaPropiaCompleta = computed(() => camposEmpresa.value.every(v => v !== ''))
+const empresaPropiaVacia = computed(() => camposEmpresa.value.every(v => v === ''))
+const empresaAMedias = computed(() => !empresaPropiaCompleta.value && !empresaPropiaVacia.value)
 
 const estado = computed(() => {
   if (!consultado.value) return 'cargando'
@@ -53,13 +78,25 @@ async function consultar() {
     constanciaUrl.value = data.constancia_url || ''
     trabajadorCompleto.value = !!data.trabajador_completo
     empresaCompleta.value = !!data.empresa_completa
+    // De dónde saldrá la empresa y cuál es, para que el alumno sepa a nombre de
+    // quién va su constancia antes de decidir si declara la suya.
+    tieneEmpresaPropia.value = data.empresa_origen === 'alumno'
+    empresaRespaldo.value = data.empresa?.razon_social || ''
+
     if (data.trabajador) {
-      // Se precargan para que corregir un dato no obligue a teclear los tres.
+      // Se precargan para que corregir un dato no obligue a teclear todo.
       form.value = {
+        ...form.value,
         curp: data.trabajador.curp || '',
         puesto: data.trabajador.puesto || '',
         ocupacion_especifica: data.trabajador.ocupacion_especifica || '',
       }
+    }
+    if (tieneEmpresaPropia.value && data.empresa) {
+      form.value.razon_social = data.empresa.razon_social || ''
+      form.value.rfc = data.empresa.rfc || ''
+      form.value.nombre_patron = data.empresa.nombre_patron || ''
+      form.value.representante_trabajadores = data.empresa.representante_trabajadores || ''
     }
   } catch {
     // Un curso sin DC-3 responde con error; no es algo que reportar al alumno.
@@ -74,12 +111,20 @@ async function enviar() {
     toast.error('La CURP debe tener 18 caracteres')
     return
   }
+  if (empresaAMedias.value) {
+    toast.error('Completa los cuatro datos de tu empresa o déjalos todos vacíos')
+    return
+  }
   guardando.value = true
   try {
     const { data, status } = await api.post(`/capacitaciones/${props.cursoId}/dc3`, {
       curp: form.value.curp.trim().toUpperCase(),
       puesto: form.value.puesto.trim(),
       ocupacion_especifica: form.value.ocupacion_especifica.trim(),
+      razon_social: form.value.razon_social.trim(),
+      rfc: form.value.rfc.trim().toUpperCase(),
+      nombre_patron: form.value.nombre_patron.trim(),
+      representante_trabajadores: form.value.representante_trabajadores.trim(),
     })
     trabajadorCompleto.value = true
     // 202 significa "guardado, pero falta el instructor". No es un error y no
@@ -145,7 +190,51 @@ watch(() => props.completado, (val) => { if (val) consultar() })
           <small class="dc3-hint">Clave y nombre del Catálogo Nacional de Ocupaciones.</small>
         </label>
       </div>
-      <button class="btn btn-primary" :disabled="guardando || !curpValida" @click="enviar">
+
+      <!--
+        Empresa del alumno: opcional.
+        Legalmente el patrón es quien lo emplea, así que si trabaja para una
+        empresa debe ir la suya. Quien se capacita por su cuenta lo deja vacío y
+        recibe la constancia a nombre de quien la imparte.
+      -->
+      <div class="dc3-empresa-bloque">
+        <div class="dc3-sub">
+          <strong>¿Trabajas para una empresa?</strong>
+          <p v-if="empresaRespaldo">
+            Si lo dejas vacío, tu constancia saldrá a nombre de
+            <b>{{ empresaRespaldo }}</b>.
+          </p>
+          <p v-else>
+            Si lo dejas vacío, tu constancia saldrá a nombre de quien imparte la
+            capacitación.
+          </p>
+        </div>
+        <div class="dc3-form">
+          <label class="dc3-field">
+            <span>Razón social</span>
+            <input v-model="form.razon_social" class="field-input" />
+          </label>
+          <label class="dc3-field">
+            <span>RFC</span>
+            <input v-model="form.rfc" maxlength="13" class="field-input" />
+          </label>
+          <label class="dc3-field">
+            <span>Patrón o representante legal</span>
+            <input v-model="form.nombre_patron" class="field-input" />
+          </label>
+          <label class="dc3-field">
+            <span>Representante de los trabajadores</span>
+            <input v-model="form.representante_trabajadores" class="field-input" />
+          </label>
+        </div>
+        <small v-if="empresaAMedias" class="dc3-error">
+          Completa los cuatro datos o déjalos todos vacíos: una constancia con
+          media empresa no corresponde a ninguna entidad real.
+        </small>
+      </div>
+
+      <button class="btn btn-primary"
+              :disabled="guardando || !curpValida || empresaAMedias" @click="enviar">
         {{ guardando ? 'Emitiendo…' : 'Emitir mi constancia' }}
       </button>
     </template>

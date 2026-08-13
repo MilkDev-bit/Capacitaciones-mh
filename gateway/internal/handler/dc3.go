@@ -64,7 +64,58 @@ func (h *DC3Handler) EstadoConstancia(ctx *gin.Context) {
 		"empresa_completa":    datos.EmpresaCompleta,
 		"trabajador":          datos.Trabajador,
 		"nombre_curso":        datos.NombreCurso,
+		// A nombre de quién saldrá la constancia y de dónde salió ese dato. Es
+		// lo que necesita el alumno para decidir si declara su propio patrón.
+		"empresa":        datos.Empresa,
+		"empresa_origen": datos.EmpresaOrigen,
 	})
+}
+
+// GET /api/instructor/dc3-empresa
+//
+// Datos de empresa que el instructor deja configurados como respaldo para los
+// alumnos que no declaran patrón propio.
+func (h *DC3Handler) GetEmpresaInstructor(ctx *gin.Context) {
+	resp, err := h.c.Cursos.GetEmpresaInstructor(ctx.Request.Context(), &cursospb.UserRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// PUT /api/instructor/dc3-empresa
+func (h *DC3Handler) GuardarEmpresaInstructor(ctx *gin.Context) {
+	var body struct {
+		RazonSocial       string `json:"razon_social"`
+		RFC               string `json:"rfc"`
+		NombrePatron      string `json:"nombre_patron"`
+		RepTrabajadores   string `json:"representante_trabajadores"`
+		NombreCapacitador string `json:"nombre_capacitador"`
+		LogoBase64        string `json:"logo_base64"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos capturados"})
+		return
+	}
+
+	if _, err := h.c.Cursos.GuardarEmpresaInstructor(ctx.Request.Context(), &cursospb.EmpresaInstructorRequest{
+		InstructorId: ctx.GetString(middleware.CtxUserID),
+		Empresa: &cursospb.DatosEmpresaDC3{
+			RazonSocial:               body.RazonSocial,
+			Rfc:                       body.RFC,
+			NombrePatron:              body.NombrePatron,
+			RepresentanteTrabajadores: body.RepTrabajadores,
+			NombreCapacitador:         body.NombreCapacitador,
+			LogoBase64:                body.LogoBase64,
+		},
+	}); err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 // POST /api/capacitaciones/:id/dc3
@@ -80,6 +131,12 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 		CURP                string `json:"curp"`
 		Puesto              string `json:"puesto"`
 		OcupacionEspecifica string `json:"ocupacion_especifica"`
+		// Patrón del alumno. Opcional: quien no tenga empresa lo deja vacío y la
+		// constancia sale a nombre de la que configuró el instructor.
+		RazonSocial     string `json:"razon_social"`
+		RFC             string `json:"rfc"`
+		NombrePatron    string `json:"nombre_patron"`
+		RepTrabajadores string `json:"representante_trabajadores"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos capturados"})
@@ -92,6 +149,12 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 			Curp:                body.CURP,
 			Puesto:              body.Puesto,
 			OcupacionEspecifica: body.OcupacionEspecifica,
+		},
+		Empresa: &cursospb.DatosEmpresaDC3{
+			RazonSocial:               body.RazonSocial,
+			Rfc:                       body.RFC,
+			NombrePatron:              body.NombrePatron,
+			RepresentanteTrabajadores: body.RepTrabajadores,
 		},
 	}); err != nil {
 		grpcToHTTP(ctx, err)
@@ -197,7 +260,7 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 
 		NombreCurso:       datos.NombreCurso,
 		DuracionHoras:     datos.DuracionHoras,
-		AreaTematica:      datos.Empresa.AreaTematica,
+		AreaTematica:      datos.AreaTematica,
 		NombreCapacitador: datos.Empresa.NombreCapacitador,
 		FechaInicio:       datos.FechaInicio,
 		FechaFin:          datos.FechaFin,

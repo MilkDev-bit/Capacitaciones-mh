@@ -51,6 +51,25 @@ func (h *CursosHandler) RegistrarConstanciaDC3(ctx context.Context, req *cursosp
 	return &cursospb.EmptyResponse{}, nil
 }
 
+func (h *CursosHandler) GetEmpresaInstructor(ctx context.Context, req *cursospb.UserRequest) (*cursospb.DatosEmpresaDC3, error) {
+	e, err := h.svc.GetEmpresaInstructor(ctx, req.UserId)
+	if err != nil {
+		slog.Error("GetEmpresaInstructor", "instructor_id", req.UserId, "error", err)
+		return nil, status.Error(codes.Internal, "error obteniendo los datos de la empresa")
+	}
+	return e, nil
+}
+
+func (h *CursosHandler) GuardarEmpresaInstructor(ctx context.Context, req *cursospb.EmpresaInstructorRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.GuardarEmpresaInstructor(ctx, req); err != nil {
+		// El mensaje se le muestra al instructor tal cual, así que viaja como
+		// InvalidArgument y no como un Internal opaco.
+		slog.Warn("GuardarEmpresaInstructor rechazado", "instructor_id", req.InstructorId, "error", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
 func (h *CursosHandler) ListMisConstancias(ctx context.Context, req *cursospb.UserRequest) (*cursospb.ListConstanciasResponse, error) {
 	resp, err := h.svc.ListMisConstancias(ctx, req.UserId)
 	if err != nil {

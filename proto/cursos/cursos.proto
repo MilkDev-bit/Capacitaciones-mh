@@ -100,6 +100,11 @@ service CursosService {
   rpc GuardarDatosTrabajador(DatosTrabajadorRequest) returns (EmptyResponse);
   rpc RegistrarConstanciaDC3(RegistrarConstanciaRequest) returns (EmptyResponse);
   rpc ListMisConstancias(UserRequest)         returns (ListConstanciasResponse);
+
+  // Empresa por defecto del instructor: la que se usa cuando el alumno no
+  // declara patrón propio. Se captura una vez y sirve para todos sus cursos.
+  rpc GetEmpresaInstructor(UserRequest)              returns (DatosEmpresaDC3);
+  rpc GuardarEmpresaInstructor(EmpresaInstructorRequest) returns (EmptyResponse);
 }
 
 // ── Requests ─────────────────────────────────────────────────────────────────
@@ -128,9 +133,10 @@ message CreateCursoRequest {
   string scheduled_at    = 12;
   int32  duration        = 13;
   bool   dc3_enabled     = 14;
-  // Datos de empresa y agentes capacitadores para las constancias de este
-  // curso. Solo se exige cuando dc3_enabled va en true.
-  DatosEmpresaDC3 dc3_empresa = 15;
+  // Área temática del catálogo STPS. Es del curso: "trabajos en altura" y
+  // "primeros auxilios" no comparten clave, así que no puede vivir en el perfil
+  // del instructor.
+  string dc3_area_tematica = 15;
 }
 
 message UpdateCursoRequest {
@@ -149,7 +155,7 @@ message UpdateCursoRequest {
   string scheduled_at    = 13;
   int32  duration        = 15;
   bool   dc3_enabled     = 16;
-  DatosEmpresaDC3 dc3_empresa = 17;
+  string dc3_area_tematica = 17;
 }
 
 message InscribirseRequest {
@@ -191,9 +197,7 @@ message CursoResponse {
   int32  total_lecciones = 18;
   int32  lecciones_completadas = 19;
   bool   dc3_enabled     = 20;
-  // Solo se rellena para el instructor y el admin: son datos fiscales de la
-  // empresa y no tienen por qué viajar al listado público ni al del alumno.
-  DatosEmpresaDC3 dc3_empresa = 21;
+  string dc3_area_tematica = 21;
 }
 
 message ListCursosResponse {
@@ -581,12 +585,12 @@ message CursoCompletadoResponse {
 
 // ── Constancias DC-3 ─────────────────────────────────────────────────────────
 
-// DatosEmpresaDC3 son los datos que el instructor captura UNA vez por
-// capacitación y que se repiten en todas las constancias que emita ese curso.
+// DatosEmpresaDC3 identifica al patrón y a los agentes que firman la constancia.
 //
-// Van en la capacitación y no en una configuración global porque el patrón que
-// firma la constancia es quien emplea al trabajador, y un mismo instructor
-// puede impartir cursos para clientes distintos.
+// Se usa en dos sitios con el mismo formato: la empresa que declara el alumno
+// (su patrón real) y la que el instructor deja configurada como respaldo. En la
+// generación gana la del alumno; la del instructor solo entra si el alumno no
+// declaró ninguna.
 message DatosEmpresaDC3 {
   string razon_social                = 1;
   string rfc                         = 2;
@@ -594,8 +598,10 @@ message DatosEmpresaDC3 {
   // representante de los trabajadores.
   string nombre_patron               = 3;
   string representante_trabajadores  = 4;
-  // Área temática del catálogo STPS y capacitador acreditado.
-  string area_tematica               = 5;
+  // area_tematica ya NO se usa aquí: es un atributo del curso, no de la
+  // empresa. Se conserva el número de campo para no reciclarlo.
+  reserved 5;
+  // Capacitador acreditado que imparte. Es del instructor, no del patrón.
   string nombre_capacitador          = 6;
   // Logo en base64; sustituye el de la plantilla. Vacío deja el de fábrica.
   string logo_base64                 = 7;
@@ -612,6 +618,18 @@ message DatosTrabajadorDC3 {
 message DatosTrabajadorRequest {
   string user_id = 1;
   DatosTrabajadorDC3 datos = 2;
+  // Patrón del alumno. Opcional: quien no tenga empresa lo deja vacío y la
+  // constancia sale a nombre de la que configuró el instructor.
+  //
+  // Se acepta el bloque COMPLETO o ninguno. Mezclar la razón social del alumno
+  // con el representante de los trabajadores del instructor produciría un
+  // documento que no corresponde a ninguna empresa real.
+  DatosEmpresaDC3 empresa = 3;
+}
+
+message EmpresaInstructorRequest {
+  string instructor_id = 1;
+  DatosEmpresaDC3 empresa = 2;
 }
 
 message DatosDC3Request {
@@ -622,6 +640,7 @@ message DatosDC3Request {
 // DatosDC3Response trae todo lo necesario para generar el documento, más el
 // diagnóstico de qué falta y a quién le toca completarlo.
 message DatosDC3Response {
+  // Empresa ya resuelta: la del alumno si la declaró, si no la del instructor.
   DatosEmpresaDC3    empresa    = 1;
   DatosTrabajadorDC3 trabajador = 2;
 
@@ -639,6 +658,12 @@ message DatosDC3Response {
   bool trabajador_completo = 8;
   // URL de una constancia ya emitida; vacía si aún no se ha generado.
   string constancia_url = 9;
+  // "alumno" o "instructor": de dónde salió la empresa resuelta. El frontend lo
+  // usa para decirle al alumno a nombre de quién va a salir su constancia, que
+  // es justo lo que necesita saber para decidir si declara su propio patrón.
+  string empresa_origen = 10;
+  // Área temática del curso (catálogo STPS). Vive en la capacitación.
+  string area_tematica = 11;
 }
 
 message RegistrarConstanciaRequest {
