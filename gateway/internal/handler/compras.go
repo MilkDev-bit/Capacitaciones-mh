@@ -43,6 +43,10 @@ type itemCompra struct {
 	// Código de acceso. Deliberadamente sin exportar: viaja por correo, no en
 	// la respuesta HTTP de la pantalla de éxito.
 	codigoAcceso string
+
+	// Dueño del curso, para avisarle del alta. Sin exportar por lo mismo: es
+	// un dato interno y no tiene por qué aparecer en la pantalla de éxito.
+	instructorID string
 }
 
 // resumenCompra es lo que se devuelve al frontend para pintar la pantalla de
@@ -52,6 +56,10 @@ type resumenCompra struct {
 	Total    float64      `json:"total"`
 	Redirect string       `json:"redirect"`
 	Etiqueta string       `json:"etiqueta"`
+
+	// Comprador. Sin exportar: el frontend ya sabe quién es: lo necesita la
+	// campana, que se emite fuera del ciclo de la petición.
+	compradorID string
 }
 
 // ── Deduplicación de notificaciones ──────────────────────────────────────────
@@ -111,6 +119,7 @@ func (h *CursosHandler) procesarSesion(ctx context.Context, sess *stripe.Checkou
 		slog.Error("procesarSesion: sin user_id", "session", sess.ID, "ref", ref)
 		return res
 	}
+	res.compradorID = userID
 
 	// Se parte de la metadata que ya traía el contexto (x-user-name/x-user-email
 	// desde el JWT) en lugar de reemplazarla: el repositorio de cursos la usa
@@ -186,6 +195,7 @@ func (h *CursosHandler) enrolarB2C(ctx context.Context, userID, cursoID string) 
 	}
 	item.Titulo = resp.CapacitacionTitulo
 	item.CursoType = resp.CapacitacionType
+	item.instructorID = resp.InstructorId
 	return item
 }
 
@@ -246,10 +256,22 @@ func destinoTrasCompra(items []itemCompra) (ruta, etiqueta string) {
 // notificarCompra envía el acuse de pago y, si hubo licencias corporativas, el
 // correo con los accesos. Se ejecuta una sola vez por sesión de Stripe.
 func (h *CursosHandler) notificarCompra(sess *stripe.CheckoutSession, res resumenCompra, nombre, email string) {
-	if !h.mail.Enabled() || email == "" || len(res.Items) == 0 {
+	if len(res.Items) == 0 {
 		return
 	}
+	// El guardián se evalúa antes que cualquier canal y una sola vez. Antes
+	// vivía detrás de la comprobación del correo, así que con Resend apagado
+	// nunca se marcaba la sesión: el webhook y la pantalla de éxito habrían
+	// duplicado la campana.
 	if yaNotificado(sess.ID) {
+		return
+	}
+
+	h.avisarCompraEnApp(res, nombre)
+
+	// El correo es un canal aparte y puede estar deshabilitado; la campana no
+	// depende de él.
+	if !h.mail.Enabled() || email == "" {
 		return
 	}
 
@@ -285,6 +307,61 @@ func (h *CursosHandler) notificarCompra(sess *stripe.CheckoutSession, res resume
 		msg.To = []string{email}
 		h.mail.SendAsync(msg)
 	}
+}
+
+// avisarCompraEnApp deja la compra en la campana del comprador y el alta en la
+// del instructor dueño de cada curso.
+//
+// Se llama desde notificarCompra, que ya está protegida por `yaNotificado`: el
+// webhook y /verify-checkout-session llegan con la misma sesión de Stripe y
+// solo el primero en pasar produce avisos.
+func (h *CursosHandler) avisarCompraEnApp(res resumenCompra, nombreComprador string) {
+	if res.compradorID == "" {
+		return
+	}
+	if nombreComprador == "" {
+		nombreComprador = "Un alumno"
+	}
+
+	avisos := []aviso{{
+		UserID:  res.compradorID,
+		Tipo:    TipoCompra,
+		Titulo:  "Compra confirmada",
+		Mensaje: resumenItems(res.Items),
+		Enlace:  res.Redirect,
+		Ventana: ventanaCompra,
+	}}
+
+	// Un alta por curso con instructor. Los ítems B2B no generan aviso al
+	// instructor: comprar licencias no inscribe a nadie todavía, los alumnos
+	// entran después al canjear su código.
+	for _, it := range res.Items {
+		if it.Tipo != "b2c" || it.instructorID == "" || it.instructorID == res.compradorID {
+			continue
+		}
+		titulo := it.Titulo
+		if titulo == "" {
+			titulo = "una de tus capacitaciones"
+		}
+		avisos = append(avisos, aviso{
+			UserID:  it.instructorID,
+			Tipo:    TipoNuevoAlumno,
+			Titulo:  "Nueva inscripción en " + recorta(titulo, 60),
+			Mensaje: nombreComprador + " se inscribió a tu capacitación.",
+			Enlace:  "/instructor/estudiantes",
+			Ventana: 0, // cada alta cuenta: agrupar ocultaría inscripciones reales
+		})
+	}
+
+	notificar(h.c, avisos...)
+}
+
+// resumenItems describe la compra en una línea para el cuerpo de la campana.
+func resumenItems(items []itemCompra) string {
+	if len(items) == 1 && items[0].Titulo != "" {
+		return "Ya tienes acceso a " + recorta(items[0].Titulo, 80) + "."
+	}
+	return fmt.Sprintf("Se registraron %d conceptos en tu cuenta.", len(items))
 }
 
 // ── Reparto de accesos a participantes ───────────────────────────────────────

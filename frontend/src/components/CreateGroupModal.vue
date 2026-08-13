@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import api from '../api'
+import { toast } from '../utils/toast'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
 }>()
 
@@ -17,18 +18,23 @@ const results = ref<any[]>([])
 const selectedUsers = ref<Map<string, any>>(new Map())
 const loading = ref(false)
 const creating = ref(false)
+/** Se buscó algo y no hubo resultados: sirve para el mensaje vacío. */
+const buscoSinResultados = ref(false)
 
 async function onSearch() {
   if (!query.value.trim()) {
     results.value = []
+    buscoSinResultados.value = false
     return
   }
   loading.value = true
   try {
     const res = await api.get('/usuarios/search', { params: { q: query.value.trim() } })
     results.value = res.data || []
+    buscoSinResultados.value = results.value.length === 0
   } catch (e) {
     console.error('Error al buscar usuarios:', e)
+    results.value = []
   } finally {
     loading.value = false
   }
@@ -58,8 +64,14 @@ async function createGroup() {
     })
     emit('created', { id: res.data.grupo_id, name: res.data.nombre })
     emit('close')
-  } catch (e) {
-    console.error('Error creando grupo', e)
+  } catch (e: any) {
+    // 403 = alguien de la selección ya no comparte capacitación con el
+    // usuario. El backend rechaza el grupo entero en lugar de crearlo
+    // incompleto, así que hay que decirlo en vez de fallar en silencio.
+    toast.error(
+      e.response?.data?.error || 'No se pudo crear el grupo. Inténtalo de nuevo.',
+      e.response?.status === 403 ? 'Miembro no permitido' : 'Error'
+    )
   } finally {
     creating.value = false
   }
@@ -84,7 +96,8 @@ async function createGroup() {
 
             <div class="form-group">
               <label>Añadir Miembros</label>
-              <input v-model="query" type="text" class="input-field search-input" placeholder="Buscar usuarios..." />
+              <input v-model="query" type="text" class="input-field search-input" placeholder="Buscar entre tus compañeros..." />
+              <p class="field-hint">Solo puedes agregar a personas de tus capacitaciones.</p>
             </div>
 
             <!-- Seleccionados -->
@@ -96,6 +109,9 @@ async function createGroup() {
             </div>
 
             <div v-if="loading" class="loading-state">Buscando...</div>
+            <div v-else-if="buscoSinResultados" class="empty-state">
+              Nadie con ese nombre en tus capacitaciones.
+            </div>
             <ul v-else-if="results.length > 0" class="user-list">
               <li v-for="user in results" :key="user.id" class="user-item" @click="toggleUser(user)">
                 <div class="avatar">
@@ -165,6 +181,8 @@ async function createGroup() {
 .tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.9rem; }
 
 .loading-state { text-align: center; color: var(--text-muted); padding: 1rem 0; }
+.empty-state { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1rem 0; }
+.field-hint { margin: 6px 0 0; font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
 .user-list { list-style: none; padding: 0; margin: 0; }
 .user-item {
   display: flex; align-items: center; gap: 1rem; padding: 0.75rem;

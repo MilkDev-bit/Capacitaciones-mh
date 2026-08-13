@@ -206,7 +206,29 @@ func (h *CursosHandler) Inscribirse(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+	h.avisarInscripcion(ctx.GetString(middleware.CtxUserID), ctx.Param("id"))
 	ctx.JSON(http.StatusCreated, gin.H{"message": "inscripción exitosa"})
+}
+
+// avisarInscripcion deja constancia del alta en la campana del alumno.
+//
+// Las tres vías de inscripción sin pago (directa, por código y por licencia)
+// devuelven EmptyResponse, así que no hay título de curso que poner: el enlace
+// al detalle es lo útil. Cuando cursos-service devuelva el título, basta con
+// pasarlo aquí.
+func (h *CursosHandler) avisarInscripcion(userID, cursoID string) {
+	enlace := "/usuario/capacitaciones"
+	if cursoID != "" {
+		enlace += "/" + cursoID
+	}
+	notificar(h.c, aviso{
+		UserID:  userID,
+		Tipo:    TipoInscripcion,
+		Titulo:  "Tienes una capacitación nueva",
+		Mensaje: "Ya puedes empezarla desde tus capacitaciones.",
+		Enlace:  enlace,
+		Ventana: ventanaCompra,
+	})
 }
 
 // POST /api/inscripciones  (unirse con código)
@@ -231,6 +253,9 @@ func (h *CursosHandler) UnirseConCodigo(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+	// Sin curso_id: el código lo resuelve el servicio y no lo devuelve, así que
+	// el enlace va al listado.
+	h.avisarInscripcion(ctx.GetString(middleware.CtxUserID), "")
 	ctx.JSON(http.StatusCreated, gin.H{"message": "inscripción exitosa"})
 }
 
@@ -253,6 +278,7 @@ func (h *CursosHandler) UnirseConLicencia(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+	h.avisarInscripcion(ctx.GetString(middleware.CtxUserID), req.CapacitacionID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Inscrito con licencia correctamente"})
 }
 

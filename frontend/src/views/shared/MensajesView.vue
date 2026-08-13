@@ -5,8 +5,10 @@ import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
 import CameraCapture from '../../components/CameraCapture.vue'
 import VideoCallModal from '../../components/VideoCallModal.vue'
+import LlamadaTimbrando from '../../components/LlamadaTimbrando.vue'
 import SearchUserModal from '../../components/SearchUserModal.vue'
 import CreateGroupModal from '../../components/CreateGroupModal.vue'
+import { useLlamadas } from '../../composables/useLlamadas'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -60,28 +62,39 @@ const errorMsg       = ref('')
 const showSearchUserModal = ref(false)
 const showCreateGroupModal = ref(false)
 
+const activePeerId = computed(() => route.params.peer_id as string | undefined)
+
 // ─── Videollamada ──────────────────────────────────────────────────────────
-const showVideoCall  = ref(false)
-const currentRoomName = ref('')
+//
+// La sala ya no se deriva de los IDs de usuario ni se pega en un mensaje: el
+// servidor la genera al vuelo y solo la entrega a quien acepta la llamada.
+// Todo lo que hace esta vista es enrutar los eventos de señalización al
+// composable y pintar lo que él decida.
+const llamada = useLlamadas((payload) => {
+  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload))
+})
+
+/** La conversación abierta es un grupo. Determina a cuánta gente se timbra. */
+const esGrupo = computed(
+  () => !!convs.value.find(c => c.peer_id === activePeerId.value)?.is_group,
+)
 
 function startVideoCall() {
-  if (!activePeerId.value || !auth.user?.id) return
-  // Generate consistent room name based on sorted IDs
-  const sortedIds = [auth.user.id, activePeerId.value].sort()
-  currentRoomName.value = `Capacitaciones-mh-${sortedIds[0]}-${sortedIds[1]}`
-  showVideoCall.value = true
-
-  // Send automated message
-  newMsg.value = `📞 Videollamada iniciada. [SALA:${currentRoomName.value}]`
-  sendMensaje()
+  if (!activePeerId.value) return
+  llamada.llamar(activePeerId.value, peerName.value, esGrupo.value)
 }
 
-function joinVideoCall(roomName: string) {
-  currentRoomName.value = roomName
-  showVideoCall.value = true
+/**
+ * Detecta los mensajes que son constancia de una llamada para pintarlos como
+ * tarjeta y no como texto suelto.
+ *
+ * Se conserva el prefijo antiguo "[SALA:" para que los hilos existentes, que
+ * sí llevaban la sala dentro del mensaje, sigan renderizándose como registro
+ * en lugar de mostrar el identificador crudo al usuario.
+ */
+function esRegistroDeLlamada(contenido: string): boolean {
+  return contenido.startsWith('📞') || contenido.includes('[SALA:')
 }
-
-const activePeerId = computed(() => route.params.peer_id as string | undefined)
 
 // ─── Adjuntos ──────────────────────────────────────────────────────────────
 const fileInputRef   = ref<HTMLInputElement | null>(null)
@@ -209,7 +222,14 @@ function disconnectWs() {
   ws = null
 }
 
-function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string }) {
+function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string; call?: unknown }) {
+  // La señalización de llamada se atiende primero y consume el evento: son
+  // los únicos tipos que empiezan por "call_".
+  if (ev.type.startsWith('call_')) {
+    void llamada.manejarEvento(ev as never)
+    return
+  }
+
   switch (ev.type) {
     case 'new_message': {
       if (!ev.msg) break
@@ -435,10 +455,17 @@ async function sendMensaje() {
     }
   } catch (e: any) {
     uploadingFile.value = false
+    // 403 = el destinatario ya no comparte capacitación. Reintentar nunca va a
+    // funcionar, así que el borrador se retira en vez de dejar un mensaje
+    // fallido con botón de "reintentar" que solo repetiría el rechazo.
+    const bloqueado = e.response?.status === 403
     const idx = msgs.value.findIndex(m => m._tempId === tempId)
-    if (idx !== -1) msgs.value[idx]!._status = 'error'
+    if (idx !== -1) {
+      if (bloqueado) msgs.value.splice(idx, 1)
+      else msgs.value[idx]!._status = 'error'
+    }
     errorMsg.value = e.response?.data?.error || 'No se pudo enviar el mensaje'
-    setTimeout(() => { errorMsg.value = '' }, 4000)
+    setTimeout(() => { errorMsg.value = '' }, bloqueado ? 7000 : 4000)
   } finally {
     sending.value = false
   }
@@ -548,6 +575,7 @@ onUnmounted(() => {
   disconnectWs()
   sentinelObserver?.disconnect()
   if (typingHideTimer) clearTimeout(typingHideTimer)
+  llamada.limpiar()
 })
 </script>
 
@@ -710,17 +738,18 @@ onUnmounted(() => {
                   
                   <!-- Contenido del mensaje -->
                   <div v-if="msg.contenido">
-                    <!-- Es una invitación a videollamada -->
-                    <template v-if="msg.contenido.includes('📞 Videollamada iniciada. [SALA:')">
-                      <div class="videocall-invite">
-                        <p>📞 <strong>Videollamada iniciada</strong></p>
-                        <button class="join-call-btn" @click.stop="joinVideoCall(msg.contenido.split('[SALA:')[1]?.split(']')[0] || '')">
-                          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M23 7l-7 5 7 5V7z" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                          </svg>
-                          Unirse a la llamada
-                        </button>
+                    <!--
+                      Registro de llamada. Ya no lleva sala embebida ni botón de
+                      "unirse con el código": es solo la constancia de que hubo
+                      una llamada, como en cualquier app de mensajería. Volver a
+                      llamar se hace con el botón de la cabecera, que timbra.
+                    -->
+                    <template v-if="esRegistroDeLlamada(msg.contenido)">
+                      <div class="call-log" :class="{ perdida: msg.contenido.includes('perdida') || msg.contenido.includes('sin respuesta') }">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                        </svg>
+                        <span>{{ msg.contenido.replace('📞', '').trim() }}</span>
                       </div>
                     </template>
                     <!-- Mensaje normal -->
@@ -828,13 +857,30 @@ onUnmounted(() => {
       @gallery="onGalleryFromCamera"
     />
 
-    <!-- Modal de Videollamada Jitsi -->
-    <VideoCallModal
-      v-if="showVideoCall"
-      :roomName="currentRoomName"
-      :userName="auth.user?.name ?? 'Usuario'"
-      @close="showVideoCall = false"
+    <!-- Timbre: llamada entrante o saliente antes de conectar -->
+    <LlamadaTimbrando
+      v-if="llamada.estado.value === 'entrante' || llamada.estado.value === 'saliente'"
+      :modo="llamada.estado.value === 'entrante' ? 'entrante' : 'saliente'"
+      :nombre="llamada.nombreOtro.value"
+      :is-group="!!llamada.llamada.value?.is_group"
+      :restantes="llamada.restantes.value"
+      @aceptar="llamada.aceptar"
+      @rechazar="llamada.rechazar"
+      @colgar="llamada.colgar"
     />
+
+    <!-- Videollamada ya conectada. Solo se monta con token válido en mano. -->
+    <VideoCallModal
+      v-if="llamada.estado.value === 'en_llamada' && llamada.credenciales.value"
+      :roomName="llamada.credenciales.value.sala"
+      :domain="llamada.credenciales.value.dominio"
+      :jwt="llamada.credenciales.value.token"
+      :userName="auth.user?.name ?? 'Usuario'"
+      @close="llamada.colgar"
+    />
+
+    <!-- Aviso breve del resultado de la llamada (rechazada, sin respuesta…) -->
+    <div v-if="llamada.aviso.value" class="call-toast" role="status">{{ llamada.aviso.value }}</div>
 
     <!-- Modal de Buscar Usuarios -->
     <SearchUserModal
@@ -1226,37 +1272,32 @@ onUnmounted(() => {
   transform: scale(1.05);
 }
 
-.videocall-invite {
-  background: var(--surface-hover);
-  padding: 0.8rem 1rem;
-  border-radius: 0.5rem;
-  border-left: 4px solid var(--primary, #3b82f6);
-  margin-top: 0.2rem;
-}
-
-.videocall-invite p {
-  margin: 0 0 0.5rem 0;
-  color: var(--text);
-}
-
-.join-call-btn {
+/* Constancia de llamada dentro del hilo. Es informativa: no lleva acción,
+   porque volver a llamar se hace con el botón de la cabecera, que timbra. */
+.call-log {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--primary, #3b82f6);
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  width: 100%;
-  justify-content: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
 }
+.call-log svg { flex-shrink: 0; opacity: 0.8; }
+.call-log.perdida { color: var(--danger); }
+.call-log.perdida svg { opacity: 1; }
 
-.join-call-btn:hover {
-  background: #2563eb;
+/* Aviso efímero del desenlace de la llamada (rechazada, sin respuesta…). */
+.call-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 10002;
+  background: rgba(17, 24, 39, 0.94);
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 </style>

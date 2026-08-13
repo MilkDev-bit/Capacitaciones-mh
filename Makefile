@@ -29,7 +29,7 @@ GO ?= $(shell command -v go 2>/dev/null \
 	|| ls $$HOME/.local/go/bin/go 2>/dev/null \
 	|| ls /usr/lib/go-*/bin/go 2>/dev/null | sort -V | tail -1)
 
-.PHONY: check-go generate lint-proto breaking tidy build up down logs clean test
+.PHONY: check-go generate lint-proto breaking tidy build up down logs clean test video-check video-fix jitsi-secrets
 
 ## check-go: verifica que el toolchain de Go esté disponible
 #
@@ -99,6 +99,30 @@ test: check-go
 		echo "==> Testing $$d ..."; \
 		(cd $$d && "$(GO)" test ./...) || exit 1; \
 	done
+
+## jitsi-secrets: genera los secretos de videollamada y los imprime para .env
+##                Nunca los escribe en disco: cópialos tú al .env.
+jitsi-secrets:
+	@echo "# Pega estas líneas en tu .env (reemplazando las existentes):"
+	@echo "JITSI_APP_SECRET=$$(openssl rand -hex 32)"
+	@echo "JICOFO_AUTH_PASSWORD=$$(openssl rand -hex 16)"
+	@echo "JVB_AUTH_PASSWORD=$$(openssl rand -hex 16)"
+	@echo "JICOFO_COMPONENT_SECRET=$$(openssl rand -hex 16)"
+	@echo ""
+	@echo "# Tras cambiarlos: docker compose down -v jitsi-prosody jitsi-jicofo jitsi-jvb"
+	@echo "# (los contenedores cachean la config en sus volúmenes)"
+
+## video-check: diagnostica si un MP4 arranca lento (atom moov al final)
+##              uso: make video-check FILE=ruta/o/url.mp4
+video-check:
+	@test -n "$(FILE)" || { echo "Falta FILE=. Ej: make video-check FILE=curso.mp4"; exit 1; }
+	@./scripts/video_faststart.sh check "$(FILE)"
+
+## video-fix: reescribe un MP4 con -movflags +faststart (sin recodificar)
+##            uso: make video-fix FILE=entrada.mp4 [OUT=salida.mp4]
+video-fix:
+	@test -n "$(FILE)" || { echo "Falta FILE=. Ej: make video-fix FILE=curso.mp4"; exit 1; }
+	@./scripts/video_faststart.sh fix "$(FILE)" $(OUT)
 
 ## clean: elimina el código generado (gen/auth, gen/usuarios, etc.)
 clean:

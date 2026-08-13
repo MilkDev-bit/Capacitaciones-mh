@@ -4,10 +4,19 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	usuariospb "Prueba-Go/gen/usuarios"
 	"Prueba-Go/services/usuarios/internal/repository"
+)
+
+// Errores de validación de notificaciones. Se exportan para que el handler gRPC
+// pueda traducirlos a InvalidArgument en vez de a un Internal genérico.
+var (
+	ErrDatosNotificacion = errors.New("faltan datos obligatorios de la notificación")
+	ErrTipoNotificacion  = errors.New("tipo de notificación no reconocido")
 )
 
 // UsuariosService encapsula la lógica de gestión de perfiles.
@@ -112,4 +121,36 @@ func (s *UsuariosService) ListNotificaciones(ctx context.Context, userID string)
 
 func (s *UsuariosService) MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error {
 	return s.repo.MarkNotificacionesRead(ctx, userID, ids)
+}
+
+// tiposNotificacion es la lista cerrada de tipos aceptados.
+//
+// La validación vive aquí y no en el Gateway porque este servicio es el dueño
+// de la tabla: si mañana otro emisor escribe un tipo inventado, el frontend lo
+// descartaría en silencio al filtrar por perfil y el fallo sería invisible.
+var tiposNotificacion = map[string]bool{
+	"compra":          true,
+	"inscripcion":     true,
+	"nuevo_alumno":    true,
+	"mensaje":         true,
+	"llamada_perdida": true,
+	"foro_respuesta":  true,
+}
+
+func (s *UsuariosService) CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (*usuariospb.CreateNotificacionResponse, error) {
+	if req.UserId == "" {
+		return nil, ErrDatosNotificacion
+	}
+	if !tiposNotificacion[req.Tipo] {
+		return nil, fmt.Errorf("%w: %q", ErrTipoNotificacion, req.Tipo)
+	}
+	if strings.TrimSpace(req.Titulo) == "" {
+		return nil, ErrDatosNotificacion
+	}
+
+	id, creada, err := s.repo.CreateNotificacion(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &usuariospb.CreateNotificacionResponse{Id: id, Creada: creada}, nil
 }

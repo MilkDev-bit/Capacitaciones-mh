@@ -51,6 +51,13 @@ type Config struct {
 	AppURL  string
 	AppName string
 
+	// Jitsi — videollamadas. El servidor se autohospeda con autenticación por
+	// JWT: sin token firmado con JitsiAppSecret, Prosody rechaza la entrada a
+	// la sala aunque se conozca su nombre.
+	JitsiDomain    string // dominio público del servidor Jitsi
+	JitsiAppID     string // JWT_APP_ID de Prosody (claim iss/aud)
+	JitsiAppSecret string // JWT_APP_SECRET — nunca se codifica en el binario
+
 	// Entorno
 	GinMode            string
 	RailwayEnvironment string
@@ -96,12 +103,32 @@ func Load() *Config {
 		AppURL:  normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
 		AppName: getEnvOr("APP_NAME", "Capacitaciones MH"),
 
+		JitsiDomain:    strings.TrimSpace(getEnvOr("JITSI_DOMAIN", "localhost:8443")),
+		JitsiAppID:     getEnvOr("JITSI_APP_ID", "capacitaciones"),
+		JitsiAppSecret: os.Getenv("JITSI_APP_SECRET"),
+
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),
 		LogLevel:           getEnvOr("LOG_LEVEL", "info"),
 	}
 	warnIfAppURLLooksLikeAPI(C.AppURL, C.Port)
+	if C.JitsiAppSecret == "" {
+		slog.Warn("JITSI_APP_SECRET vacía — las videollamadas quedarán deshabilitadas")
+	}
 	return &C
+}
+
+// JitsiSubject es el claim `sub` que espera el módulo token_verification de
+// Prosody: el dominio del servidor Jitsi sin puerto. Con un `sub` distinto al
+// que Prosody tiene configurado, el token se rechaza sin explicación visible
+// en el navegador, así que se deriva del dominio en vez de pedir otra
+// variable de entorno que pueda quedar desincronizada.
+func (c *Config) JitsiSubject() string {
+	dominio := c.JitsiDomain
+	if i := strings.IndexByte(dominio, ':'); i > 0 {
+		dominio = dominio[:i]
+	}
+	return dominio
 }
 
 // normalizeOrigin deja APP_URL como scheme://host, descartando path, query y

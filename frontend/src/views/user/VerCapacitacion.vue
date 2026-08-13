@@ -1228,6 +1228,7 @@ function tramitarDC3() {
                 <div v-if="['video', '1'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))"
                   class="ver-media-frame ver-media-video">
                   <VideoPlayer v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)"
+                    :poster="curso?.thumbnail_url ? fileUrl(curso.thumbnail_url) : ''"
                     :saved-time="savedVideoTime(selectedLeccion.id)"
                     bloquear-adelanto
                     :ya-completada="!!selectedLeccion.completada"

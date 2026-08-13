@@ -88,6 +88,19 @@ message ComentarioResponse {
   string created_at = 6;
   string parent_id  = 7;
   repeated Reaction reactions = 8;
+
+  // Destinatarios de la notificación "te respondieron". El servicio ya conoce
+  // ambos autores al insertar el comentario; devolverlos evita que el Gateway
+  // tenga que hacer dos consultas extra solo para saber a quién avisar.
+  //
+  // post_user_id   → autor de la publicación
+  // parent_user_id → autor del comentario respondido (vacío si es de primer nivel)
+  string post_user_id   = 9;
+  string parent_user_id = 10;
+
+  // Curso al que pertenece el hilo. El foro no tiene URL propia: se ve dentro
+  // de la capacitación, así que es lo que necesita el enlace de la campana.
+  string capacitacion_id = 11;
 }
 
 message ListComentariosResponse {

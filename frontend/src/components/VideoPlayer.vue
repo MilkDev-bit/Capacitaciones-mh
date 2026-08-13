@@ -5,6 +5,8 @@ import 'plyr/dist/plyr.css'
 
 const props = defineProps<{
   src: string
+  /** Miniatura de la lección: evita el rectángulo negro mientras carga. */
+  poster?: string
   // Posición guardada en segundos (opcional)
   savedTime?: number
   /**
@@ -43,9 +45,37 @@ const bloqueoActivo = () => !!props.bloquearAdelanto && !props.yaCompletada
 const videoEl = ref<HTMLVideoElement | null>(null)
 let player: Plyr | null = null
 
+/**
+ * Estado de carga visible.
+ *
+ * Antes el reproductor mostraba un rectángulo negro inerte mientras el
+ * navegador descargaba el archivo: los mismos segundos se perciben mucho más
+ * largos sin ninguna señal de que algo está pasando. `cargando` alimenta el
+ * spinner y `tardando` aparece a los 4 s para explicar la espera.
+ */
+const cargando = ref(true)
+const tardando = ref(false)
+const errorCarga = ref(false)
+let temporizadorTardanza: ReturnType<typeof setTimeout> | undefined
+
+function marcarCargando() {
+  cargando.value = true
+  errorCarga.value = false
+  tardando.value = false
+  clearTimeout(temporizadorTardanza)
+  temporizadorTardanza = setTimeout(() => { tardando.value = true }, 4000)
+}
+
+function marcarListo() {
+  cargando.value = false
+  tardando.value = false
+  clearTimeout(temporizadorTardanza)
+}
+
 function initPlayer() {
   if (!videoEl.value) return
   if (player) { player.destroy(); player = null }
+  marcarCargando()
 
   const conBloqueo = bloqueoActivo()
 
@@ -182,6 +212,18 @@ function initPlayer() {
       emit('ended')
     }
   })
+
+  // `loadedmetadata` es la señal correcta para retirar el spinner: significa
+  // que el navegador ya leyó el atom moov y sabe duración y dimensiones, que
+  // es justo el punto donde el reproductor pasa a ser usable. Esperar a
+  // `canplay` mantendría el overlay durante todo el primer buffer.
+  player.on('loadedmetadata', marcarListo)
+  player.on('playing', marcarListo)
+  player.on('waiting', () => { cargando.value = true })
+  player.on('error', () => {
+    marcarListo()
+    errorCarga.value = true
+  })
 }
 
 onMounted(() => initPlayer())
@@ -211,6 +253,7 @@ watch(() => props.yaCompletada, (ahora, antes) => {
 })
 
 onBeforeUnmount(() => {
+  clearTimeout(temporizadorTardanza)
   player?.destroy()
   player = null
 })
@@ -218,17 +261,78 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="plyr-wrapper">
-    <video ref="videoEl" :src="src" playsinline crossorigin="anonymous" />
+    <!--
+      Sin `crossorigin`: el atributo obliga al navegador a tratar el MP4 como
+      recurso CORS y a esperar la cabecera Access-Control-Allow-Origin antes de
+      empezar a decodificar. Solo hace falta para pintar el video en un canvas
+      o cargar subtítulos de otro origen, y aquí no se hace ninguna de las dos.
+
+      `preload="metadata"` pide solo la cabecera del contenedor en lugar de
+      dejar la decisión al navegador (Chrome tiende a `auto` y se trae varios
+      megabytes antes del primer fotograma).
+    -->
+    <video
+      ref="videoEl"
+      :src="src"
+      :poster="poster || undefined"
+      preload="metadata"
+      playsinline
+    />
+
+    <div v-if="cargando || errorCarga" class="video-overlay">
+      <template v-if="errorCarga">
+        <p class="overlay-text">No se pudo cargar el video.</p>
+        <button type="button" class="overlay-btn" @click="initPlayer">Reintentar</button>
+      </template>
+      <template v-else>
+        <span class="overlay-spinner" aria-hidden="true"></span>
+        <p class="overlay-text">{{ tardando ? 'Preparando el video…' : 'Cargando…' }}</p>
+      </template>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .plyr-wrapper {
+  position: relative;
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
   background: #000;
 }
+
+/* Overlay de carga/error. `pointer-events: none` en el estado normal para no
+   robarle el clic al botón grande de reproducir de Plyr. */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+.overlay-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay-spinner { animation-duration: 2s; }
+}
+.overlay-text { margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; font-weight: 600; }
+.overlay-btn {
+  background: #f97316; color: #fff; border: none; border-radius: 8px;
+  padding: 8px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.overlay-btn:hover { background: #ea580c; }
 .plyr-wrapper :deep(.plyr) {
   width: 100%;
   border-radius: 12px;

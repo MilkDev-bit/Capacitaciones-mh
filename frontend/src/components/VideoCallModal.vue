@@ -8,8 +8,17 @@ declare global {
 }
 
 const props = defineProps<{
+  /** Sala negociada por el servidor. El cliente nunca la inventa. */
   roomName: string
   userName: string
+  /** Dominio del servidor Jitsi autohospedado. */
+  domain: string
+  /**
+   * Token JWT emitido por el gateway para ESTA sala. Sin él, Prosody rechaza
+   * la conexión: es lo que sustituye al "código de acceso" — la autorización
+   * la lleva el token, no el usuario.
+   */
+  jwt: string
 }>()
 
 const emit = defineEmits<{
@@ -19,54 +28,88 @@ const emit = defineEmits<{
 const jitsiContainer = ref<HTMLElement | null>(null)
 let api: any = null
 const isLoading = ref(true)
+const errorMsg = ref('')
 
 onMounted(() => {
-  // Load Jitsi external API script dynamically
-  if (!window.JitsiMeetExternalAPI) {
-    const script = document.createElement('script')
-    script.src = 'https://meet.jit.si/external_api.js'
-    script.async = true
-    script.onload = initJitsi
-    document.head.appendChild(script)
-  } else {
+  if (window.JitsiMeetExternalAPI) {
     initJitsi()
+    return
   }
+  const script = document.createElement('script')
+  // El script se carga del propio servidor Jitsi, no de meet.jit.si: es el
+  // que corresponde a la versión desplegada y evita depender de un tercero.
+  script.src = `https://${props.domain}/external_api.js`
+  script.async = true
+  script.onload = initJitsi
+  script.onerror = () => {
+    isLoading.value = false
+    errorMsg.value = 'No se pudo contactar con el servidor de videollamadas.'
+  }
+  document.head.appendChild(script)
 })
 
 function initJitsi() {
-  isLoading.value = false
   if (!jitsiContainer.value) return
 
-  const domain = 'meet.jit.si'
   const options = {
     roomName: props.roomName,
+    jwt: props.jwt,
     width: '100%',
     height: '100%',
     parentNode: jitsiContainer.value,
-    userInfo: {
-      displayName: props.userName
-    },
+    userInfo: { displayName: props.userName },
     configOverwrite: {
-      prejoinPageEnabled: false, // Skip prejoin page to enter directly
-      disableDeepLinking: true // Prevent mobile app redirect prompts
+      // `prejoinConfig.enabled` es la clave vigente. La antigua
+      // `prejoinPageEnabled` está obsoleta desde Jitsi 2022 y es la razón de
+      // que siguiera apareciendo la pantalla de "Entrar a la reunión" pese a
+      // estar puesta en false.
+      prejoinConfig: { enabled: false },
+      disableDeepLinking: true,
+      // Entrar con cámara y micrófono activos, como en cualquier app de
+      // mensajería: el usuario ya aceptó la llamada, pedirle otra confirmación
+      // reintroduce la fricción que estamos quitando.
+      startWithAudioMuted: false,
+      startWithVideoMuted: false,
+      disableInviteFunctions: true,
+      // Sin lobby ni sala de espera: quién entra ya lo decidió el token.
+      enableLobbyChat: false,
+      hideConferenceSubject: true,
+      hideConferenceTimer: false,
+      // El chat de Jitsi sobra: la conversación ya está en la plataforma.
+      disableChat: true,
     },
     interfaceConfigOverwrite: {
-      // Customize interface slightly if needed
-      SHOW_JITSI_WATERMARK: false
-    }
+      SHOW_JITSI_WATERMARK: false,
+      SHOW_WATERMARK_FOR_GUESTS: false,
+      SHOW_BRAND_WATERMARK: false,
+      DISABLE_JOIN_LEAVE_NOTIFICATIONS: false,
+      MOBILE_APP_PROMO: false,
+      TOOLBAR_BUTTONS: [
+        'microphone', 'camera', 'desktop', 'fullscreen',
+        'fodeviceselection', 'hangup', 'profile', 'settings',
+        'videoquality', 'filmstrip', 'tileview', 'select-background',
+      ],
+    },
   }
 
-   
-  api = new (window as any).JitsiMeetExternalAPI(domain, options)
+  api = new (window as any).JitsiMeetExternalAPI(props.domain, options)
+  isLoading.value = false
 
-  api.addListener('videoConferenceLeft', () => {
-    emit('close')
+  api.addListener('videoConferenceLeft', () => emit('close'))
+  api.addListener('readyToClose', () => emit('close'))
+  // Un token inválido o vencido se manifiesta aquí; sin este listener el
+  // usuario se queda mirando una pantalla en blanco sin saber por qué.
+  api.addListener('errorOccurred', (e: any) => {
+    if (e?.error?.isFatal) {
+      errorMsg.value = 'La llamada se interrumpió. Vuelve a intentarlo.'
+    }
   })
 }
 
 onUnmounted(() => {
   if (api) {
     api.dispose()
+    api = null
   }
 })
 </script>
@@ -78,7 +121,11 @@ onUnmounted(() => {
       <button class="close-btn" @click="emit('close')" aria-label="Cerrar">✕</button>
     </div>
     <div class="jitsi-wrapper" ref="jitsiContainer">
-      <div v-if="isLoading" class="loading-state">
+      <div v-if="errorMsg" class="loading-state">
+        <p>{{ errorMsg }}</p>
+        <button type="button" class="retry-btn" @click="emit('close')">Cerrar</button>
+      </div>
+      <div v-else-if="isLoading" class="loading-state">
         <span class="spinner"></span>
         <p>Conectando llamada...</p>
       </div>
@@ -153,6 +200,18 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+.retry-btn {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.retry-btn:hover { background: #ea580c; }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>

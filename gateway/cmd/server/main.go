@@ -70,6 +70,13 @@ func main() {
 		slog.Warn("RESEND_API_KEY vacía — no se enviarán accesos ni confirmaciones de compra")
 	}
 
+	// ── 4e. Señalización de videollamadas ─────────────────────────────────────
+	// El gestor vive junto al hub porque una llamada solo existe mientras hay
+	// sockets abiertos: su estado es tan efímero como las conexiones.
+	gestorLlamadas := hub.NewGestorLlamadas(h)
+	llamadasH := handler.NewLlamadasHandler(svc, cfg, h, gestorLlamadas)
+	llamadasH.RegistrarPerdidas()
+
 	// ── 5. Inyección de dependencias ──────────────────────────────────────────
 	r := router.New(router.Deps{
 		Cfg:          cfg,
@@ -80,7 +87,8 @@ func main() {
 		ExamenesH:    handler.NewExamenesHandler(svc),
 		ForosH:       handler.NewForosHandler(svc),
 		MensajesH:    handler.NewMensajesHandler(svc, h),
-		WsH:          handler.NewWsHandler(h),
+		LlamadasH:    llamadasH,
+		WsH:          handler.NewWsHandler(h, gestorLlamadas, llamadasH),
 		PresignH:     handler.NewPresignHandler(),
 		AuthMW:       middleware.AuthRequired(svc),
 		InstructorMW: middleware.InstructorRequired(svc),

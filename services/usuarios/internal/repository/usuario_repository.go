@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	usuariospb "Prueba-Go/gen/usuarios"
@@ -11,16 +13,16 @@ import (
 
 // Usuario es el modelo interno de este servicio.
 type Usuario struct {
-	ID        string    `db:"id"`
-	Name      string    `db:"name"`
-	Email     string    `db:"email"`
-	Role      string    `db:"role"`
-	Bio       string    `db:"bio"`
-	AvatarURL string    `db:"avatar_url"`
-	CoverURL  string    `db:"cover_url"`
-	Phone     string    `db:"phone"`
-	Specialty string    `db:"specialty"`
-	CreatedAt time.Time `db:"created_at"`
+	ID                   string    `db:"id"`
+	Name                 string    `db:"name"`
+	Email                string    `db:"email"`
+	Role                 string    `db:"role"`
+	Bio                  string    `db:"bio"`
+	AvatarURL            string    `db:"avatar_url"`
+	CoverURL             string    `db:"cover_url"`
+	Phone                string    `db:"phone"`
+	Specialty            string    `db:"specialty"`
+	CreatedAt            time.Time `db:"created_at"`
 	CursosInscritos      int32
 	LeccionesCompletadas int32
 	TotalLecciones       int32
@@ -34,13 +36,13 @@ func (u *Usuario) ToProto() *usuariospb.PerfilResponse {
 		Id: u.ID, Name: u.Name, Email: u.Email, Role: u.Role,
 		Bio: u.Bio, AvatarUrl: u.AvatarURL, CoverUrl: u.CoverURL,
 		Phone: u.Phone, Specialty: u.Specialty,
-		CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		CursosInscritos: u.CursosInscritos,
+		CreatedAt:            u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CursosInscritos:      u.CursosInscritos,
 		LeccionesCompletadas: u.LeccionesCompletadas,
-		TotalLecciones: u.TotalLecciones,
-		CursosCreados: u.CursosCreados,
-		EstudiantesTotal: u.EstudiantesTotal,
-		ExamenesCreados: u.ExamenesCreados,
+		TotalLecciones:       u.TotalLecciones,
+		CursosCreados:        u.CursosCreados,
+		EstudiantesTotal:     u.EstudiantesTotal,
+		ExamenesCreados:      u.ExamenesCreados,
 	}
 }
 
@@ -62,6 +64,7 @@ type UsuarioRepository interface {
 	Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error)
 	ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error)
 	MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error
+	CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (id string, creada bool, err error)
 }
 
 type postgresUsuarioRepository struct{ db *sqlx.DB }
@@ -140,36 +143,62 @@ func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, li
 		_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
 	}
 
-	var q string
-	var args []any
-	if role == "admin" || role == "instructor" || requesterID == "" || role == "" {
-		q = `SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
-		            COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
-		            COALESCE(specialty,'') specialty, created_at
-		     FROM users
-		     WHERE name ILIKE $1 OR email ILIKE $1
-		     ORDER BY name ASC LIMIT $2`
-		args = []any{"%" + query + "%", limit}
-	} else {
-		// Isolate to same cohort
-		q = `SELECT DISTINCT u.id, u.name, u.email, u.role, COALESCE(u.bio,'') bio, COALESCE(u.avatar_url,'') avatar_url,
-		            COALESCE(u.cover_url,'') cover_url, COALESCE(u.phone,'') phone,
-		            COALESCE(u.specialty,'') specialty, u.created_at
-		     FROM users u
-		     JOIN inscripciones i ON u.id = i.user_id
-		     WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
-		       AND EXISTS (
-		           SELECT 1 FROM inscripciones i2
-		           WHERE i2.user_id = $3
-		             AND i2.capacitacion_id = i.capacitacion_id
-		             AND i2.licencia_id IS NOT DISTINCT FROM i.licencia_id
-		       )
-		     ORDER BY u.name ASC LIMIT $2`
-		args = []any{"%" + query + "%", limit, requesterID}
+	const columnas = `u.id, u.name, u.email, u.role, COALESCE(u.bio,'') bio,
+	                  COALESCE(u.avatar_url,'') avatar_url, COALESCE(u.cover_url,'') cover_url,
+	                  COALESCE(u.phone,'') phone, COALESCE(u.specialty,'') specialty, u.created_at`
+
+	// Admin e instructor buscan sin límite: necesitan dar soporte y coordinar
+	// fuera de su propio grupo.
+	if role == "admin" || role == "instructor" {
+		q := `SELECT ` + columnas + `
+		        FROM users u
+		       WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
+		         AND u.id <> $3
+		       ORDER BY u.name ASC LIMIT $2`
+		var users []*Usuario
+		return users, r.db.SelectContext(ctx, &users, q, "%"+query+"%", limit, requesterID)
 	}
 
+	// Sin solicitante identificado no se devuelve nada. Antes este caso —y el
+	// de un `role` vacío por fallo de la consulta anterior— caía en la rama
+	// sin filtro y exponía el directorio completo de la plataforma.
+	if requesterID == "" {
+		return nil, nil
+	}
+
+	// Alumno: solo compañeros de sus capacitaciones. La pertenencia a un curso
+	// incluye inscripción, asignación por RR.HH. e impartición, de modo que el
+	// instructor del curso aparece en los resultados de sus propios alumnos.
+	//
+	// Nota: esta consulta es solo la capa de descubrimiento. La autorización
+	// real de cada mensaje vive en mensajes-service, porque un filtro de
+	// búsqueda no impide llamar al endpoint de envío con un ID adivinado.
+	q := `
+		WITH mis_cursos AS (
+		    SELECT capacitacion_id AS id FROM inscripciones  WHERE user_id = $3
+		    UNION
+		    SELECT capacitacion_id      FROM asignaciones   WHERE user_id = $3 AND capacitacion_id IS NOT NULL
+		    UNION
+		    SELECT id                   FROM capacitaciones WHERE instructor_id = $3 AND deleted_at IS NULL
+		),
+		companeros AS (
+		    SELECT i.user_id FROM inscripciones  i JOIN mis_cursos m ON m.id = i.capacitacion_id
+		    UNION
+		    SELECT a.user_id FROM asignaciones   a JOIN mis_cursos m ON m.id = a.capacitacion_id
+		    UNION
+		    SELECT c.instructor_id FROM capacitaciones c
+		      JOIN mis_cursos m ON m.id = c.id
+		     WHERE c.instructor_id IS NOT NULL AND c.deleted_at IS NULL
+		)
+		SELECT ` + columnas + `
+		  FROM users u
+		 WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
+		   AND u.id <> $3
+		   AND u.id IN (SELECT user_id FROM companeros)
+		 ORDER BY u.name ASC LIMIT $2`
+
 	var users []*Usuario
-	return users, r.db.SelectContext(ctx, &users, q, args...)
+	return users, r.db.SelectContext(ctx, &users, q, "%"+query+"%", limit, requesterID)
 }
 
 func (r *postgresUsuarioRepository) ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error) {
@@ -178,7 +207,7 @@ func (r *postgresUsuarioRepository) ListNotificaciones(ctx context.Context, user
 		FROM notificaciones
 		WHERE user_id = $1
 		ORDER BY created_at DESC LIMIT 50`
-	
+
 	type dbNotif struct {
 		ID        string    `db:"id"`
 		UserID    string    `db:"user_id"`
@@ -218,4 +247,43 @@ func (r *postgresUsuarioRepository) MarkNotificacionesRead(ctx context.Context, 
 	query := `UPDATE notificaciones SET leida = true WHERE user_id = $1 AND id = ANY($2)`
 	_, err := r.db.ExecContext(ctx, query, userID, ids)
 	return err
+}
+
+// CreateNotificacion inserta una notificación, opcionalmente deduplicada.
+//
+// La deduplicación se resuelve dentro del propio INSERT (INSERT ... SELECT ...
+// WHERE NOT EXISTS) en lugar de con un SELECT previo seguido de un INSERT: dos
+// eventos concurrentes para el mismo usuario —dos mensajes que llegan a la vez—
+// pasarían ambos la comprobación si fueran dos viajes separados a la base.
+//
+// Cuando la fila se suprime por duplicada no hay RETURNING, así que sql.ErrNoRows
+// es el caso normal y no un error: se traduce a creada=false.
+func (r *postgresUsuarioRepository) CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (string, bool, error) {
+	const query = `
+		INSERT INTO notificaciones (user_id, tipo, titulo, mensaje, enlace)
+		SELECT $1::uuid, $2, $3, $4, NULLIF($5, '')
+		WHERE $6 <= 0 OR NOT EXISTS (
+			SELECT 1 FROM notificaciones
+			 WHERE user_id = $1::uuid
+			   AND tipo    = $2
+			   AND titulo  = $3
+			   AND mensaje = $4
+			   AND COALESCE(enlace, '') = $5
+			   AND leida = false
+			   AND created_at > NOW() - make_interval(secs => $6::double precision)
+		)
+		RETURNING id`
+
+	var id string
+	err := r.db.QueryRowContext(ctx, query,
+		req.UserId, req.Tipo, req.Titulo, req.Mensaje, req.Enlace, req.DedupeVentanaSeg,
+	).Scan(&id)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	return id, true, nil
 }

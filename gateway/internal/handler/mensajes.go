@@ -19,6 +19,10 @@ type MensajesHandler struct {
 	client         mensajespb.MensajesServiceClient
 	usuariosClient usuariospb.UsuariosServiceClient
 	hub            *hub.Hub
+	// svc se guarda entero, y no solo los dos clientes de arriba, porque
+	// notificar() recibe el conjunto: así emitir un aviso desde cualquier
+	// handler es siempre la misma llamada.
+	svc *clients.Clients
 }
 
 func NewMensajesHandler(svc *clients.Clients, h *hub.Hub) *MensajesHandler {
@@ -26,6 +30,7 @@ func NewMensajesHandler(svc *clients.Clients, h *hub.Hub) *MensajesHandler {
 		client:         svc.Mensajes,
 		usuariosClient: svc.Usuarios,
 		hub:            h,
+		svc:            svc,
 	}
 }
 
@@ -102,104 +107,108 @@ func (h *MensajesHandler) ListConversaciones(c *gin.Context) {
 // GetMensajes devuelve la conversacion entre el usuario autenticado y un peer.
 // Soporta paginacion con ?limit=N&before_id=UUID
 func (h *MensajesHandler) GetMensajes(c *gin.Context) {
-userID := c.GetString(mw.CtxUserID)
-peerID := c.Param("peer_id")
+	userID := c.GetString(mw.CtxUserID)
+	peerID := c.Param("peer_id")
 
-limitStr := c.DefaultQuery("limit", "50")
-limit, err := strconv.Atoi(limitStr)
-if err != nil || limit <= 0 || limit > 200 {
-limit = 50
-}
-beforeID := c.Query("before_id")
+	limitStr := c.DefaultQuery("limit", "50")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	beforeID := c.Query("before_id")
 
-isGroup := c.Query("is_group") == "true"
+	isGroup := c.Query("is_group") == "true"
 
-resp, err := h.client.GetMensajes(c.Request.Context(), &mensajespb.GetMensajesRequest{
-UserId:   userID,
-PeerId:   peerID,
-Limit:    int32(limit),
-BeforeId: beforeID,
-IsGroup:  isGroup,
-})
-if err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando mensajes"})
-return
-}
+	resp, err := h.client.GetMensajes(c.Request.Context(), &mensajespb.GetMensajesRequest{
+		UserId:   userID,
+		PeerId:   peerID,
+		Limit:    int32(limit),
+		BeforeId: beforeID,
+		IsGroup:  isGroup,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error cargando mensajes"})
+		return
+	}
 
-// En la carga inicial (sin cursor) notificar al peer via WS que sus mensajes fueron leidos
-if beforeID == "" {
-h.hub.Broadcast(peerID, hub.Event{
-Type:   "message_read",
-PeerID: userID,
-})
-}
+	// En la carga inicial (sin cursor) notificar al peer via WS que sus mensajes fueron leidos
+	if beforeID == "" {
+		h.hub.Broadcast(peerID, hub.Event{
+			Type:   "message_read",
+			PeerID: userID,
+		})
+	}
 
-type mensajeDTO struct {
-ID             string    `json:"id"`
-EmisorID       string    `json:"emisor_id"`
-EmisorName     string    `json:"emisor_name"`
-ReceptorID     string    `json:"receptor_id"`
-ReceptorName   string    `json:"receptor_name"`
-Contenido      string    `json:"contenido"`
-Leido          bool      `json:"leido"`
-CreatedAt      time.Time `json:"created_at"`
-AttachmentUrl  string    `json:"attachment_url,omitempty"`
-AttachmentType string    `json:"attachment_type,omitempty"`
-IsGroup        bool      `json:"is_group"`
-}
+	type mensajeDTO struct {
+		ID             string    `json:"id"`
+		EmisorID       string    `json:"emisor_id"`
+		EmisorName     string    `json:"emisor_name"`
+		ReceptorID     string    `json:"receptor_id"`
+		ReceptorName   string    `json:"receptor_name"`
+		Contenido      string    `json:"contenido"`
+		Leido          bool      `json:"leido"`
+		CreatedAt      time.Time `json:"created_at"`
+		AttachmentUrl  string    `json:"attachment_url,omitempty"`
+		AttachmentType string    `json:"attachment_type,omitempty"`
+		IsGroup        bool      `json:"is_group"`
+	}
 
-msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
-for _, m := range resp.Mensajes {
-t, _ := time.Parse("2006-01-02T15:04:05Z", m.CreatedAt)
-msgs = append(msgs, mensajeDTO{
-ID:             m.Id,
-EmisorID:       m.EmisorId,
-EmisorName:     m.EmisorName,
-ReceptorID:     m.ReceptorId,
-ReceptorName:   m.ReceptorName,
-Contenido:      m.Contenido,
-Leido:          m.Leido,
-CreatedAt:      t,
-AttachmentUrl:  m.AttachmentUrl,
-AttachmentType: m.AttachmentType,
-IsGroup:        m.IsGroup,
-})
-}
-c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})
+	msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
+	for _, m := range resp.Mensajes {
+		t, _ := time.Parse("2006-01-02T15:04:05Z", m.CreatedAt)
+		msgs = append(msgs, mensajeDTO{
+			ID:             m.Id,
+			EmisorID:       m.EmisorId,
+			EmisorName:     m.EmisorName,
+			ReceptorID:     m.ReceptorId,
+			ReceptorName:   m.ReceptorName,
+			Contenido:      m.Contenido,
+			Leido:          m.Leido,
+			CreatedAt:      t,
+			AttachmentUrl:  m.AttachmentUrl,
+			AttachmentType: m.AttachmentType,
+			IsGroup:        m.IsGroup,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})
 }
 
 // SendMensaje envia un mensaje al peer indicado.
 func (h *MensajesHandler) SendMensaje(c *gin.Context) {
-userID := c.GetString(mw.CtxUserID)
-userName := c.GetString(mw.CtxUserName)
-peerID := c.Param("peer_id")
+	userID := c.GetString(mw.CtxUserID)
+	userName := c.GetString(mw.CtxUserName)
+	peerID := c.Param("peer_id")
 
-var body struct {
-Contenido      string `json:"contenido"`
-PeerName       string `json:"peer_name"`
-AttachmentUrl  string `json:"attachment_url"`
-AttachmentType string `json:"attachment_type"`
-IsGroup        bool   `json:"is_group"`
-}
-if err := c.ShouldBindJSON(&body); err != nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
-return
-}
+	var body struct {
+		Contenido      string `json:"contenido"`
+		PeerName       string `json:"peer_name"`
+		AttachmentUrl  string `json:"attachment_url"`
+		AttachmentType string `json:"attachment_type"`
+		IsGroup        bool   `json:"is_group"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cuerpo invalido"})
+		return
+	}
 
-resp, err := h.client.SendMensaje(c.Request.Context(), &mensajespb.SendMensajeRequest{
-EmisorId:       userID,
-EmisorName:     userName,
-ReceptorId:     peerID,
-ReceptorName:   body.PeerName,
-Contenido:      body.Contenido,
-AttachmentUrl:  body.AttachmentUrl,
-AttachmentType: body.AttachmentType,
-IsGroup:        body.IsGroup,
-})
-if err != nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-return
-}
+	resp, err := h.client.SendMensaje(c.Request.Context(), &mensajespb.SendMensajeRequest{
+		EmisorId:       userID,
+		EmisorName:     userName,
+		ReceptorId:     peerID,
+		ReceptorName:   body.PeerName,
+		Contenido:      body.Contenido,
+		AttachmentUrl:  body.AttachmentUrl,
+		AttachmentType: body.AttachmentType,
+		IsGroup:        body.IsGroup,
+	})
+	if err != nil {
+		// grpcToHTTP y no un 400 fijo: el servicio ahora devuelve
+		// PermissionDenied cuando el destinatario no comparte capacitación, y
+		// eso debe llegar al frontend como 403 con su mensaje, no como un
+		// "cuerpo inválido" con el error de gRPC crudo dentro.
+		grpcToHTTP(c, err)
+		return
+	}
 
 	t, _ := time.Parse("2006-01-02T15:04:05Z", resp.CreatedAt)
 
@@ -226,15 +235,22 @@ return
 			GrupoId: resp.ReceptorId,
 		})
 		if err == nil {
+			destinatarios := make([]aviso, 0, len(membersResp.UserIds))
 			for _, mID := range membersResp.UserIds {
 				if mID != userID {
 					h.hub.Broadcast(mID, event)
+					destinatarios = append(destinatarios, avisoMensaje(mID, userName, resp.ReceptorId, resp.ReceptorName))
 				}
 			}
+			notificar(h.svc, destinatarios...)
 		}
 	} else {
 		// Notificar al receptor en tiempo real via WebSocket
 		h.hub.Broadcast(resp.ReceptorId, event)
+		// El WebSocket solo alcanza a quien está conectado ahora mismo; la
+		// campana es lo que ve quien vuelve mañana. El enlace apunta al emisor
+		// porque es la conversación que el receptor quiere abrir.
+		notificar(h.svc, avisoMensaje(resp.ReceptorId, userName, userID, userName))
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -252,28 +268,52 @@ return
 	})
 }
 
+// avisoMensaje construye la campana de "tienes un mensaje".
+//
+// El cuerpo es deliberadamente fijo y NO lleva el texto del mensaje. Con el
+// extracto dentro, cada mensaje sería una fila distinta y la deduplicación no
+// agruparía nada: veinte mensajes seguidos dejarían veinte campanas. El detalle
+// está a un clic, en la conversación; la campana solo tiene que avisar.
+func avisoMensaje(destinatarioID, emisorNombre, conversacionID, conversacionNombre string) aviso {
+	if emisorNombre == "" {
+		emisorNombre = "Alguien"
+	}
+	titulo := "Nuevo mensaje de " + emisorNombre
+	if conversacionNombre != "" && conversacionNombre != emisorNombre {
+		titulo = emisorNombre + " escribió en " + conversacionNombre
+	}
+	return aviso{
+		UserID:  destinatarioID,
+		Tipo:    TipoMensaje,
+		Titulo:  titulo,
+		Mensaje: "Abre la conversación para leerlo.",
+		Enlace:  "/usuario/mensajes/" + conversacionID,
+		Ventana: ventanaConversacion,
+	}
+}
+
 // MarcarLeido marca un mensaje individual como leido y notifica al emisor.
 func (h *MensajesHandler) MarcarLeido(c *gin.Context) {
-userID := c.GetString(mw.CtxUserID)
-msgID := c.Param("msg_id")
+	userID := c.GetString(mw.CtxUserID)
+	msgID := c.Param("msg_id")
 
-resp, err := h.client.MarcarLeido(c.Request.Context(), &mensajespb.MarcarLeidoRequest{
-MsgId:  msgID,
-UserId: userID,
-})
-if err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "error marcando mensaje"})
-return
-}
+	resp, err := h.client.MarcarLeido(c.Request.Context(), &mensajespb.MarcarLeidoRequest{
+		MsgId:  msgID,
+		UserId: userID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error marcando mensaje"})
+		return
+	}
 
-if resp.EmisorId != "" {
-h.hub.Broadcast(resp.EmisorId, hub.Event{
-Type:   "message_read",
-PeerID: userID,
-})
-}
+	if resp.EmisorId != "" {
+		h.hub.Broadcast(resp.EmisorId, hub.Event{
+			Type:   "message_read",
+			PeerID: userID,
+		})
+	}
 
-c.JSON(http.StatusOK, gin.H{"ok": resp.Ok})
+	c.JSON(http.StatusOK, gin.H{"ok": resp.Ok})
 }
 
 // CreateGroup crea un nuevo grupo de mensajes.
@@ -300,12 +340,12 @@ func (h *MensajesHandler) CreateGroup(c *gin.Context) {
 	}
 
 	resp, err := h.client.CreateGroup(c.Request.Context(), &mensajespb.CreateGroupRequest{
-		Nombre:   body.Nombre,
-		AdminId:  userID,
-		Members:  finalMembers,
+		Nombre:  body.Nombre,
+		AdminId: userID,
+		Members: finalMembers,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando grupo"})
+		grpcToHTTP(c, err)
 		return
 	}
 
@@ -331,7 +371,7 @@ func (h *MensajesHandler) AddGroupMembers(c *gin.Context) {
 		UserIds: body.Members,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error añadiendo miembros al grupo"})
+		grpcToHTTP(c, err)
 		return
 	}
 

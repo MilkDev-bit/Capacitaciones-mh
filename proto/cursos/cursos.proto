@@ -474,6 +474,9 @@ message EnrollResponse {
   string capacitacion_id     = 1;
   string capacitacion_titulo = 2;
   string capacitacion_type   = 3; // "video" | "document" | "text" | "link"
+  // Dueño del curso. El Gateway lo usa para avisarle de la nueva inscripción;
+  // va vacío en los cursos sin instructor asignado.
+  string instructor_id       = 4;
 }
 
 message ComprarB2BDirectResponse {

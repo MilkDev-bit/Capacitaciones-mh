@@ -41,6 +41,10 @@ service UsuariosService {
   // Notificaciones
   rpc ListNotificaciones(UserIDRequest)              returns (ListNotificacionesResponse);
   rpc MarkNotificacionesRead(MarkNotificacionesReadRequest) returns (EmptyResponse);
+  // Interno: crea una notificación in-app. Lo invoca el Gateway tras una acción
+  // que le interesa al destinatario (compra, mensaje, respuesta en el foro).
+  // No se expone como ruta HTTP: nadie debe poder escribir en la campana ajena.
+  rpc CreateNotificacion(CreateNotificacionRequest) returns (CreateNotificacionResponse);
 
   // ── Gamificación: Insignias ───────────────────────────────────────────────
   // Devuelve todas las insignias desbloqueadas de un usuario.
@@ -93,6 +97,29 @@ message SearchUsersRequest {
 message MarkNotificacionesReadRequest {
   string          user_id = 1;
   repeated string ids     = 2;
+}
+
+message CreateNotificacionRequest {
+  string user_id = 1;
+  // tipo clasifica la notificación y es lo que el frontend usa para decidir
+  // si la muestra en el layout de alumno, instructor o admin.
+  string tipo    = 2;
+  string titulo  = 3;
+  string mensaje = 4;
+  string enlace  = 5;
+
+  // Ventana de deduplicación en segundos. Si dentro de la ventana ya existe una
+  // notificación NO leída idéntica (mismo user_id, tipo, título, mensaje y
+  // enlace), no se crea otra. 0 desactiva la deduplicación.
+  //
+  // Existe porque los emisores son eventos, no acciones del usuario: veinte
+  // mensajes seguidos de la misma persona deben dejar UNA campana, no veinte.
+  int32 dedupe_ventana_seg = 6;
+}
+
+message CreateNotificacionResponse {
+  string id     = 1;
+  bool   creada = 2; // false si se suprimió por deduplicación
 }
 
 // ── Requests de Gamificación ──────────────────────────────────────────────────

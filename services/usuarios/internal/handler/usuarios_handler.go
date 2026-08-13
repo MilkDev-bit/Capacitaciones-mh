@@ -6,6 +6,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	usuariospb "Prueba-Go/gen/usuarios"
@@ -127,4 +128,20 @@ func (h *UsuariosHandler) MarkNotificacionesRead(ctx context.Context, req *usuar
 		return nil, status.Error(codes.Internal, "error marcando notificaciones leidas")
 	}
 	return &usuariospb.EmptyResponse{}, nil
+}
+
+func (h *UsuariosHandler) CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (*usuariospb.CreateNotificacionResponse, error) {
+	resp, err := h.svc.CreateNotificacion(ctx, req)
+	switch {
+	case errors.Is(err, service.ErrDatosNotificacion), errors.Is(err, service.ErrTipoNotificacion):
+		// InvalidArgument y no Internal: es un emisor mal escrito, no una caída
+		// de la base. Con Internal el Gateway reintentaría contra un error que
+		// nunca se va a resolver solo.
+		slog.Warn("CreateNotificacion rechazada", "user_id", req.UserId, "tipo", req.Tipo, "error", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	case err != nil:
+		slog.Error("CreateNotificacion", "user_id", req.UserId, "tipo", req.Tipo, "error", err)
+		return nil, status.Error(codes.Internal, "error creando la notificacion")
+	}
+	return resp, nil
 }

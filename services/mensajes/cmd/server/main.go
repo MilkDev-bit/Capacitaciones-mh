@@ -32,7 +32,10 @@ func main() {
 	}
 
 	repo := repository.NewMensajesRepository(db)
-	svc := service.NewMensajesService(repo)
+	// contactos resuelve "quién puede escribirle a quién" consultando las
+	// tablas de inscripción del servicio de cursos (misma base de datos).
+	contactos := repository.NewContactosRepository(db)
+	svc := service.NewMensajesService(repo, contactos)
 	h := handler.NewMensajesHandler(svc)
 
 	port := getEnvOr("GRPC_PORT", "50057")

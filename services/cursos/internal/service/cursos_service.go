@@ -403,6 +403,9 @@ func (s *CursosService) WebhookEnroll(ctx context.Context, req *cursospb.Webhook
 		if curso, errC := s.repo.FindByID(ctx, req.CapacitacionId); errC == nil {
 			resp.CapacitacionTitulo = curso.Title
 			resp.CapacitacionType = curso.Type
+			if curso.InstructorID != nil {
+				resp.InstructorId = *curso.InstructorID
+			}
 		}
 	}
 

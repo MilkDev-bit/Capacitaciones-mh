@@ -226,6 +226,12 @@ services:
       SMTP_FROM:      ${SMTP_FROM:-}
       APP_URL:        ${APP_URL:-http://localhost:5173}
       APP_NAME:       ${APP_NAME:-Capacitaciones MH}
+
+      # Videollamadas: el gateway firma los tokens con los que el cliente
+      # entra a cada sala. Debe compartir JITSI_APP_SECRET con Prosody.
+      JITSI_DOMAIN:     ${JITSI_DOMAIN:-localhost:8443}
+      JITSI_APP_ID:     ${JITSI_APP_ID:-capacitaciones}
+      JITSI_APP_SECRET: ${JITSI_APP_SECRET:-}
     ports:
       - "8080:8080"
 
@@ -245,5 +251,125 @@ services:
     depends_on:
       - gateway
 
+  # ── Jitsi Meet (videollamadas) ────────────────────────────────────────────────
+  #
+  # Se autohospeda en lugar de usar meet.jit.si porque el servidor público
+  # exige desde 2023 que el primer participante inicie sesión con una cuenta
+  # Jitsi para abrir la sala — que es justamente la fricción del "código de
+  # acceso" que queremos eliminar.
+  #
+  # La autenticación es por JWT: Prosody solo admite a quien presente un token
+  # firmado con JITSI_APP_SECRET y cuyo claim `room` coincida con la sala. El
+  # gateway emite ese token en POST /api/llamadas/token, y solo a quien el
+  # gestor de llamadas reconoce como participante. Conocer el nombre de la
+  # sala no basta para entrar.
+  #
+  # Estos cuatro contenedores son el despliegue de referencia de Jitsi:
+  #   jitsi-web     → la interfaz y el servidor XMPP-sobre-WebSocket
+  #   jitsi-prosody → XMPP: autenticación y salas
+  #   jitsi-jicofo  → asigna un puente de vídeo a cada conferencia
+  #   jitsi-jvb     → el puente que enruta el audio y vídeo
+  #
+  # Los secretos NUNCA van aquí: se generan una vez con `make jitsi-secrets`
+  # y se guardan en .env.
+  jitsi-prosody:
+    image: jitsi/prosody:stable-9955
+    restart: unless-stopped
+    expose:
+      - "5222"
+      - "5347"
+      - "5280"
+    volumes:
+      - jitsi_prosody:/config
+    environment:
+      <<: &jitsi-comun
+        TZ: ${TZ:-America/Mexico_City}
+        XMPP_DOMAIN: ${JITSI_XMPP_DOMAIN:-meet.jitsi}
+        XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN:-meet.jitsi}
+        XMPP_MUC_DOMAIN: muc.${JITSI_XMPP_DOMAIN:-meet.jitsi}
+        XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN:-meet.jitsi}
+        XMPP_SERVER: jitsi-prosody
+        XMPP_BOSH_URL_BASE: http://jitsi-prosody:5280
+        JICOFO_AUTH_USER: focus
+        JVB_AUTH_USER: jvb
+        JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD}
+        JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD}
+        JICOFO_COMPONENT_SECRET: ${JICOFO_COMPONENT_SECRET}
+      # Autenticación por token: sin esto Jitsi vuelve al modelo de sala
+      # abierta y cualquiera con la URL entra.
+      ENABLE_AUTH: 1
+      ENABLE_GUESTS: 0
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JITSI_APP_ID:-capacitaciones}
+      JWT_APP_SECRET: ${JITSI_APP_SECRET}
+      JWT_ACCEPTED_ISSUERS: ${JITSI_APP_ID:-capacitaciones}
+      JWT_ACCEPTED_AUDIENCES: ${JITSI_APP_ID:-capacitaciones}
+      JWT_ALLOW_EMPTY: 0
+
+  jitsi-web:
+    image: jitsi/web:stable-9955
+    restart: unless-stopped
+    depends_on:
+      - jitsi-prosody
+    ports:
+      - "${JITSI_HTTP_PORT:-8000}:80"
+      - "${JITSI_HTTPS_PORT:-8443}:443"
+    volumes:
+      - jitsi_web:/config
+      - jitsi_web_crontabs:/var/spool/cron/crontabs
+    environment:
+      <<: *jitsi-comun
+      PUBLIC_URL: ${JITSI_PUBLIC_URL:-https://localhost:8443}
+      ENABLE_AUTH: 1
+      ENABLE_GUESTS: 0
+      AUTH_TYPE: jwt
+      # La pantalla previa ("Entrar a la reunión") se desactiva en el servidor
+      # y no solo desde el cliente: la clave `prejoinPageEnabled` que se usaba
+      # en configOverwrite está obsoleta y meet.jit.si la ignoraba.
+      ENABLE_PREJOIN_PAGE: 0
+      ENABLE_WELCOME_PAGE: 0
+      ENABLE_CLOSE_PAGE: 0
+      DISABLE_DEEP_LINKING: 1
+      ENABLE_LOBBY: 0
+      # Habilitar Let's Encrypt en producción con un dominio real.
+      ENABLE_LETSENCRYPT: ${JITSI_ENABLE_LETSENCRYPT:-0}
+      LETSENCRYPT_DOMAIN: ${JITSI_DOMAIN:-}
+      LETSENCRYPT_EMAIL: ${JITSI_LETSENCRYPT_EMAIL:-}
+
+  jitsi-jicofo:
+    image: jitsi/jicofo:stable-9955
+    restart: unless-stopped
+    depends_on:
+      - jitsi-prosody
+    volumes:
+      - jitsi_jicofo:/config
+    environment:
+      <<: *jitsi-comun
+
+  jitsi-jvb:
+    image: jitsi/jvb:stable-9955
+    restart: unless-stopped
+    depends_on:
+      - jitsi-prosody
+    ports:
+      # UDP 10000 es por donde viaja el audio y el vídeo. Si este puerto no
+      # está abierto de extremo a extremo, la llamada conecta pero nadie ve ni
+      # oye nada: es el fallo más común al desplegar Jitsi.
+      - "${JVB_PORT:-10000}:10000/udp"
+    volumes:
+      - jitsi_jvb:/config
+    environment:
+      <<: *jitsi-comun
+      JVB_PORT: ${JVB_PORT:-10000}
+      # IP pública del host. En un servidor con NAT (la mayoría de VPS y
+      # cualquier despliegue en la nube) hay que fijarla o el JVB anuncia una
+      # dirección privada que los clientes no pueden alcanzar.
+      JVB_ADVERTISE_IPS: ${JVB_ADVERTISE_IPS:-}
+
 volumes:
   postgres_data:
+  jitsi_web:
+  jitsi_web_crontabs:
+  jitsi_prosody:
+  jitsi_jicofo:
+  jitsi_jvb:

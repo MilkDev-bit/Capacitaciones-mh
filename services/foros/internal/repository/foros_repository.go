@@ -42,6 +42,12 @@ type ForoComentario struct {
 	Contenido string    `db:"contenido"`
 	Reactions []byte    `db:"reactions"`
 	CreatedAt time.Time `db:"created_at"`
+
+	// Autores a los que hay que avisar. Solo los rellena CreateComentario:
+	// el listado no los necesita y traerlos costaría dos joins por comentario.
+	PostUserID     string `db:"post_user_id"`
+	ParentUserID   string `db:"parent_user_id"`
+	CapacitacionID string `db:"capacitacion_id"`
 }
 
 func (c *ForoComentario) ToProto() *forospb.ComentarioResponse {
@@ -52,7 +58,10 @@ func (c *ForoComentario) ToProto() *forospb.ComentarioResponse {
 	return &forospb.ComentarioResponse{
 		Id: c.ID, PostId: c.PostID, ParentId: pid, UserId: c.UserID, UserName: c.UserName,
 		Contenido: c.Contenido, Reactions: parseReactions(c.Reactions),
-		CreatedAt: c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:      c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		PostUserId:     c.PostUserID,
+		ParentUserId:   c.ParentUserID,
+		CapacitacionId: c.CapacitacionID,
 	}
 }
 
@@ -184,12 +193,22 @@ func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *for
 	if err != nil {
 		return nil, err
 	}
+	// El join trae de paso a quién hay que notificar. Hacerlo aquí en vez de en
+	// el Gateway evita dos consultas extra por comentario y, sobre todo, evita
+	// que el Gateway tenga que conocer el esquema del foro.
 	var c ForoComentario
 	return &c, r.db.GetContext(ctx, &c,
-		`SELECT id, post_id, parent_id, user_id,
-		        COALESCE(user_name,'') user_name,
-		        contenido, '[]'::json as reactions, created_at
-		   FROM foro_comentarios WHERE id=$1::uuid`, id)
+		`SELECT c.id, c.post_id, c.parent_id, c.user_id,
+		        COALESCE(c.user_name,'') user_name,
+		        c.contenido, '[]'::json as reactions, c.created_at,
+		        COALESCE(p.user_id::text, '')  AS post_user_id,
+		        COALESCE(pc.user_id::text, '') AS parent_user_id,
+		        COALESCE(l.capacitacion_id::text, '') AS capacitacion_id
+		   FROM foro_comentarios c
+		   JOIN foro_posts p             ON p.id  = c.post_id
+		   LEFT JOIN lecciones l         ON l.id  = p.leccion_id
+		   LEFT JOIN foro_comentarios pc ON pc.id = c.parent_id
+		  WHERE c.id=$1::uuid`, id)
 }
 
 func (r *postgresForosRepository) TogglePostReaction(ctx context.Context, req *forospb.PostReactionRequest) (*forospb.ReactionResponse, error) {

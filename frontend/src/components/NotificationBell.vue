@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import api from '../api'
 
 interface Notificacion {
@@ -14,24 +15,109 @@ interface Notificacion {
   created_at: string
 }
 
+/**
+ * Tipos relevantes para cada layout.
+ *
+ * Todas las notificaciones van dirigidas al usuario, pero no todas pertenecen
+ * al sombrero que lleva puesto: un instructor viendo su panel de docencia no
+ * necesita el acuse de la compra que hizo como alumno — eso vive en /usuario.
+ *
+ * Un tipo que no aparezca en ninguna lista se muestra SIEMPRE (ver `esVisible`).
+ * Es deliberado: si mañana el backend emite un tipo nuevo y nadie actualiza
+ * este mapa, el aviso se ve de más, que es un fallo visible y corregible. La
+ * alternativa —ocultarlo— produce un aviso que se crea, se guarda y no aparece
+ * nunca, que es exactamente el fallo que este componente tenía.
+ */
+const TIPOS_POR_PERFIL: Record<string, string[]> = {
+  usuario:    ['compra', 'inscripcion', 'mensaje', 'llamada_perdida', 'foro_respuesta'],
+  instructor: ['nuevo_alumno', 'foro_respuesta', 'mensaje', 'llamada_perdida'],
+  admin:      ['nuevo_alumno', 'compra', 'mensaje', 'llamada_perdida'],
+}
+
+const TODOS_LOS_TIPOS = [...new Set(Object.values(TIPOS_POR_PERFIL).flat())]
+
+/** Prefijos de ruta por perfil, para reescribir el enlace al layout correcto. */
+const BASES_PERFIL = ['/admin', '/instructor', '/usuario']
+
 const router = useRouter()
+const auth = useAuthStore()
+
 const notificaciones = ref<Notificacion[]>([])
-const unreadCount = computed(() => displayNotificaciones.value.length)
 const isOpen = ref(false)
+const verTodas = ref(false)
 
 let pollInterval: ReturnType<typeof setInterval>
 
+const perfil = computed(() => {
+  const role = auth.user?.role
+  if (role === 'admin') return 'admin'
+  if (role === 'instructor') return 'instructor'
+  return 'usuario'
+})
+
+const baseDelPerfil = computed(() => (perfil.value === 'usuario' ? '/usuario' : `/${perfil.value}`))
+
+function esVisible(n: Notificacion) {
+  if (verTodas.value) return true
+  if (!TODOS_LOS_TIPOS.includes(n.tipo)) return true // tipo desconocido: fail-open
+  return TIPOS_POR_PERFIL[perfil.value].includes(n.tipo)
+}
+
+const noLeidas = computed(() => notificaciones.value.filter(n => !n.leida))
+
+/**
+ * Lista pintada en el desplegable.
+ *
+ * La deduplicación por (título, mensaje, enlace) se conserva aunque el backend
+ * ya deduplica al insertar: las filas creadas antes de ese cambio siguen en la
+ * base y se verían repetidas.
+ */
 const displayNotificaciones = computed(() => {
-  const unread = notificaciones.value.filter(n => !n.leida)
-  const seen = new Set()
-  return unread.filter(n => {
-    // deduplicate by title and message
-    const key = n.titulo + '|' + n.mensaje + '|' + n.enlace
-    if (seen.has(key)) return false
-    seen.add(key)
+  const vistos = new Set<string>()
+  return noLeidas.value.filter(n => {
+    if (!esVisible(n)) return false
+    const clave = `${n.tipo}|${n.titulo}|${n.mensaje}|${n.enlace}`
+    if (vistos.has(clave)) return false
+    vistos.add(clave)
     return true
   })
 })
+
+const unreadCount = computed(() => displayNotificaciones.value.length)
+
+/** Cuántas quedan fuera por el filtro de perfil (para ofrecer "ver todas"). */
+const ocultasPorPerfil = computed(() => {
+  if (verTodas.value) return 0
+  return noLeidas.value.filter(n => !esVisible(n)).length
+})
+
+/**
+ * Traduce el enlace guardado al layout de quien lo abre.
+ *
+ * El backend emite rutas con prefijo /usuario porque es el caso mayoritario,
+ * pero un instructor debe aterrizar en /instructor/mensajes/… y no salir de su
+ * panel. Si la ruta reescrita no existe (el panel de admin no tiene mensajes,
+ * por ejemplo) se cae al enlace original, y si ese tampoco resuelve se devuelve
+ * null y la notificación solo se marca como leída: mejor no navegar que llevar
+ * a una pantalla en blanco.
+ */
+function resolverEnlace(enlace: string): string | null {
+  if (!enlace || !enlace.startsWith('/')) return null
+
+  const base = baseDelPerfil.value
+  const original = BASES_PERFIL.find(b => enlace === b || enlace.startsWith(`${b}/`))
+
+  const candidatos = original && original !== base
+    ? [base + enlace.slice(original.length), enlace]
+    : [enlace]
+
+  for (const candidato of candidatos) {
+    try {
+      if (router.resolve(candidato).matched.length > 0) return candidato
+    } catch { /* ruta no resoluble: se prueba la siguiente */ }
+  }
+  return null
+}
 
 async function fetchNotificaciones() {
   try {
@@ -42,35 +128,37 @@ async function fetchNotificaciones() {
   }
 }
 
+/** Marca como leídas todas las copias equivalentes que la lista había agrupado. */
 async function markAsReadWithoutNavigating(n: Notificacion) {
-  const duplicates = notificaciones.value.filter(x => !x.leida && x.titulo === n.titulo && x.mensaje === n.mensaje)
-  const ids = duplicates.map(x => x.id)
+  const duplicadas = notificaciones.value.filter(
+    x => !x.leida && x.tipo === n.tipo && x.titulo === n.titulo && x.mensaje === n.mensaje,
+  )
+  const ids = duplicadas.map(x => x.id)
+  if (ids.length === 0) return
 
-  if (ids.length > 0) {
-    try {
-      await api.post('/notificaciones/marcar-leidas', { ids })
-      duplicates.forEach(x => x.leida = true)
-    } catch (err) {
-      console.error('Error marking as read', err)
-    }
+  try {
+    await api.post('/notificaciones/marcar-leidas', { ids })
+    duplicadas.forEach(x => { x.leida = true })
+  } catch (err) {
+    console.error('Error marking as read', err)
   }
 }
 
 async function markAsRead(n: Notificacion) {
   await markAsReadWithoutNavigating(n)
   isOpen.value = false
-  if (n.enlace) {
-    router.push(n.enlace)
-  }
+
+  const destino = resolverEnlace(n.enlace)
+  if (destino) router.push(destino)
 }
 
 async function markAllAsRead() {
-  const unreadIds = notificaciones.value.filter(n => !n.leida).map(n => n.id)
-  if (unreadIds.length === 0) return
+  const ids = noLeidas.value.map(n => n.id)
+  if (ids.length === 0) return
 
   try {
-    await api.post('/notificaciones/marcar-leidas', { ids: unreadIds })
-    notificaciones.value.forEach(n => n.leida = true)
+    await api.post('/notificaciones/marcar-leidas', { ids })
+    notificaciones.value.forEach(n => { n.leida = true })
   } catch (err) {
     console.error('Error marking all as read', err)
   }
@@ -84,6 +172,7 @@ function closeDropdown(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.notification-wrapper')) {
     isOpen.value = false
+    verTodas.value = false
   }
 }
 
@@ -93,11 +182,9 @@ function timeAgo(dateString: string) {
   if (isNaN(date.getTime())) {
     date = new Date(dateString.replace(' ', 'T'))
   }
-  if (isNaN(date.getTime())) {
-    return ''
-  }
-  const now = new Date()
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  if (isNaN(date.getTime())) return ''
+
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
 
   let interval = seconds / 31536000
   if (interval > 1) return Math.floor(interval) + ' años'
@@ -109,7 +196,7 @@ function timeAgo(dateString: string) {
   if (interval > 1) return Math.floor(interval) + 'h'
   interval = seconds / 60
   if (interval > 1) return Math.floor(interval) + 'm'
-  return Math.floor(seconds) + 's'
+  return Math.max(0, Math.floor(seconds)) + 's'
 }
 
 onMounted(() => {
@@ -122,20 +209,22 @@ onUnmounted(() => {
   clearInterval(pollInterval)
   document.removeEventListener('click', closeDropdown)
 })
+
+defineExpose({ resolverEnlace, displayNotificaciones, unreadCount })
 </script>
 
 <template>
   <div class="notification-wrapper">
-    <button class="icon-btn" @click="toggleDropdown" data-tooltip="Notificaciones">
+    <button class="icon-btn" @click="toggleDropdown" data-tooltip="Notificaciones" :aria-label="`Notificaciones (${unreadCount} sin leer)`">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-      <span v-if="unreadCount > 0" class="badge"></span>
+      <span v-if="unreadCount > 0" class="badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
     </button>
 
     <Transition name="slide-down">
       <div v-if="isOpen" class="dropdown-menu">
         <div class="dropdown-header">
           <strong>Notificaciones</strong>
-          <button v-if="unreadCount > 0" class="mark-read-btn" @click.stop="markAllAsRead">
+          <button v-if="noLeidas.length > 0" class="mark-read-btn" @click.stop="markAllAsRead">
             Marcar todas como leídas
           </button>
         </div>
@@ -143,9 +232,9 @@ onUnmounted(() => {
           <div v-if="displayNotificaciones.length === 0" class="empty-state">
             No tienes notificaciones
           </div>
-          <div v-else 
-               v-for="n in displayNotificaciones" 
-               :key="n.id" 
+          <div v-else
+               v-for="n in displayNotificaciones"
+               :key="n.id"
                class="notification-item unread"
                @click="markAsRead(n)">
             <div class="notif-content">
@@ -160,6 +249,14 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+        <!--
+          El filtro por perfil oculta, nunca borra. Este pie es la salida de
+          emergencia: sin él, una notificación mal clasificada sería invisible
+          para el usuario y no habría forma de saber que existe.
+        -->
+        <button v-if="ocultasPorPerfil > 0" class="ver-todas" @click.stop="verTodas = true">
+          Ver {{ ocultasPorPerfil }} de otros perfiles
+        </button>
       </div>
     </Transition>
   </div>
@@ -191,13 +288,20 @@ onUnmounted(() => {
 
 .badge {
   position: absolute;
-  top: 6px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   background: var(--danger);
-  border-radius: 50%;
+  color: #fff;
+  border-radius: 8px;
   border: 2px solid var(--surface);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-sizing: content-box;
 }
 
 .dropdown-menu {
@@ -317,6 +421,21 @@ onUnmounted(() => {
 .mark-btn:hover {
   background: var(--surface);
   color: var(--brand);
+}
+
+.ver-todas {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--brand);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ver-todas:hover {
+  background-color: var(--surface-hover);
 }
 
 /* Animations */

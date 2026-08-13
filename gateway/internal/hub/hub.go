@@ -24,11 +24,12 @@ type MsgPayload struct {
 
 // Event es el mensaje JSON que el servidor envía al cliente WebSocket.
 type Event struct {
-	Type     string      `json:"type"`
-	Msg      *MsgPayload `json:"msg,omitempty"`
-	PeerID   string      `json:"peer_id,omitempty"`
-	PeerName string      `json:"peer_name,omitempty"`
-	Count    int32       `json:"count,omitempty"`
+	Type     string       `json:"type"`
+	Msg      *MsgPayload  `json:"msg,omitempty"`
+	Call     *CallPayload `json:"call,omitempty"`
+	PeerID   string       `json:"peer_id,omitempty"`
+	PeerName string       `json:"peer_name,omitempty"`
+	Count    int32        `json:"count,omitempty"`
 }
 
 // Client representa una conexión WebSocket activa.
@@ -76,6 +77,17 @@ func (h *Hub) Unregister(c *Client) {
 			}
 		}
 	}
+}
+
+// EstaConectado indica si el usuario tiene al menos una conexión abierta.
+//
+// La señalización de llamadas lo consulta antes de timbrar: llamar a alguien
+// sin ninguna pestaña abierta debe fallar de inmediato con "no disponible", no
+// dejar sonar treinta segundos contra el vacío.
+func (h *Hub) EstaConectado(userID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients[userID]) > 0
 }
 
 // Broadcast envía un evento a todas las conexiones de un usuario.

@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import api from '../api'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
 }>()
 
@@ -58,12 +58,13 @@ function selectUser(u: any) {
               v-model="query" 
               type="text" 
               class="search-input" 
-              placeholder="Buscar por nombre o correo..." 
-              autofocus 
+              placeholder="Buscar entre tus compañeros..."
+              autofocus
             />
-            
+            <p class="field-hint">Solo aparecen personas inscritas en tus mismas capacitaciones.</p>
+
             <div v-if="loading" class="loading-state">Buscando...</div>
-            <div v-else-if="results.length === 0 && query" class="empty-state">No se encontraron usuarios</div>
+            <div v-else-if="results.length === 0 && query" class="empty-state">Nadie con ese nombre en tus capacitaciones</div>
             
             <ul v-else class="user-list">
               <li v-for="user in results" :key="user.id" class="user-item" @click="selectUser(user)">

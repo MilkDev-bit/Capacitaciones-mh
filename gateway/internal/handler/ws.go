@@ -32,11 +32,16 @@ var upgrader = websocket.Upgrader{
 // WsHandler gestiona conexiones WebSocket autenticadas.
 type WsHandler struct {
 	hub *hub.Hub
+	// call y llamadas soportan la señalización de videollamada. Van por el
+	// mismo socket que los mensajes porque el timbre necesita exactamente lo
+	// que el socket ya ofrece: entrega inmediata y saber quién está en línea.
+	call     *hub.GestorLlamadas
+	llamadas *LlamadasHandler
 }
 
 // NewWsHandler crea un WsHandler.
-func NewWsHandler(h *hub.Hub) *WsHandler {
-	return &WsHandler{hub: h}
+func NewWsHandler(h *hub.Hub, g *hub.GestorLlamadas, lh *LlamadasHandler) *WsHandler {
+	return &WsHandler{hub: h, call: g, llamadas: lh}
 }
 
 // Handle actualiza la conexión HTTP a WebSocket, registra el cliente en el hub
@@ -114,8 +119,11 @@ func (wh *WsHandler) Handle(c *gin.Context) {
 		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 		var ev struct {
-			Type   string `json:"type"`
-			PeerID string `json:"peer_id"`
+			Type     string `json:"type"`
+			PeerID   string `json:"peer_id"`
+			PeerName string `json:"peer_name"`
+			CallID   string `json:"call_id"`
+			IsGroup  bool   `json:"is_group"`
 		}
 		if err := json.Unmarshal(raw, &ev); err != nil {
 			log.Printf("error unmarshal: %v", err)
@@ -131,8 +139,50 @@ func (wh *WsHandler) Handle(c *gin.Context) {
 					PeerName: userName,
 				})
 			}
+
+		// ── Señalización de videollamada ──────────────────────────────────
+		//
+		// El cliente nunca elige el nombre de sala ni decide quién puede
+		// entrar: solo declara intención ("llamar a X", "acepto"). Todo lo
+		// demás lo resuelve el servidor, que es el único que puede hacerlo
+		// sin confiar en el navegador.
+		case "call_start":
+			if ev.PeerID == "" || wh.llamadas == nil {
+				continue
+			}
+			// Se lanza en goroutine para no bloquear el bucle de lectura: la
+			// expansión del grupo y la comprobación de permisos hacen
+			// llamadas gRPC, y un socket que deja de leer se cae por el
+			// read deadline de 60 s.
+			go wh.llamadas.Iniciar(userID, userName, ev.PeerID, ev.PeerName, ev.IsGroup)
+
+		case "call_accept":
+			if ev.CallID != "" && wh.call != nil {
+				wh.call.Aceptar(ev.CallID, userID, userName)
+			}
+
+		case "call_reject":
+			if ev.CallID != "" && wh.call != nil {
+				wh.call.Rechazar(ev.CallID, userID)
+			}
+
+		case "call_cancel":
+			if ev.CallID != "" && wh.call != nil {
+				wh.call.Cancelar(ev.CallID, userID)
+			}
+
+		case "call_leave":
+			if ev.CallID != "" && wh.call != nil {
+				wh.call.Salir(ev.CallID, userID)
+			}
 		}
 	}
 
 	cleanupFn()
+	// Al perder la conexión se cierran las llamadas del usuario. Sin esto,
+	// cerrar la pestaña dejaría al otro extremo escuchando el tono hasta que
+	// venciera el timeout de 30 s.
+	if wh.call != nil {
+		wh.call.LimpiarUsuario(userID)
+	}
 }

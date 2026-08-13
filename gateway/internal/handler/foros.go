@@ -110,9 +110,10 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 	}
 	md := metadata.Pairs("x-user-name", foroASCII(ctx.GetString(middleware.CtxUserName)))
 	grpcCtx := metadata.NewOutgoingContext(ctx.Request.Context(), md)
+	autorID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Foros.CreateForoComentario(grpcCtx, &forospb.CreateComentarioRequest{
 		PostId:    ctx.Param("post_id"),
-		UserId:    ctx.GetString(middleware.CtxUserID),
+		UserId:    autorID,
 		Contenido: body.Contenido,
 		ParentId:  body.ParentID,
 	})
@@ -120,7 +121,55 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 		grpcToHTTP(ctx, err)
 		return
 	}
+
+	h.avisarRespuestaForo(ctx.GetString(middleware.CtxUserName), autorID, resp)
+
 	ctx.JSON(http.StatusCreated, resp)
+}
+
+// avisarRespuestaForo notifica a quien fue respondido.
+//
+// Se avisa al autor del comentario padre y, si es distinto, al autor de la
+// publicación: en un hilo largo el dueño del post quiere enterarse de la
+// actividad aunque la respuesta cuelgue de otro comentario. El `map` evita que
+// reciba dos campanas cuando es la misma persona.
+func (h *ForosHandler) avisarRespuestaForo(autorNombre, autorID string, c *forospb.ComentarioResponse) {
+	if c == nil {
+		return
+	}
+	if autorNombre == "" {
+		autorNombre = "Alguien"
+	}
+
+	// El foro no tiene pantalla propia: vive dentro de la capacitación. Si el
+	// join no encontró el curso (lección huérfana) se manda al listado, que
+	// siempre existe, en lugar de a una URL rota.
+	enlace := "/usuario/capacitaciones"
+	if c.CapacitacionId != "" {
+		enlace += "/" + c.CapacitacionId
+	}
+	extracto := recorta(c.Contenido, 120)
+
+	destinatarios := map[string]string{}
+	if c.ParentUserId != "" {
+		destinatarios[c.ParentUserId] = "respondió a tu comentario"
+	}
+	if _, yaAvisado := destinatarios[c.PostUserId]; !yaAvisado && c.PostUserId != "" {
+		destinatarios[c.PostUserId] = "comentó en tu publicación"
+	}
+
+	avisos := make([]aviso, 0, len(destinatarios))
+	for userID, accion := range destinatarios {
+		avisos = append(avisos, aviso{
+			UserID:  userID,
+			Tipo:    TipoForoRespuesta,
+			Titulo:  autorNombre + " " + accion,
+			Mensaje: extracto,
+			Enlace:  enlace,
+			Ventana: ventanaForo,
+		})
+	}
+	notificarSalvoA(h.c, autorID, avisos...)
 }
 
 // POST /api/foro/posts/:post_id/reactions

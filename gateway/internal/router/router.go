@@ -27,6 +27,7 @@ type Deps struct {
 	ExamenesH    *handler.ExamenesHandler
 	ForosH       *handler.ForosHandler
 	MensajesH    *handler.MensajesHandler
+	LlamadasH    *handler.LlamadasHandler
 	WsH          *handler.WsHandler
 	PresignH     *handler.PresignHandler
 	AuthMW       gin.HandlerFunc
@@ -209,6 +210,11 @@ func New(d Deps) *gin.Engine {
 			auth.GET("/mensajes/grupos/:grupo_id/members", d.MensajesH.GetGroupMembers)
 			auth.GET("/mensajes/:peer_id", d.MensajesH.GetMensajes)
 			auth.POST("/mensajes/:peer_id", d.MensajesH.SendMensaje)
+
+			// Videollamadas: la señalización (timbre, aceptar, colgar) viaja
+			// por el WebSocket de arriba. Esta ruta solo emite el token con el
+			// que el cliente entra a la sala ya negociada.
+			auth.POST("/llamadas/token", d.LlamadasH.Token)
 
 			// ── Instructor ────────────────────────────────────────────────────
 			inst := auth.Group("/instructor")
