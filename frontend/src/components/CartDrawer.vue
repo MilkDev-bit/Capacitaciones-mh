@@ -42,7 +42,13 @@ async function checkout() {
   if (!auth.isLoggedIn) {
     cart.closeDrawer()
     toast.info('Inicia sesión o regístrate para completar tu compra.')
-    router.push({ path: '/login', query: { redirect: route.fullPath, opencart: '1' } })
+    // `opencart` va en el DESTINO, no en la URL del login. Antes viajaba en el
+    // login y allí solo servía para tapar el formulario con el panel; al volver
+    // a la ficha el carrito aparecía cerrado, el botón seguía diciendo
+    // "Comprar ahora" y volver a pulsarlo duplicaba la línea.
+    const destino = route.fullPath
+    const sep = destino.includes('?') ? '&' : '?'
+    router.push({ path: '/login', query: { redirect: `${destino}${sep}opencart=1` } })
     return
   }
 

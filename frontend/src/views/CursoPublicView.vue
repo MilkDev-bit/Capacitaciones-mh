@@ -131,13 +131,17 @@ async function enrollFree() {
   }
 }
 
+/** El curso ya está en el carrito: el botón deja de agregar y pasa a abrirlo. */
+const yaEnCarrito = computed(() => !!curso.value && cart.contiene(curso.value.id))
+
 function buyCourse() {
   if (!curso.value) return
   if (incluidoEnPlan.value) {
     entrarConPlan()
     return
   }
-  cart.addItem({
+
+  const resultado = cart.addItem({
     curso_id: curso.value.id,
     title: curso.value.title,
     thumbnail: curso.value.thumbnail_url,
@@ -145,6 +149,14 @@ function buyCourse() {
     cantidad: 1,
     type: 'b2c',
   })
+
+  // Volver a esta ficha tras iniciar sesión y pulsar de nuevo era el camino
+  // exacto por el que se colaba una segunda línea idéntica. Ahora el store lo
+  // impide y aquí se dice en voz alta, en vez de abrir el panel en silencio
+  // como si se hubiera agregado algo.
+  if (resultado === 'existente') {
+    toast.info('Este curso ya está en tu carrito.')
+  }
   cart.openDrawer()
 }
 
@@ -293,6 +305,7 @@ function buyB2B() {
             </button>
             <button v-else-if="curso.precio > 0" class="cpv-btn-buy" @click="buyCourse" :disabled="buying">
               <span v-if="buying" class="cpv-btn-spinner"></span>
+              <span v-else-if="yaEnCarrito">Ver tu carrito</span>
               <span v-else>{{ formattedPrice }} — Comprar ahora</span>
             </button>
             <button v-else class="cpv-btn-free" @click="enrollFree" :disabled="enrolling">
@@ -407,7 +420,7 @@ function buyB2B() {
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                   </svg>
-                  Comprar ahora — {{ formattedPrice }}
+                  {{ yaEnCarrito ? 'Ver tu carrito' : `Comprar ahora — ${formattedPrice}` }}
                 </template>
               </button>
 

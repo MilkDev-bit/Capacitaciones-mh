@@ -119,20 +119,20 @@ const BENEFICIOS_EQUIPO = [
 
     <!-- ── Planes ─────────────────────────────────────────── -->
     <section class="grid" v-if="!susc.cargandoPlanes">
-      <article v-for="p in individuales" :key="p.id" class="card card--destacada" v-reveal>
-        <span class="card__flag">Para ti</span>
-        <h2 class="card__nombre">{{ p.nombre }}</h2>
-        <p class="card__desc">{{ p.descripcion || 'Acceso completo al catálogo, a tu ritmo.' }}</p>
-        <p class="card__precio">
+      <article v-for="p in individuales" :key="p.id" class="plan plan--destacado" v-reveal>
+        <span class="plan__flag">Para ti</span>
+        <h2 class="plan__nombre">{{ p.nombre }}</h2>
+        <p class="plan__desc">{{ p.descripcion || 'Acceso completo al catálogo, a tu ritmo.' }}</p>
+        <p class="plan__precio">
           {{ precioDesdeCentavos(p.precio_centavos, p.moneda) }}
           <small>/{{ p.intervalo === 'anio' ? 'año' : 'mes' }}</small>
         </p>
-        <p v-if="p.dias_prueba" class="card__prueba">{{ p.dias_prueba }} días de prueba gratis</p>
-        <ul class="card__lista">
+        <p v-if="p.dias_prueba" class="plan__prueba">{{ p.dias_prueba }} días de prueba gratis</p>
+        <ul class="plan__lista">
           <li v-for="b in BENEFICIOS_INDIVIDUAL" :key="b">{{ b }}</li>
         </ul>
         <button
-          class="card__cta"
+          class="plan__cta"
           :disabled="procesando === p.codigo || susc.tieneSuscripcion"
           @click="suscribirse(p.codigo, p.modalidad)"
         >
@@ -142,11 +142,11 @@ const BENEFICIOS_EQUIPO = [
         </button>
       </article>
 
-      <article v-for="p in equipo" :key="p.id" class="card" v-reveal="1">
-        <span class="card__flag card__flag--alt">Para tu equipo</span>
-        <h2 class="card__nombre">{{ p.nombre }}</h2>
-        <p class="card__desc">{{ p.descripcion || 'Un lugar por colaborador, con acceso a todo.' }}</p>
-        <p class="card__precio">
+      <article v-for="p in equipo" :key="p.id" class="plan" v-reveal="1">
+        <span class="plan__flag plan__flag--alt">Para tu equipo</span>
+        <h2 class="plan__nombre">{{ p.nombre }}</h2>
+        <p class="plan__desc">{{ p.descripcion || 'Un lugar por colaborador, con acceso a todo.' }}</p>
+        <p class="plan__precio">
           {{ precioDesdeCentavos(p.precio_centavos, p.moneda) }}
           <small>/lugar /{{ p.intervalo === 'anio' ? 'año' : 'mes' }}</small>
         </p>
@@ -160,11 +160,11 @@ const BENEFICIOS_EQUIPO = [
           /{{ p.intervalo === 'anio' ? 'año' : 'mes' }}
         </p>
 
-        <ul class="card__lista">
+        <ul class="plan__lista">
           <li v-for="b in BENEFICIOS_EQUIPO" :key="b">{{ b }}</li>
         </ul>
         <button
-          class="card__cta card__cta--alt"
+          class="plan__cta plan__cta--alt"
           :disabled="procesando === p.codigo || susc.tieneSuscripcion"
           @click="suscribirse(p.codigo, p.modalidad)"
         >
@@ -175,21 +175,21 @@ const BENEFICIOS_EQUIPO = [
       </article>
 
       <!-- Tercera columna: la compra individual, con el mismo peso visual -->
-      <article class="card card--suelta" v-reveal="2">
-        <span class="card__flag card__flag--neutro">Sin suscripción</span>
-        <h2 class="card__nombre">Compra por curso</h2>
-        <p class="card__desc">
+      <article class="plan plan--suelto" v-reveal="2">
+        <span class="plan__flag plan__flag--neutro">Sin suscripción</span>
+        <h2 class="plan__nombre">Compra por curso</h2>
+        <p class="plan__desc">
           ¿Solo necesitas una capacitación puntual? Cómprala suelta y es tuya para siempre,
           sin pagos recurrentes.
         </p>
-        <p class="card__precio card__precio--var">Desde el precio de cada curso</p>
-        <ul class="card__lista">
+        <p class="plan__precio plan__precio--var">Desde el precio de cada curso</p>
+        <ul class="plan__lista">
           <li>Pago único, acceso de por vida a ese curso</li>
           <li>Constancia DC-3 igual que en la suscripción</li>
           <li>También en versión corporativa por licencias</li>
           <li>Sin tarjeta guardada ni renovaciones</li>
         </ul>
-        <button class="card__cta card__cta--fantasma" @click="router.push('/tienda')">
+        <button class="plan__cta plan__cta--fantasma" @click="router.push('/tienda')">
           Ver catálogo y precios
         </button>
       </article>
@@ -355,13 +355,15 @@ const BENEFICIOS_EQUIPO = [
 .grid {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 1rem clamp(1rem, 5vw, 3rem);
+  /* 1.6rem arriba: la etiqueta sobresale 0.7rem del borde y el hover levanta
+     la tarjeta otros 4px. Con 1rem se recortaba contra el borde del grid. */
+  padding: 1.6rem clamp(1rem, 5vw, 3rem) 1rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 1.4rem;
   align-items: stretch;
 }
-.card {
+.plan {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -369,14 +371,21 @@ const BENEFICIOS_EQUIPO = [
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 1.8rem 1.5rem 1.5rem;
+  /* Explícito: la etiqueta vive medio fuera de la caja y cualquier recorte la
+     decapita. Era lo que heredaba del `.card` global de main.css. */
   overflow: visible;
+  /* La tarjeta crece con su contenido; el CTA se ancla abajo con margin-top
+     auto. Sin esto, el botón de "Contratar N lugares" se salía por el borde
+     inferior cuando la columna de al lado era más corta. */
+  height: auto;
+  min-width: 0;
   transition: transform 0.3s var(--ease-apple), box-shadow 0.3s var(--ease-apple);
 }
-.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-.card--destacada { border-color: var(--brand-border); box-shadow: var(--shadow-sm); }
-.card--suelta { background: var(--surface-soft); }
+.plan:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.plan--destacado { border-color: var(--brand-border); box-shadow: var(--shadow-sm); }
+.plan--suelto { background: var(--surface-soft); }
 
-.card__flag {
+.plan__flag {
   position: absolute;
   top: -0.7rem;
   left: 1.5rem;
@@ -389,25 +398,25 @@ const BENEFICIOS_EQUIPO = [
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
 }
-.card__flag--alt { background: #6366f1; }
-.card__flag--neutro { background: var(--muted); }
+.plan__flag--alt { background: #6366f1; }
+.plan__flag--neutro { background: var(--muted); }
 
-.card__nombre { font-size: 1.3rem; font-weight: 750; margin: 0.4rem 0 0.4rem; letter-spacing: -0.02em; }
-.card__desc { color: var(--muted); font-size: 0.93rem; line-height: 1.55; margin: 0 0 1.1rem; }
-.card__precio { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.3rem; }
-.card__precio small { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
-.card__precio--var { font-size: 1.1rem; font-weight: 600; color: var(--muted); }
-.card__prueba { font-size: 0.85rem; color: #10b981; font-weight: 600; margin: 0 0 0.6rem; }
+.plan__nombre { font-size: 1.3rem; font-weight: 750; margin: 0.4rem 0 0.4rem; letter-spacing: -0.02em; }
+.plan__desc { color: var(--muted); font-size: 0.93rem; line-height: 1.55; margin: 0 0 1.1rem; }
+.plan__precio { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.3rem; }
+.plan__precio small { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+.plan__precio--var { font-size: 1.1rem; font-weight: 600; color: var(--muted); }
+.plan__prueba { font-size: 0.85rem; color: #10b981; font-weight: 600; margin: 0 0 0.6rem; }
 
-.card__lista { list-style: none; padding: 0; margin: 1rem 0 1.5rem; display: grid; gap: 0.6rem; }
-.card__lista li {
+.plan__lista { list-style: none; padding: 0; margin: 1rem 0 1.5rem; display: grid; gap: 0.6rem; }
+.plan__lista li {
   position: relative;
   padding-left: 1.5rem;
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--muted);
 }
-.card__lista li::before {
+.plan__lista li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -440,7 +449,7 @@ const BENEFICIOS_EQUIPO = [
 }
 .asientos__total { font-size: 0.9rem; color: var(--muted); margin: 0.5rem 0 0; }
 
-.card__cta {
+.plan__cta {
   margin-top: auto;
   width: 100%;
   padding: 0.8rem 1rem;
@@ -453,15 +462,15 @@ const BENEFICIOS_EQUIPO = [
   cursor: pointer;
   transition: filter 0.2s;
 }
-.card__cta:hover:not(:disabled) { filter: brightness(1.08); }
-.card__cta:disabled { opacity: 0.55; cursor: not-allowed; }
-.card__cta--alt { background: #6366f1; }
-.card__cta--fantasma {
+.plan__cta:hover:not(:disabled) { filter: brightness(1.08); }
+.plan__cta:disabled { opacity: 0.55; cursor: not-allowed; }
+.plan__cta--alt { background: #6366f1; }
+.plan__cta--fantasma {
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
 }
-.card__cta--fantasma:hover { border-color: var(--brand); color: var(--brand); }
+.plan__cta--fantasma:hover { border-color: var(--brand); color: var(--brand); }
 
 .cargando,
 .vacio { text-align: center; color: var(--muted); padding: 3rem 1rem; }

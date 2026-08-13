@@ -422,6 +422,18 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		if err != nil {
 			return nil, err
 		}
+		// Misma guarda que en el carrito. La inscripción es única por usuario y
+		// curso, así que cobrar de nuevo no entrega nada: solo genera un
+		// reembolso manual.
+		if req.UserId != "" {
+			inscrito, errI := s.repo.IsEnrolled(ctx, req.UserId, req.CursoId)
+			if errI != nil {
+				return nil, errI
+			}
+			if inscrito {
+				return nil, fmt.Errorf("%w: %s", ErrYaInscrito, curso.Title)
+			}
+		}
 		importe := precioDe(curso.PrecioCentavos, curso.Precio)
 		if !importe.IsPositive() {
 			return nil, errors.New("el curso no tiene precio")
@@ -755,12 +767,85 @@ func (s *CursosService) GetAdminDashboardStats(ctx context.Context) (*cursospb.A
 	return s.repo.GetAdminDashboardStats(ctx)
 }
 
+// ErrYaInscrito: se intenta comprar un curso que el usuario ya tiene.
+var ErrYaInscrito = errors.New("ya tienes acceso a este curso")
+
+// normalizarCarrito deja el carrito en un estado que se puede cobrar sin dañar
+// a nadie: colapsa renglones repetidos y descarta lo que el usuario ya posee.
+//
+// Es una validación de SERVIDOR a propósito. El carrito vive en el localStorage
+// del navegador, así que su contenido es una propuesta del cliente, no un
+// hecho: cualquier arreglo que solo esté en el front se lo salta una pestaña
+// vieja, un carrito guardado de antes o una petición a mano.
+//
+// Las dos reglas nacen de un cobro real de 2×$400 por un mismo curso, donde el
+// segundo renglón no compró nada porque la inscripción es única por usuario.
+func (s *CursosService) normalizarCarrito(
+	ctx context.Context, userID string, items []*cursospb.CartItem,
+) ([]*cursospb.CartItem, error) {
+	// La clave incluye el tipo: la misma capacitación puede comprarse a la vez
+	// como inscripción propia y como licencias para el equipo.
+	type clave struct{ cursoID, tipo string }
+	posicion := make(map[clave]int, len(items))
+	salida := make([]*cursospb.CartItem, 0, len(items))
+
+	for _, item := range items {
+		if item == nil || item.CursoId == "" {
+			continue
+		}
+
+		// Solo aplica a la inscripción propia. Comprar licencias corporativas de
+		// un curso que tú ya llevas es legítimo: los lugares son para tu equipo.
+		if item.Type == "b2c" && userID != "" {
+			inscrito, err := s.repo.IsEnrolled(ctx, userID, item.CursoId)
+			if err != nil {
+				return nil, err
+			}
+			if inscrito {
+				curso, errC := s.repo.FindByID(ctx, item.CursoId)
+				nombre := item.CursoId
+				if errC == nil {
+					nombre = curso.Title
+				}
+				return nil, fmt.Errorf("%w: %s", ErrYaInscrito, nombre)
+			}
+		}
+
+		k := clave{item.CursoId, item.Type}
+		if i, visto := posicion[k]; visto {
+			// Individual: una inscripción por persona, la cantidad no significa
+			// nada. Corporativo: los lugares sí se acumulan.
+			if item.Type == "b2b_direct" {
+				salida[i].Cantidad += item.Cantidad
+			}
+			continue
+		}
+		posicion[k] = len(salida)
+		salida = append(salida, item)
+	}
+
+	if len(salida) == 0 {
+		return nil, errors.New("el carrito está vacío")
+	}
+	if len(salida) != len(items) {
+		slog.Warn("carrito con renglones repetidos, se consolidaron",
+			"user_id", userID, "recibidos", len(items), "cobrados", len(salida))
+	}
+	return salida, nil
+}
+
 func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *cursospb.CheckoutCartRequest) (*cursospb.CheckoutSessionResponse, error) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 
 	if len(req.Items) == 0 {
 		return nil, errors.New("el carrito está vacío")
 	}
+
+	items, err := s.normalizarCarrito(ctx, req.UserId, req.Items)
+	if err != nil {
+		return nil, err
+	}
+	req.Items = items
 
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 	metadataMap := make(map[string]string)

@@ -183,11 +183,9 @@ function agregarAlCarrito(curso: StoreCourse) {
     abrirCurso(curso.id)
     return
   }
-  if (idsEnCarrito.value.includes(curso.id)) {
-    cart.openDrawer()
-    return
-  }
-  cart.addItem({
+  // El store es la autoridad sobre si ya estaba: comprobarlo aquí también
+  // duplicaría la regla y las dos copias acabarían divergiendo.
+  const resultado = cart.addItem({
     curso_id: curso.id,
     title: curso.title,
     thumbnail: curso.thumbnail_url,
@@ -195,6 +193,10 @@ function agregarAlCarrito(curso: StoreCourse) {
     cantidad: 1,
     type: 'b2c',
   })
+  if (resultado === 'existente') {
+    cart.openDrawer()
+    return
+  }
   toast.success(`"${curso.title}" se agregó al carrito`)
 }
 

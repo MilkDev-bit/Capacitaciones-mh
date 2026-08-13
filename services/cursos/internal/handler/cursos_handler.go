@@ -171,6 +171,9 @@ func (h *CursosHandler) ListInvitacionesLicencia(ctx context.Context, req *curso
 func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb.CheckoutSessionRequest) (*cursospb.CheckoutSessionResponse, error) {
 	resp, err := h.svc.CreateCheckoutSession(ctx, req)
 	if err != nil {
+		if errors.Is(err, service.ErrYaInscrito) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
 		slog.Error("CreateCheckoutSession error", "error", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -180,6 +183,11 @@ func (h *CursosHandler) CreateCheckoutSession(ctx context.Context, req *cursospb
 func (h *CursosHandler) CreateCheckoutSessionCart(ctx context.Context, req *cursospb.CheckoutCartRequest) (*cursospb.CheckoutSessionResponse, error) {
 	resp, err := h.svc.CreateCheckoutSessionCart(ctx, req)
 	if err != nil {
+		// Comprar algo que ya tienes es un error del usuario, no del servidor:
+		// como Internal se pintaba un 500 genérico y el mensaje útil se perdía.
+		if errors.Is(err, service.ErrYaInscrito) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
 		slog.Error("CreateCheckoutSessionCart error", "error", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
