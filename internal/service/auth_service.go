@@ -70,7 +70,11 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (string, e
 
 	id, err := s.users.Create(ctx, in.Name, in.Email, string(hash), role)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		// errors.As y no type-assert: si el repositorio envuelve el error con
+		// %w la aserción directa falla en silencio y el duplicado se degrada
+		// a un 500 genérico.
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			return "", ErrEmailTaken
 		}
 		slog.Error("Register: error creando usuario", "error", err)

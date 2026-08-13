@@ -264,6 +264,12 @@ func toGRPC(err error) error {
 	if err == nil {
 		return nil
 	}
+	// Saltarse el orden es un error del usuario, no del servidor: como Internal
+	// el frontend pintaría un 500 genérico y se perdería el nombre de la lección
+	// que hay que terminar primero.
+	if errors.Is(err, service.ErrLeccionBloqueada) {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return status.Error(codes.NotFound, "recurso no encontrado")
 	}

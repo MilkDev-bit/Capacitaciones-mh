@@ -72,7 +72,7 @@ services:
       EMAIL_VERIFICATION_COOLDOWN_SECONDS: ${EMAIL_VERIFICATION_COOLDOWN_SECONDS:-60}
       # SMTP_* quedan como respaldo de compatibilidad; ya no se usan para enviar.
       SMTP_FROM:            ${SMTP_FROM:-}
-      APP_URL:              ${APP_URL:-http://localhost:8080}
+      APP_URL:              ${APP_URL:-http://localhost:5173}
       APP_NAME:             ${APP_NAME:-Capacitaciones}
       LOG_LEVEL:            ${LOG_LEVEL:-info}
     expose:
@@ -224,7 +224,7 @@ services:
       RESEND_FROM:     ${RESEND_FROM:-}
       RESEND_REPLY_TO: ${RESEND_REPLY_TO:-}
       SMTP_FROM:      ${SMTP_FROM:-}
-      APP_URL:        ${APP_URL:-http://localhost:8080}
+      APP_URL:        ${APP_URL:-http://localhost:5173}
       APP_NAME:       ${APP_NAME:-Capacitaciones MH}
     ports:
       - "8080:8080"

@@ -37,7 +37,30 @@ const props = defineProps<{
   tree: Tree
   selectedId: string | null
   cursoTitle?: string
+  /**
+   * Ids abiertos por el avance secuencial. Se reciben ya calculados: la vista
+   * es la dueña de la regla y la barra solo la pinta, para que no existan dos
+   * versiones del mismo criterio que puedan divergir.
+   *
+   * Sin ellos —por ejemplo si otro sitio reutiliza el componente— no se
+   * bloquea nada: el modo permisivo es el seguro por defecto.
+   */
+  leccionesAbiertas?: Set<string>
+  modulosAbiertos?: Set<string>
 }>()
+
+function abierta(lec: Leccion) {
+  return !props.leccionesAbiertas || props.leccionesAbiertas.has(lec.id)
+}
+function moduloAbierto(id: string) {
+  return !props.modulosAbiertos || props.modulosAbiertos.has(id)
+}
+
+/** Un clic sobre algo cerrado no emite nada: el candado es la respuesta. */
+function elegir(lec: Leccion) {
+  if (!abierta(lec)) return
+  emit('select', lec)
+}
 
 const emit = defineEmits<{
   (e: 'select', lec: Leccion): void
@@ -111,8 +134,15 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
           <div class="csb-module-left">
             <span class="csb-module-chevron" :class="{ open: !collapsed.has(mod.id) }">›</span>
             <div class="csb-module-info">
-              <span class="csb-module-title">{{ mod.title }}</span>
-              <span class="csb-module-meta">{{ moduleTotal(mod) }} lecciones</span>
+              <span class="csb-module-title">
+                <span v-if="!moduloAbierto(mod.id)" class="csb-lock csb-lock--mod" aria-label="Módulo bloqueado">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </span>
+                {{ mod.title }}
+              </span>
+              <span class="csb-module-meta">
+                {{ moduloAbierto(mod.id) ? `${moduleTotal(mod)} lecciones` : 'Termina el módulo anterior' }}
+              </span>
             </div>
           </div>
           <!-- Mini progress ring -->
@@ -139,12 +169,18 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
           <button
             v-for="lec in mod.lecciones" :key="lec.id"
             class="csb-lesson"
-            :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
-            @click="emit('select', lec)"
+            :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type), locked: !abierta(lec) }"
+            :disabled="!abierta(lec)"
+            :aria-disabled="!abierta(lec)"
+            :title="abierta(lec) ? undefined : 'Termina la lección anterior para desbloquearla'"
+            @click="elegir(lec)"
           >
             <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
             <span class="csb-lesson-title">{{ lec.title }}</span>
-            <span v-if="lec.completada" class="csb-check">✓</span>
+            <span v-if="!abierta(lec)" class="csb-lock" aria-label="Bloqueada">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            </span>
+            <span v-else-if="lec.completada" class="csb-check">✓</span>
             <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </span>
@@ -169,12 +205,18 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
               <button
                 v-for="lec in sub.lecciones" :key="lec.id"
                 class="csb-lesson"
-                :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
-                @click="emit('select', lec)"
+                :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type), locked: !abierta(lec) }"
+                :disabled="!abierta(lec)"
+                :aria-disabled="!abierta(lec)"
+                :title="abierta(lec) ? undefined : 'Termina la lección anterior para desbloquearla'"
+                @click="elegir(lec)"
               >
                 <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
                 <span class="csb-lesson-title">{{ lec.title }}</span>
-                <span v-if="lec.completada" class="csb-check">✓</span>
+                <span v-if="!abierta(lec)" class="csb-lock" aria-label="Bloqueada">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </span>
+                <span v-else-if="lec.completada" class="csb-check">✓</span>
                 <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   {{ lec.points_reward }}
@@ -192,12 +234,18 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
       <button
         v-for="lec in tree.lecciones" :key="lec.id"
         class="csb-lesson csb-lesson-loose"
-        :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type) }"
-        @click="emit('select', lec)"
+        :class="{ selected: selectedId === lec.id, done: lec.completada, game: isGame(lec.lesson_type), locked: !abierta(lec) }"
+        :disabled="!abierta(lec)"
+        :aria-disabled="!abierta(lec)"
+        :title="abierta(lec) ? undefined : 'Termina la lección anterior para desbloquearla'"
+        @click="elegir(lec)"
       >
         <span class="csb-lesson-icon" v-html="icon(lec.lesson_type)"></span>
         <span class="csb-lesson-title">{{ lec.title }}</span>
-        <span v-if="lec.completada" class="csb-check">✓</span>
+        <span v-if="!abierta(lec)" class="csb-lock" aria-label="Bloqueada">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+        </span>
+        <span v-else-if="lec.completada" class="csb-check">✓</span>
         <span v-else-if="isGame(lec.lesson_type) && lec.points_reward" class="csb-pts-badge">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           {{ lec.points_reward }}
@@ -282,4 +330,30 @@ function isGame(t: number) { return t >= 5 && t <= 9 }
 /* Empties */
 .csb-empty { font-size: 0.75rem; color: var(--muted); padding: 8px 12px; text-align: center; }
 .csb-empty-root { padding: 30px; }
+
+/* ── Bloqueo secuencial ────────────────────────────────── */
+.csb-lesson.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* Se anulan hover y foco: una fila bloqueada que reacciona al ratón invita a
+   pulsarla, y el clic no hace nada. */
+.csb-lesson.locked:hover,
+.csb-lesson.locked:focus-visible {
+  background: transparent;
+  transform: none;
+}
+.csb-lesson.locked .csb-lesson-title {
+  text-decoration: none;
+}
+.csb-lock {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.csb-lock--mod {
+  margin-right: 5px;
+  vertical-align: -1px;
+}
 </style>

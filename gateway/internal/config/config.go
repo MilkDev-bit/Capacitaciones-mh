@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -87,14 +89,50 @@ func Load() *Config {
 		SMTPUser: os.Getenv("SMTP_USER"),
 		SMTPPass: os.Getenv("SMTP_PASS"),
 		SMTPFrom: os.Getenv("SMTP_FROM"),
-		AppURL:   getEnvOr("APP_URL", "http://localhost:8080"),
-		AppName:  getEnvOr("APP_NAME", "Capacitaciones MH"),
+		// APP_URL es la URL PÚBLICA DEL FRONTEND, no la del gateway. De aquí
+		// salen los enlaces de los correos ("Activar mi acceso" → /unirse/:codigo,
+		// reset de contraseña, retorno de Stripe). Apuntarla al puerto del API
+		// (8080) generaba enlaces muertos en producción.
+		AppURL:  normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
+		AppName: getEnvOr("APP_NAME", "Capacitaciones MH"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),
 		LogLevel:           getEnvOr("LOG_LEVEL", "info"),
 	}
+	warnIfAppURLLooksLikeAPI(C.AppURL, C.Port)
 	return &C
+}
+
+// normalizeOrigin deja APP_URL como scheme://host, descartando path, query y
+// fragment. Sin esto, un APP_URL con path (".../login") produce enlaces
+// duplicados del tipo ".../login/unirse/<codigo>".
+func normalizeOrigin(raw string) string {
+	raw = strings.TrimRight(strings.TrimSpace(raw), "/")
+	if raw == "" {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return raw
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+// warnIfAppURLLooksLikeAPI avisa cuando APP_URL apunta al propio gateway.
+// Es un error de configuración silencioso y caro: los correos salen con
+// enlaces que el usuario no puede abrir y no hay forma de detectarlo desde
+// los logs de la petición. No es fatal para no tumbar despliegues en curso.
+func warnIfAppURLLooksLikeAPI(appURL, port string) {
+	if appURL == "" {
+		slog.Warn("APP_URL vacía — los correos saldrán sin enlaces ni logo")
+		return
+	}
+	if strings.HasSuffix(appURL, ":"+port) {
+		slog.Warn("APP_URL apunta al puerto del gateway; debe ser la URL pública del FRONTEND",
+			"app_url", appURL,
+			"efecto", "los botones de los correos (activar acceso, reset de contraseña) abrirán el API en lugar del sitio")
+	}
 }
 
 func requireEnv(key string) string {

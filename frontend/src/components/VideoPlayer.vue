@@ -7,13 +7,38 @@ const props = defineProps<{
   src: string
   // Posición guardada en segundos (opcional)
   savedTime?: number
+  /**
+   * Impide saltar hacia delante: hay que ver el video para avanzar.
+   *
+   * Retroceder SÍ se permite. Bloquear también el retroceso convertiría
+   * cualquier despiste en volver a ver el video entero, y no aporta nada:
+   * lo que se quiere evitar es certificar a quien no vio el contenido.
+   */
+  bloquearAdelanto?: boolean
+  /** Ya completada: se libera la barra para poder repasar sin fricción. */
+  yaCompletada?: boolean
 }>()
 
 const emit = defineEmits<{
   // Emite el tiempo actual periódicamente para guardarlo
   (e: 'timeupdate', seconds: number): void
   (e: 'ended'): void
+  /** El usuario intentó adelantar mientras estaba bloqueado. */
+  (e: 'seek-bloqueado'): void
 }>()
+
+/**
+ * Marca de agua: el segundo más lejano realmente reproducido.
+ *
+ * Es lo único que hace de tope. Se sube solo desde `timeupdate`, es decir
+ * cuando el video de verdad avanzó; si se actualizara en `seeking` bastaría
+ * arrastrar la barra para subirla y el bloqueo no serviría de nada.
+ */
+let maxVisto = 0
+/** Margen para el goteo normal de timeupdate, que llega a saltos de ~250 ms. */
+const TOLERANCIA_S = 1.5
+
+const bloqueoActivo = () => !!props.bloquearAdelanto && !props.yaCompletada
 
 const videoEl = ref<HTMLVideoElement | null>(null)
 let player: Plyr | null = null
@@ -22,14 +47,24 @@ function initPlayer() {
   if (!videoEl.value) return
   if (player) { player.destroy(); player = null }
 
+  const conBloqueo = bloqueoActivo()
+
   player = new Plyr(videoEl.value, {
     controls: [
-      'play-large', 'rewind', 'play', 'fast-forward', 'progress',
+      'play-large', 'rewind', 'play',
+      // Adelantar 10s se quita del todo mientras hay bloqueo: dejarlo visible
+      // y que no haga nada se lee como que el reproductor está roto.
+      ...(conBloqueo ? [] : ['fast-forward']),
+      'progress',
       'current-time', 'duration', 'mute', 'volume', 'captions',
       'settings', 'pip', 'fullscreen',
     ],
-    settings: ['captions', 'quality', 'speed', 'loop'],
-    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
+    settings: conBloqueo ? ['captions', 'quality'] : ['captions', 'quality', 'speed', 'loop'],
+    // Sin bloqueo se puede acelerar; con bloqueo no, porque a 2x el video
+    // termina en la mitad de tiempo y el requisito deja de significar nada.
+    speed: conBloqueo
+      ? { selected: 1, options: [1] }
+      : { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
     keyboard: { focused: true, global: false },
     tooltips: { controls: true, seek: true },
     seekTime: 10,
@@ -76,10 +111,17 @@ function initPlayer() {
   // Reanudar desde posición guardada
   const seekToSaved = () => {
     if (player && props.savedTime && props.savedTime > 0) {
+      // El tope sube ANTES de mover la cabeza: ese tramo ya se vio en una
+      // sesión anterior. Sin esto, reanudar se leería como un salto prohibido
+      // y el guardia devolvería al alumno al segundo cero.
+      if (props.savedTime > maxVisto) maxVisto = props.savedTime
       if (Math.abs(player.currentTime - props.savedTime) > 2) {
         player.currentTime = props.savedTime
       }
     }
+  }
+  if (props.savedTime && props.savedTime > 0 && props.savedTime > maxVisto) {
+    maxVisto = props.savedTime
   }
   if (props.savedTime && props.savedTime > 0) {
     player.once('ready', seekToSaved)
@@ -91,6 +133,9 @@ function initPlayer() {
   let endedEmitted = false
   player.on('timeupdate', () => {
     if (!player) return
+    // Solo aquí sube el tope, y solo hacia arriba: es la prueba de que el
+    // video avanzó de verdad en lugar de que alguien movió la barra.
+    if (player.currentTime > maxVisto) maxVisto = player.currentTime
     const t = Math.floor(player.currentTime)
     if (t > 0 && Math.abs(t - lastEmit) >= 3) {
       lastEmit = t
@@ -108,8 +153,25 @@ function initPlayer() {
     if (t > 0) emit('timeupdate', t)
   })
 
+  /**
+   * Guardia del salto hacia delante.
+   *
+   * Se escuchan `seeking` y `seeked`: el primero atrapa el arrastre en cuanto
+   * empieza, el segundo cubre los saltos que el navegador aplica de golpe sin
+   * pasar por `seeking` (teclado y algunos móviles).
+   */
+  const frenarAdelanto = () => {
+    if (!player || !bloqueoActivo()) return false
+    if (player.currentTime <= maxVisto + TOLERANCIA_S) return false
+    player.currentTime = maxVisto
+    emit('seek-bloqueado')
+    return true
+  }
+  player.on('seeking', frenarAdelanto)
+
   player.on('seeked', () => {
     if (!player) return
+    if (frenarAdelanto()) return
     const t = Math.floor(player.currentTime)
     if (t > 0) emit('timeupdate', t)
   })
@@ -131,8 +193,21 @@ watch(() => props.savedTime, (newTime) => {
 })
 
 // Cuando cambia el src (el usuario cambia de lección), reinicializar
+// Otro video es otro tope: si no se reinicia, el minuto 12 del anterior
+// dejaría saltar libremente los primeros 12 minutos del nuevo.
 watch(() => props.src, () => {
+  maxVisto = 0
   if (videoEl.value) initPlayer()
+})
+
+// Al completarse la lección el bloqueo se levanta, y eso cambia los controles:
+// hay que reconstruir el reproductor para que reaparezcan velocidad y avance.
+watch(() => props.yaCompletada, (ahora, antes) => {
+  if (ahora && !antes && videoEl.value) {
+    const t = player?.currentTime ?? 0
+    initPlayer()
+    if (t > 0) player?.once('ready', () => { if (player) player.currentTime = t })
+  }
 })
 
 onBeforeUnmount(() => {

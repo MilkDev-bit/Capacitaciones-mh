@@ -7,6 +7,15 @@ import { toast } from '../../utils/toast'
 import { uploadToR2 } from '../../utils/upload'
 import { getAvatarUrl } from '../../utils/avatars'
 import VideoPlayer from '../../components/VideoPlayer.vue'
+import {
+  aplanarArbol,
+  idsDesbloqueados,
+  idsModulosDesbloqueados,
+  desbloqueada as leccionDesbloqueada,
+  siguienteAbierta,
+  anterior as leccionAnterior,
+  requisitoDe,
+} from '../../composables/progresion'
 import CourseSidebar from '../../components/CourseSidebar.vue'
 import InteractiveActivity from '../../components/InteractiveActivity.vue'
 
@@ -20,13 +29,48 @@ const curso = ref<any>(null)
 // Árbol jerárquico (Módulo → Submódulo → Lección)
 const tree = ref<any>({ modulos: [], lecciones: [] })
 // Lista plana derivada del árbol para la lógica de navegación (anterior/siguiente)
+/**
+ * Lista plana en el MISMO orden que pinta la barra lateral.
+ *
+ * Antes las lecciones sueltas iban primero mientras la barra las pintaba al
+ * final: "Siguiente" saltaba a una lección distinta de la que se veía debajo.
+ * Con el avance secuencial esa discrepancia además bloquearía las equivocadas.
+ */
 const lecciones = computed<any[]>(() => {
-  const all: any[] = [...(tree.value?.lecciones ?? [])]
+  const orden = aplanarArbol(tree.value)
+  const porID = new Map<string, any>()
+  const registrar = (l: any) => { if (l?.id) porID.set(l.id, l) }
+  tree.value?.lecciones?.forEach(registrar)
   tree.value?.modulos?.forEach((m: any) => {
-    all.push(...(m.lecciones ?? []))
-    m.submodulos?.forEach((s: any) => all.push(...(s.lecciones ?? [])))
+    m.lecciones?.forEach(registrar)
+    m.submodulos?.forEach((sm: any) => sm.lecciones?.forEach(registrar))
   })
-  return all
+  // Se devuelven los objetos originales, no las copias planas: el resto de la
+  // vista lee campos (file_path, lesson_type, points_reward…) que la vista
+  // plana no arrastra.
+  return orden.map((l) => porID.get(l.id)).filter(Boolean)
+})
+
+// ── Avance secuencial ───────────────────────────────────────────────────────
+
+/**
+ * Curso de pago.
+ *
+ * El ranking es una mecánica de grupo: tiene sentido en una inducción interna,
+ * donde todos los compañeros hacen el mismo curso. En un curso comprado uno a
+ * uno el alumno vería su propio nombre solo en la tabla —como en la captura—,
+ * o peor, los nombres de otros clientes que no tienen relación con él.
+ */
+const esCursoDePago = computed(() => Number(curso.value?.precio ?? 0) > 0)
+
+const planas = computed(() => aplanarArbol(tree.value))
+const leccionesAbiertas = computed(() => idsDesbloqueados(planas.value))
+const modulosAbiertos = computed(() => idsModulosDesbloqueados(tree.value, planas.value))
+
+/** Lección que hay que terminar para que se abra el resto. */
+const requisitoActual = computed(() => {
+  const id = selectedLeccion.value?.id
+  return id ? requisitoDe(planas.value, id) : null
 })
 const selectedLeccion = ref<any | null>(null)
 const isSelectedLeccionVideo = computed(() => {
@@ -104,14 +148,31 @@ const tiempoRestante = computed(() =>
 const currentIndex = computed(() =>
   lecciones.value.findIndex(l => l.id === selectedLeccion.value?.id)
 )
-const previousLeccion = computed(() =>
-  currentIndex.value > 0 ? lecciones.value[currentIndex.value - 1] : null
-)
-const nextLeccion = computed(() =>
-  currentIndex.value >= 0 && currentIndex.value < lecciones.value.length - 1
-    ? lecciones.value[currentIndex.value + 1]
-    : null
-)
+// Atrás siempre se puede: lo ya visto se repasa cuando haga falta.
+const previousLeccion = computed(() => {
+  const id = selectedLeccion.value?.id
+  if (!id) return null
+  const prev = leccionAnterior(planas.value, id)
+  return prev ? lecciones.value.find((l) => l.id === prev.id) ?? null : null
+})
+
+/**
+ * Adelante solo si la siguiente está abierta. Devolver null en lugar del objeto
+ * bloqueado deshabilita el botón, en vez de llevar a una pantalla que rebota.
+ */
+const nextLeccion = computed(() => {
+  const id = selectedLeccion.value?.id
+  if (!id) return null
+  const sig = siguienteAbierta(planas.value, id)
+  return sig ? lecciones.value.find((l) => l.id === sig.id) ?? null : null
+})
+
+/** Hay una siguiente, pero está cerrada: cambia el mensaje del botón. */
+const siguienteBloqueada = computed(() => {
+  if (currentIndex.value < 0) return false
+  const hayMas = currentIndex.value < lecciones.value.length - 1
+  return hayMas && !nextLeccion.value
+})
 const nextPendingLeccion = computed(() =>
   lecciones.value.find(l => !l.completada && l.id !== selectedLeccion.value?.id)
 )
@@ -257,6 +318,21 @@ async function subirActividad() {
 }
 
 async function selectLeccion(lec: any) {
+  if (!lec) return
+
+  // La comprobación vive aquí, no solo en la barra lateral: a esta función
+  // también llegan el botón Siguiente, "Continuar curso" y los enlaces del
+  // resumen. Ponerla solo en la lista dejaría las otras puertas abiertas.
+  if (!leccionDesbloqueada(planas.value, lec.id)) {
+    const req = requisitoDe(planas.value, lec.id)
+    toast.info(
+      req?.title
+        ? `Primero termina "${req.title}" para desbloquear esta lección.`
+        : 'Termina la lección anterior para desbloquear esta.'
+    )
+    return
+  }
+
   selectedLeccion.value = lec
   sidebarOpen.value = false
   showIntermedias.value = false
@@ -321,8 +397,18 @@ async function marcarCompleta() {
     } else if (progreso.value === 100) {
       await iniciarExamenFinalAutomatico()
     }
-  } catch {
-    toast.error('Error al marcar lección')
+  } catch (e: any) {
+    // 422 = el servidor rechazó el orden. Trae el nombre de la lección que
+    // falta, así que se muestra tal cual en lugar del error genérico: tragarlo
+    // dejaría al alumno bloqueado sin saber a dónde volver.
+    if (e?.response?.status === 422) {
+      toast.info(e.response?.data?.error || 'Termina la lección anterior para continuar.')
+      // La barra lateral y el servidor discrepaban: se recarga el árbol para
+      // que el alumno vea el estado real en vez de uno inventado por el cliente.
+      await load()
+      return
+    }
+    toast.error(e?.response?.data?.error || 'Error al marcar lección')
   }
 }
 
@@ -355,6 +441,17 @@ async function onVideoTimeUpdate(seconds: number) {
     }
   }
 }
+/**
+ * Aviso al intentar adelantar. Va con antirrebote porque arrastrar la barra
+ * dispara `seeking` muchas veces seguidas y saldrían diez avisos por gesto.
+ */
+let avisoSeekTimer: ReturnType<typeof setTimeout> | null = null
+function onSeekBloqueado() {
+  if (avisoSeekTimer) return
+  toast.info('Para completar esta lección necesitas ver el video completo.')
+  avisoSeekTimer = setTimeout(() => { avisoSeekTimer = null }, 4000)
+}
+
 async function onVideoEnded() {
   if (selectedLeccion.value && !selectedLeccion.value.completada) {
     await marcarCompleta()
@@ -468,7 +565,9 @@ async function cargarLeaderboard() {
 
 async function abrirPanelAvance() {
   showAvancePanel.value = true
-  await cargarLeaderboard()
+  // En cursos de pago no se pide siquiera: además de ahorrar la petición,
+  // evita que nombres de otros compradores lleguen al navegador para nada.
+  if (!esCursoDePago.value) await cargarLeaderboard()
 }
 
 async function iniciarExamenFinalAutomatico() {
@@ -926,7 +1025,7 @@ function tramitarDC3() {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
                 </svg>
               </span>
-              Mi Avance y Puntuaciones
+              {{ esCursoDePago ? 'Mi Avance' : 'Mi Avance y Puntuaciones' }}
             </button>
           </div>
           <div v-if="progreso === 100 && examenFinal" style="margin-top: 8px;">
@@ -958,6 +1057,7 @@ function tramitarDC3() {
         </div>
         <!-- Árbol jerárquico de navegación -->
         <CourseSidebar :tree="tree" :selected-id="selectedLeccion?.id ?? null" :curso-title="curso?.title"
+          :lecciones-abiertas="leccionesAbiertas" :modulos-abiertos="modulosAbiertos"
           @select="selectLeccion" />
       </aside>
 
@@ -1111,7 +1211,7 @@ function tramitarDC3() {
                   </button>
                   <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
                     style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
-                    🎬 Finaliza el 100% del video para completarla
+                    🎬 Ve el video completo para desbloquear la siguiente lección
                   </span>
                   <span v-else class="ver-done-chip">
                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -1128,8 +1228,12 @@ function tramitarDC3() {
                 <div v-if="['video', '1'].includes(String(selectedLeccion.lesson_type ?? selectedLeccion.type))"
                   class="ver-media-frame ver-media-video">
                   <VideoPlayer v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)"
-                    :saved-time="savedVideoTime(selectedLeccion.id)" @timeupdate="onVideoTimeUpdate"
-                    @ended="onVideoEnded" />
+                    :saved-time="savedVideoTime(selectedLeccion.id)"
+                    bloquear-adelanto
+                    :ya-completada="!!selectedLeccion.completada"
+                    @timeupdate="onVideoTimeUpdate"
+                    @ended="onVideoEnded"
+                    @seek-bloqueado="onSeekBloqueado" />
                   <div v-else class="ver-media-empty">Sin video disponible</div>
                 </div>
 
@@ -1281,8 +1385,13 @@ function tramitarDC3() {
                   style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
                   🎬 Finaliza el 100% del video para completarla
                 </span>
-                <button class="btn btn-secondary" :disabled="!nextLeccion" @click="goToLesson(nextLeccion)">
-                  Siguiente →
+                <button
+                  class="btn btn-secondary"
+                  :disabled="!nextLeccion"
+                  :title="siguienteBloqueada ? 'Termina esta lección para continuar' : undefined"
+                  @click="goToLesson(nextLeccion)"
+                >
+                  {{ siguienteBloqueada ? '🔒 Termina esta lección' : 'Siguiente →' }}
                 </button>
               </div>
 
@@ -1839,8 +1948,12 @@ function tramitarDC3() {
                 </svg>
               </div>
               <div>
-                <h3>Mi Avance y Puntuaciones</h3>
-                <p>Progreso en el curso y ranking de puntuaciones logradas</p>
+                <h3>{{ esCursoDePago ? 'Mi Avance' : 'Mi Avance y Puntuaciones' }}</h3>
+                <p>
+                  {{ esCursoDePago
+                    ? 'Tu progreso en el curso'
+                    : 'Progreso en el curso y ranking de puntuaciones logradas' }}
+                </p>
               </div>
             </div>
             <button class="ver-examen-close-btn" @click="showAvancePanel = false" title="Cerrar">✕</button>
@@ -1868,7 +1981,7 @@ function tramitarDC3() {
             </div>
 
             <!-- Tabla de Leaderboard / Puntuaciones -->
-            <div class="ver-avance-ranking">
+            <div v-if="!esCursoDePago" class="ver-avance-ranking">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                 <span class="glass-icon-badge glass-icon-orange">
                   <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">

@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 
-	"Prueba-Go/services/lecciones/internal/badges"
 	leccionespb "Prueba-Go/gen/lecciones"
+	"Prueba-Go/services/lecciones/internal/badges"
 	"Prueba-Go/services/lecciones/internal/repository"
 )
 
@@ -94,6 +95,29 @@ func (s *LeccionesService) GetLeccionesConProgreso(ctx context.Context, cursoID,
 	return result, nil
 }
 
+// validarAvanceSecuencial rechaza completar una lección saltándose las previas.
+//
+// Cuesta una construcción del árbol por lección completada. Es asumible —se
+// completa una lección cada varios minutos, no por segundo— y a cambio el
+// orden que valida el servidor es exactamente el que ve el alumno en la barra
+// lateral, porque sale de la misma consulta.
+func (s *LeccionesService) validarAvanceSecuencial(ctx context.Context, leccionID, userID string) error {
+	lec, err := s.repo.FindByID(ctx, leccionID)
+	if err != nil {
+		return err
+	}
+	tree, err := s.repo.BuildCursoTree(ctx, lec.CapacitacionID, userID)
+	if err != nil {
+		// Un fallo al leer el árbol NO debe impedir avanzar: dejaría el curso
+		// muerto por un problema de infraestructura ajeno al alumno. Se deja
+		// pasar y queda el bloqueo del navegador como única barrera.
+		slog.Error("no se pudo validar el orden de avance",
+			"leccion_id", leccionID, "user_id", userID, "error", err)
+		return nil
+	}
+	return ValidarOrden(AplanarArbol(tree), leccionID)
+}
+
 // MarcarCompleta marca la lección como completada y, si la lección tiene
 // points_reward y es la primera vez que se completa, otorga los puntos.
 func (s *LeccionesService) MarcarCompleta(ctx context.Context, leccionID, userID string) (*leccionespb.MarcarLeccionResponse, error) {
@@ -101,6 +125,15 @@ func (s *LeccionesService) MarcarCompleta(ctx context.Context, leccionID, userID
 	yaCompletada, err := s.repo.IsLeccionCompletada(ctx, leccionID, userID)
 	if err != nil {
 		return nil, err
+	}
+
+	// El orden solo se valida la primera vez. Repetir una lección ya terminada
+	// es inofensivo y además la usan el reintento del reproductor y el repaso;
+	// exigirle el orden obligaría a rehacer el curso entero para revisar algo.
+	if !yaCompletada {
+		if err := s.validarAvanceSecuencial(ctx, leccionID, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.repo.MarcarCompleta(ctx, leccionID, userID); err != nil {

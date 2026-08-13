@@ -189,6 +189,18 @@ async function inscribirse(id: string) {
   }
 }
 
+/**
+ * ¿El curso se pagó? El código de acceso NO debe verse en ese caso.
+ *
+ * El código sirve para que un instructor reparta un curso gratuito o para
+ * canjear una licencia corporativa. En un curso comprado es un pase de entrada
+ * gratis: quien lo copia se inscribe sin pagar, y el propio comprador tiene el
+ * incentivo de compartirlo.
+ */
+function esDePago(c: any): boolean {
+  return Number(c?.precio ?? 0) > 0
+}
+
 async function unirseConCodigo() {
   const code = codigoInput.value.trim().toUpperCase()
   if (!code) {
@@ -360,7 +372,7 @@ function copyCode(code: string) {
               </div>
             </div>
             
-            <div class="course-code-display" v-if="c.codigo_acceso">
+            <div class="course-code-display" v-if="c.codigo_acceso && !esDePago(c)">
               <span class="code-label">Código de acceso:</span>
               <div class="code-value" @click.stop="copyCode(c.codigo_acceso || '')" title="Haz clic para copiar">
                 <strong style="font-weight: 900; font-size: 1.15em;">{{ c.codigo_acceso || 'Generando...' }}</strong>

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	authpb "Prueba-Go/gen/auth"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -35,7 +37,10 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		RecaptchaToken string `json:"recaptchaToken"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// El error crudo del validador ("Key: 'Email' Error:Field validation
+		// for 'Email' failed on the 'email' tag") se filtraba tal cual al toast
+		// del frontend. Se traduce a un mensaje que el usuario pueda accionar.
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": registerValidationMessage(err)})
 		return
 	}
 
@@ -198,6 +203,28 @@ func (h *AuthHandler) clearAuthCookie(ctx *gin.Context) {
 }
 
 // ── Error mapping ─────────────────────────────────────────────────────────────
+
+// registerValidationMessage traduce los errores del validador de Gin a un
+// texto en español apto para mostrarse directamente al usuario.
+func registerValidationMessage(err error) string {
+	var ve validator.ValidationErrors
+	if !errors.As(err, &ve) {
+		return "revisa los datos del formulario"
+	}
+	for _, fe := range ve {
+		switch fe.Field() {
+		case "Email":
+			return "el correo electrónico no es válido"
+		case "Password":
+			return "la contraseña debe tener al menos 8 caracteres"
+		case "Name":
+			return "escribe tu nombre completo"
+		case "Code":
+			return "ingresa el código de 6 dígitos"
+		}
+	}
+	return "revisa los datos del formulario"
+}
 
 func (h *AuthHandler) handleGRPCError(ctx *gin.Context, err error) {
 	st, _ := status.FromError(err)

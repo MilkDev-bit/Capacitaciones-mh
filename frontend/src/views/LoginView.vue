@@ -145,7 +145,19 @@ async function register() {
     toast.success('¡Cuenta creada! Te enviamos un código de 6 dígitos.')
     router.push({ path: '/verificar-correo', query: { email: nuevoEmail } })
   } catch (e: any) {
-    toast.error(e.response?.data?.error || 'Error al registrarse')
+    // 409 = el correo ya tiene cuenta. En vez de dejar al usuario mirando un
+    // error, se le lleva a la pestaña de acceso con el correo precargado.
+    if (e.response?.status === 409) {
+      email.value = regEmail.value
+      tab.value = 'login'
+      toast.error('Ese correo ya tiene una cuenta. Inicia sesión o recupera tu contraseña.', 'Correo ya registrado')
+      return
+    }
+    if (e.response?.status === 400) {
+      toast.error(e.response?.data?.error || 'Revisa los datos: el correo o la contraseña no son válidos.')
+      return
+    }
+    toast.error(e.response?.data?.error || 'No pudimos crear tu cuenta. Inténtalo de nuevo.')
   } finally {
     regLoading.value = false
   }

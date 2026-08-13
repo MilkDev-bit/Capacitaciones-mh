@@ -25,9 +25,30 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// uniqueViolation detecta el código SQLSTATE 23505 (unique_violation).
+//
+// El auth service abre la conexión con el driver `pgx` (stdlib), que devuelve
+// *pgconn.PgError — NO *pq.Error. Comprobar solo *pq.Error hacía que el choque
+// de correo duplicado se colara como error genérico y el usuario recibiera
+// "error interno del servidor" en lugar de "el email ya está registrado".
+// Se cubren ambos tipos para que la función siga siendo válida si algún
+// servicio del monolito legado (que sí usa lib/pq) reutiliza este paquete.
+func uniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
+	}
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return pqErr.Code == "23505"
+	}
+	return false
+}
 
 // ── Errores de dominio ────────────────────────────────────────────────────────
 
@@ -106,6 +127,18 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 		}
 	}
 
+	email := normalizeEmail(in.Email)
+
+	// Pre-chequeo explícito: da un mensaje claro sin depender del nombre del
+	// índice único y evita gastar un bcrypt de coste 12 (~250 ms) en un alta
+	// que ya sabemos que va a fallar. El INSERT sigue siendo la fuente de
+	// verdad ante carreras concurrentes.
+	if existing, err := s.users.FindByEmail(ctx, email); err == nil && existing != nil {
+		return nil, ErrEmailTaken
+	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("find user: %w", err)
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), 12)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
@@ -119,7 +152,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 	u := &model.User{
 		ID:            uuid.New().String(),
 		Name:          in.Name,
-		Email:         normalizeEmail(in.Email),
+		Email:         email,
 		PasswordHash:  string(hash),
 		Role:          role,
 		TokenVersion:  1,
@@ -127,8 +160,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 	}
 
 	if err := s.users.Create(ctx, u); err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		if uniqueViolation(err) {
 			return nil, ErrEmailTaken
 		}
 		return nil, fmt.Errorf("create user: %w", err)
@@ -340,7 +372,10 @@ func (s *AuthService) Logout(ctx context.Context, userID string) error {
 // ForgotPassword genera un token de reset y lo envía por email.
 // No revela si el email existe o no (seguridad).
 func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
-	u, err := s.users.FindByEmail(ctx, email)
+	// normalizeEmail: el alta guarda el correo en minúsculas, así que buscarlo
+	// tal cual lo teclea el usuario dejaba sin recuperación a quien escribiera
+	// "Juan@Empresa.com".
+	u, err := s.users.FindByEmail(ctx, normalizeEmail(email))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil // silencioso — no revela existencia del email

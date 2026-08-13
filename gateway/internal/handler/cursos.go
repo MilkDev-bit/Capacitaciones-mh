@@ -1046,6 +1046,11 @@ func grpcToHTTP(ctx *gin.Context, err error) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": st.Message()})
 	case codes.InvalidArgument:
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": st.Message()})
+	// 422: la petición está bien formada, pero el estado del usuario no permite
+	// atenderla todavía — por ejemplo completar una lección saltándose la
+	// anterior. No es un 400 (nada que corregir en el cuerpo) ni un 500.
+	case codes.FailedPrecondition:
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"error": st.Message()})
 	default:
 		slog.Error("grpc error", "code", st.Code(), "msg", st.Message(), "path", ctx.FullPath())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": st.Message()})
