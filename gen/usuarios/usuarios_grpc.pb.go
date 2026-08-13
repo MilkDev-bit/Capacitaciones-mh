@@ -31,6 +31,7 @@ const (
 	UsuariosService_AdminUpdateRole_FullMethodName        = "/usuarios.UsuariosService/AdminUpdateRole"
 	UsuariosService_ListNotificaciones_FullMethodName     = "/usuarios.UsuariosService/ListNotificaciones"
 	UsuariosService_MarkNotificacionesRead_FullMethodName = "/usuarios.UsuariosService/MarkNotificacionesRead"
+	UsuariosService_CreateNotificacion_FullMethodName     = "/usuarios.UsuariosService/CreateNotificacion"
 	UsuariosService_GetUserBadges_FullMethodName          = "/usuarios.UsuariosService/GetUserBadges"
 	UsuariosService_AwardBadge_FullMethodName             = "/usuarios.UsuariosService/AwardBadge"
 )
@@ -66,6 +67,10 @@ type UsuariosServiceClient interface {
 	// Notificaciones
 	ListNotificaciones(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(ctx context.Context, in *MarkNotificacionesReadRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Interno: crea una notificación in-app. Lo invoca el Gateway tras una acción
+	// que le interesa al destinatario (compra, mensaje, respuesta en el foro).
+	// No se expone como ruta HTTP: nadie debe poder escribir en la campana ajena.
+	CreateNotificacion(ctx context.Context, in *CreateNotificacionRequest, opts ...grpc.CallOption) (*CreateNotificacionResponse, error)
 	// ── Gamificación: Insignias ───────────────────────────────────────────────
 	// Devuelve todas las insignias desbloqueadas de un usuario.
 	GetUserBadges(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*UserBadgesResponse, error)
@@ -201,6 +206,16 @@ func (c *usuariosServiceClient) MarkNotificacionesRead(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *usuariosServiceClient) CreateNotificacion(ctx context.Context, in *CreateNotificacionRequest, opts ...grpc.CallOption) (*CreateNotificacionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateNotificacionResponse)
+	err := c.cc.Invoke(ctx, UsuariosService_CreateNotificacion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *usuariosServiceClient) GetUserBadges(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*UserBadgesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserBadgesResponse)
@@ -252,6 +267,10 @@ type UsuariosServiceServer interface {
 	// Notificaciones
 	ListNotificaciones(context.Context, *UserIDRequest) (*ListNotificacionesResponse, error)
 	MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error)
+	// Interno: crea una notificación in-app. Lo invoca el Gateway tras una acción
+	// que le interesa al destinatario (compra, mensaje, respuesta en el foro).
+	// No se expone como ruta HTTP: nadie debe poder escribir en la campana ajena.
+	CreateNotificacion(context.Context, *CreateNotificacionRequest) (*CreateNotificacionResponse, error)
 	// ── Gamificación: Insignias ───────────────────────────────────────────────
 	// Devuelve todas las insignias desbloqueadas de un usuario.
 	GetUserBadges(context.Context, *UserIDRequest) (*UserBadgesResponse, error)
@@ -302,6 +321,9 @@ func (UnimplementedUsuariosServiceServer) ListNotificaciones(context.Context, *U
 }
 func (UnimplementedUsuariosServiceServer) MarkNotificacionesRead(context.Context, *MarkNotificacionesReadRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkNotificacionesRead not implemented")
+}
+func (UnimplementedUsuariosServiceServer) CreateNotificacion(context.Context, *CreateNotificacionRequest) (*CreateNotificacionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateNotificacion not implemented")
 }
 func (UnimplementedUsuariosServiceServer) GetUserBadges(context.Context, *UserIDRequest) (*UserBadgesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserBadges not implemented")
@@ -546,6 +568,24 @@ func _UsuariosService_MarkNotificacionesRead_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsuariosService_CreateNotificacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateNotificacionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsuariosServiceServer).CreateNotificacion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsuariosService_CreateNotificacion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsuariosServiceServer).CreateNotificacion(ctx, req.(*CreateNotificacionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UsuariosService_GetUserBadges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserIDRequest)
 	if err := dec(in); err != nil {
@@ -636,6 +676,10 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkNotificacionesRead",
 			Handler:    _UsuariosService_MarkNotificacionesRead_Handler,
+		},
+		{
+			MethodName: "CreateNotificacion",
+			Handler:    _UsuariosService_CreateNotificacion_Handler,
 		},
 		{
 			MethodName: "GetUserBadges",

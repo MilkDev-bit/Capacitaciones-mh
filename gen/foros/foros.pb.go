@@ -662,17 +662,28 @@ func (x *ListPostsResponse) GetPosts() []*PostResponse {
 }
 
 type ComentarioResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	UserName      string                 `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
-	Contenido     string                 `protobuf:"bytes,5,opt,name=contenido,proto3" json:"contenido,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ParentId      string                 `protobuf:"bytes,7,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
-	Reactions     []*Reaction            `protobuf:"bytes,8,rep,name=reactions,proto3" json:"reactions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	PostId    string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	UserId    string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserName  string                 `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	Contenido string                 `protobuf:"bytes,5,opt,name=contenido,proto3" json:"contenido,omitempty"`
+	CreatedAt string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ParentId  string                 `protobuf:"bytes,7,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
+	Reactions []*Reaction            `protobuf:"bytes,8,rep,name=reactions,proto3" json:"reactions,omitempty"`
+	// Destinatarios de la notificación "te respondieron". El servicio ya conoce
+	// ambos autores al insertar el comentario; devolverlos evita que el Gateway
+	// tenga que hacer dos consultas extra solo para saber a quién avisar.
+	//
+	// post_user_id   → autor de la publicación
+	// parent_user_id → autor del comentario respondido (vacío si es de primer nivel)
+	PostUserId   string `protobuf:"bytes,9,opt,name=post_user_id,json=postUserId,proto3" json:"post_user_id,omitempty"`
+	ParentUserId string `protobuf:"bytes,10,opt,name=parent_user_id,json=parentUserId,proto3" json:"parent_user_id,omitempty"`
+	// Curso al que pertenece el hilo. El foro no tiene URL propia: se ve dentro
+	// de la capacitación, así que es lo que necesita el enlace de la campana.
+	CapacitacionId string `protobuf:"bytes,11,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ComentarioResponse) Reset() {
@@ -759,6 +770,27 @@ func (x *ComentarioResponse) GetReactions() []*Reaction {
 		return x.Reactions
 	}
 	return nil
+}
+
+func (x *ComentarioResponse) GetPostUserId() string {
+	if x != nil {
+		return x.PostUserId
+	}
+	return ""
+}
+
+func (x *ComentarioResponse) GetParentUserId() string {
+	if x != nil {
+		return x.ParentUserId
+	}
+	return ""
+}
+
+func (x *ComentarioResponse) GetCapacitacionId() string {
+	if x != nil {
+		return x.CapacitacionId
+	}
+	return ""
 }
 
 type ListComentariosResponse struct {
@@ -940,7 +972,7 @@ const file_foros_foros_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\tR\tcreatedAt\">\n" +
 	"\x11ListPostsResponse\x12)\n" +
-	"\x05posts\x18\x01 \x03(\v2\x13.foros.PostResponseR\x05posts\"\xfc\x01\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.foros.PostResponseR\x05posts\"\xed\x02\n" +
 	"\x12ComentarioResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\apost_id\x18\x02 \x01(\tR\x06postId\x12\x17\n" +
@@ -950,7 +982,12 @@ const file_foros_foros_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1b\n" +
 	"\tparent_id\x18\a \x01(\tR\bparentId\x12-\n" +
-	"\treactions\x18\b \x03(\v2\x0f.foros.ReactionR\treactions\"V\n" +
+	"\treactions\x18\b \x03(\v2\x0f.foros.ReactionR\treactions\x12 \n" +
+	"\fpost_user_id\x18\t \x01(\tR\n" +
+	"postUserId\x12$\n" +
+	"\x0eparent_user_id\x18\n" +
+	" \x01(\tR\fparentUserId\x12'\n" +
+	"\x0fcapacitacion_id\x18\v \x01(\tR\x0ecapacitacionId\"V\n" +
 	"\x17ListComentariosResponse\x12;\n" +
 	"\vcomentarios\x18\x01 \x03(\v2\x19.foros.ComentarioResponseR\vcomentarios\"A\n" +
 	"\x10ReactionResponse\x12-\n" +

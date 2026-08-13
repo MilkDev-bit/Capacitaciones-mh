@@ -201,9 +201,6 @@ function tramitarDC3Licencia(lic: any) {
 <template>
   <div class="mis-licencias">
     <div class="header-section">
-      <div class="glass-icon-wrapper">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="glass-icon"><path d="M4 10h16"/><path d="M4 14h16"/><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z"/><path d="M18 22H4"/><path d="M22 18V6a2 2 0 0 0-2-2h-4"/></svg>
-      </div>
       <h2>Mis Licencias Corporativas</h2>
       <p class="subtitle">Gestiona los accesos que has adquirido para tu equipo.</p>
     </div>
@@ -211,10 +208,14 @@ function tramitarDC3Licencia(lic: any) {
     <div v-if="loading || verifying" class="loading">
       {{ verifying ? 'Procesando tu compra...' : 'Cargando tus licencias...' }}
     </div>
-    
+
     <div v-else-if="licencias.length === 0" class="empty-state">
       <div class="empty-icon glass-icon-wrapper-large">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="glass-icon"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="glass-icon">
+          <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
       </div>
       <h3>Aún no has adquirido licencias</h3>
       <p>Cuando compres accesos grupales para tu empresa, aparecerán aquí con sus respectivos códigos de invitación.</p>
@@ -227,7 +228,7 @@ function tramitarDC3Licencia(lic: any) {
           <h3>{{ lic.nombre }}</h3>
           <span class="status-badge">Activa</span>
         </div>
-        
+
         <div class="lic-body">
           <div class="stats-row">
             <div class="stat">
@@ -248,13 +249,21 @@ function tramitarDC3Licencia(lic: any) {
             <p class="code-instruction">Envía este código a tu equipo para que puedan acceder al curso:</p>
             <div class="code-box" @click="copyCode(lic.codigo_acceso)">
               {{ lic.codigo_acceso }}
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
             </div>
           </div>
 
           <!-- Acción principal: repartir los accesos por correo -->
           <button class="btn-enviar" @click="abrirEnvio(lic)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
             Enviar accesos por correo
           </button>
           <p v-if="lic.accesos_enviados > 0" class="enviados-hint">
@@ -263,10 +272,17 @@ function tramitarDC3Licencia(lic: any) {
 
           <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button class="btn-details" style="margin-top: 0; flex: 1;" @click="openDetails(lic)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
               Ver Detalles
             </button>
-            <button class="btn-details" style="margin-top: 0; flex: 1; background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);" @click="tramitarDC3Licencia(lic)">
+            <button class="btn-details"
+              style="margin-top: 0; flex: 1; background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);"
+              @click="tramitarDC3Licencia(lic)">
               📋 Tramitar DC-3
             </button>
           </div>
@@ -282,33 +298,54 @@ function tramitarDC3Licencia(lic: any) {
             <div class="modal-header">
               <h3>Detalles de Licencia</h3>
               <button class="modal-close" @click="closeModal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
             <div class="modal-body">
-              <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">{{ selectedLic.nombre }}</span></div>
-              <div class="detail-row"><span class="detail-label">Código de acceso</span><span class="detail-value mono">{{ selectedLic.codigo_acceso }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{ selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima : 'Ilimitados' }}</span></div>
-              <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{ selectedLic.usadas || 0 }}</span></div>
-              <div class="detail-row"><span class="detail-label">Fecha de Compra</span><span class="detail-value">{{ new Date(selectedLic.created_at).toLocaleDateString() }}</span></div>
-              <div class="detail-row"><span class="detail-label">Precio Pagado</span><span class="detail-value">${{ selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
+              <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">{{
+                selectedLic.nombre }}</span></div>
+              <div class="detail-row"><span class="detail-label">Código de acceso</span><span
+                  class="detail-value mono">{{ selectedLic.codigo_acceso }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares totales</span><span class="detail-value">{{
+                selectedLic.capacidad_maxima > 0 ? selectedLic.capacidad_maxima : 'Ilimitados' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Lugares usados</span><span class="detail-value">{{
+                selectedLic.usadas || 0 }}</span></div>
+              <div class="detail-row"><span class="detail-label">Fecha de Compra</span><span class="detail-value">{{ new
+                Date(selectedLic.created_at).toLocaleDateString() }}</span></div>
+              <div class="detail-row"><span class="detail-label">Precio Pagado</span><span class="detail-value">${{
+                selectedLic.precio?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }} MXN</span></div>
               <div class="detail-row"><span class="detail-label">Factura</span><span class="detail-value">
-                <button class="btn btn-secondary btn-sm" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
-                  {{ invoiceLoading ? 'Descargando...' : 'Descargar Factura PDF' }}
-                </button>
-              </span></div>
+                  <button class="btn btn-secondary btn-sm" @click="downloadInvoice(selectedLic)"
+                    :disabled="invoiceLoading">
+                    {{ invoiceLoading ? 'Descargando...' : 'Descargar Factura PDF' }}
+                  </button>
+                </span></div>
 
             </div>
             <div class="modal-footer">
-              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #10b981; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;" @click="tramitarDC3Licencia(selectedLic)">
+              <button
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #10b981; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;"
+                @click="tramitarDC3Licencia(selectedLic)">
                 📋 Tramitar DC-3
               </button>
-              <button style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;" class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
-                <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <button
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;"
+                class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">
+                <svg v-if="!invoiceLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
                 <span v-if="invoiceLoading">Buscando...</span>
                 <span v-else>Recibo</span>
               </button>
-              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;" @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
+              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;"
+                @click="copyCode(selectedLic.codigo_acceso)">Copiar Código</button>
             </div>
           </div>
         </div>
@@ -326,7 +363,11 @@ function tramitarDC3Licencia(lic: any) {
                 <p class="modal-sub">{{ envioLic.capacitacion_titulo || envioLic.nombre }}</p>
               </div>
               <button class="modal-close" @click="cerrarEnvio">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
 
@@ -340,12 +381,8 @@ function tramitarDC3Licencia(lic: any) {
               <!-- Pegado masivo: lo normal es que RR. HH. tenga la lista en un correo -->
               <details class="bulk">
                 <summary>Pegar una lista de correos</summary>
-                <textarea
-                  v-model="pegadoMasivo"
-                  class="bulk-input"
-                  rows="4"
-                  placeholder="ana@empresa.com&#10;Luis Pérez <luis@empresa.com>&#10;maria@empresa.com"
-                ></textarea>
+                <textarea v-model="pegadoMasivo" class="bulk-input" rows="4"
+                  placeholder="ana@empresa.com&#10;Luis Pérez <luis@empresa.com>&#10;maria@empresa.com"></textarea>
                 <button class="btn-secondary btn-sm" :disabled="!pegadoMasivo.trim()" @click="procesarPegado">
                   Agregar a la lista
                 </button>
@@ -356,7 +393,11 @@ function tramitarDC3Licencia(lic: any) {
                   <input v-model="p.nombre" class="input-nombre" type="text" placeholder="Nombre (opcional)" />
                   <input v-model="p.email" class="input-email" type="email" placeholder="correo@empresa.com" />
                   <button class="btn-quitar" :aria-label="`Quitar participante ${i + 1}`" @click="quitarFila(i)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -386,13 +427,10 @@ function tramitarDC3Licencia(lic: any) {
             </div>
 
             <div class="modal-footer">
-              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;" @click="cerrarEnvio">Cerrar</button>
-              <button
-                class="btn-enviar"
-                style="margin: 0; flex: 1;"
-                :disabled="enviando || !correosValidos.length || excedeCupo"
-                @click="enviarAccesos"
-              >
+              <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.85rem;"
+                @click="cerrarEnvio">Cerrar</button>
+              <button class="btn-enviar" style="margin: 0; flex: 1;"
+                :disabled="enviando || !correosValidos.length || excedeCupo" @click="enviarAccesos">
                 {{ enviando ? 'Enviando…' : `Enviar ${correosValidos.length || ''} acceso(s)` }}
               </button>
             </div>
@@ -410,7 +448,16 @@ function tramitarDC3Licencia(lic: any) {
   gap: 24px;
   animation: fadeIn 0.3s ease;
 }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
 
 .header-section {
   display: flex;
@@ -418,8 +465,19 @@ function tramitarDC3Licencia(lic: any) {
   gap: 16px;
   flex-wrap: wrap;
 }
-.header-section h2 { margin: 0 0 8px 0; color: var(--dark); font-size: 1.8rem; width: 100%; }
-.subtitle { margin: 0; color: var(--muted); width: 100%; }
+
+.header-section h2 {
+  margin: 0 0 8px 0;
+  color: var(--dark);
+  font-size: 1.8rem;
+  width: 100%;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  width: 100%;
+}
 
 .glass-icon-wrapper {
   background: rgba(249, 115, 22, 0.1);
@@ -431,6 +489,7 @@ function tramitarDC3Licencia(lic: any) {
   border: 1px solid rgba(249, 115, 22, 0.2);
   backdrop-filter: blur(4px);
 }
+
 .glass-icon-wrapper-large {
   background: rgba(249, 115, 22, 0.1);
   padding: 24px;
@@ -441,6 +500,7 @@ function tramitarDC3Licencia(lic: any) {
   border: 1px solid rgba(249, 115, 22, 0.2);
   backdrop-filter: blur(4px);
 }
+
 .glass-icon {
   color: var(--primary);
 }
@@ -452,10 +512,27 @@ function tramitarDC3Licencia(lic: any) {
   border-radius: var(--r-lg);
   border: 1px dashed var(--border);
 }
-.empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.8; }
-.empty-state h3 { margin: 0 0 8px 0; color: var(--dark); }
-.empty-state p { color: var(--muted); max-width: 400px; margin: 0 auto; }
-.mt-4 { margin-top: 16px; }
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  color: var(--dark);
+}
+
+.empty-state p {
+  color: var(--muted);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
 
 .licencias-grid {
   display: grid;
@@ -471,6 +548,7 @@ function tramitarDC3Licencia(lic: any) {
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .licencia-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
@@ -484,12 +562,14 @@ function tramitarDC3Licencia(lic: any) {
   align-items: flex-start;
   background: rgba(52, 211, 153, 0.05);
 }
+
 .lic-header h3 {
   margin: 0;
   font-size: 1.1rem;
   color: var(--dark);
   font-weight: 600;
 }
+
 .status-badge {
   background: #34d399;
   color: #fff;
@@ -509,17 +589,20 @@ function tramitarDC3Licencia(lic: any) {
   gap: 20px;
   margin-bottom: 24px;
 }
+
 .stat {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .stat .label {
   font-size: 0.8rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
 .stat .value {
   font-size: 1.1rem;
   font-weight: 600;
@@ -527,15 +610,17 @@ function tramitarDC3Licencia(lic: any) {
 }
 
 .code-section {
-  background: rgba(0,0,0,0.02);
+  background: rgba(0, 0, 0, 0.02);
   padding: 16px;
   border-radius: var(--r-md);
 }
+
 .code-instruction {
   margin: 0 0 12px 0;
   font-size: 0.85rem;
   color: var(--muted);
 }
+
 .code-box {
   display: flex;
   justify-content: space-between;
@@ -551,9 +636,11 @@ function tramitarDC3Licencia(lic: any) {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .code-box:hover {
   background: rgba(52, 211, 153, 0.1);
 }
+
 .copy-icon {
   font-size: 1.2rem;
   opacity: 0.5;
@@ -577,7 +664,7 @@ function tramitarDC3Licencia(lic: any) {
   border-radius: 20px;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   border: 1px solid var(--border);
 }
@@ -608,7 +695,11 @@ function tramitarDC3Licencia(lic: any) {
   justify-content: center;
   transition: all 0.2s;
 }
-.modal-close:hover { background: var(--border); color: var(--dark); }
+
+.modal-close:hover {
+  background: var(--border);
+  color: var(--dark);
+}
 
 .modal-body {
   padding: 20px 24px;
@@ -627,7 +718,10 @@ function tramitarDC3Licencia(lic: any) {
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
 }
-.detail-row:last-child { border-bottom: none; }
+
+.detail-row:last-child {
+  border-bottom: none;
+}
 
 .detail-label {
   font-size: 0.82rem;
@@ -646,9 +740,18 @@ function tramitarDC3Licencia(lic: any) {
   word-break: break-all;
 }
 
-.detail-value.mono { font-family: monospace; }
-.detail-value.small { font-size: 0.75rem; }
-.detail-value.highlight { color: var(--primary); font-weight: 700; }
+.detail-value.mono {
+  font-family: monospace;
+}
+
+.detail-value.small {
+  font-size: 0.75rem;
+}
+
+.detail-value.highlight {
+  color: var(--primary);
+  font-weight: 700;
+}
 
 .modal-footer {
   padding: 16px 24px;
@@ -674,8 +777,16 @@ function tramitarDC3Licencia(lic: any) {
   flex: 1;
   justify-content: center;
 }
-.btn-comprobante:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.btn-comprobante:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-comprobante:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-comprobante:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .btn-secondary {
   background: var(--border);
@@ -688,7 +799,11 @@ function tramitarDC3Licencia(lic: any) {
   cursor: pointer;
   transition: all 0.2s;
 }
-.btn-secondary:hover { background: var(--muted); color: white; }
+
+.btn-secondary:hover {
+  background: var(--muted);
+  color: white;
+}
 
 .btn-details {
   display: flex;
@@ -707,13 +822,21 @@ function tramitarDC3Licencia(lic: any) {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .btn-details:hover {
   background: rgba(249, 115, 22, 0.15);
   transform: translateY(-1px);
 }
 
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
-.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
 
 
 
@@ -746,86 +869,244 @@ function tramitarDC3Licencia(lic: any) {
 .btn-enviar {
   width: 100%;
   margin-top: 16px;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 14px; border: none; border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: #fff; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
   box-shadow: 0 6px 16px rgba(249, 115, 22, 0.22);
 }
-.btn-enviar:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(249, 115, 22, 0.3); }
-.btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
 
-.enviados-hint { margin: 8px 0 0; font-size: 0.78rem; color: var(--muted); text-align: center; }
+.btn-enviar:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.3);
+}
 
-.modal-wide { max-width: 640px; }
-.modal-sub { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+.btn-enviar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.enviados-hint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.modal-wide {
+  max-width: 640px;
+}
+
+.modal-sub {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
 
 .cupo-bar {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  background: rgba(249, 115, 22, 0.07); border-radius: 10px;
-  padding: 10px 14px; font-size: 0.85rem; color: var(--text-muted, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(249, 115, 22, 0.07);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
   margin-bottom: 16px;
 }
-.cupo-bar strong { color: #ea580c; font-size: 1rem; }
-.cupo-sep { opacity: 0.4; }
 
-.bulk { margin-bottom: 16px; }
+.cupo-bar strong {
+  color: #ea580c;
+  font-size: 1rem;
+}
+
+.cupo-sep {
+  opacity: 0.4;
+}
+
+.bulk {
+  margin-bottom: 16px;
+}
+
 .bulk summary {
-  cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #f97316;
-  padding: 6px 0; user-select: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f97316;
+  padding: 6px 0;
+  user-select: none;
 }
-.bulk-input {
-  width: 100%; margin: 10px 0 8px; padding: 10px 12px; font-size: 0.85rem;
-  border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 10px; resize: vertical;
-  font-family: inherit; box-sizing: border-box;
-}
-.bulk-input:focus { outline: none; border-color: #f97316; }
 
-.participantes { display: flex; flex-direction: column; gap: 8px; }
-.participante-row { display: flex; gap: 8px; align-items: center; }
-.input-nombre, .input-email {
-  padding: 10px 12px; font-size: 0.87rem; border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 9px; font-family: inherit; min-width: 0;
+.bulk-input {
+  width: 100%;
+  margin: 10px 0 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
 }
-.input-nombre { flex: 0 1 38%; }
-.input-email { flex: 1 1 auto; }
-.input-nombre:focus, .input-email:focus { outline: none; border-color: #f97316; }
+
+.bulk-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.participantes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participante-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-nombre,
+.input-email {
+  padding: 10px 12px;
+  font-size: 0.87rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.input-nombre {
+  flex: 0 1 38%;
+}
+
+.input-email {
+  flex: 1 1 auto;
+}
+
+.input-nombre:focus,
+.input-email:focus {
+  outline: none;
+  border-color: #f97316;
+}
 
 .btn-quitar {
-  flex-shrink: 0; width: 32px; height: 32px; border: none; border-radius: 8px;
-  background: rgba(239, 68, 68, 0.08); color: #ef4444; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
 }
-.btn-quitar:hover { background: rgba(239, 68, 68, 0.18); }
+
+.btn-quitar:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
 
 .btn-agregar {
-  margin-top: 10px; background: none; border: 1px dashed rgba(0, 0, 0, 0.15);
-  border-radius: 9px; padding: 9px 14px; width: 100%;
-  font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer;
+  margin-top: 10px;
+  background: none;
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 9px;
+  padding: 9px 14px;
+  width: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.btn-agregar:hover { border-color: #f97316; color: #f97316; }
+
+.btn-agregar:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
 
 .alerta {
-  margin: 14px 0 0; padding: 10px 14px; border-radius: 9px;
-  background: rgba(239, 68, 68, 0.08); color: #b91c1c; font-size: 0.83rem;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  font-size: 0.83rem;
 }
 
-.historial { margin-top: 24px; }
-.historial h4 { margin: 0 0 10px; font-size: 0.9rem; color: var(--text-color); }
-.historial-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
-.historial-item {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(0, 0, 0, 0.02); border-radius: 9px; padding: 9px 12px;
+.historial {
+  margin-top: 24px;
 }
-.historial-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.historial-email { font-size: 0.85rem; color: var(--text-color); overflow: hidden; text-overflow: ellipsis; }
-.historial-nombre { font-size: 0.75rem; color: var(--muted); }
-.historial-codigo { font-size: 0.8rem; color: var(--muted); }
+
+.historial h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+.historial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.historial-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+
+.historial-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.historial-email {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historial-nombre {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.historial-codigo {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 
 @media (max-width: 560px) {
-  .participante-row { flex-wrap: wrap; }
-  .input-nombre { flex: 1 1 100%; }
+  .participante-row {
+    flex-wrap: wrap;
+  }
+
+  .input-nombre {
+    flex: 1 1 100%;
+  }
 }
 </style>

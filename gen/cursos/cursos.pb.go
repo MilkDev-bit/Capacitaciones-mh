@@ -3619,8 +3619,11 @@ type EnrollResponse struct {
 	CapacitacionId     string                 `protobuf:"bytes,1,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
 	CapacitacionTitulo string                 `protobuf:"bytes,2,opt,name=capacitacion_titulo,json=capacitacionTitulo,proto3" json:"capacitacion_titulo,omitempty"`
 	CapacitacionType   string                 `protobuf:"bytes,3,opt,name=capacitacion_type,json=capacitacionType,proto3" json:"capacitacion_type,omitempty"` // "video" | "document" | "text" | "link"
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Dueño del curso. El Gateway lo usa para avisarle de la nueva inscripción;
+	// va vacío en los cursos sin instructor asignado.
+	InstructorId  string `protobuf:"bytes,4,opt,name=instructor_id,json=instructorId,proto3" json:"instructor_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnrollResponse) Reset() {
@@ -3670,6 +3673,13 @@ func (x *EnrollResponse) GetCapacitacionTitulo() string {
 func (x *EnrollResponse) GetCapacitacionType() string {
 	if x != nil {
 		return x.CapacitacionType
+	}
+	return ""
+}
+
+func (x *EnrollResponse) GetInstructorId() string {
+	if x != nil {
+		return x.InstructorId
 	}
 	return ""
 }
@@ -4582,11 +4592,12 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x1eWebhookComprarB2BDirectRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\x12\x1a\n" +
-	"\bcantidad\x18\x03 \x01(\x05R\bcantidad\"\x97\x01\n" +
+	"\bcantidad\x18\x03 \x01(\x05R\bcantidad\"\xbc\x01\n" +
 	"\x0eEnrollResponse\x12'\n" +
 	"\x0fcapacitacion_id\x18\x01 \x01(\tR\x0ecapacitacionId\x12/\n" +
 	"\x13capacitacion_titulo\x18\x02 \x01(\tR\x12capacitacionTitulo\x12+\n" +
-	"\x11capacitacion_type\x18\x03 \x01(\tR\x10capacitacionType\"\x97\x02\n" +
+	"\x11capacitacion_type\x18\x03 \x01(\tR\x10capacitacionType\x12#\n" +
+	"\rinstructor_id\x18\x04 \x01(\tR\finstructorId\"\x97\x02\n" +
 	"\x18ComprarB2BDirectResponse\x12\x1f\n" +
 	"\vlicencia_id\x18\x01 \x01(\tR\n" +
 	"licenciaId\x12'\n" +
