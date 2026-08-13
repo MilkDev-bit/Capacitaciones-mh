@@ -23,7 +23,6 @@ const (
 	UsuariosService_UpdatePerfil_FullMethodName           = "/usuarios.UsuariosService/UpdatePerfil"
 	UsuariosService_UpdateAvatarURL_FullMethodName        = "/usuarios.UsuariosService/UpdateAvatarURL"
 	UsuariosService_UpdateCoverURL_FullMethodName         = "/usuarios.UsuariosService/UpdateCoverURL"
-	UsuariosService_BecomeInstructor_FullMethodName       = "/usuarios.UsuariosService/BecomeInstructor"
 	UsuariosService_GetPublicPerfil_FullMethodName        = "/usuarios.UsuariosService/GetPublicPerfil"
 	UsuariosService_ListUsers_FullMethodName              = "/usuarios.UsuariosService/ListUsers"
 	UsuariosService_DeleteUser_FullMethodName             = "/usuarios.UsuariosService/DeleteUser"
@@ -52,8 +51,6 @@ type UsuariosServiceClient interface {
 	UpdateAvatarURL(ctx context.Context, in *UpdateMediaURLRequest, opts ...grpc.CallOption) (*PerfilResponse, error)
 	// Guarda la URL de portada (la subida a R2 la hace el Gateway).
 	UpdateCoverURL(ctx context.Context, in *UpdateMediaURLRequest, opts ...grpc.CallOption) (*PerfilResponse, error)
-	// Cambia el rol del usuario a "instructor".
-	BecomeInstructor(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*PerfilResponse, error)
 	// Perfil público de cualquier usuario (acceso autenticado).
 	GetPublicPerfil(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*PerfilResponse, error)
 	// Lista todos los usuarios (solo admin).
@@ -120,16 +117,6 @@ func (c *usuariosServiceClient) UpdateCoverURL(ctx context.Context, in *UpdateMe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PerfilResponse)
 	err := c.cc.Invoke(ctx, UsuariosService_UpdateCoverURL_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *usuariosServiceClient) BecomeInstructor(ctx context.Context, in *UserIDRequest, opts ...grpc.CallOption) (*PerfilResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PerfilResponse)
-	err := c.cc.Invoke(ctx, UsuariosService_BecomeInstructor_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -252,8 +239,6 @@ type UsuariosServiceServer interface {
 	UpdateAvatarURL(context.Context, *UpdateMediaURLRequest) (*PerfilResponse, error)
 	// Guarda la URL de portada (la subida a R2 la hace el Gateway).
 	UpdateCoverURL(context.Context, *UpdateMediaURLRequest) (*PerfilResponse, error)
-	// Cambia el rol del usuario a "instructor".
-	BecomeInstructor(context.Context, *UserIDRequest) (*PerfilResponse, error)
 	// Perfil público de cualquier usuario (acceso autenticado).
 	GetPublicPerfil(context.Context, *UserIDRequest) (*PerfilResponse, error)
 	// Lista todos los usuarios (solo admin).
@@ -297,9 +282,6 @@ func (UnimplementedUsuariosServiceServer) UpdateAvatarURL(context.Context, *Upda
 }
 func (UnimplementedUsuariosServiceServer) UpdateCoverURL(context.Context, *UpdateMediaURLRequest) (*PerfilResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCoverURL not implemented")
-}
-func (UnimplementedUsuariosServiceServer) BecomeInstructor(context.Context, *UserIDRequest) (*PerfilResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BecomeInstructor not implemented")
 }
 func (UnimplementedUsuariosServiceServer) GetPublicPerfil(context.Context, *UserIDRequest) (*PerfilResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPublicPerfil not implemented")
@@ -420,24 +402,6 @@ func _UsuariosService_UpdateCoverURL_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UsuariosServiceServer).UpdateCoverURL(ctx, req.(*UpdateMediaURLRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _UsuariosService_BecomeInstructor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserIDRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UsuariosServiceServer).BecomeInstructor(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: UsuariosService_BecomeInstructor_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsuariosServiceServer).BecomeInstructor(ctx, req.(*UserIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -644,10 +608,6 @@ var UsuariosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateCoverURL",
 			Handler:    _UsuariosService_UpdateCoverURL_Handler,
-		},
-		{
-			MethodName: "BecomeInstructor",
-			Handler:    _UsuariosService_BecomeInstructor_Handler,
 		},
 		{
 			MethodName: "GetPublicPerfil",

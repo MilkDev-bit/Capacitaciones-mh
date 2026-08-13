@@ -130,18 +130,6 @@ func (h *UsuariosHandler) UploadCover(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"url": resp.CoverUrl})
 }
 
-// POST /api/perfil/become-instructor
-func (h *UsuariosHandler) BecomeInstructor(ctx *gin.Context) {
-	resp, err := h.c.Usuarios.BecomeInstructor(ctx.Request.Context(), &usuariospb.UserIDRequest{
-		UserId: ctx.GetString(middleware.CtxUserID),
-	})
-	if err != nil {
-		grpcToHTTP(ctx, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"role": resp.Role})
-}
-
 // GET /api/usuarios/:id/perfil
 func (h *UsuariosHandler) GetPublicPerfil(ctx *gin.Context) {
 	resp, err := h.c.Usuarios.GetPublicPerfil(ctx.Request.Context(), &usuariospb.UserIDRequest{

@@ -18,7 +18,10 @@ const route = useRoute()
 const router = useRouter()
 const cart = useCartStore()
 
-const estado = ref<'procesando' | 'listo' | 'error'>('procesando')
+// 'pendiente' es el pago en tienda (OXXO): la sesión se completó y la ficha
+// existe, pero el dinero no ha entrado. No es un error y no debe pintarse como
+// tal, o el comprador tira el voucher creyendo que la compra falló.
+const estado = ref<'procesando' | 'listo' | 'pendiente' | 'error'>('procesando')
 const items = ref<ItemCompra[]>([])
 const total = ref(0)
 const redirect = ref('/usuario/dashboard')
@@ -42,7 +45,9 @@ onMounted(async () => {
     total.value = res.data.total || 0
     redirect.value = res.data.redirect || '/usuario/dashboard'
     etiqueta.value = res.data.etiqueta || 'Continuar'
-    estado.value = 'listo'
+    estado.value = res.data.pendiente ? 'pendiente' : 'listo'
+    // El carrito se vacía también con la ficha pendiente: los renglones ya
+    // quedaron congelados en la orden, y dejarlos ahí llevaría a pagarlos dos veces.
     cart.clearCart()
   } catch (e: any) {
     // Si el webhook de Stripe ya procesó la compra, verify puede fallar por
@@ -96,6 +101,25 @@ async function copiarComprobante() {
         <h1>No pudimos confirmar el pago</h1>
         <p class="lead">{{ mensajeError }}</p>
         <router-link to="/tienda" class="btn-primary">Volver a la tienda</router-link>
+      </template>
+
+      <!-- Pago en tienda pendiente (OXXO) -->
+      <template v-else-if="estado === 'pendiente'">
+        <div class="icon-badge pendiente">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" /><path d="M12 7v5l3 2" />
+          </svg>
+        </div>
+        <h1>Tu ficha de pago está lista</h1>
+        <p class="lead">
+          Te la enviamos por correo con las instrucciones y el número de referencia.
+          <br />Paga en cualquier tienda OXXO y activamos tu acceso automáticamente.
+          La confirmación puede tardar hasta un día hábil después de pagar.
+        </p>
+        <p class="lead aviso">
+          Guarda tu comprobante de la tienda. Los pagos en efectivo no admiten devolución.
+        </p>
+        <button class="btn-primary" @click="continuar">{{ etiqueta }}</button>
       </template>
 
       <!-- Éxito -->
@@ -175,6 +199,10 @@ async function copiarComprobante() {
   background: rgba(16, 185, 129, 0.12); color: #10b981;
 }
 .icon-badge.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+/* Ámbar y no rojo: la ficha pendiente es un paso normal del pago en tienda,
+   no un fallo. El color es la primera señal que lee el comprador. */
+.icon-badge.pendiente { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.lead.aviso { font-weight: 600; color: #b45309; }
 
 .spinner {
   width: 46px; height: 46px; margin: 0 auto 22px;

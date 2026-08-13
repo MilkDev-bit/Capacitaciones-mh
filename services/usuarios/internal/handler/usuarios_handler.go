@@ -60,14 +60,6 @@ func (h *UsuariosHandler) UpdateCoverURL(ctx context.Context, req *usuariospb.Up
 	return perfil, nil
 }
 
-func (h *UsuariosHandler) BecomeInstructor(ctx context.Context, req *usuariospb.UserIDRequest) (*usuariospb.PerfilResponse, error) {
-	perfil, err := h.svc.BecomeInstructor(ctx, req.UserId)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "error cambiando rol")
-	}
-	return perfil, nil
-}
-
 func (h *UsuariosHandler) AdminUpdateRole(ctx context.Context, req *usuariospb.AdminUpdateRoleRequest) (*usuariospb.PerfilResponse, error) {
 	perfil, err := h.svc.AdminUpdateRole(ctx, req)
 	if err != nil {

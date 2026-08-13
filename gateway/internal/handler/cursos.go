@@ -426,6 +426,13 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	}
 
 	switch event.Type {
+	// ── Sesión completada ────────────────────────────────────────────────
+	//
+	// "Completada" NO significa "pagada". Con tarjeta ambas cosas coinciden,
+	// pero con métodos asíncronos como OXXO la sesión se completa cuando el
+	// comprador recibe su ficha, con payment_status=unpaid y hasta tres días
+	// para ir a la tienda. Cumplir aquí sin mirar el estado del pago sería
+	// regalar el curso a quien solo imprimió un voucher.
 	case "checkout.session.completed":
 		var sess stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
@@ -433,16 +440,40 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 			return
 		}
 
-		h.cerrarOrden(c.Request.Context(), sess.ID, "pagada", "", intentIDDe(&sess))
+		if sesionPagada(&sess) {
+			h.cumplirSesion(c.Request.Context(), &sess)
+			break
+		}
 
-		// Se responde 200 a Stripe pase lo que pase con el correo: un fallo de
-		// Resend no debe provocar reintentos del webhook ni altas duplicadas.
-		res := h.procesarSesion(c.Request.Context(), &sess, "")
+		// Pago pendiente: la orden se queda en 'pendiente' (su estado por
+		// defecto) a la espera de async_payment_succeeded. No se inscribe, no se
+		// factura y no se manda el acuse de compra.
+		slog.Info("webhook: sesión completada con pago pendiente",
+			"session_id", sess.ID, "payment_status", sess.PaymentStatus)
+		h.avisarPagoPendiente(&sess)
 
-		h.cerrarOrden(c.Request.Context(), sess.ID, "cumplida", "", "")
+	// ── Métodos asíncronos (OXXO) ────────────────────────────────────────
+	//
+	// Aquí es donde una compra con ficha se vuelve real: llega cuando el
+	// comprador pagó en la tienda, que pueden ser días después de la sesión.
+	case "checkout.session.async_payment_succeeded":
+		var sess stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		h.cumplirSesion(c.Request.Context(), &sess)
 
-		nombre, email := datosComprador(&sess)
-		h.notificarCompra(&sess, res, nombre, email)
+	case "checkout.session.async_payment_failed":
+		var sess stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing webhook JSON"})
+			return
+		}
+		// La ficha venció sin pago. Se marca fallida para que la conciliación
+		// no la deje colgada como pendiente para siempre.
+		slog.Info("webhook: pago asíncrono fallido", "session_id", sess.ID)
+		h.cerrarOrden(c.Request.Context(), sess.ID, "fallida", "el pago en tienda no se completó a tiempo", "")
 
 	case "checkout.session.expired":
 		var sess stripe.CheckoutSession
@@ -494,6 +525,72 @@ func (h *CursosHandler) StripeWebhook(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+// sesionPagada dice si una Checkout Session ya tiene el dinero cobrado.
+//
+// `no_payment_required` cuenta como pagada: es lo que devuelve Stripe cuando el
+// total quedó en cero (un cupón del 100%), y en ese caso el acceso sí debe
+// otorgarse. El único estado que NO cumple es `unpaid`, que es donde caen las
+// fichas de OXXO todavía sin pagar.
+func sesionPagada(sess *stripe.CheckoutSession) bool {
+	return sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid ||
+		sess.PaymentStatus == stripe.CheckoutSessionPaymentStatusNoPaymentRequired
+}
+
+// cumplirSesion otorga los accesos de una sesión cobrada.
+//
+// Es el camino común de la tarjeta (checkout.session.completed ya pagada) y del
+// pago en tienda (async_payment_succeeded, días después). Se puede llamar más de
+// una vez: procesarSesion es idempotente y notificarCompra está protegida por
+// yaNotificado.
+func (h *CursosHandler) cumplirSesion(ctx context.Context, sess *stripe.CheckoutSession) {
+	h.cerrarOrden(ctx, sess.ID, "pagada", "", intentIDDe(sess))
+
+	// Se responde 200 a Stripe pase lo que pase con el correo: un fallo de
+	// Resend no debe provocar reintentos del webhook ni altas duplicadas.
+	res := h.procesarSesion(ctx, sess, "")
+
+	h.cerrarOrden(ctx, sess.ID, "cumplida", "", "")
+
+	nombre, email := datosComprador(sess)
+	h.notificarCompra(sess, res, nombre, email)
+}
+
+// avisarPagoPendiente deja constancia en la campana de que la ficha se generó.
+//
+// Sin esto el comprador de OXXO se queda sin señal alguna dentro de la
+// plataforma: la pantalla de éxito le dice que el pago no está completo (y hace
+// bien), pero nada le recuerda que tiene una ficha viva. El aviso no pasa por
+// notificarCompra a propósito, para no consumir el guardián `yaNotificado` que
+// necesita el acuse real cuando el pago entre.
+func (h *CursosHandler) avisarPagoPendiente(sess *stripe.CheckoutSession) {
+	userID := compradorDeSesion(sess)
+	if userID == "" {
+		return
+	}
+	notificar(h.c, aviso{
+		UserID:  userID,
+		Tipo:    TipoCompra,
+		Titulo:  "Tu ficha de pago está lista",
+		Mensaje: "Paga en OXXO para activar tu acceso. La confirmación tarda hasta un día hábil.",
+		Enlace:  "/usuario/dashboard",
+		Ventana: ventanaCompra,
+	})
+}
+
+// compradorDeSesion extrae el user_id de la referencia de cliente.
+//
+// El formato de client_reference_id no es uniforme —"cart||<uid>",
+// "curso||<uid>||<curso>", "b2b_direct||<uid>||…"— porque el primer segmento
+// identifica el tipo de compra. El user_id es el segundo salvo en "cart", donde
+// también lo es. Devuelve cadena vacía si no encaja, y quien llama no notifica.
+func compradorDeSesion(sess *stripe.CheckoutSession) string {
+	partes := strings.Split(sess.ClientReferenceID, "||")
+	if len(partes) < 2 {
+		return ""
+	}
+	return partes[1]
 }
 
 // cerrarOrden aplica una transición de estado sin abortar el webhook si falla:
@@ -563,7 +660,21 @@ func (h *CursosHandler) VerifyCheckoutSession(ctx *gin.Context) {
 		return
 	}
 
-	if sess.PaymentStatus != stripe.CheckoutSessionPaymentStatusPaid {
+	// Un pago en tienda deja la sesión completa pero sin cobrar. No es un fallo:
+	// el comprador tiene una ficha viva y va a volver a pagarla. Devolver 402
+	// aquí hacía que la pantalla de éxito le dijera "no se realizó ningún cargo",
+	// que es justo lo que le haría tirar el voucher.
+	if !sesionPagada(sess) {
+		if sess.Status == stripe.CheckoutSessionStatusComplete {
+			ctx.JSON(http.StatusOK, gin.H{
+				"ok":        false,
+				"pendiente": true,
+				"redirect":  "/usuario/dashboard",
+				"etiqueta":  "Ir a mi panel",
+			})
+			return
+		}
+		// Sesión abierta o expirada sin pagar: aquí sí es un abandono real.
 		ctx.JSON(http.StatusPaymentRequired, gin.H{"error": "El pago no ha sido completado"})
 		return
 	}

@@ -2,6 +2,11 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import {
+  esTipoVisible,
+  perfilDesdeRol,
+  resolverEnlace as resolverEnlaceBase,
+} from '../composables/notificaciones'
 import api from '../api'
 
 interface Notificacion {
@@ -15,30 +20,8 @@ interface Notificacion {
   created_at: string
 }
 
-/**
- * Tipos relevantes para cada layout.
- *
- * Todas las notificaciones van dirigidas al usuario, pero no todas pertenecen
- * al sombrero que lleva puesto: un instructor viendo su panel de docencia no
- * necesita el acuse de la compra que hizo como alumno — eso vive en /usuario.
- *
- * Un tipo que no aparezca en ninguna lista se muestra SIEMPRE (ver `esVisible`).
- * Es deliberado: si mañana el backend emite un tipo nuevo y nadie actualiza
- * este mapa, el aviso se ve de más, que es un fallo visible y corregible. La
- * alternativa —ocultarlo— produce un aviso que se crea, se guarda y no aparece
- * nunca, que es exactamente el fallo que este componente tenía.
- */
-const TIPOS_POR_PERFIL: Record<string, string[]> = {
-  usuario:    ['compra', 'inscripcion', 'mensaje', 'llamada_perdida', 'foro_respuesta'],
-  instructor: ['nuevo_alumno', 'foro_respuesta', 'mensaje', 'llamada_perdida'],
-  admin:      ['nuevo_alumno', 'compra', 'mensaje', 'llamada_perdida'],
-}
-
-const TODOS_LOS_TIPOS = [...new Set(Object.values(TIPOS_POR_PERFIL).flat())]
-
-/** Prefijos de ruta por perfil, para reescribir el enlace al layout correcto. */
-const BASES_PERFIL = ['/admin', '/instructor', '/usuario']
-
+// Las reglas de filtrado y de reescritura de enlaces viven en
+// ../composables/notificaciones para poder probarlas como funciones puras.
 const router = useRouter()
 const auth = useAuthStore()
 
@@ -48,19 +31,11 @@ const verTodas = ref(false)
 
 let pollInterval: ReturnType<typeof setInterval>
 
-const perfil = computed(() => {
-  const role = auth.user?.role
-  if (role === 'admin') return 'admin'
-  if (role === 'instructor') return 'instructor'
-  return 'usuario'
-})
-
-const baseDelPerfil = computed(() => (perfil.value === 'usuario' ? '/usuario' : `/${perfil.value}`))
+const perfil = computed(() => perfilDesdeRol(auth.user?.role))
 
 function esVisible(n: Notificacion) {
   if (verTodas.value) return true
-  if (!TODOS_LOS_TIPOS.includes(n.tipo)) return true // tipo desconocido: fail-open
-  return TIPOS_POR_PERFIL[perfil.value].includes(n.tipo)
+  return esTipoVisible(n.tipo, perfil.value)
 }
 
 const noLeidas = computed(() => notificaciones.value.filter(n => !n.leida))
@@ -91,32 +66,13 @@ const ocultasPorPerfil = computed(() => {
   return noLeidas.value.filter(n => !esVisible(n)).length
 })
 
-/**
- * Traduce el enlace guardado al layout de quien lo abre.
- *
- * El backend emite rutas con prefijo /usuario porque es el caso mayoritario,
- * pero un instructor debe aterrizar en /instructor/mensajes/… y no salir de su
- * panel. Si la ruta reescrita no existe (el panel de admin no tiene mensajes,
- * por ejemplo) se cae al enlace original, y si ese tampoco resuelve se devuelve
- * null y la notificación solo se marca como leída: mejor no navegar que llevar
- * a una pantalla en blanco.
- */
+/** Comprueba contra el router real si una ruta existe. */
+function existeRuta(path: string) {
+  return router.resolve(path).matched.length > 0
+}
+
 function resolverEnlace(enlace: string): string | null {
-  if (!enlace || !enlace.startsWith('/')) return null
-
-  const base = baseDelPerfil.value
-  const original = BASES_PERFIL.find(b => enlace === b || enlace.startsWith(`${b}/`))
-
-  const candidatos = original && original !== base
-    ? [base + enlace.slice(original.length), enlace]
-    : [enlace]
-
-  for (const candidato of candidatos) {
-    try {
-      if (router.resolve(candidato).matched.length > 0) return candidato
-    } catch { /* ruta no resoluble: se prueba la siguiente */ }
-  }
-  return null
+  return resolverEnlaceBase(enlace, perfil.value, existeRuta)
 }
 
 async function fetchNotificaciones() {

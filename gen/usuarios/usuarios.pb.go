@@ -1442,13 +1442,12 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x12UserBadgesResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x06badges\x18\x02 \x03(\v2\x0f.usuarios.BadgeR\x06badges\"\x0f\n" +
-	"\rEmptyResponse2\x84\t\n" +
+	"\rEmptyResponse2\xbd\b\n" +
 	"\x0fUsuariosService\x12A\n" +
 	"\tGetPerfil\x12\x1a.usuarios.GetPerfilRequest\x1a\x18.usuarios.PerfilResponse\x12G\n" +
 	"\fUpdatePerfil\x12\x1d.usuarios.UpdatePerfilRequest\x1a\x18.usuarios.PerfilResponse\x12L\n" +
 	"\x0fUpdateAvatarURL\x12\x1f.usuarios.UpdateMediaURLRequest\x1a\x18.usuarios.PerfilResponse\x12K\n" +
-	"\x0eUpdateCoverURL\x12\x1f.usuarios.UpdateMediaURLRequest\x1a\x18.usuarios.PerfilResponse\x12E\n" +
-	"\x10BecomeInstructor\x12\x17.usuarios.UserIDRequest\x1a\x18.usuarios.PerfilResponse\x12D\n" +
+	"\x0eUpdateCoverURL\x12\x1f.usuarios.UpdateMediaURLRequest\x1a\x18.usuarios.PerfilResponse\x12D\n" +
 	"\x0fGetPublicPerfil\x12\x17.usuarios.UserIDRequest\x1a\x18.usuarios.PerfilResponse\x12D\n" +
 	"\tListUsers\x12\x1a.usuarios.ListUsersRequest\x1a\x1b.usuarios.ListUsersResponse\x12>\n" +
 	"\n" +
@@ -1506,34 +1505,32 @@ var file_usuarios_usuarios_proto_depIdxs = []int32{
 	1,  // 5: usuarios.UsuariosService.UpdatePerfil:input_type -> usuarios.UpdatePerfilRequest
 	2,  // 6: usuarios.UsuariosService.UpdateAvatarURL:input_type -> usuarios.UpdateMediaURLRequest
 	2,  // 7: usuarios.UsuariosService.UpdateCoverURL:input_type -> usuarios.UpdateMediaURLRequest
-	4,  // 8: usuarios.UsuariosService.BecomeInstructor:input_type -> usuarios.UserIDRequest
-	4,  // 9: usuarios.UsuariosService.GetPublicPerfil:input_type -> usuarios.UserIDRequest
-	5,  // 10: usuarios.UsuariosService.ListUsers:input_type -> usuarios.ListUsersRequest
-	4,  // 11: usuarios.UsuariosService.DeleteUser:input_type -> usuarios.UserIDRequest
-	6,  // 12: usuarios.UsuariosService.SearchUsers:input_type -> usuarios.SearchUsersRequest
-	3,  // 13: usuarios.UsuariosService.AdminUpdateRole:input_type -> usuarios.AdminUpdateRoleRequest
-	4,  // 14: usuarios.UsuariosService.ListNotificaciones:input_type -> usuarios.UserIDRequest
-	7,  // 15: usuarios.UsuariosService.MarkNotificacionesRead:input_type -> usuarios.MarkNotificacionesReadRequest
-	8,  // 16: usuarios.UsuariosService.CreateNotificacion:input_type -> usuarios.CreateNotificacionRequest
-	4,  // 17: usuarios.UsuariosService.GetUserBadges:input_type -> usuarios.UserIDRequest
-	10, // 18: usuarios.UsuariosService.AwardBadge:input_type -> usuarios.AwardBadgeRequest
-	11, // 19: usuarios.UsuariosService.GetPerfil:output_type -> usuarios.PerfilResponse
-	11, // 20: usuarios.UsuariosService.UpdatePerfil:output_type -> usuarios.PerfilResponse
-	11, // 21: usuarios.UsuariosService.UpdateAvatarURL:output_type -> usuarios.PerfilResponse
-	11, // 22: usuarios.UsuariosService.UpdateCoverURL:output_type -> usuarios.PerfilResponse
-	11, // 23: usuarios.UsuariosService.BecomeInstructor:output_type -> usuarios.PerfilResponse
-	11, // 24: usuarios.UsuariosService.GetPublicPerfil:output_type -> usuarios.PerfilResponse
-	12, // 25: usuarios.UsuariosService.ListUsers:output_type -> usuarios.ListUsersResponse
-	19, // 26: usuarios.UsuariosService.DeleteUser:output_type -> usuarios.EmptyResponse
-	14, // 27: usuarios.UsuariosService.SearchUsers:output_type -> usuarios.SearchUsersResponse
-	11, // 28: usuarios.UsuariosService.AdminUpdateRole:output_type -> usuarios.PerfilResponse
-	16, // 29: usuarios.UsuariosService.ListNotificaciones:output_type -> usuarios.ListNotificacionesResponse
-	19, // 30: usuarios.UsuariosService.MarkNotificacionesRead:output_type -> usuarios.EmptyResponse
-	9,  // 31: usuarios.UsuariosService.CreateNotificacion:output_type -> usuarios.CreateNotificacionResponse
-	18, // 32: usuarios.UsuariosService.GetUserBadges:output_type -> usuarios.UserBadgesResponse
-	19, // 33: usuarios.UsuariosService.AwardBadge:output_type -> usuarios.EmptyResponse
-	19, // [19:34] is the sub-list for method output_type
-	4,  // [4:19] is the sub-list for method input_type
+	4,  // 8: usuarios.UsuariosService.GetPublicPerfil:input_type -> usuarios.UserIDRequest
+	5,  // 9: usuarios.UsuariosService.ListUsers:input_type -> usuarios.ListUsersRequest
+	4,  // 10: usuarios.UsuariosService.DeleteUser:input_type -> usuarios.UserIDRequest
+	6,  // 11: usuarios.UsuariosService.SearchUsers:input_type -> usuarios.SearchUsersRequest
+	3,  // 12: usuarios.UsuariosService.AdminUpdateRole:input_type -> usuarios.AdminUpdateRoleRequest
+	4,  // 13: usuarios.UsuariosService.ListNotificaciones:input_type -> usuarios.UserIDRequest
+	7,  // 14: usuarios.UsuariosService.MarkNotificacionesRead:input_type -> usuarios.MarkNotificacionesReadRequest
+	8,  // 15: usuarios.UsuariosService.CreateNotificacion:input_type -> usuarios.CreateNotificacionRequest
+	4,  // 16: usuarios.UsuariosService.GetUserBadges:input_type -> usuarios.UserIDRequest
+	10, // 17: usuarios.UsuariosService.AwardBadge:input_type -> usuarios.AwardBadgeRequest
+	11, // 18: usuarios.UsuariosService.GetPerfil:output_type -> usuarios.PerfilResponse
+	11, // 19: usuarios.UsuariosService.UpdatePerfil:output_type -> usuarios.PerfilResponse
+	11, // 20: usuarios.UsuariosService.UpdateAvatarURL:output_type -> usuarios.PerfilResponse
+	11, // 21: usuarios.UsuariosService.UpdateCoverURL:output_type -> usuarios.PerfilResponse
+	11, // 22: usuarios.UsuariosService.GetPublicPerfil:output_type -> usuarios.PerfilResponse
+	12, // 23: usuarios.UsuariosService.ListUsers:output_type -> usuarios.ListUsersResponse
+	19, // 24: usuarios.UsuariosService.DeleteUser:output_type -> usuarios.EmptyResponse
+	14, // 25: usuarios.UsuariosService.SearchUsers:output_type -> usuarios.SearchUsersResponse
+	11, // 26: usuarios.UsuariosService.AdminUpdateRole:output_type -> usuarios.PerfilResponse
+	16, // 27: usuarios.UsuariosService.ListNotificaciones:output_type -> usuarios.ListNotificacionesResponse
+	19, // 28: usuarios.UsuariosService.MarkNotificacionesRead:output_type -> usuarios.EmptyResponse
+	9,  // 29: usuarios.UsuariosService.CreateNotificacion:output_type -> usuarios.CreateNotificacionResponse
+	18, // 30: usuarios.UsuariosService.GetUserBadges:output_type -> usuarios.UserBadgesResponse
+	19, // 31: usuarios.UsuariosService.AwardBadge:output_type -> usuarios.EmptyResponse
+	18, // [18:32] is the sub-list for method output_type
+	4,  // [4:18] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name

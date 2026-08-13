@@ -233,7 +233,13 @@ function tramitarDC3Licencia(lic: any) {
           <div class="stats-row">
             <div class="stat">
               <span class="label">Lugares usados</span>
-              <span class="value">{{ lic.usadas }} / {{ lic.capacidad_maxima > 0 ? lic.capacidad_maxima : '∞' }}</span>
+              <!--
+                `?? 0` no es defensivo por gusto: los enteros del API vienen de
+                protobuf, cuyos structs llevan `json:"usadas,omitempty"`. Cuando
+                el valor es 0 la clave desaparece del JSON y sin este fallback la
+                tarjeta pintaba " / 4" — el cupo sí, los usados en blanco.
+              -->
+              <span class="value">{{ lic.usadas ?? 0 }} / {{ lic.capacidad_maxima > 0 ? lic.capacidad_maxima : '∞' }}</span>
             </div>
             <div class="stat">
               <span class="label">Fecha de Compra</span>

@@ -20,8 +20,10 @@ service UsuariosService {
   // Guarda la URL de portada (la subida a R2 la hace el Gateway).
   rpc UpdateCoverURL(UpdateMediaURLRequest) returns (PerfilResponse);
 
-  // Cambia el rol del usuario a "instructor".
-  rpc BecomeInstructor(UserIDRequest) returns (PerfilResponse);
+  // Aquí vivía BecomeInstructor, que ascendía a quien la invocara sin
+  // comprobar nada. Se eliminó a propósito: el único camino para cambiar de rol
+  // es AdminUpdateRole, que valida que el solicitante sea admin. No la
+  // reintroduzcas sin esa validación.
 
   // Perfil público de cualquier usuario (acceso autenticado).
   rpc GetPublicPerfil(UserIDRequest) returns (PerfilResponse);

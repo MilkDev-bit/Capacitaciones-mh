@@ -134,6 +134,21 @@ function initials(name: string) {
           </template>
         </div>
         <div class="topbar-right">
+          <!--
+            Acceso a la tienda. El alumno llega al panel y ya no tiene forma de
+            volver al catálogo sin editar la URL: el sidebar solo lista lo que ya
+            compró. Es un RouterLink y no un botón con push() para que el clic
+            central y "abrir en pestaña nueva" funcionen.
+          -->
+          <RouterLink to="/tienda" class="icon-btn topbar-store" data-tooltip="Ir a la tienda"
+            aria-label="Ir a la tienda">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17" />
+              <circle cx="9" cy="20" r="1" />
+              <circle cx="17" cy="20" r="1" />
+            </svg>
+          </RouterLink>
+
           <!-- Theme Toggle -->
           <button class="icon-btn" @click="toggleTheme"
             style="border:none; background:transparent; width: 36px; height: 36px" data-tooltip="Cambiar tema">
@@ -201,6 +216,28 @@ function initials(name: string) {
 </template>
 
 <style scoped>
+/*
+  El .icon-btn global trae borde y fondo de tarjeta; en la topbar los iconos van
+  desnudos. El toggle de tema lo resuelve con estilos inline, pero un RouterLink
+  además arrastra color y subrayado de <a>, así que aquí se neutraliza todo
+  junto en lugar de repetir la lista de inline styles.
+*/
+.topbar-store {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 50%;
+}
+
+.topbar-store:hover {
+  background-color: var(--surface-hover);
+  border-color: transparent;
+  color: var(--brand);
+}
+
 .breadcrumb-link {
   color: var(--muted);
   text-decoration: none;

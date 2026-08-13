@@ -174,54 +174,9 @@ func UploadCover(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
-// BecomeInstructor promotes a "user" role account to "instructor".
-// Only users with role="user" can call this endpoint.
-// Optionally accepts bio and specialty to complete the instructor profile.
-func BecomeInstructor(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	role, _ := c.Get("role")
-
-	if role != "user" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "solo los estudiantes pueden convertirse en instructores"})
-		return
-	}
-
-	var req struct {
-		Bio       string `json:"bio"`
-		Specialty string `json:"specialty"`
-	}
-	// Fields are optional — ignore binding errors
-	_ = c.ShouldBindJSON(&req)
-
-	tx, err := db.DB.Begin()
-	if err != nil {
-		slog.Error("BecomeInstructor: Begin", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
-		return
-	}
-	defer tx.Rollback()
-
-	if req.Bio != "" || req.Specialty != "" {
-		_, err = tx.Exec(`UPDATE users SET bio=$1, specialty=$2 WHERE id=$3`, req.Bio, req.Specialty, userID)
-		if err != nil {
-			slog.Error("BecomeInstructor: UPDATE perfil", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
-			return
-		}
-	}
-
-	_, err = tx.Exec(`UPDATE users SET role='instructor' WHERE id=$1 AND role='user'`, userID)
-	if err != nil {
-		slog.Error("BecomeInstructor: UPDATE role", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		slog.Error("BecomeInstructor: Commit", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"role": "instructor"})
-}
+// Aquí vivía BecomeInstructor, la versión de este monolito de la
+// auto-promoción a instructor. Se eliminó junto con la del Gateway: aunque este
+// binario ya no es el que se despliega, dejar el endpoint compilado en el repo
+// es dejar el agujero listo para el día que alguien vuelva a arrancarlo.
+//
+// El cambio de rol se hace solo desde el panel de administración.

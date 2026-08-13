@@ -4,7 +4,7 @@ package router
 
 import (
 	"net/http"
-	"os"           
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,40 +61,40 @@ func New(d Deps) *gin.Engine {
 		c.Next()
 	})
 
-    distDir := "/frontend/dist"
-    
-    // Si ejecutas en desarrollo local y la carpeta /frontend/dist no existe, cae a la ruta relativa
-    if _, err := os.Stat(distDir); os.IsNotExist(err) {
-        distDir = "./frontend/dist"
-    }
+	distDir := "/frontend/dist"
 
-    r.Static("/assets", distDir+"/assets")
-    r.StaticFile("/favicon.png", distDir+"/favicon.png")
-    r.StaticFile("/favicon.ico", distDir+"/favicon.ico")
-    r.StaticFile("/logo-capacitaciones.png", distDir+"/logo-capacitaciones.png")
-    r.StaticFile("/", distDir+"/index.html")
+	// Si ejecutas en desarrollo local y la carpeta /frontend/dist no existe, cae a la ruta relativa
+	if _, err := os.Stat(distDir); os.IsNotExist(err) {
+		distDir = "./frontend/dist"
+	}
 
-    r.NoRoute(func(c *gin.Context) {
-        p := c.Request.URL.Path
+	r.Static("/assets", distDir+"/assets")
+	r.StaticFile("/favicon.png", distDir+"/favicon.png")
+	r.StaticFile("/favicon.ico", distDir+"/favicon.ico")
+	r.StaticFile("/logo-capacitaciones.png", distDir+"/logo-capacitaciones.png")
+	r.StaticFile("/", distDir+"/index.html")
 
-        // Bloqueo de rutas sensibles
-        for _, prefix := range []string{"/.git", "/.env", "/actuator"} {
-            if strings.HasPrefix(p, prefix) {
-                c.AbortWithStatus(http.StatusNotFound)
-                return
-            }
-        }
+	r.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
 
-        // Si la petición corresponde a un archivo físico en la carpeta dist (imágenes, icons, etc.)
-        filePath := filepath.Join(distDir, filepath.Clean(p))
-        if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
-            c.File(filePath)
-            return
-        }
+		// Bloqueo de rutas sensibles
+		for _, prefix := range []string{"/.git", "/.env", "/actuator"} {
+			if strings.HasPrefix(p, prefix) {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
 
-        // Fallback SPA: devolver index.html para que Vue Router maneje la vista
-        c.File(distDir + "/index.html")
-    })
+		// Si la petición corresponde a un archivo físico en la carpeta dist (imágenes, icons, etc.)
+		filePath := filepath.Join(distDir, filepath.Clean(p))
+		if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
+			c.File(filePath)
+			return
+		}
+
+		// Fallback SPA: devolver index.html para que Vue Router maneje la vista
+		c.File(distDir + "/index.html")
+	})
 
 	api := r.Group("/api")
 	api.Use(middleware.NewRateLimiter(300, 50).Handler()) // Global Anti-DDoS (300 req/min, ráfaga 50)
@@ -133,7 +133,11 @@ func New(d Deps) *gin.Engine {
 			auth.PUT("/perfil", d.UsuariosH.UpdatePerfil)
 			auth.POST("/perfil/avatar", d.UsuariosH.UploadAvatar)
 			auth.POST("/perfil/cover", d.UsuariosH.UploadCover)
-			auth.POST("/perfil/become-instructor", d.UsuariosH.BecomeInstructor)
+			// No hay ruta de auto-promoción a instructor. La había
+			// (POST /perfil/become-instructor) y no validaba nada: cualquier
+			// sesión válida podía ascenderse sola con una petición directa, sin
+			// pasar por la UI. Los cambios de rol viven solo en
+			// PATCH /admin/users/:id/role, que comprueba que quien llama sea admin.
 			auth.GET("/usuarios/:id/perfil", d.UsuariosH.GetPublicPerfil)
 			auth.GET("/usuarios/search", d.UsuariosH.SearchUsers)
 

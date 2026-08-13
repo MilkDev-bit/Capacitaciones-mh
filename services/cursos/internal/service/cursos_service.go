@@ -460,8 +460,10 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 	}
 
 	// Crear sesión
+	metodos, opcionesPago := metodosDePago(amount)
 	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		PaymentMethodTypes:   metodos,
+		PaymentMethodOptions: opcionesPago,
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -566,8 +568,10 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
 
 	// Crear sesión
+	metodos, opcionesPago := metodosDePago(amount)
 	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		PaymentMethodTypes:   metodos,
+		PaymentMethodOptions: opcionesPago,
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -939,13 +943,17 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 	clientRef := "cart||" + req.UserId
 
+	// El tope de OXXO aplica al total del carrito, no a cada renglón: es lo que
+	// Stripe cobra en una sola operación.
+	metodos, opcionesPago := metodosDePago(total.StripeAmount())
 	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
-		LineItems:          lineItems,
-		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:         stripe.String(req.SuccessUrl),
-		CancelURL:          stripe.String(req.CancelUrl),
-		ClientReferenceID:  stripe.String(clientRef),
+		PaymentMethodTypes:   metodos,
+		PaymentMethodOptions: opcionesPago,
+		LineItems:            lineItems,
+		Mode:                 stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:           stripe.String(req.SuccessUrl),
+		CancelURL:            stripe.String(req.CancelUrl),
+		ClientReferenceID:    stripe.String(clientRef),
 		InvoiceCreation: &stripe.CheckoutSessionInvoiceCreationParams{
 			Enabled: stripe.Bool(true),
 		},

@@ -57,13 +57,12 @@ func (s *UsuariosService) UpdateCoverURL(ctx context.Context, userID, url string
 	return s.GetPerfil(ctx, userID)
 }
 
-func (s *UsuariosService) BecomeInstructor(ctx context.Context, userID string) (*usuariospb.PerfilResponse, error) {
-	if err := s.repo.UpdateField(ctx, userID, "role", "instructor"); err != nil {
-		return nil, err
-	}
-	return s.GetPerfil(ctx, userID)
-}
-
+// AdminUpdateRole es el ÚNICO camino para cambiar el rol de un usuario.
+//
+// Antes convivía con BecomeInstructor, que ascendía a quien la llamara sin
+// comprobación alguna y colgaba de una ruta autenticada corriente: bastaba un
+// POST directo para saltarse la UI y auto-promoverse. Esa función ya no existe;
+// si necesitas otra vía de ascenso, replica primero esta comprobación de rol.
 func (s *UsuariosService) AdminUpdateRole(ctx context.Context, req *usuariospb.AdminUpdateRoleRequest) (*usuariospb.PerfilResponse, error) {
 	admin, err := s.repo.FindByID(ctx, req.AdminId)
 	if err != nil {
