@@ -190,18 +190,16 @@ async function enviarAccesos() {
   }
 }
 
-// OBSOLETO — pendiente de retirar junto con sus dos botones.
+// El trámite de DC-3 se retiró de esta pantalla, no se migró al modal.
 //
-// Mandaba al representante a un sitio externo a teclear a mano los datos de cada
-// trabajador. Ahora la constancia se emite sola dentro de la plataforma cuando
-// el alumno termina el curso: él captura sus datos una vez y el instructor los
-// de la empresa en la capacitación.
-function tramitarDC3Licencia(lic: any) {
-  const nombreCurso = lic.nombre && lic.nombre !== 'Licencia Corporativa' ? lic.nombre : 'Capacitación'
-  const duracion = Math.ceil((lic.curso_duracion || 60) / 60)
-  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=6000`
-  window.open(url, '_blank')
-}
+// Una licencia es una compra corporativa que cubre a varios trabajadores,
+// mientras que la constancia es de un alumno concreto por un curso concreto.
+// El botón mandaba al representante a teclear a mano los datos de cada
+// trabajador en un sitio externo, y reapuntarlo al modal habría sido peor:
+// habría emitido la constancia a nombre del propio representante, que
+// normalmente no es quien tomó el curso.
+//
+// Cada alumno la tramita desde su capacitación o desde Mis constancias.
 </script>
 
 <template>
@@ -293,11 +291,6 @@ function tramitarDC3Licencia(lic: any) {
               </svg>
               Ver Detalles
             </button>
-            <button class="btn-details"
-              style="margin-top: 0; flex: 1; background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);"
-              @click="tramitarDC3Licencia(lic)">
-              📋 Tramitar DC-3
-            </button>
           </div>
         </div>
       </div>
@@ -340,11 +333,6 @@ function tramitarDC3Licencia(lic: any) {
 
             </div>
             <div class="modal-footer">
-              <button
-                style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #10b981; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;"
-                @click="tramitarDC3Licencia(selectedLic)">
-                📋 Tramitar DC-3
-              </button>
               <button
                 style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #f97316; color: #ffffff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;"
                 class="action-doc-btn" @click="downloadInvoice(selectedLic)" :disabled="invoiceLoading">

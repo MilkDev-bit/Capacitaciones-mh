@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../../api'
 import iziToast from 'izitoast'
+import { useDC3Store } from '../../stores/dc3'
 
 const route = useRoute()
+const dc3 = useDC3Store()
 const examen = ref<any>(null)
 const respuestas = ref<Record<string, string>>({})
 const resultado = ref<any>(null)
@@ -60,11 +62,18 @@ function reintentar() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+/**
+ * La constancia es de la capacitación, no del examen.
+ *
+ * El título del examen se limpia solo para la cabecera del modal; los datos
+ * reales los resuelve el backend a partir de `capacitacion_id`. La versión
+ * anterior mandaba ese título recortado al formulario externo como nombre del
+ * curso, así que la constancia podía salir con "Final" pegado al nombre.
+ */
 function tramitarDC3() {
   let nombreCurso = examen.value?.title || 'Capacitación'
   nombreCurso = nombreCurso.replace(/^Exám?en(\s+Final)?\s*[-–:]*\s*/i, '').trim() || nombreCurso
-  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=1&area_tematica=6000`
-  window.open(url, '_blank')
+  dc3.abrir(examen.value?.capacitacion_id, nombreCurso)
 }
 </script>
 
@@ -157,7 +166,9 @@ function tramitarDC3() {
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap;">
         <router-link to="/usuario/examenes" class="btn btn-secondary" style="display:inline-flex">Volver a mis exámenes</router-link>
         <button v-if="resultado.porcentaje < 80" @click="reintentar" class="btn btn-primary" style="display:inline-flex">🔄 Reintentar Examen</button>
-        <button v-if="resultado.porcentaje >= 80" @click="tramitarDC3" class="btn btn-primary" style="display:inline-flex; background: #10b981; border-color: #10b981;">📋 Tramitar Constancia DC-3</button>
+        <!-- Sin capacitación asociada no hay constancia que emitir: el botón
+             abriría un modal vacío, así que ni se pinta. -->
+        <button v-if="resultado.porcentaje >= 80 && examen?.capacitacion_id" @click="tramitarDC3" class="btn btn-primary" style="display:inline-flex; background: #10b981; border-color: #10b981;">📋 Tramitar Constancia DC-3</button>
       </div>
     </div>
   </div>

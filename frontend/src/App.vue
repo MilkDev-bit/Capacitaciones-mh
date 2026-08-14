@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import { useTheme } from './composables/useTheme'
 import CartDrawer from './components/CartDrawer.vue'
+import DC3Modal from './components/DC3Modal.vue'
 import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from './stores/cart'
@@ -38,4 +39,7 @@ watch(
 <template>
   <RouterView />
   <CartDrawer />
+  <!-- Montado aquí y no en cada vista: los botones de constancia están
+       repartidos por cinco pantallas y todas abren esta misma instancia. -->
+  <DC3Modal />
 </template>

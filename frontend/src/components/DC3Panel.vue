@@ -2,27 +2,41 @@
 /**
  * Panel de la constancia DC-3 dentro de una capacitación.
  *
- * Tiene cuatro estados y cada uno responde a una pregunta distinta del alumno:
+ * Cada estado responde a una pregunta distinta del alumno:
  *
- *   lista        → "ya está, descárgala"
- *   faltan-mios  → "faltan TUS datos, captúralos" (el único accionable por él)
- *   falta-empresa→ "faltan los del instructor, no puedes hacer nada"
- *   no-aplica    → el curso no emite constancia, no se muestra nada
+ *   lista         → "ya está, descárgala"
+ *   faltan-mios   → "faltan TUS datos, captúralos" (el único accionable por él)
+ *   falta-empresa → "faltan los del instructor, no puedes hacer nada"
+ *   sin-emitir    → sus datos y los del instructor están, pero no hay documento
+ *   no-aplica     → el curso no emite constancia, no se muestra nada
  *
  * Distinguir los dos "faltan" importa: mandar al alumno a rellenar un formulario
  * que no va a desbloquear nada es peor que decirle a quién reclamar.
+ *
+ * `sin-emitir` estaba fundido con `falta-empresa` y ese era el bug: el alumno
+ * veía "falta que el instructor complete la empresa" cuando la empresa ya
+ * estaba completa y lo que había fallado era el armado del documento. Le
+ * echaba la culpa a un tercero por algo que un reintento resuelve.
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
+import { estadoDC3 } from '../utils/dc3'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   cursoId: string
   /** El panel solo aparece cuando el curso está terminado. */
   completado: boolean
   /** dc3_enabled de la capacitación. */
   habilitado?: boolean
-}>()
+  /**
+   * `plano` quita el marco propio. Dentro del modal el panel ya está sobre una
+   * tarjeta, y anidar dos bordes con el mismo radio se lee como un error.
+   */
+  variante?: 'tarjeta' | 'plano'
+}>(), { variante: 'tarjeta' })
+
+const emit = defineEmits<{ (e: 'emitida', url: string): void }>()
 
 const cargando = ref(false)
 const guardando = ref(false)
@@ -58,15 +72,24 @@ const empresaPropiaCompleta = computed(() => camposEmpresa.value.every(v => v !=
 const empresaPropiaVacia = computed(() => camposEmpresa.value.every(v => v === ''))
 const empresaAMedias = computed(() => !empresaPropiaCompleta.value && !empresaPropiaVacia.value)
 
-const estado = computed(() => {
-  if (!consultado.value) return 'cargando'
-  if (constanciaUrl.value) return 'lista'
-  if (!trabajadorCompleto.value) return 'faltan-mios'
-  if (!empresaCompleta.value) return 'falta-empresa'
-  // Datos completos pero sin documento: suele ser un curso sin duración
-  // registrada, que el backend rechaza al armar el documento.
-  return 'falta-empresa'
-})
+/**
+ * El alumno pidió corregir datos que ya había guardado.
+ *
+ * Sin esto, una CURP mal tecleada quedaba congelada para siempre: el formulario
+ * solo se mostraba mientras `trabajador_completo` fuera falso, y en cuanto
+ * guardaba una vez ya no había forma de volver a él.
+ */
+const editando = ref(false)
+
+// La decisión vive en utils/dc3 para poder cubrirla con tests: aquí solo se le
+// pasa el estado actual.
+const estado = computed(() => estadoDC3({
+  consultado: consultado.value,
+  constanciaUrl: constanciaUrl.value,
+  trabajadorCompleto: trabajadorCompleto.value,
+  empresaCompleta: empresaCompleta.value,
+  editando: editando.value,
+}))
 
 const curpValida = computed(() => form.value.curp.trim().length === 18)
 
@@ -127,6 +150,7 @@ async function enviar() {
       representante_trabajadores: form.value.representante_trabajadores.trim(),
     })
     trabajadorCompleto.value = true
+    editando.value = false
     // 202 significa "guardado, pero falta el instructor". No es un error y no
     // debe pintarse en rojo.
     if (status === 202) {
@@ -135,7 +159,14 @@ async function enviar() {
       return
     }
     constanciaUrl.value = data.constancia_url || ''
-    toast.success('Tu constancia está lista')
+    if (constanciaUrl.value) {
+      emit('emitida', constanciaUrl.value)
+      toast.success('Tu constancia está lista')
+    } else {
+      // El backend aceptó los datos pero no devolvió documento. Decirle
+      // "está lista" y no darle nada que descargar es la peor combinación.
+      toast.error('Guardamos tus datos, pero no pudimos armar el documento')
+    }
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'No se pudieron guardar tus datos')
   } finally {
@@ -143,13 +174,32 @@ async function enviar() {
   }
 }
 
+/**
+ * Reintenta la emisión reenviando los datos ya guardados.
+ *
+ * El endpoint es idempotente: si el documento existe lo devuelve, y si no,
+ * vuelve a intentar armarlo. Por eso reutiliza `enviar` en vez de duplicar la
+ * llamada con otra ruta.
+ */
+function reintentar() {
+  enviar()
+}
+
 onMounted(consultar)
 watch(() => props.completado, (val) => { if (val) consultar() })
+// El modal reutiliza la misma instancia al abrirlo para otra capacitación.
+watch(() => props.cursoId, () => {
+  consultado.value = false
+  constanciaUrl.value = ''
+  editando.value = false
+  consultar()
+})
 </script>
 
 <template>
-  <div v-if="completado && habilitado !== false && consultado" class="dc3-panel">
-    <div class="dc3-head">
+  <div v-if="completado && habilitado !== false && consultado"
+       class="dc3-panel" :class="{ 'dc3-plano': variante === 'plano' }">
+    <div v-if="variante !== 'plano'" class="dc3-head">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" />
       </svg>
@@ -159,9 +209,15 @@ watch(() => props.completado, (val) => { if (val) consultar() })
     <!-- Lista -->
     <template v-if="estado === 'lista'">
       <p class="dc3-lead">Tu constancia de habilidades laborales está emitida.</p>
-      <a :href="constanciaUrl" target="_blank" rel="noopener" class="btn btn-primary" download>
-        Descargar constancia
-      </a>
+      <div class="dc3-acciones">
+        <a :href="constanciaUrl" target="_blank" rel="noopener" class="btn btn-primary" download>
+          Descargar constancia
+        </a>
+        <button class="btn btn-ghost" @click="editando = true">Corregir mis datos</button>
+      </div>
+      <small class="dc3-hint">
+        La tienes siempre disponible en <b>Mis constancias</b>, dentro de tu perfil.
+      </small>
     </template>
 
     <!-- Faltan datos del alumno -->
@@ -233,19 +289,48 @@ watch(() => props.completado, (val) => { if (val) consultar() })
         </small>
       </div>
 
-      <button class="btn btn-primary"
-              :disabled="guardando || !curpValida || empresaAMedias" @click="enviar">
-        {{ guardando ? 'Emitiendo…' : 'Emitir mi constancia' }}
-      </button>
+      <div class="dc3-acciones">
+        <button class="btn btn-primary"
+                :disabled="guardando || !curpValida || empresaAMedias" @click="enviar">
+          {{ guardando ? 'Emitiendo…' : 'Emitir mi constancia' }}
+        </button>
+        <button v-if="editando" class="btn btn-ghost" :disabled="guardando"
+                @click="editando = false">
+          Cancelar
+        </button>
+      </div>
     </template>
 
     <!-- Falta que el instructor configure la empresa -->
-    <template v-else>
+    <template v-else-if="estado === 'falta-empresa'">
       <p class="dc3-lead">
         Tus datos están guardados. Falta que el instructor complete los datos de la
         empresa y los agentes capacitadores de esta capacitación; en cuanto lo haga,
-        emitimos tu constancia automáticamente.
+        emitimos tu constancia automáticamente y la verás en <b>Mis constancias</b>.
       </p>
+      <button class="btn btn-ghost" @click="editando = true">Revisar mis datos</button>
+    </template>
+
+    <!--
+      Sin emitir: ya no hay nadie a quien esperar.
+      Se ofrece el reintento antes que el aviso al soporte porque la causa
+      habitual —un dato del curso que el instructor acaba de corregir— se
+      resuelve sola en cuanto se vuelve a pedir el documento.
+    -->
+    <template v-else>
+      <p class="dc3-lead">
+        Tus datos y los de la capacitación están completos, pero el documento no
+        llegó a generarse. Vuelve a intentarlo; si sigue sin salir, avisa a tu
+        instructor de que revise la duración y el área temática del curso.
+      </p>
+      <div class="dc3-acciones">
+        <button class="btn btn-primary" :disabled="guardando" @click="reintentar">
+          {{ guardando ? 'Reintentando…' : 'Reintentar emisión' }}
+        </button>
+        <button class="btn btn-ghost" :disabled="guardando" @click="editando = true">
+          Corregir mis datos
+        </button>
+      </div>
     </template>
   </div>
 </template>
@@ -301,5 +386,29 @@ watch(() => props.completado, (val) => { if (val) consultar() })
 .dc3-hint, .dc3-error { font-size: 0.75rem; }
 .dc3-hint { color: var(--muted); }
 .dc3-error { color: var(--danger); }
+
+/* Dentro del modal el marco lo pone el propio modal. */
+.dc3-plano {
+  border: 0;
+  padding: 0;
+  background: none;
+  margin-top: 0;
+}
+
+/* En móvil los botones se apilan a ancho completo: dos acciones en fila
+ * quedan por debajo del objetivo táctil de 44px en pantallas estrechas. */
+.dc3-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dc3-acciones > * { min-height: var(--touch-min); }
+
+@media (max-width: 479px) {
+  .dc3-acciones { flex-direction: column; align-items: stretch; }
+  .dc3-acciones > * { width: 100%; text-align: center; }
+}
 
 </style>

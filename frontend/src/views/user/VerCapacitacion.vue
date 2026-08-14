@@ -18,12 +18,13 @@ import {
 } from '../../composables/progresion'
 import CourseSidebar from '../../components/CourseSidebar.vue'
 import InteractiveActivity from '../../components/InteractiveActivity.vue'
-import DC3Panel from '../../components/DC3Panel.vue'
+import { useDC3Store } from '../../stores/dc3'
 
 const route = useRoute()
 const router = useRouter()
 const cursoId = route.params.id as string
 const authStore = useAuthStore()
+const dc3 = useDC3Store()
 const currentUser = computed(() => authStore.user)
 
 const curso = ref<any>(null)
@@ -946,11 +947,7 @@ function goBack() {
 }
 
 function tramitarDC3() {
-  const nombreCurso = curso.value?.title || ''
-  const duracion = Math.ceil((curso.value?.duration || 60) / 60)
-  const area = curso.value?.area_tematica || '6000'
-  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=${encodeURIComponent(area)}`
-  window.open(url, '_blank')
+  dc3.abrir(String(route.params.id), curso.value?.title || '')
 }
 </script>
 
@@ -1902,12 +1899,12 @@ function tramitarDC3() {
     </Transition>
 
     <!--
-      Constancia DC-3.
-      El panel se pinta solo, y solo cuando el curso está terminado y emite
-      constancia: él mismo consulta si ya existe, si faltan datos del alumno o
-      si falta que el instructor configure su empresa.
+      El panel de la DC-3 ya no se pinta aquí.
+      Colgado al final de la página quedaba por debajo de todas las lecciones,
+      así que el alumno tenía que desplazarse hasta el fondo para descubrir que
+      existía. Ahora vive en el modal que abre "Tramitar Constancia DC-3" desde
+      la barra lateral y desde el aviso de curso completado.
     -->
-    <DC3Panel :curso-id="cursoId" :completado="progreso === 100" :habilitado="curso?.dc3_enabled" />
 
     <!-- Celebration Confetti Overlay -->
     <Transition name="fade">
@@ -1928,8 +1925,12 @@ function tramitarDC3() {
               style="display: inline-flex; align-items: center; gap: 8px;">
               🎓 Responder Examen Final
             </button>
+            <!-- Se cierra el aviso antes de abrir el modal: si no, el modal
+                 aparece encima del confeti y al cerrarlo el alumno vuelve a la
+                 pantalla de felicitación como si no hubiera hecho nada. -->
             <button v-if="curso?.dc3_enabled === true" class="btn btn-primary"
-              style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
+              style="display: inline-flex; align-items: center; gap: 8px;"
+              @click="showConfetti = false; tramitarDC3()">
               Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>

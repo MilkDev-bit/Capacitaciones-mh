@@ -65,6 +65,7 @@ const router = createRouter({
         { path: 'examenes/:id', component: () => import('../views/user/ResponderExamen.vue') },
         { path: 'capacitaciones/:id', component: () => import('../views/user/VerCapacitacion.vue') },
         { path: 'licencias', component: () => import('../views/user/MisLicencias.vue') },
+        { path: 'constancias', component: () => import('../views/user/MisConstancias.vue') },
         { path: 'perfil', component: () => import('../views/user/PerfilView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
         { path: 'mensajes', component: () => import('../views/shared/MensajesView.vue') },

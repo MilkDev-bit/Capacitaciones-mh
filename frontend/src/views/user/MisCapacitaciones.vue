@@ -6,10 +6,12 @@ import { useAuthStore } from '../../stores/auth'
 import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
 import { useCartStore } from '../../stores/cart'
+import { useDC3Store } from '../../stores/dc3'
 
 const auth = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
+const dc3 = useDC3Store()
 const route = useRoute()
 
 const capacitaciones = ref<any[]>([])
@@ -171,11 +173,7 @@ async function openCourse(id: string) {
 }
 
 function tramitarDC3(c: any) {
-  const nombreCurso = c.title || ''
-  const duracion = Math.ceil((c.duration || 60) / 60)
-  const area = c.area_tematica || '6000'
-  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=${duracion}&area_tematica=${encodeURIComponent(area)}`
-  window.open(url, '_blank')
+  dc3.abrir(c.id, c.title || '')
 }
 
 async function inscribirse(id: string) {

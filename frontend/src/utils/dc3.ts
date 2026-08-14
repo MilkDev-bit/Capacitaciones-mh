@@ -97,3 +97,41 @@ export function cursoDelCatalogo(nombre: string): CursoCatalogoDC3 | undefined {
   const n = nombre.trim().toUpperCase()
   return CURSOS_CATALOGO_DC3.find(c => c.nombre.toUpperCase() === n)
 }
+
+/** Estados posibles del panel de constancia de un alumno. */
+export type EstadoDC3 =
+  | 'cargando'
+  | 'lista'
+  | 'faltan-mios'
+  | 'falta-empresa'
+  | 'sin-emitir'
+
+export type EntradaEstadoDC3 = {
+  /** Ya respondió `GET /capacitaciones/:id/dc3`. */
+  consultado: boolean
+  /** URL del documento emitido, vacía si aún no existe. */
+  constanciaUrl: string
+  trabajadorCompleto: boolean
+  empresaCompleta: boolean
+  /** El alumno pidió volver al formulario para corregir datos ya guardados. */
+  editando: boolean
+}
+
+/**
+ * Decide qué le toca ver al alumno.
+ *
+ * Vive fuera del componente porque es donde estuvo el fallo que se reportó: los
+ * dos últimos casos estaban fundidos en `falta-empresa`, así que a un alumno
+ * con todo en regla se le decía que esperase a su instructor cuando el
+ * instructor ya había hecho su parte y lo que había fallado era el armado del
+ * documento. Aislada aquí, la distinción queda cubierta por tests.
+ */
+export function estadoDC3(e: EntradaEstadoDC3): EstadoDC3 {
+  if (!e.consultado) return 'cargando'
+  // `editando` gana a `lista`: corregir la CURP de una constancia ya emitida es
+  // justamente el caso que no tenía salida.
+  if (e.constanciaUrl && !e.editando) return 'lista'
+  if (!e.trabajadorCompleto || e.editando) return 'faltan-mios'
+  if (!e.empresaCompleta) return 'falta-empresa'
+  return 'sin-emitir'
+}

@@ -40,6 +40,7 @@ const navItems = computed(() => {
     { to: '/usuario/dashboard', label: 'Dashboard', icon: 'home' },
     { to: '/usuario/capacitaciones', label: 'Mis cursos', icon: 'book' },
     { to: '/usuario/examenes', label: 'Mis exámenes', icon: 'clipboard' },
+    { to: '/usuario/constancias', label: 'Mis constancias', icon: 'certificate' },
     { to: '/usuario/perfil', label: 'Mi perfil', icon: 'user' },
   ]
 })
@@ -92,6 +93,11 @@ function close() {
             stroke-width="2" viewBox="0 0 24 24">
             <path
               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <svg v-if="item.icon === 'certificate'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
+            stroke-width="2" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <path d="M14 2v6h6M9 15l2 2 4-4" />
           </svg>
           <svg v-if="item.icon === 'user'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
             stroke-width="2" viewBox="0 0 24 24">

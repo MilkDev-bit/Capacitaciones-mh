@@ -2,9 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
+import { useDC3Store } from '../../stores/dc3'
 
 const examenes = ref<any[]>([])
 const router = useRouter()
+const dc3 = useDC3Store()
 
 // Filtros
 const statusFilter = ref('todos') // 'todos' | 'pendiente' | 'completado' | 'bloqueado'
@@ -66,8 +68,9 @@ function handleCardClick(e: any) {
 function tramitarDC3(e: any) {
   let nombreCurso = e.title || 'Capacitación'
   nombreCurso = nombreCurso.replace(/^Exám?en(\s+Final)?\s*[-–:]*\s*/i, '').trim() || nombreCurso
-  const url = `https://dc3.mhsolucionesempresariales.com/formulario-dc3-8f9d3a2b?nombre_curso=${encodeURIComponent(nombreCurso)}&duracion_horas=1&area_tematica=6000`
-  window.open(url, '_blank')
+  // El título limpio es solo para la cabecera del modal; el nombre que sale en
+  // el documento lo pone el backend desde la capacitación.
+  dc3.abrir(e.capacitacion_id, nombreCurso)
 }
 </script>
 
@@ -159,7 +162,7 @@ function tramitarDC3(e: any) {
                 {{ e.porcentaje.toFixed(0) }}%
               </span>
             </div>
-            <div style="margin-top: 12px;">
+            <div v-if="e.capacitacion_id" style="margin-top: 12px;">
               <button
                 class="btn btn-secondary btn-sm"
                 style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #10b981; color: #10b981; font-weight: 600;"
