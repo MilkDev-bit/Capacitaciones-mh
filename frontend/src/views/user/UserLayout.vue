@@ -12,7 +12,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 const sidebarOpen = ref(false)
-// Con el cajón abierto en móvil, la página de detrás no debe desplazarse.
+
 useScrollLock(sidebarOpen)
 const profileOpen = ref(false)
 
