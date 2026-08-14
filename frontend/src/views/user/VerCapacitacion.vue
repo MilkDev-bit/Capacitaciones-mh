@@ -895,13 +895,13 @@ function typeLabel(t: any) {
 
 function typeIcon(t: any) {
   const map: Record<string, string> = {
-    video: '🎬', '1': '🎬',
-    document: '📄', '3': '📄',
-    text: '📝', '2': '📝',
-    link: '🔗', '4': '❓',
-    '5': '🃏', '6': '🎯', '7': '🔤', '8': '📋', '9': '📊', '11': '🎯', '10': '📋'
+    video: '', '1': '',
+    document: '', '3': '',
+    text: '', '2': '',
+    link: '', '4': '',
+    '5': '', '6': '', '7': '', '8': '', '9': '', '11': '', '10': ''
   }
-  return map[String(t)] || '📄'
+  return map[String(t)] || ''
 }
 
 function isNextPending(lec: any) {
@@ -1044,7 +1044,7 @@ function tramitarDC3() {
                     d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                 </svg>
               </span>
-              {{ examenFinal.ya_respondido ? '🔄 Repetir Examen (' + Number(examenFinal.porcentaje || 0).toFixed(0) +
+              {{ examenFinal.ya_respondido ? 'Repetir Examen (' + Number(examenFinal.porcentaje || 0).toFixed(0) +
                 '%)' : 'Responder Examen Final' }}
             </button>
           </div>
@@ -1052,14 +1052,13 @@ function tramitarDC3() {
             <button class="btn btn-secondary btn-sm"
               style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border-color: #f97316; color: #f97316; font-weight: 600;"
               @click="tramitarDC3">
-              📋 Tramitar Constancia DC-3
+              Tramitar Constancia DC-3
             </button>
           </div>
         </div>
         <!-- Árbol jerárquico de navegación -->
         <CourseSidebar :tree="tree" :selected-id="selectedLeccion?.id ?? null" :curso-title="curso?.title"
-          :lecciones-abiertas="leccionesAbiertas" :modulos-abiertos="modulosAbiertos"
-          @select="selectLeccion" />
+          :lecciones-abiertas="leccionesAbiertas" :modulos-abiertos="modulosAbiertos" @select="selectLeccion" />
       </aside>
 
 
@@ -1212,7 +1211,7 @@ function tramitarDC3() {
                   </button>
                   <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
                     style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
-                    🎬 Ve el video completo para desbloquear la siguiente lección
+                    Ve el video completo para desbloquear la siguiente lección
                   </span>
                   <span v-else class="ver-done-chip">
                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -1230,11 +1229,8 @@ function tramitarDC3() {
                   class="ver-media-frame ver-media-video">
                   <VideoPlayer v-if="selectedLeccion.file_path" :src="fileUrl(selectedLeccion.file_path)"
                     :poster="curso?.thumbnail_url ? fileUrl(curso.thumbnail_url) : ''"
-                    :saved-time="savedVideoTime(selectedLeccion.id)"
-                    bloquear-adelanto
-                    :ya-completada="!!selectedLeccion.completada"
-                    @timeupdate="onVideoTimeUpdate"
-                    @ended="onVideoEnded"
+                    :saved-time="savedVideoTime(selectedLeccion.id)" bloquear-adelanto
+                    :ya-completada="!!selectedLeccion.completada" @timeupdate="onVideoTimeUpdate" @ended="onVideoEnded"
                     @seek-bloqueado="onSeekBloqueado" />
                   <div v-else class="ver-media-empty">Sin video disponible</div>
                 </div>
@@ -1385,15 +1381,12 @@ function tramitarDC3() {
                 </button>
                 <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
                   style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
-                  🎬 Finaliza el 100% del video para completarla
+                  Finaliza el 100% del video para completarla
                 </span>
-                <button
-                  class="btn btn-secondary"
-                  :disabled="!nextLeccion"
+                <button class="btn btn-secondary" :disabled="!nextLeccion"
                   :title="siguienteBloqueada ? 'Termina esta lección para continuar' : undefined"
-                  @click="goToLesson(nextLeccion)"
-                >
-                  {{ siguienteBloqueada ? '🔒 Termina esta lección' : 'Siguiente →' }}
+                  @click="goToLesson(nextLeccion)">
+                  {{ siguienteBloqueada ? 'Termina esta lección' : 'Siguiente →' }}
                 </button>
               </div>
 
@@ -1452,7 +1445,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1581,7 +1574,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                        }}</router-link>
+                          }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
@@ -1914,8 +1907,7 @@ function tramitarDC3() {
       constancia: él mismo consulta si ya existe, si faltan datos del alumno o
       si falta que el instructor configure su empresa.
     -->
-    <DC3Panel :curso-id="cursoId" :completado="progreso === 100"
-              :habilitado="curso?.dc3_enabled" />
+    <DC3Panel :curso-id="cursoId" :completado="progreso === 100" :habilitado="curso?.dc3_enabled" />
 
     <!-- Celebration Confetti Overlay -->
     <Transition name="fade">
@@ -1938,7 +1930,7 @@ function tramitarDC3() {
             </button>
             <button v-if="curso?.dc3_enabled === true" class="btn btn-primary"
               style="display: inline-flex; align-items: center; gap: 8px;" @click="tramitarDC3">
-              📋 Tramitar Constancia DC-3
+              Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>
           </div>
