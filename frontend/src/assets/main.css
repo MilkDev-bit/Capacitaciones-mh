@@ -112,7 +112,11 @@
  *
  * Para rejillas de tarjetas conviene acotarlo:
  *
- *     .mi-rejilla { --auto-grid-max: 340px; justify-content: center; }
+ *     .mi-rejilla { --auto-grid-max: 340px; justify-content: start; }
+ *
+ * `start` y no `center`: los títulos y filtros de una pantalla van alineados a
+ * la izquierda, así que centrar las tarjetas las descuelga de esa columna en
+ * cuanto hay pocos resultados. El bloque entero ya lo centra .app-container.
  *
  * Para campos de formulario o paneles que SÍ deben estirarse, 1fr es correcto
  * y no hay que tocar nada. */

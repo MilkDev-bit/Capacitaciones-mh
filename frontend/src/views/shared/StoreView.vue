@@ -1530,9 +1530,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 340px));
-  /* Sin esto, las filas incompletas dejarían el hueco a la derecha en vez de
-   * repartirlo; centrar mantiene la rejilla equilibrada con pocos resultados. */
-  justify-content: center;
+  /* start y NO center: el título, los filtros y el contador están alineados a
+   * la izquierda, así que centrar las tarjetas las sacaba de esa columna y con
+   * uno o dos resultados quedaba descolgado. El bloque entero ya va centrado
+   * por .app-container; centrar otra vez dentro solo desalinea. */
+  justify-content: start;
   gap: clamp(14px, 2vw, 22px);
 }
 

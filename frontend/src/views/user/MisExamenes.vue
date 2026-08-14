@@ -311,7 +311,9 @@ function tramitarDC3(e: any) {
    * la fila entera y la tarjeta saldría desproporcionada. Acotar el máximo
    * cubre los dos extremos. */
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 360px));
-  justify-content: center;
+  /* start: las tarjetas deben alinearse con el título y los filtros de arriba.
+   * Centrarlas las descuelga de esa columna cuando hay pocos resultados. */
+  justify-content: start;
   gap: 18px;
 }
 
