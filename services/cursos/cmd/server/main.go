@@ -226,6 +226,8 @@ func runMigrations(db *sqlx.DB) error {
 		// El área temática es del CURSO: "trabajos en altura" y "primeros
 		// auxilios" no comparten clave del catálogo STPS.
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_area_tematica VARCHAR(100)`,
+		// Nombre oficial para la constancia; distinto del título comercial.
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_curso VARCHAR(250)`,
 
 		// Los datos de empresa vivieron un momento aquí, por capacitación. Se
 		// retiran: el patrón es de quien emplea al trabajador, no del curso.

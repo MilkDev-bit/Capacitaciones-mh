@@ -74,11 +74,13 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 	}
 
 	resp := &cursospb.DatosDC3Response{
-		Empresa:            empresa,
-		EmpresaOrigen:      origen,
-		AreaTematica:       curso.DC3AreaTematica,
-		Trabajador:         trabajador.ToProto(),
-		NombreCurso:        curso.Title,
+		Empresa:       empresa,
+		EmpresaOrigen: origen,
+		AreaTematica:  curso.DC3AreaTematica,
+		Trabajador:    trabajador.ToProto(),
+		// El nombre oficial manda; el título comercial es el respaldo para los
+		// cursos que aún no lo tienen capturado.
+		NombreCurso:        nombreParaConstancia(curso.DC3NombreCurso, curso.Title),
 		DuracionHoras:      horasDeMinutos(curso.Duration),
 		EmpresaCompleta:    empresaCompleta(empresa) && strings.TrimSpace(curso.DC3AreaTematica) != "",
 		TrabajadorCompleto: trabajadorCompleto(trabajador),
@@ -236,6 +238,19 @@ func trabajadorCompleto(d *repository.DatosTrabajadorDC3) bool {
 		strings.TrimSpace(d.CURP) != "" &&
 		strings.TrimSpace(d.Puesto) != "" &&
 		strings.TrimSpace(d.OcupacionEspecifica) != ""
+}
+
+// nombreParaConstancia elige qué nombre de curso va impreso.
+//
+// El título de la plataforma es comercial ("Curso Trabajos en alturas") y el de
+// la constancia es el registrado ante la STPS ("SEGURIDAD EN TRABAJOS ALTURAS").
+// Si el instructor no capturó el oficial se usa el título, que es mejor que
+// dejar el campo vacío y bloquear la emisión.
+func nombreParaConstancia(oficial, titulo string) string {
+	if o := strings.TrimSpace(oficial); o != "" {
+		return o
+	}
+	return titulo
 }
 
 // horasDeMinutos traduce la duración del curso a las horas que declara la

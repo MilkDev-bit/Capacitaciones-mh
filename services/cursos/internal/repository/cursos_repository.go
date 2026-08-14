@@ -47,6 +47,8 @@ type Curso struct {
 	// Solo lo rellenan las consultas que usan selectCurso; ListByUser lo deja
 	// vacío y no pasa nada, porque la constancia se arma desde GetDatosDC3.
 	DC3AreaTematica string `db:"dc3_area_tematica"`
+	// Nombre oficial del curso para la DC-3; vacío usa Title.
+	DC3NombreCurso string `db:"dc3_nombre_curso"`
 }
 
 func (c *Curso) ToProto() *cursospb.CursoResponse {
@@ -59,6 +61,7 @@ func (c *Curso) ToProto() *cursospb.CursoResponse {
 		Duration:             c.Duration,
 		Dc3Enabled:           c.DC3Enabled,
 		Dc3AreaTematica:      c.DC3AreaTematica,
+		Dc3NombreCurso:       c.DC3NombreCurso,
 		TotalLecciones:       c.TotalLecciones,
 		LeccionesCompletadas: c.LeccionesCompletadas,
 		CreatedAt:            c.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -276,6 +279,7 @@ const selectCurso = `SELECT id, title, COALESCE(description,'') description, typ
 	COALESCE(welcome_message,'') welcome_message, COALESCE(thumbnail_url,'') thumbnail_url,
 	COALESCE(color,'#f97316') color, precio, COALESCE(precio_centavos, 0) precio_centavos, scheduled_at, duration, COALESCE(dc3_enabled, true) dc3_enabled, created_at,
 	COALESCE(dc3_area_tematica,'') dc3_area_tematica,
+	COALESCE(dc3_nombre_curso,'') dc3_nombre_curso,
 	0 as total_lecciones,
 	0 as lecciones_completadas
 	FROM capacitaciones`
@@ -341,11 +345,11 @@ func (r *postgresCursosRepository) Create(ctx context.Context, req *cursospb.Cre
 	err := r.db.QueryRowContext(ctx,
 		// precio_centavos se deriva en SQL: ROUND sobre NUMERIC es exacto en
 		// decimal, a diferencia de int64(precio*100) en Go, que truncaba.
-		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, precio_centavos, duration, dc3_enabled, codigo_acceso, dc3_area_tematica)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,ROUND($11::NUMERIC*100)::BIGINT,$12,$13,$14,$15) RETURNING id`,
+		`INSERT INTO capacitaciones(title, description, type, file_path, content, instructor_id, is_public, welcome_message, thumbnail_url, color, precio, precio_centavos, duration, dc3_enabled, codigo_acceso, dc3_area_tematica, dc3_nombre_curso)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,ROUND($11::NUMERIC*100)::BIGINT,$12,$13,$14,$15,$16) RETURNING id`,
 		req.Title, req.Description, req.Type, req.FilePath, req.Content, instructorID,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color, req.Precio, req.Duration, req.Dc3Enabled, codigoAcceso,
-		req.Dc3AreaTematica,
+		req.Dc3AreaTematica, req.Dc3NombreCurso,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -361,22 +365,22 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 	// Los marcadores van numerados a mano, así que añadir una columna obliga a
 	// recorrer los índices de scheduled_at y del WHERE. Es la razón por la que
 	// dc3_area_tematica se coloca al final del bloque fijo, en $13.
-	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12, dc3_area_tematica=$13`
+	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12, dc3_area_tematica=$13, dc3_nombre_curso=$14`
 	args := []interface{}{
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
-		req.Precio, req.Duration, req.Dc3Enabled, req.Dc3AreaTematica,
+		req.Precio, req.Duration, req.Dc3Enabled, req.Dc3AreaTematica, req.Dc3NombreCurso,
 	}
 	if req.ScheduledAt != "" {
 		if t, err := time.Parse(time.RFC3339, req.ScheduledAt); err == nil {
-			query += `, scheduled_at=$14 WHERE id=$15`
+			query += `, scheduled_at=$15 WHERE id=$16`
 			args = append(args, t, req.CursoId)
 		} else {
-			query += ` WHERE id=$14`
+			query += ` WHERE id=$15`
 			args = append(args, req.CursoId)
 		}
 	} else {
-		query += `, scheduled_at=NULL WHERE id=$14`
+		query += `, scheduled_at=NULL WHERE id=$15`
 		args = append(args, req.CursoId)
 	}
 	_, err := r.db.ExecContext(ctx, query, args...)

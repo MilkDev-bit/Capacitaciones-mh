@@ -261,8 +261,13 @@ type CreateCursoRequest struct {
 	// "primeros auxilios" no comparten clave, así que no puede vivir en el perfil
 	// del instructor.
 	Dc3AreaTematica string `protobuf:"bytes,15,opt,name=dc3_area_tematica,json=dc3AreaTematica,proto3" json:"dc3_area_tematica,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Nombre OFICIAL del curso para la constancia.
+	//
+	// No es el título comercial: "Curso Trabajos en alturas" se vende así, pero
+	// en la DC-3 figura "SEGURIDAD EN TRABAJOS ALTURAS". Vacío usa el título.
+	Dc3NombreCurso string `protobuf:"bytes,16,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateCursoRequest) Reset() {
@@ -400,6 +405,13 @@ func (x *CreateCursoRequest) GetDc3AreaTematica() string {
 	return ""
 }
 
+func (x *CreateCursoRequest) GetDc3NombreCurso() string {
+	if x != nil {
+		return x.Dc3NombreCurso
+	}
+	return ""
+}
+
 type UpdateCursoRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	CursoId         string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -418,6 +430,7 @@ type UpdateCursoRequest struct {
 	Duration        int32                  `protobuf:"varint,15,opt,name=duration,proto3" json:"duration,omitempty"`
 	Dc3Enabled      bool                   `protobuf:"varint,16,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	Dc3AreaTematica string                 `protobuf:"bytes,17,opt,name=dc3_area_tematica,json=dc3AreaTematica,proto3" json:"dc3_area_tematica,omitempty"`
+	Dc3NombreCurso  string                 `protobuf:"bytes,18,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -560,6 +573,13 @@ func (x *UpdateCursoRequest) GetDc3Enabled() bool {
 func (x *UpdateCursoRequest) GetDc3AreaTematica() string {
 	if x != nil {
 		return x.Dc3AreaTematica
+	}
+	return ""
+}
+
+func (x *UpdateCursoRequest) GetDc3NombreCurso() string {
+	if x != nil {
+		return x.Dc3NombreCurso
 	}
 	return ""
 }
@@ -758,6 +778,7 @@ type CursoResponse struct {
 	LeccionesCompletadas int32                  `protobuf:"varint,19,opt,name=lecciones_completadas,json=leccionesCompletadas,proto3" json:"lecciones_completadas,omitempty"`
 	Dc3Enabled           bool                   `protobuf:"varint,20,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	Dc3AreaTematica      string                 `protobuf:"bytes,21,opt,name=dc3_area_tematica,json=dc3AreaTematica,proto3" json:"dc3_area_tematica,omitempty"`
+	Dc3NombreCurso       string                 `protobuf:"bytes,22,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -928,6 +949,13 @@ func (x *CursoResponse) GetDc3Enabled() bool {
 func (x *CursoResponse) GetDc3AreaTematica() string {
 	if x != nil {
 		return x.Dc3AreaTematica
+	}
+	return ""
+}
+
+func (x *CursoResponse) GetDc3NombreCurso() string {
+	if x != nil {
+		return x.Dc3NombreCurso
 	}
 	return ""
 }
@@ -4318,8 +4346,14 @@ type DatosEmpresaDC3 struct {
 	RepresentanteTrabajadores string `protobuf:"bytes,4,opt,name=representante_trabajadores,json=representanteTrabajadores,proto3" json:"representante_trabajadores,omitempty"`
 	// Capacitador acreditado que imparte. Es del instructor, no del patrón.
 	NombreCapacitador string `protobuf:"bytes,6,opt,name=nombre_capacitador,json=nombreCapacitador,proto3" json:"nombre_capacitador,omitempty"`
-	// Logo en base64; sustituye el de la plantilla. Vacío deja el de fábrica.
-	LogoBase64    string `protobuf:"bytes,7,opt,name=logo_base64,json=logoBase64,proto3" json:"logo_base64,omitempty"`
+	// Logo de la empresa, como URL de R2.
+	//
+	// La cabecera de la constancia lleva DOS logotipos: este y un sello del
+	// formato oficial que NUNCA se sustituye. Vacío deja el de la plantilla.
+	//
+	// Se guarda la URL y no la imagen en base64: una imagen de 1 MB serían ~1.4 MB
+	// de texto en cada fila, y el resto de la plataforma ya sube a R2.
+	LogoUrl       string `protobuf:"bytes,7,opt,name=logo_url,json=logoUrl,proto3" json:"logo_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4389,9 +4423,9 @@ func (x *DatosEmpresaDC3) GetNombreCapacitador() string {
 	return ""
 }
 
-func (x *DatosEmpresaDC3) GetLogoBase64() string {
+func (x *DatosEmpresaDC3) GetLogoUrl() string {
 	if x != nil {
-		return x.LogoBase64
+		return x.LogoUrl
 	}
 	return ""
 }
@@ -4951,7 +4985,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xd5\x03\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xff\x03\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -4969,7 +5003,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\bduration\x18\r \x01(\x05R\bduration\x12\x1f\n" +
 	"\vdc3_enabled\x18\x0e \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
-	"\x11dc3_area_tematica\x18\x0f \x01(\tR\x0fdc3AreaTematica\"\xf0\x03\n" +
+	"\x11dc3_area_tematica\x18\x0f \x01(\tR\x0fdc3AreaTematica\x12(\n" +
+	"\x10dc3_nombre_curso\x18\x10 \x01(\tR\x0edc3NombreCurso\"\x9a\x04\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -4988,7 +5023,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\bduration\x18\x0f \x01(\x05R\bduration\x12\x1f\n" +
 	"\vdc3_enabled\x18\x10 \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
-	"\x11dc3_area_tematica\x18\x11 \x01(\tR\x0fdc3AreaTematica\"H\n" +
+	"\x11dc3_area_tematica\x18\x11 \x01(\tR\x0fdc3AreaTematica\x12(\n" +
+	"\x10dc3_nombre_curso\x18\x12 \x01(\tR\x0edc3NombreCurso\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -4999,7 +5035,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\x8e\x05\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xb8\x05\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -5023,7 +5059,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x15lecciones_completadas\x18\x13 \x01(\x05R\x14leccionesCompletadas\x12\x1f\n" +
 	"\vdc3_enabled\x18\x14 \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
-	"\x11dc3_area_tematica\x18\x15 \x01(\tR\x0fdc3AreaTematica\"C\n" +
+	"\x11dc3_area_tematica\x18\x15 \x01(\tR\x0fdc3AreaTematica\x12(\n" +
+	"\x10dc3_nombre_curso\x18\x16 \x01(\tR\x0edc3NombreCurso\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +
@@ -5308,15 +5345,14 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x06avisar\x18\x01 \x01(\bR\x06avisar\x12)\n" +
 	"\x10representante_id\x18\x02 \x01(\tR\x0frepresentanteId\x12/\n" +
 	"\x13capacitacion_titulo\x18\x03 \x01(\tR\x12capacitacionTitulo\x12)\n" +
-	"\x10duracion_minutos\x18\x04 \x01(\x05R\x0fduracionMinutos\"\x80\x02\n" +
+	"\x10duracion_minutos\x18\x04 \x01(\x05R\x0fduracionMinutos\"\xfa\x01\n" +
 	"\x0fDatosEmpresaDC3\x12!\n" +
 	"\frazon_social\x18\x01 \x01(\tR\vrazonSocial\x12\x10\n" +
 	"\x03rfc\x18\x02 \x01(\tR\x03rfc\x12#\n" +
 	"\rnombre_patron\x18\x03 \x01(\tR\fnombrePatron\x12=\n" +
 	"\x1arepresentante_trabajadores\x18\x04 \x01(\tR\x19representanteTrabajadores\x12-\n" +
-	"\x12nombre_capacitador\x18\x06 \x01(\tR\x11nombreCapacitador\x12\x1f\n" +
-	"\vlogo_base64\x18\a \x01(\tR\n" +
-	"logoBase64J\x04\b\x05\x10\x06\"s\n" +
+	"\x12nombre_capacitador\x18\x06 \x01(\tR\x11nombreCapacitador\x12\x19\n" +
+	"\blogo_url\x18\a \x01(\tR\alogoUrlJ\x04\b\x05\x10\x06\"s\n" +
 	"\x12DatosTrabajadorDC3\x12\x12\n" +
 	"\x04curp\x18\x01 \x01(\tR\x04curp\x12\x16\n" +
 	"\x06puesto\x18\x02 \x01(\tR\x06puesto\x121\n" +

@@ -106,6 +106,7 @@ func cursoToJSON(resp *cursospb.CursoResponse) gin.H {
 		"lecciones_completadas": resp.LeccionesCompletadas,
 		"dc3_enabled":           resp.Dc3Enabled,
 		"dc3_area_tematica":     resp.Dc3AreaTematica,
+		"dc3_nombre_curso":      resp.Dc3NombreCurso,
 	}
 }
 
@@ -828,6 +829,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		Duration        int32   `json:"duration"`
 		Dc3Enabled      *bool   `json:"dc3_enabled"`
 		Dc3AreaTematica string  `json:"dc3_area_tematica"`
+		Dc3NombreCurso  string  `json:"dc3_nombre_curso"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -856,6 +858,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
 		Dc3AreaTematica: areaTematica,
+		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -879,6 +882,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		Duration        int32   `json:"duration"`
 		Dc3Enabled      *bool   `json:"dc3_enabled"`
 		Dc3AreaTematica string  `json:"dc3_area_tematica"`
+		Dc3NombreCurso  string  `json:"dc3_nombre_curso"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -908,6 +912,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
 		Dc3AreaTematica: areaTematica,
+		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1075,6 +1080,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		Duration        int32  `json:"duration"`
 		Dc3Enabled      *bool  `json:"dc3_enabled"`
 		Dc3AreaTematica string `json:"dc3_area_tematica"`
+		Dc3NombreCurso  string `json:"dc3_nombre_curso"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1102,6 +1108,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
 		Dc3AreaTematica: areaTematica,
+		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1124,6 +1131,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		Duration        int32  `json:"duration"`
 		Dc3Enabled      *bool  `json:"dc3_enabled"`
 		Dc3AreaTematica string `json:"dc3_area_tematica"`
+		Dc3NombreCurso  string `json:"dc3_nombre_curso"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1152,6 +1160,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
 		Dc3AreaTematica: areaTematica,
+		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

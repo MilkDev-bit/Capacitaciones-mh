@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, toRef } from 'vue'
+import { ref, watch, toRef, computed } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
 import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import CourseTreeEditor from './CourseTreeEditor.vue'
-import { AREAS_TEMATICAS_DC3 } from '../utils/dc3'
+import { AREAS_TEMATICAS_DC3, CURSOS_CATALOGO_DC3, cursoDelCatalogo } from '../utils/dc3'
 import { useScrollLock } from '../composables/useScrollLock'
 
 const props = defineProps<{
@@ -30,11 +30,30 @@ watch(() => props.show, (val) => {
       ...props.course,
       dc3_enabled: props.course.dc3_enabled === true,
       dc3_area_tematica: props.course.dc3_area_tematica || '',
+      dc3_nombre_curso: props.course.dc3_nombre_curso || '',
     }
     thumbnailFile.value = null
     activeTab.value = 'info'
   }
 })
+
+/** Entrada del catálogo que coincide con lo escrito, si la hay. */
+const cursoElegido = computed(() => cursoDelCatalogo(form.value.dc3_nombre_curso || ''))
+
+/**
+ * Al elegir un curso del catálogo se rellena sola su área temática.
+ *
+ * Solo si el área está vacía: si el instructor ya eligió una a mano, pisarla
+ * sería descartar una decisión suya sin avisar. Las horas NO se tocan por lo
+ * mismo —`duration` gobierna también la duración que se muestra en la
+ * plataforma—; se enseñan como nota para que decida él.
+ */
+function alElegirCurso() {
+  const c = cursoElegido.value
+  if (c && !form.value.dc3_area_tematica) {
+    form.value.dc3_area_tematica = c.area
+  }
+}
 
 async function saveInfo() {
   if (!form.value.title) return toast.error('Título requerido')
@@ -47,6 +66,7 @@ async function saveInfo() {
       is_public: form.value.is_public,
       dc3_enabled: form.value.dc3_enabled === true,
       dc3_area_tematica: form.value.dc3_area_tematica || '',
+      dc3_nombre_curso: (form.value.dc3_nombre_curso || '').trim(),
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
@@ -148,13 +168,35 @@ useScrollLock(toRef(props, "show"))
           -->
           <div v-if="form.dc3_enabled" class="dc3-empresa mt-4">
             <div class="dc3-empresa-head">
-              <strong>Área temática de la constancia</strong>
+              <strong>Datos del curso en la constancia</strong>
               <p>
-                Clave del catálogo STPS de este temario. Los datos de empresa y
-                capacitador se configuran una sola vez en tu perfil.
+                Nombre oficial y clave del catálogo STPS de este temario. Los
+                datos de empresa y capacitador se configuran una sola vez en tu
+                perfil.
               </p>
             </div>
             <label class="field">
+              <span class="field-label">Nombre del curso en la constancia</span>
+              <!--
+                Lista de sugerencias, no cerrada: admite escribir un curso que no
+                esté en el catálogo. El nombre registrado ante la STPS no suele
+                coincidir con el título comercial.
+              -->
+              <input v-model="form.dc3_nombre_curso" class="field-input"
+                     list="dc3-cursos" :placeholder="form.title || 'Nombre oficial del curso'"
+                     @change="alElegirCurso" />
+              <datalist id="dc3-cursos">
+                <option v-for="c in CURSOS_CATALOGO_DC3" :key="c.nombre" :value="c.nombre" />
+              </datalist>
+              <small class="dc3-nota">
+                Si lo dejas vacío se usa el título del curso.
+                <template v-if="cursoElegido">
+                  El catálogo indica <strong>{{ cursoElegido.horas }} h</strong> para este curso.
+                </template>
+              </small>
+            </label>
+
+            <label class="field mt-3">
               <span class="field-label">Área temática <em>*</em></span>
               <select v-model="form.dc3_area_tematica" class="field-input">
                 <option value="">Selecciona un área…</option>
@@ -203,6 +245,7 @@ useScrollLock(toRef(props, "show"))
 }
 
 .dc3-empresa em { color: var(--danger); font-style: normal; }
+.dc3-nota { display: block; margin-top: 5px; font-size: 0.75rem; color: var(--muted); line-height: 1.45; }
 
 .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-overlay.open { opacity: 1; pointer-events: auto; }

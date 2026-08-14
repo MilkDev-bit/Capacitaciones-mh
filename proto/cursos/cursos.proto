@@ -137,6 +137,11 @@ message CreateCursoRequest {
   // "primeros auxilios" no comparten clave, así que no puede vivir en el perfil
   // del instructor.
   string dc3_area_tematica = 15;
+  // Nombre OFICIAL del curso para la constancia.
+  //
+  // No es el título comercial: "Curso Trabajos en alturas" se vende así, pero
+  // en la DC-3 figura "SEGURIDAD EN TRABAJOS ALTURAS". Vacío usa el título.
+  string dc3_nombre_curso = 16;
 }
 
 message UpdateCursoRequest {
@@ -156,6 +161,7 @@ message UpdateCursoRequest {
   int32  duration        = 15;
   bool   dc3_enabled     = 16;
   string dc3_area_tematica = 17;
+  string dc3_nombre_curso  = 18;
 }
 
 message InscribirseRequest {
@@ -198,6 +204,7 @@ message CursoResponse {
   int32  lecciones_completadas = 19;
   bool   dc3_enabled     = 20;
   string dc3_area_tematica = 21;
+  string dc3_nombre_curso  = 22;
 }
 
 message ListCursosResponse {
