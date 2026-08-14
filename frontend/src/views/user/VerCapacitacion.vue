@@ -2851,18 +2851,39 @@ function tramitarDC3() {
 }
 
 /* Lesson header */
+/* Cabecera de la lección: acciones arriba, texto a lo ancho.
+ *
+ * Antes era una fila con el texto a la izquierda y las acciones a la derecha.
+ * El problema es que ahí vive el aviso "Ve el video completo para desbloquear
+ * la siguiente lección", que ocupa unos 640px: el título y la descripción
+ * quedaban comprimidos en una columna de ~390px mientras el vídeo de debajo
+ * usaba los 980px completos, y el bloque entero se veía desalineado.
+ *
+ * Apilando, el texto ocupa el mismo ancho que el reproductor y ambos comparten
+ * el borde izquierdo. */
 .ver-lec-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 14px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 .ver-lec-header-left {
-  flex: 1 1 260px;
   min-width: 0;
+}
+
+/* Las acciones suben a la primera línea con `order`, en vez de reordenar la
+ * plantilla: así el marcado sigue leyéndose título → acciones, que es el orden
+ * correcto para un lector de pantalla.
+ *
+ * flex-wrap y max-width son la red de seguridad: el aviso de desbloqueo es
+ * largo y sin ellos desbordaría en pantallas estrechas. */
+.ver-lec-header-right {
+  order: -1;
+  align-self: flex-end;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .ver-lec-breadcrumb {
@@ -3778,9 +3799,11 @@ html.dark-theme .ver-int-pregunta {
     padding: 16px;
   }
 
-  .ver-lec-header {
-    flex-direction: column;
-    align-items: stretch;
+  /* Ya se apila en todos los anchos; en móvil las acciones pasan a ocupar la
+   * línea completa en vez de quedar pegadas a la derecha. */
+  .ver-lec-header-right {
+    align-self: stretch;
+    justify-content: flex-start;
   }
 
   .ver-lec-title {
