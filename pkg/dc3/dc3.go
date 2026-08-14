@@ -14,7 +14,6 @@ package dc3
 
 import (
 	_ "embed"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -26,6 +25,18 @@ import (
 
 //go:embed plantilla/dc3.docx
 var plantilla []byte
+
+// logoEmpresa es la imagen de la cabecera que SÍ se sustituye.
+//
+// La constancia lleva dos logotipos arriba, uno junto al otro:
+//
+//	image1.jpg   ~1.8 MB, logo de la empresa   → configurable
+//	image2.jpeg  ~14 KB, sello del formato     → NO se toca nunca
+//
+// Sustituir el segundo alteraría un elemento oficial del documento. Si algún
+// día hace falta cambiarlo, tiene que ser cambiando la plantilla, no en
+// tiempo de generación.
+const logoEmpresa = "word/media/image1.jpg"
 
 // Datos es todo lo que necesita una constancia.
 //
@@ -46,9 +57,12 @@ type Datos struct {
 	// o su representante legal, y el representante de los trabajadores.
 	NombrePatron        string
 	NombreRepresentante string
-	// LogoBase64 sustituye la imagen de la plantilla. Admite el prefijo
-	// "data:image/...;base64," que mandan los navegadores.
-	LogoBase64 string
+
+	// Logo de la empresa, en bytes de imagen ya decodificados.
+	//
+	// La cabecera de la constancia lleva DOS imágenes y solo esta se sustituye
+	// (ver logoEmpresa). Vacío deja el de la plantilla.
+	Logo []byte
 
 	// ── Curso ────────────────────────────────────────────────────────────────
 	NombreCurso       string
@@ -160,10 +174,8 @@ func Generar(d Datos) ([]byte, error) {
 		return nil, fmt.Errorf("reemplazando marcadores: %w", err)
 	}
 
-	if img, ok := decodificarLogo(d.LogoBase64); ok {
-		// La plantilla trae el logo como image1.jpg; sustituir los bytes es la
-		// única forma de cambiarlo sin rehacer el documento.
-		doc.SetFile("word/media/image1.jpg", img)
+	if len(d.Logo) > 0 {
+		doc.SetFile(logoEmpresa, d.Logo)
 	}
 
 	destino, err := os.CreateTemp("", "dc3-salida-*.docx")
@@ -298,22 +310,6 @@ func conSufijoHoras(d string) string {
 		return d
 	}
 	return d + " HRS"
-}
-
-func decodificarLogo(b64 string) ([]byte, bool) {
-	if b64 == "" {
-		return nil, false
-	}
-	// Los navegadores mandan "data:image/png;base64,AAAA..."; se recorta el
-	// prefijo si viene.
-	if i := strings.Index(b64, ","); i != -1 {
-		b64 = b64[i+1:]
-	}
-	img, err := base64.StdEncoding.DecodeString(b64)
-	if err != nil || len(img) == 0 {
-		return nil, false
-	}
-	return img, true
 }
 
 func mayus(s string) string { return strings.ToUpper(strings.TrimSpace(s)) }

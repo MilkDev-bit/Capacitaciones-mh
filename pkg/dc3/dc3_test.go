@@ -213,19 +213,3 @@ func TestAreaValidaRechazaBasura(t *testing.T) {
 		t.Fatal("la clave debe aceptarse con espacios alrededor")
 	}
 }
-
-func TestDecodificarLogo(t *testing.T) {
-	// Con prefijo data: como lo manda un navegador.
-	if _, ok := decodificarLogo("data:image/png;base64,aGVsbG8="); !ok {
-		t.Fatal("debería aceptar el prefijo data:")
-	}
-	if _, ok := decodificarLogo("aGVsbG8="); !ok {
-		t.Fatal("debería aceptar base64 pelado")
-	}
-	if _, ok := decodificarLogo(""); ok {
-		t.Fatal("vacío no es logo")
-	}
-	if _, ok := decodificarLogo("no-es-base64-válido!!"); ok {
-		t.Fatal("base64 inválido debe descartarse en silencio, no romper la constancia")
-	}
-}

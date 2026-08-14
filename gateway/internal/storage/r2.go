@@ -89,6 +89,19 @@ func Init(cfg *config.Config) {
 // Default returns the package-level storage service.
 func Default() *StorageService { return defaultSvc }
 
+// PublicURL devuelve la base pública del bucket, sin barra final.
+//
+// Se expone para poder comprobar que una URL recibida del cliente apunta a
+// nuestro almacenamiento antes de que el servidor la descargue. Sin esa
+// comprobación, cualquiera podría hacer que el gateway pida una dirección
+// arbitraria —incluidos servicios internos que no son alcanzables desde fuera—.
+func (s *StorageService) PublicURL() string {
+	if s == nil {
+		return ""
+	}
+	return s.publicURL
+}
+
 // New creates a StorageService.
 func New(bucket, endpoint, accessKey, secretKey, publicURL string) *StorageService {
 	c := s3.New(s3.Options{

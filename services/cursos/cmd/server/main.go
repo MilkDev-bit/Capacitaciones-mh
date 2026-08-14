@@ -243,6 +243,9 @@ func runMigrations(db *sqlx.DB) error {
 		// Empresa por defecto del instructor. Es el respaldo para el alumno que
 		// no declara patrón propio: un particular que se capacita por su cuenta
 		// recibe la constancia a nombre de quien la imparte.
+		// La columna nació como logo_base64 y pasó a URL de R2 antes de tener datos.
+		`ALTER TABLE dc3_empresa_instructor DROP COLUMN IF EXISTS logo_base64`,
+		`ALTER TABLE dc3_empresa_instructor ADD COLUMN IF NOT EXISTS logo_url TEXT NOT NULL DEFAULT ''`,
 		`CREATE TABLE IF NOT EXISTS dc3_empresa_instructor (
 			instructor_id UUID PRIMARY KEY,
 			razon_social VARCHAR(200) NOT NULL DEFAULT '',
@@ -250,7 +253,7 @@ func runMigrations(db *sqlx.DB) error {
 			nombre_patron VARCHAR(200) NOT NULL DEFAULT '',
 			representante_trabajadores VARCHAR(200) NOT NULL DEFAULT '',
 			nombre_capacitador VARCHAR(200) NOT NULL DEFAULT '',
-			logo_base64 TEXT NOT NULL DEFAULT '',
+			logo_url TEXT NOT NULL DEFAULT '',
 			actualizado_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
 

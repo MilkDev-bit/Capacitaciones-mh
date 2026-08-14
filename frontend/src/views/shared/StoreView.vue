@@ -1516,15 +1516,23 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 /* Catálogo de cursos.
  *
- * auto-FIT y no auto-fill: con auto-fill se crean las pistas vacías igualmente,
- * así que al filtrar y quedar dos resultados en una fila de cuatro, esas dos
- * tarjetas se quedaban a un cuarto de ancho con medio catálogo en blanco al
- * lado. auto-fit colapsa las pistas sobrantes y las tarjetas ocupan la fila.
+ * auto-fit con un TOPE de pista, que es la parte que importa.
  *
- * El min() evita que la pista mínima de 255px desborde en móviles de 320px. */
+ * Con `1fr` como máximo, auto-fit colapsa las pistas sobrantes y reparte todo
+ * el ancho entre las tarjetas que haya: con un solo resultado, esa tarjeta se
+ * comía los 1440px de la fila y la portada salía gigante. Con auto-fill pasaba
+ * lo contrario —las pistas vacías seguían ocupando y dos resultados quedaban a
+ * un cuarto de ancho—.
+ *
+ * Acotar el máximo resuelve los dos extremos: una tarjeta nunca pasa de 340px,
+ * quepan una o veinte. El min() del mínimo evita el desborde en móviles de
+ * 320px, donde la pista pasa a valer el 100%. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 340px));
+  /* Sin esto, las filas incompletas dejarían el hueco a la derecha en vez de
+   * repartirlo; centrar mantiene la rejilla equilibrada con pocos resultados. */
+  justify-content: center;
   gap: clamp(14px, 2vw, 22px);
 }
 
@@ -1780,7 +1788,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   }
 
   /* En móvil se baja la pista mínima para que quepan dos tarjetas por fila en
-   * vez de una: un catálogo de una sola columna obliga a demasiado scroll. */
+   * vez de una: un catálogo de una sola columna obliga a demasiado scroll.
+   *
+   * Aquí el máximo SÍ es 1fr: en un ancho de teléfono no hay riesgo de que una
+   * tarjeta se desmadre, y estirar aprovecha mejor la pantalla. */
   .grid {
     grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
     gap: 14px;

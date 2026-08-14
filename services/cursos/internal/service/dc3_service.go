@@ -68,7 +68,7 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 		if curso.InstructorID != nil {
 			if respaldo, _ := s.repo.FindEmpresaInstructor(ctx, *curso.InstructorID); respaldo != nil {
 				empresa.NombreCapacitador = respaldo.NombreCapacitador
-				empresa.LogoBase64 = respaldo.LogoBase64
+				empresa.LogoUrl = respaldo.LogoURL
 			}
 		}
 	}
@@ -181,7 +181,7 @@ func (s *CursosService) GuardarEmpresaInstructor(ctx context.Context, req *curso
 		NombrePatron:      strings.TrimSpace(req.Empresa.NombrePatron),
 		RepTrabajadores:   strings.TrimSpace(req.Empresa.RepresentanteTrabajadores),
 		NombreCapacitador: strings.TrimSpace(req.Empresa.NombreCapacitador),
-		LogoBase64:        req.Empresa.LogoBase64,
+		LogoURL:           strings.TrimSpace(req.Empresa.LogoUrl),
 	}
 	if e.RazonSocial == "" || e.RFC == "" || e.NombrePatron == "" ||
 		e.RepTrabajadores == "" || e.NombreCapacitador == "" {

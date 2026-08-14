@@ -101,8 +101,21 @@
 .auto-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), var(--auto-grid-max, 1fr)));
 }
+
+/* OJO con el máximo cuando el contenido son TARJETAS.
+ *
+ * Con `1fr`, auto-fit reparte todo el ancho entre lo que haya: un único
+ * elemento ocupa la fila entera, y en un monitor grande eso convierte una
+ * tarjeta de curso en un banner con la portada desproporcionada.
+ *
+ * Para rejillas de tarjetas conviene acotarlo:
+ *
+ *     .mi-rejilla { --auto-grid-max: 340px; justify-content: center; }
+ *
+ * Para campos de formulario o paneles que SÍ deben estirarse, 1fr es correcto
+ * y no hay que tocar nada. */
 .auto-grid-sm { --auto-grid-min: 180px; }
 .auto-grid-lg { --auto-grid-min: 320px; }
 .auto-grid-sm,

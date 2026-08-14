@@ -304,10 +304,14 @@ function tramitarDC3(e: any) {
 /* Grid */
 .exams-grid {
   display: grid;
-  /* auto-FIT: con auto-fill se creaban las pistas vacías, así que al filtrar
-   * y quedar pocos exámenes las tarjetas se quedaban estrechas con la fila
-   * medio en blanco. Los dos overrides de abajo sobran ya. */
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  /* auto-fit con TOPE de pista, no con 1fr.
+   *
+   * Con auto-fill las pistas vacías seguían ocupando y pocos exámenes quedaban
+   * estrechos; con auto-fit y 1fr pasa lo contrario, un solo examen se comería
+   * la fila entera y la tarjeta saldría desproporcionada. Acotar el máximo
+   * cubre los dos extremos. */
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 360px));
+  justify-content: center;
   gap: 18px;
 }
 

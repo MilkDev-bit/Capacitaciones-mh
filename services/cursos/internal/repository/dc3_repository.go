@@ -73,7 +73,7 @@ type EmpresaInstructorDC3 struct {
 	NombrePatron      string    `db:"nombre_patron"`
 	RepTrabajadores   string    `db:"representante_trabajadores"`
 	NombreCapacitador string    `db:"nombre_capacitador"`
-	LogoBase64        string    `db:"logo_base64"`
+	LogoURL           string    `db:"logo_url"`
 	ActualizadoAt     time.Time `db:"actualizado_at"`
 }
 
@@ -87,7 +87,7 @@ func (e *EmpresaInstructorDC3) ToProto() *cursospb.DatosEmpresaDC3 {
 		NombrePatron:              e.NombrePatron,
 		RepresentanteTrabajadores: e.RepTrabajadores,
 		NombreCapacitador:         e.NombreCapacitador,
-		LogoBase64:                e.LogoBase64,
+		LogoUrl:                   e.LogoURL,
 	}
 }
 
@@ -149,7 +149,7 @@ func (r *postgresCursosRepository) FindEmpresaInstructor(ctx context.Context, in
 	e := &EmpresaInstructorDC3{}
 	err := r.db.GetContext(ctx, e,
 		`SELECT instructor_id, razon_social, rfc, nombre_patron,
-		        representante_trabajadores, nombre_capacitador, logo_base64, actualizado_at
+		        representante_trabajadores, nombre_capacitador, logo_url, actualizado_at
 		   FROM dc3_empresa_instructor WHERE instructor_id = $1::uuid`, instructorID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -165,7 +165,7 @@ func (r *postgresCursosRepository) GuardarEmpresaInstructor(ctx context.Context,
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO dc3_empresa_instructor
 		    (instructor_id, razon_social, rfc, nombre_patron,
-		     representante_trabajadores, nombre_capacitador, logo_base64, actualizado_at)
+		     representante_trabajadores, nombre_capacitador, logo_url, actualizado_at)
 		 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, NOW())
 		 ON CONFLICT (instructor_id) DO UPDATE
 		    SET razon_social = EXCLUDED.razon_social,
@@ -173,10 +173,10 @@ func (r *postgresCursosRepository) GuardarEmpresaInstructor(ctx context.Context,
 		        nombre_patron = EXCLUDED.nombre_patron,
 		        representante_trabajadores = EXCLUDED.representante_trabajadores,
 		        nombre_capacitador = EXCLUDED.nombre_capacitador,
-		        logo_base64 = EXCLUDED.logo_base64,
+		        logo_url = EXCLUDED.logo_url,
 		        actualizado_at = NOW()`,
 		e.InstructorID, e.RazonSocial, e.RFC, e.NombrePatron,
-		e.RepTrabajadores, e.NombreCapacitador, e.LogoBase64)
+		e.RepTrabajadores, e.NombreCapacitador, e.LogoURL)
 	return err
 }
 

@@ -15,8 +15,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
+	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -94,7 +97,8 @@ func (h *DC3Handler) GuardarEmpresaInstructor(ctx *gin.Context) {
 		NombrePatron      string `json:"nombre_patron"`
 		RepTrabajadores   string `json:"representante_trabajadores"`
 		NombreCapacitador string `json:"nombre_capacitador"`
-		LogoBase64        string `json:"logo_base64"`
+		// URL del logo ya subido a R2 por el frontend, como avatares y portadas.
+		LogoURL string `json:"logo_url"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos capturados"})
@@ -109,7 +113,7 @@ func (h *DC3Handler) GuardarEmpresaInstructor(ctx *gin.Context) {
 			NombrePatron:              body.NombrePatron,
 			RepresentanteTrabajadores: body.RepTrabajadores,
 			NombreCapacitador:         body.NombreCapacitador,
-			LogoBase64:                body.LogoBase64,
+			LogoUrl:                   body.LogoURL,
 		},
 	}); err != nil {
 		grpcToHTTP(ctx, err)
@@ -225,6 +229,62 @@ func (h *DC3Handler) EmitirEnSegundoPlano(userID, cursoID, nombre string) {
 	}()
 }
 
+// logoMaxBytes acota lo que se descarga para incrustar en la constancia.
+//
+// El logo va DENTRO del .docx, así que su peso es el peso del documento que
+// recibe cada alumno. La plantilla trae uno de ~1.8 MB; 4 MB da margen de
+// sobra sin permitir que una imagen enorme infle todas las constancias.
+const logoMaxBytes = 4 << 20
+
+// descargarLogo trae el logo de R2 para incrustarlo.
+//
+// Devuelve nil ante cualquier problema, y eso es deliberado: sin logo la
+// constancia sale con el de la plantilla, que es un documento válido. Fallar la
+// emisión entera porque una imagen decorativa no cargó sería desproporcionado.
+func (h *DC3Handler) descargarLogo(ctx context.Context, url string) []byte {
+	if url == "" {
+		return nil
+	}
+	// Solo se descarga de NUESTRO bucket.
+	//
+	// La URL llega en el cuerpo de una petición, así que un instructor podría
+	// mandar cualquier dirección y convertir al gateway en su cliente HTTP
+	// —incluso contra servicios internos de la red privada de Railway, que no
+	// son alcanzables desde fuera—. Comprobar el prefijo lo impide.
+	base := storage.Default().PublicURL()
+	if base == "" || !strings.HasPrefix(url, base+"/") {
+		slog.Warn("DC-3: logo con URL ajena a R2, se ignora", "url", url)
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Warn("DC-3: no se pudo descargar el logo", "url", url, "error", err)
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		slog.Warn("DC-3: el logo respondió con error", "url", url, "status", resp.StatusCode)
+		return nil
+	}
+
+	// LimitReader y no ContentLength: la cabecera la controla el servidor y
+	// puede mentir o faltar.
+	img, err := io.ReadAll(io.LimitReader(resp.Body, logoMaxBytes+1))
+	if err != nil || len(img) == 0 || len(img) > logoMaxBytes {
+		slog.Warn("DC-3: logo inválido o demasiado grande", "url", url, "bytes", len(img))
+		return nil
+	}
+	return img
+}
+
 // emitir hace el trabajo de verdad: reúne, genera, sube y registra.
 //
 // Es idempotente por diseño: si cursos-service ya tiene una constancia para ese
@@ -256,7 +316,7 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		RFC:                 datos.Empresa.Rfc,
 		NombrePatron:        datos.Empresa.NombrePatron,
 		NombreRepresentante: datos.Empresa.RepresentanteTrabajadores,
-		LogoBase64:          datos.Empresa.LogoBase64,
+		Logo:                h.descargarLogo(ctx, datos.Empresa.LogoUrl),
 
 		NombreCurso:       datos.NombreCurso,
 		DuracionHoras:     datos.DuracionHoras,

@@ -603,8 +603,14 @@ message DatosEmpresaDC3 {
   reserved 5;
   // Capacitador acreditado que imparte. Es del instructor, no del patrón.
   string nombre_capacitador          = 6;
-  // Logo en base64; sustituye el de la plantilla. Vacío deja el de fábrica.
-  string logo_base64                 = 7;
+  // Logo de la empresa, como URL de R2.
+  //
+  // La cabecera de la constancia lleva DOS logotipos: este y un sello del
+  // formato oficial que NUNCA se sustituye. Vacío deja el de la plantilla.
+  //
+  // Se guarda la URL y no la imagen en base64: una imagen de 1 MB serían ~1.4 MB
+  // de texto en cada fila, y el resto de la plataforma ya sube a R2.
+  string logo_url                    = 7;
 }
 
 // DatosTrabajadorDC3 lo captura el alumno al terminar su primer curso con
