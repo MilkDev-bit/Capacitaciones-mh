@@ -207,6 +207,13 @@ function initPlayer() {
   })
 
   player.on('ended', () => {
+    // Un vídeo terminado NO está cargando.
+    //
+    // Al llegar al final, el navegador dispara `waiting` —el elemento se queda
+    // esperando datos que ya no van a llegar— y eso encendía el overlay. Como
+    // `playing` es lo único que lo apagaba y ya no vuelve a dispararse, el
+    // spinner se quedaba para siempre sobre el último fotograma.
+    marcarListo()
     if (!endedEmitted) {
       endedEmitted = true
       emit('ended')
@@ -219,7 +226,16 @@ function initPlayer() {
   // `canplay` mantendría el overlay durante todo el primer buffer.
   player.on('loadedmetadata', marcarListo)
   player.on('playing', marcarListo)
-  player.on('waiting', () => { cargando.value = true })
+  // Pausar tampoco es cargar. Sin esto, un `waiting` justo antes de una pausa
+  // dejaba el overlay puesto hasta que el usuario le diera a reproducir.
+  player.on('pause', marcarListo)
+  player.on('waiting', () => {
+    // `waiting` al final del vídeo es un falso positivo: no hay más datos que
+    // esperar. Encender el spinner ahí lo dejaría encendido para siempre,
+    // porque en estado terminado ya no llega ningún evento que lo apague.
+    if (player?.ended) return
+    cargando.value = true
+  })
   player.on('error', () => {
     marcarListo()
     errorCarga.value = true
