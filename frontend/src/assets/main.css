@@ -765,9 +765,17 @@ input[type="file"]::file-selector-button {
   .sidebar-nav { width: min(var(--sidebar-w), 82vw); }
 }
 
-/* Los breadcrumbs de la topbar son lo primero que desborda en móvil: son texto
- * variable en una fila de altura fija. Se recortan con elipsis en vez de
- * empujar al avatar fuera de la pantalla. */
+/* Breadcrumbs de la topbar en móvil.
+ *
+ * Son texto variable en una fila de altura fija: lo primero que desborda y
+ * empuja los iconos fuera de la pantalla.
+ *
+ * Recortarlos con elipsis no bastaba —"Usuario / D" no informa de nada y sigue
+ * ocupando sitio—, así que se muestra SOLO el último tramo, que es el que dice
+ * dónde estás. "Usuario / Dashboard" pasa a "Dashboard".
+ *
+ * El separador "/" y los niveles superiores son ancestros navegables; en móvil
+ * ese camino ya lo cubren el menú lateral y el gesto atrás. */
 @media (max-width: 639px) {
   .topbar-title, .topbar-left {
     min-width: 0;
@@ -776,7 +784,12 @@ input[type="file"]::file-selector-button {
     text-overflow: ellipsis;
     font-size: 0.92rem;
   }
+  .topbar-left > *:not(:last-child) { display: none; }
 }
+
+/* Los iconos de la derecha no ceden espacio: son las acciones, y el breadcrumb
+ * es contexto. Sin esto, un título largo los comprime hasta solaparlos. */
+.topbar-right { flex-shrink: 0; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.22s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

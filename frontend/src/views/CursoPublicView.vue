@@ -601,6 +601,9 @@ function buyB2B() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* gap real en lugar de confiar en space-between: sin él, cuando el contenido
+   * no cabe los dos bloques se solapan en vez de separarse. */
+  gap: 12px;
 }
 
 .cpv-brand {
@@ -667,6 +670,39 @@ function buyB2B() {
 .cpv-nav-btn.primary:hover {
   background: #ea580c;
   box-shadow: 0 0 22px rgba(249,115,22,0.5);
+}
+
+/* ── Barra en móvil ──────────────────────────────────────
+ *
+ * Cuatro botones y la marca no caben en 390px. Los botones tienen texto que no
+ * se parte, así que no encogían: se montaban encima del nombre de la marca y
+ * el último quedaba cortado por el borde de la pantalla.
+ *
+ * No se envuelve en dos filas a propósito: la barra es `position: fixed` y
+ * crecer de alto descolocaría todo el contenido de debajo. Se recorta lo
+ * prescindible. */
+@media (max-width: 767px) {
+  .cpv-nav-inner { padding: 0 14px; gap: 8px; }
+
+  /* El logo se queda como enlace al catálogo; el texto sobra. */
+  .cpv-brand > span { display: none; }
+  .cpv-brand { flex-shrink: 0; }
+
+  .cpv-nav-btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* "Registrarse" e "Iniciar sesión" llevan al MISMO destino (/login), así que
+   * ocultar una no le quita ninguna opción al visitante. */
+  .cpv-nav-btn.primary:last-child { display: none; }
+}
+
+@media (max-width: 639px) {
+  /* El botón de volver duplica el gesto atrás del navegador y el logo, que ya
+   * lleva al catálogo. Es lo primero que sobra cuando falta sitio. */
+  .cpv-nav-right > .cpv-nav-btn.ghost:first-child { display: none; }
 }
 
 /* ── LOADING ───────────────────────────────────────────── */
