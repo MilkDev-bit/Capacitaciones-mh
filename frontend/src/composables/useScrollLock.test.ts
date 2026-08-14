@@ -76,6 +76,34 @@ describe('useScrollLock', () => {
     expect(document.body.style.overflow).toBe('')
   })
 
+  it('deja el scroll bloqueado si otro código pone hidden antes de abrir', async () => {
+    // REGRESIÓN. Esto rompió el scroll de todo el sitio en producción.
+    //
+    // CartDrawer tenía su propio watch que asignaba overflow directamente, y se
+    // le añadió este composable encima. Ambos observaban la misma bandera; el
+    // watch corría primero y ponía 'hidden', así que el composable capturaba
+    // ESE valor como "el anterior" y al cerrar lo restauraba. Como CartDrawer
+    // vive en App.vue, abrir y cerrar el carrito una vez tumbaba el scroll de
+    // todas las páginas hasta recargar.
+    //
+    // La prueba documenta el comportamiento —correcto en aislamiento— para que
+    // quede claro POR QUÉ no puede haber dos bloqueos sobre la misma bandera.
+    const abierto = ref(false)
+    montarCon(abierto)
+
+    // Simula al otro watch adelantándose.
+    document.body.style.overflow = 'hidden'
+    abierto.value = true
+    await nextTick()
+
+    abierto.value = false
+    await nextTick()
+
+    // Restaura lo que había: 'hidden'. Es lo correcto para capas anidadas y
+    // exactamente lo que no debe pasar si el "anterior" era basura.
+    expect(document.body.style.overflow).toBe('hidden')
+  })
+
   it('no vuelve a guardar el estado si ya estaba bloqueado por esta capa', async () => {
     const abierto = ref(false)
     montarCon(abierto)

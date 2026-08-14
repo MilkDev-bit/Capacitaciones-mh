@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useSuscripcionStore, precioDesdeCentavos } from '../stores/suscripcion'
@@ -23,15 +23,13 @@ const money = (v: number) =>
 const totalLugares = computed(() => cart.items.reduce((a, i) => a + i.cantidad, 0))
 const hayCorporativas = computed(() => cart.items.some((i) => i.type === 'b2b_direct'))
 
-/** Bloquea el scroll del fondo mientras el panel está abierto. */
-watch(
-  () => cart.isDrawerOpen,
-  (abierto) => {
-    document.body.style.overflow = abierto ? 'hidden' : ''
-  }
-)
-// Si el componente se destruye con el panel abierto, el body se quedaría bloqueado.
-onUnmounted(() => { document.body.style.overflow = '' })
+// El bloqueo de scroll lo hace useScrollLock al final del bloque.
+//
+// Aquí había un watch propio que asignaba overflow directamente. Convivir con
+// el composable lo rompía todo: el watch corría primero y ponía 'hidden', el
+// composable capturaba ESE valor como "el anterior", y al cerrar lo restauraba
+// —dejando el body bloqueado para siempre—. Como este componente vive en
+// App.vue, abrir y cerrar el carrito una vez tumbaba el scroll de todo el sitio.
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') cart.closeDrawer()
