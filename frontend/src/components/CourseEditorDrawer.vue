@@ -6,6 +6,7 @@ import { uploadToR2 } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import CourseTreeEditor from './CourseTreeEditor.vue'
+import { AREAS_TEMATICAS_DC3 } from '../utils/dc3'
 
 const props = defineProps<{
   show: boolean
@@ -151,8 +152,12 @@ async function saveInfo() {
             </div>
             <label class="field">
               <span class="field-label">Área temática <em>*</em></span>
-              <input v-model="form.dc3_area_tematica" class="field-input"
-                     placeholder="Ej: 6000" />
+              <select v-model="form.dc3_area_tematica" class="field-input">
+                <option value="">Selecciona un área…</option>
+                <option v-for="a in AREAS_TEMATICAS_DC3" :key="a.clave" :value="a.clave">
+                  {{ a.clave }} — {{ a.denominacion }}
+                </option>
+              </select>
             </label>
           </div>
 

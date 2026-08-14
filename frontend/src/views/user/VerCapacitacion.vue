@@ -18,6 +18,7 @@ import {
 } from '../../composables/progresion'
 import CourseSidebar from '../../components/CourseSidebar.vue'
 import InteractiveActivity from '../../components/InteractiveActivity.vue'
+import DC3Panel from '../../components/DC3Panel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -1906,6 +1907,15 @@ function tramitarDC3() {
         </button>
       </div>
     </Transition>
+
+    <!--
+      Constancia DC-3.
+      El panel se pinta solo, y solo cuando el curso está terminado y emite
+      constancia: él mismo consulta si ya existe, si faltan datos del alumno o
+      si falta que el instructor configure su empresa.
+    -->
+    <DC3Panel :curso-id="cursoId" :completado="progreso === 100"
+              :habilitado="curso?.dc3_enabled" />
 
     <!-- Celebration Confetti Overlay -->
     <Transition name="fade">

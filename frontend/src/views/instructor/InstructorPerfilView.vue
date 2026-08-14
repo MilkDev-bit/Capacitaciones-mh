@@ -4,6 +4,7 @@ import api from '../../api'
 import { toast } from '../../utils/toast'
 import { useAuthStore } from '../../stores/auth'
 import { getAvatarUrl } from '../../utils/avatars'
+import DC3EmpresaInstructor from '../../components/DC3EmpresaInstructor.vue'
 
 const auth = useAuthStore()
 
@@ -184,6 +185,13 @@ async function guardar() {
             </label>
           </div>
         </section>
+
+        <!--
+          Empresa por defecto para las constancias DC-3.
+          Va en el perfil y no en cada curso porque son los mismos datos para
+          todas las capacitaciones que imparte: se capturan una vez.
+        -->
+        <DC3EmpresaInstructor />
 
         <section class="ip-card">
           <div class="ip-section-head ip-section-head-row">

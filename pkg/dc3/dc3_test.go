@@ -185,6 +185,35 @@ func TestNombreArchivo(t *testing.T) {
 	}
 }
 
+func TestAreasTematicas(t *testing.T) {
+	// Las nueve del reverso del formato oficial. Si alguien añade o quita una
+	// sin que la STPS publique un formato nuevo, la constancia sale con una
+	// clave que no existe en el catálogo impreso al dorso.
+	if len(AreasTematicas) != 9 {
+		t.Fatalf("el catálogo debe tener 9 áreas, tiene %d", len(AreasTematicas))
+	}
+	for _, clave := range []string{"1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000"} {
+		if !AreaValida(clave) {
+			t.Fatalf("la clave %s debería ser válida", clave)
+		}
+	}
+	if AreasTematicas["6000"] != "Seguridad" {
+		t.Fatalf("6000 debe ser Seguridad, es %q", AreasTematicas["6000"])
+	}
+}
+
+func TestAreaValidaRechazaBasura(t *testing.T) {
+	for _, clave := range []string{"", "600", "0", "10000", "Seguridad", "6000 Seguridad", "abc"} {
+		if AreaValida(clave) {
+			t.Fatalf("%q no debería aceptarse como área temática", clave)
+		}
+	}
+	// Los espacios sobrantes de un copiar y pegar no invalidan una clave buena.
+	if !AreaValida("  6000 ") {
+		t.Fatal("la clave debe aceptarse con espacios alrededor")
+	}
+}
+
 func TestDecodificarLogo(t *testing.T) {
 	// Con prefijo data: como lo manda un navegador.
 	if _, ok := decodificarLogo("data:image/png;base64,aGVsbG8="); !ok {

@@ -14,6 +14,7 @@ import (
 	"Prueba-Go/gateway/internal/middleware"
 	cursospb "Prueba-Go/gen/cursos"
 	leccionespb "Prueba-Go/gen/lecciones"
+	"Prueba-Go/pkg/dc3"
 	"Prueba-Go/pkg/mailer"
 
 	"github.com/gin-gonic/gin"
@@ -64,6 +65,20 @@ func genMetadata(ctx *gin.Context) context.Context {
 		"x-user-email", toASCII(ctx.GetString(middleware.CtxUserEmail)),
 	)
 	return metadata.NewOutgoingContext(ctx.Request.Context(), md)
+}
+
+// areaTematicaValida normaliza y comprueba la clave del catálogo STPS.
+//
+// Se valida aquí, en el borde HTTP, además de ofrecer un select en la interfaz:
+// la clave se imprime en un documento legal y una petición directa podría colar
+// cualquier cadena. Vacío se acepta —un curso sin DC-3 no la necesita— y lo
+// bloquea después la comprobación de datos completos al emitir.
+func areaTematicaValida(clave string) (string, bool) {
+	clave = strings.TrimSpace(clave)
+	if clave == "" {
+		return "", true
+	}
+	return clave, dc3.AreaValida(clave)
 }
 
 func cursoToJSON(resp *cursospb.CursoResponse) gin.H {
@@ -822,6 +837,11 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 	if body.Dc3Enabled != nil {
 		dc3Enabled = *body.Dc3Enabled
 	}
+	areaTematica, ok := areaTematicaValida(body.Dc3AreaTematica)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "el área temática no pertenece al catálogo STPS"})
+		return
+	}
 	resp, err := h.c.Cursos.InstructorCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
 		UserId:          ctx.GetString(middleware.CtxUserID),
 		Title:           body.Title,
@@ -835,7 +855,7 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		Precio:          body.Precio,
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: body.Dc3AreaTematica,
+		Dc3AreaTematica: areaTematica,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -868,6 +888,11 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 	if body.Dc3Enabled != nil {
 		dc3Enabled = *body.Dc3Enabled
 	}
+	areaTematica, ok := areaTematicaValida(body.Dc3AreaTematica)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "el área temática no pertenece al catálogo STPS"})
+		return
+	}
 	resp, err := h.c.Cursos.InstructorUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
 		CursoId:         ctx.Param("id"),
 		UserId:          ctx.GetString(middleware.CtxUserID),
@@ -882,7 +907,7 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		Precio:          body.Precio,
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: body.Dc3AreaTematica,
+		Dc3AreaTematica: areaTematica,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1059,6 +1084,11 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 	if body.Dc3Enabled != nil {
 		dc3Enabled = *body.Dc3Enabled
 	}
+	areaTematica, ok := areaTematicaValida(body.Dc3AreaTematica)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "el área temática no pertenece al catálogo STPS"})
+		return
+	}
 	resp, err := h.c.Cursos.AdminCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
 		UserId:          ctx.GetString(middleware.CtxUserID),
 		Title:           body.Title,
@@ -1071,7 +1101,7 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		Color:           body.Color,
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: body.Dc3AreaTematica,
+		Dc3AreaTematica: areaTematica,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1103,6 +1133,11 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 	if body.Dc3Enabled != nil {
 		dc3Enabled = *body.Dc3Enabled
 	}
+	areaTematica, ok := areaTematicaValida(body.Dc3AreaTematica)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "el área temática no pertenece al catálogo STPS"})
+		return
+	}
 	resp, err := h.c.Cursos.AdminUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
 		CursoId:         ctx.Param("id"),
 		UserId:          ctx.GetString(middleware.CtxUserID),
@@ -1116,7 +1151,7 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		Color:           body.Color,
 		Duration:        body.Duration,
 		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: body.Dc3AreaTematica,
+		Dc3AreaTematica: areaTematica,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

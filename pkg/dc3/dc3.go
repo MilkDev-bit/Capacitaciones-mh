@@ -63,6 +63,36 @@ type Datos struct {
 // ErrDatosIncompletos indica que faltan campos obligatorios de la constancia.
 var ErrDatosIncompletos = errors.New("faltan datos obligatorios para la DC-3")
 
+// AreasTematicas es el catálogo oficial de áreas temáticas de los cursos.
+//
+// Transcrito del REVERSO de la plantilla embebida: "CLAVES Y DENOMINACIONES DEL
+// CATÁLOGO DE ÁREAS TEMÁTICAS DE LOS CURSOS". Son nueve y solo cambian si la
+// STPS publica un formato nuevo, en cuyo caso también cambiaría la plantilla.
+//
+// Debe coincidir con AREAS_TEMATICAS_DC3 de frontend/src/utils/dc3.ts.
+var AreasTematicas = map[string]string{
+	"1000": "Producción general",
+	"2000": "Servicios",
+	"3000": "Administración, contabilidad y economía",
+	"4000": "Comercialización",
+	"5000": "Mantenimiento y reparación",
+	"6000": "Seguridad",
+	"7000": "Desarrollo personal y familiar",
+	"8000": "Uso de tecnologías de la información y comunicación",
+	"9000": "Participación social",
+}
+
+// AreaValida comprueba que la clave pertenezca al catálogo.
+//
+// Se valida en el servidor además de ofrecer un select en la interfaz: la clave
+// va impresa en un documento legal y una petición directa podría colar
+// cualquier cadena, produciendo una constancia inválida que nadie detecta hasta
+// que alguien la presenta en una inspección.
+func AreaValida(clave string) bool {
+	_, ok := AreasTematicas[strings.TrimSpace(clave)]
+	return ok
+}
+
 // Faltantes devuelve los campos obligatorios que están vacíos.
 //
 // Se expone en lugar de limitarse a fallar porque quien llama necesita decirle
