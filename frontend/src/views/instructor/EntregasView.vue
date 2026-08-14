@@ -245,9 +245,11 @@ const stats = computed(() => {
 }
 
 /* Stats */
+/* De 4 a 2 a 1 sin puntos de corte: los dos saltos que había (900 y 600)
+ * desaparecen porque auto-fit reparte lo que quepa. */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -361,8 +363,11 @@ const stats = computed(() => {
   overflow-x: auto;
 }
 
+/* Ver la nota de EstudiantesView: sin min-width, width:100% comprime las
+ * celdas en lugar de desbordar, y el overflow-x del contenedor no se activa. */
 table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
 }
 
@@ -524,17 +529,7 @@ td {
   }
 }
 
-@media (max-width: 900px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 639px) {
   .actions-cell {
     flex-direction: column;
   }

@@ -226,5 +226,5 @@ function tramitarDC3() {
 .result-detail { color: var(--muted); font-size: 1rem; }
 .result-verdict { font-size: 1.1rem; font-weight: 700; }
 
-@media (max-width: 600px) { .result-card { padding: 32px 20px; } }
+@media (max-width: 639px) { .result-card { padding: 32px 20px; } }
 </style>

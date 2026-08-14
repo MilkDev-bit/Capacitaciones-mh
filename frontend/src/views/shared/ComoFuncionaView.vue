@@ -653,7 +653,7 @@ onUnmounted(() => {
 }
 
 .cf__sec {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   display: flex;
   align-items: center;
   /* Aire a la derecha para el HUD y a la izquierda para el strip de pasos. */
@@ -795,7 +795,7 @@ onUnmounted(() => {
 }
 
 /* ── Responsive ────────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .strip {
     display: none;
   }

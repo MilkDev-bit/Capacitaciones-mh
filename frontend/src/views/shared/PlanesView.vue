@@ -243,7 +243,7 @@ const BENEFICIOS_EQUIPO = [
 
 <style scoped>
 .planes {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   padding-bottom: 5rem;
@@ -503,7 +503,7 @@ const BENEFICIOS_EQUIPO = [
 .fila--head { background: var(--surface-soft); font-weight: 700; }
 .fila > span:first-child { color: var(--muted); font-weight: 600; }
 
-@media (max-width: 620px) {
+@media (max-width: 639px) {
   .fila { grid-template-columns: 1fr; gap: 0.25rem; }
   .fila > span:first-child { margin-top: 0.2rem; }
   .fila--head { display: none; }

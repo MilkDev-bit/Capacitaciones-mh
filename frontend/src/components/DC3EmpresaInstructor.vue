@@ -147,7 +147,7 @@ onMounted(cargar)
 
 .dc3-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -168,7 +168,4 @@ onMounted(cargar)
 
 .dc3-actions { text-align: right; }
 
-@media (max-width: 640px) {
-  .dc3-grid { grid-template-columns: 1fr; }
-}
 </style>

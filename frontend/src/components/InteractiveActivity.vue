@@ -1712,7 +1712,7 @@ watch(() => [props.lesson?.id, props.lesson?.lesson_type, props.lesson?.type, pr
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .ia-header { padding: 16px 16px 0; }
   .game-wrap  { padding: 14px 16px 20px; }
   .memo-grid  { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; }
@@ -2002,7 +2002,7 @@ html.dark-theme .hm-key {
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .ia-header { padding: 16px 16px 0; }
   .game-wrap  { padding: 14px 16px 20px; }
   .memo-grid  { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, toRef } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
+import { useScrollLock } from '../composables/useScrollLock'
 
 defineProps<{
   show: boolean
@@ -76,12 +77,15 @@ async function createGroup() {
     creating.value = false
   }
 }
+
+// La página de detrás no debe desplazarse mientras esta capa está abierta.
+useScrollLock(toRef(props, "show"))
 </script>
 
 <template>
   <Transition name="modal">
     <div v-if="show" class="modal-mask" @click.self="emit('close')">
-      <div class="modal-wrapper">
+      <div class="modal-wrapper sheet-panel">
         <div class="modal-container">
           <div class="modal-header">
             <h3>Crear Grupo</h3>
@@ -162,7 +166,9 @@ async function createGroup() {
 .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); }
 .close-btn:hover { color: var(--text); }
 
-.modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 60vh; overflow-y: auto; }
+/* dvh y overscroll-behavior: el desplazamiento del cuerpo no debe arrastrar
+ * la página de detrás al llegar al final. */
+.modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 60dvh; overflow-y: auto; overscroll-behavior: contain; }
 .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-group label { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
 .input-field {

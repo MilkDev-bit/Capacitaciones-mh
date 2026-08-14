@@ -2340,12 +2340,19 @@ function tramitarDC3() {
 /* Layout shell */
 .ver-curso-shell {
   min-height: calc(100vh - var(--topbar-h) - 56px);
+  min-height: calc(100dvh - var(--topbar-h) - 56px);
 }
 
+/* Índice de lecciones + contenido. Es la interfaz de dos paneles que se queda
+ * a ancho completo en pantallas grandes (ver .page-content en main.css).
+ *
+ * El minmax(0, 1fr) de la segunda columna es lo que impide que un vídeo o un
+ * PDF anchos estiren la rejilla: sin él, una pista 1fr no baja del tamaño de su
+ * contenido y saca scroll lateral en toda la página. */
 .ver-layout {
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
-  min-height: calc(100vh - var(--topbar-h) - 56px);
+  min-height: calc(100dvh - var(--topbar-h) - 56px);
   background: var(--surface);
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 8px;
@@ -2357,7 +2364,7 @@ function tramitarDC3() {
 .ver-skeleton {
   display: flex;
   gap: 0;
-  height: 100vh;
+  height: 100vh; height: 100dvh;
   overflow: hidden;
 }
 
@@ -3724,7 +3731,11 @@ html.dark-theme .ver-int-pregunta {
   background: var(--brand-dark);
 }
 
-@media (max-width: 992px) {
+/* lg (1024): el índice deja de ser una columna fija y pasa a apilarse sobre el
+ * contenido. Alineado con el colapso del sidebar del layout, que ocurre en el
+ * mismo corte: por debajo de 1024 no hay sitio para tres columnas de navegación
+ * (sidebar + índice + contenido). */
+@media (max-width: 1023px) {
   .ver-curso-shell {
     min-height: auto;
   }
@@ -3762,7 +3773,7 @@ html.dark-theme .ver-int-pregunta {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .ver-main-inner {
     padding: 16px;
   }
@@ -4445,7 +4456,7 @@ html.dark-theme .ver-int-pregunta {
   border-radius: 20px;
   width: 90%;
   max-width: 680px;
-  max-height: 85vh;
+  max-height: 85dvh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
@@ -4610,7 +4621,7 @@ html.dark-theme .lb-points {
   border-radius: 20px;
   width: 90%;
   max-width: 720px;
-  max-height: 88vh;
+  max-height: 88dvh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);

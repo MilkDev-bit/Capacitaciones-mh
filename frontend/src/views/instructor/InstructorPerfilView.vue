@@ -256,7 +256,7 @@ async function guardar() {
 .ip-progress-bg { height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
 .ip-progress-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: 3px; transition: width 0.5s var(--ease-apple); }
 .ip-stats-card h3 { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
-.ip-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ip-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(90px, 100%), 1fr)); gap: 8px; }
 .ip-stat { text-align: center; padding: 12px 4px; background: var(--bg); border-radius: var(--r); }
 .ip-stat-num { display: block; font-size: 1.3rem; font-weight: 800; color: var(--dark); }
 .ip-stat-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
@@ -270,11 +270,11 @@ async function guardar() {
 .ip-field span { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .ip-pass-form { padding-top: 16px; border-top: 1px solid var(--border-light); }
 
-@media (max-width: 820px) {
+@media (max-width: 1023px) {
   .ip-grid { grid-template-columns: 1fr; }
   .ip-sidebar { position: static; }
 }
-@media (max-width: 560px) {
+@media (max-width: 639px) {
   .ip-header { flex-direction: column; align-items: stretch; }
   .ip-form { grid-template-columns: 1fr; }
   .ip-section-head-row { flex-direction: column; }

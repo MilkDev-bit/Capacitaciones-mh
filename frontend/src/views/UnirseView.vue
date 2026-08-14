@@ -103,7 +103,7 @@ function typeLabel(t: string) {
 
 <style scoped>
 .join-bg {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #7c2d12 0%, #f97316 60%, #fbbf24 100%);
   padding: 20px;
 }
@@ -153,5 +153,5 @@ function typeLabel(t: string) {
 .btn-join:disabled { opacity: .6; cursor: not-allowed; }
 .login-box { text-align: center; display: flex; flex-direction: column; gap: 10px; }
 .login-box p { color: var(--muted); font-size: 0.87rem; }
-@media (max-width: 480px) { .join-card { padding: 24px 18px; } }
+@media (max-width: 639px) { .join-card { padding: 24px 18px; } }
 </style>

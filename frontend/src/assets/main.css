@@ -47,7 +47,163 @@
   --border-color: var(--border);
 
   --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+
+  /* ── Sistema responsivo ────────────────────────────────────────────────
+   *
+   * Los breakpoints viven en tailwind.config.js (sm 640 · md 768 · lg 1024 ·
+   * xl 1280 · 2xl 1536 · tv 1920). No pueden estar aquí: las media queries de
+   * CSS no admiten custom properties. Estas variables son lo que sí se puede
+   * compartir entre Tailwind y el CSS scoped de los componentes.
+   */
+
+  /* Ancho máximo del contenido. Pasado esto se centra en lugar de estirarse:
+   * en un ultrawide o una TV, una línea de texto de 200 caracteres es
+   * ilegible por mucho espacio que sobre. */
+  --content-max: 1440px;
+  /* Márgenes laterales del contenido, crecientes con la pantalla. */
+  --gutter: 16px;
+
+  /* Altura mínima de un elemento pulsable. 44px es el mínimo de las guías de
+   * accesibilidad para el dedo; por debajo, en móvil se falla el toque. */
+  --touch-min: 44px;
 }
+
+@media (min-width: 768px) {
+  :root { --gutter: 24px; }
+}
+@media (min-width: 1280px) {
+  :root { --gutter: 32px; }
+}
+
+/* ── Utilidades responsivas ──────────────────────────────────────────────
+ *
+ * Pensadas para que el CSS scoped de los componentes NO tenga que inventar
+ * media queries. La mayor parte de lo que hoy resuelven los 68 breakpoints
+ * ad-hoc son rejillas rígidas y tablas anchas, y ambas cosas se arreglan sin
+ * un solo @media.
+ */
+
+/* Contenedor centrado con tope. Es la pieza que arregla las pantallas
+ * grandes, hoy sin tratar: no había ni un min-width propio en el proyecto. */
+.app-container {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Rejilla que se adapta sola. Sustituye al patrón de declarar 3 columnas y
+ * luego bajarlas a 2 y a 1 con dos media queries: auto-fit reparte lo que
+ * quepa, en cualquier ancho, sin puntos de corte.
+ *
+ * El minmax con min() evita el desborde clásico en móviles estrechos: sin él,
+ * una tarjeta de 260px no cabe en un viewport de 320px y saca scroll lateral. */
+.auto-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+.auto-grid-sm { --auto-grid-min: 180px; }
+.auto-grid-lg { --auto-grid-min: 320px; }
+.auto-grid-sm,
+.auto-grid-lg {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--auto-grid-min), 100%), 1fr));
+}
+
+/* Envoltura para tablas. Una tabla no se puede "responsivizar" de verdad sin
+ * rediseñarla, así que se le da scroll propio en vez de dejar que rompa el
+ * ancho de la página entera. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fila que se apila cuando no cabe, sin media query. */
+.flex-wrap-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Área de toque mínima para iconos y botones pequeños en móvil. */
+@media (max-width: 767px) {
+  .touch-target,
+  .icon-btn {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+  }
+}
+
+/* Respeta el notch y la barra de gestos en móviles. Sin esto, un pie fijo
+ * queda por debajo de la barra inferior en iPhone. */
+.safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.safe-top    { padding-top: max(0px, env(safe-area-inset-top)); }
+
+/* ── Modales y cajones en móvil ──────────────────────────────────────────
+ *
+ * Patrón compartido: por debajo de sm, un panel flotante con esquinas
+ * redondeadas y márgenes desperdicia la mitad de una pantalla que ya es
+ * pequeña. Se convierte en hoja a pantalla completa.
+ *
+ * `.sheet-panel` se añade al elemento que hace de panel, junto a la clase que
+ * ya tenga el componente. No sustituye a nada: solo aporta el comportamiento
+ * móvil, así que aplicarlo no cambia el aspecto en escritorio.
+ */
+@media (max-width: 639px) {
+  .sheet-panel {
+    max-width: none !important;
+    width: 100% !important;
+    max-height: 100dvh !important;
+    height: 100dvh;
+    border-radius: 0 !important;
+    /* La barra de gestos se come los botones de acción del pie. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* El cuerpo desplazable de un modal.
+ *
+ * dvh y no vh: con vh, la altura se calcula SIN la barra de direcciones del
+ * navegador móvil, así que el modal resulta más alto que el área visible y sus
+ * botones de acción quedan fuera de alcance — no hay forma de confirmar ni de
+ * cancelar sin cerrar la página. */
+.sheet-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Cortafuegos contra el desborde horizontal.
+ *
+ * Es el síntoma más común y más difícil de rastrear en móvil: un solo hijo
+ * demasiado ancho saca scroll lateral en TODA la página, y el culpable puede
+ * estar a diez niveles de profundidad. Los medios y las palabras largas
+ * (URLs, correos, códigos de licencia) son los sospechosos habituales. */
+img, video, canvas, svg, iframe { max-width: 100%; }
+@media (max-width: 767px) {
+  body { overflow-x: hidden; }
+}
+
+/* Palabras que no se pueden partir por sílabas.
+ *
+ * Un código de licencia, un correo largo o una URL son una sola "palabra" para
+ * el navegador: no la corta y desborda el contenedor, sacando scroll lateral en
+ * toda la página. Es la segunda causa de desborde tras los medios.
+ *
+ * overflow-wrap: anywhere y no word-break: break-all — este último parte
+ * cualquier palabra aunque quepa, y destroza la lectura del texto normal.
+ * anywhere solo actúa cuando de verdad no hay alternativa. */
+.break-anywhere,
+[class*="codigo"],
+[class*="mono"] {
+  overflow-wrap: anywhere;
+}
+
+/* Los enlaces y correos dentro de texto corrido son el caso más frecuente. */
+a, .email, td, th { overflow-wrap: break-word; }
 
 html.dark-theme {
   --dark:    #ffffff;
@@ -413,14 +569,26 @@ input[type="file"]::file-selector-button {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.shell { display: flex; min-height: 100vh; }
+/* 100dvh con 100vh de respaldo.
+ *
+ * En móvil, 100vh mide la ventana SIN contar la barra de direcciones, así que
+ * al aparecer esta recorta el contenido por abajo: el pie de una pantalla
+ * completa queda fuera y no hay forma de alcanzarlo. dvh sigue el alto real y
+ * se ajusta al mostrarse u ocultarse la barra. La línea con vh se queda para
+ * navegadores viejos, que la sobrescriben con la siguiente si entienden dvh. */
+.shell { display: flex; min-height: 100vh; min-height: 100dvh; min-height: 100dvh; }
 
 .sidebar-nav {
   width: var(--sidebar-w);
   background: linear-gradient(180deg, #1d1d1f 0%, #2c2c2e 100%);
   color: #fff;
   display: flex; flex-direction: column;
-  position: fixed; top: 0; left: 0; height: 100vh; z-index: 1200;
+  position: fixed; top: 0; left: 0; z-index: 1200;
+  height: 100vh; height: 100dvh;
+  height: 100dvh;
+  /* El menú de navegación llega hasta abajo del todo: sin esto, en un móvil
+   * con barra de gestos el botón de cerrar sesión queda debajo de ella. */
+  padding-bottom: env(safe-area-inset-bottom);
   transition: transform 0.35s var(--ease-apple);
 }
 .sidebar-nav .sn-brand {
@@ -460,7 +628,16 @@ input[type="file"]::file-selector-button {
 }
 .sidebar-nav .sn-footer button:hover { background: rgba(255,59,48,.2); color: #fff; }
 
-.shell-main, .main-column { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+.shell-main, .main-column {
+  margin-left: var(--sidebar-w); flex: 1;
+  /* min-width:0 es lo que impide que un hijo ancho —una tabla, un bloque de
+   * código— estire la columna y saque scroll lateral en toda la página. Por
+   * defecto un ítem flex no encoge por debajo de su contenido. */
+  min-width: 0;
+  display: flex; flex-direction: column;
+  min-height: 100vh; min-height: 100dvh;
+  min-height: 100dvh;
+}
 
 .topbar {
   position: sticky; top: 0; z-index: 50;
@@ -531,19 +708,74 @@ input[type="file"]::file-selector-button {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99;
 }
 
-.page-content { padding: 28px clamp(18px, 3vw, 34px); flex: 1; }
+/* Área de contenido de los tres layouts (usuario, instructor y admin).
+ *
+ * El tope centrado es lo que arregla monitores grandes, ultrawide y TV: sin él
+ * el contenido se estiraba indefinidamente y las líneas de texto llegaban a un
+ * ancho ilegible. Se aplica aquí, en la pieza compartida, en vez de en cada
+ * layout: los tres usan esta misma clase.
+ *
+ * El padding lateral usa clamp para crecer con la pantalla sin saltos. */
+.page-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: 28px clamp(18px, 3vw, 34px);
+}
 .page-content:has(.ver-curso-shell) { padding: 18px; }
 
-@media (max-width: 768px) {
+/* El visor de curso es la excepción deliberada: es una interfaz de dos paneles
+ * que sí aprovecha todo el ancho disponible, como un editor. Encajonarlo en
+ * 1440px desperdiciaría la pantalla justo donde más se agradece. */
+.page-content:has(.ver-curso-shell) { max-width: none; }
+
+/* ── Colapso del sidebar ─────────────────────────────────────────────────
+ *
+ * El corte está en lg (1024) y no en md (768), que es donde estaba antes.
+ *
+ * Con 768 una tablet de 800-1000px conservaba el sidebar fijo de 260px y le
+ * dejaba al contenido 540px: menos espacio útil que un móvil apaisado, con la
+ * pantalla llena de hueco desaprovechado. El sidebar sobre esos anchos estorba
+ * más de lo que ayuda, así que se convierte en cajón y el contenido recupera
+ * el ancho completo.
+ *
+ * Por encima de 1024 (tablet apaisada, portátil) sí compensa tenerlo fijo. */
+@media (max-width: 1023px) {
   .sidebar-nav { transform: translateX(-100%); }
   .sidebar-nav.open { transform: translateX(0); }
   .sidebar-overlay.open { display: block; }
   .shell-main, .main-column { margin-left: 0; }
   .topbar-hamburger, .menu-toggle { display: flex; }
+  .page-content { padding: 24px 20px; }
+  .page-content:has(.ver-curso-shell) { padding: 14px; }
+}
+
+@media (max-width: 767px) {
   .page-content { padding: 20px 16px; }
   .page-content:has(.ver-curso-shell) { padding: 12px; }
+  .topbar { padding: 0 16px; gap: 10px; }
+  /* El nombre se oculta pero el avatar se queda: sigue siendo el acceso al
+   * menú de perfil, así que quitarlo dejaría al usuario sin salida. */
   .topbar-name { display: none; }
   .topbar .badge { display: none; }
+  /* En un móvil de 320px un cajón de 260px deja apenas 60px de contexto
+   * detrás. Con el tope en 82vw siempre se ve que hay página debajo, que es
+   * lo que hace evidente que se cierra tocando fuera. */
+  .sidebar-nav { width: min(var(--sidebar-w), 82vw); }
+}
+
+/* Los breadcrumbs de la topbar son lo primero que desborda en móvil: son texto
+ * variable en una fila de altura fija. Se recortan con elipsis en vez de
+ * empujar al avatar fuera de la pantalla. */
+@media (max-width: 639px) {
+  .topbar-title, .topbar-left {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.92rem;
+  }
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.22s ease; }
@@ -790,7 +1022,7 @@ input[type="file"]::file-selector-button {
 .int-badge.tf  { background: var(--success-bg); color: var(--success); }
 .int-badge.ot  { background: var(--warning-bg); color: var(--warning); }
 
-@media (max-width: 560px) {
+@media (max-width: 639px) {
   .courses-grid { grid-template-columns: 1fr; }
   .code-banner { flex-direction: column; align-items: flex-start; }
   .code-banner-right { width: 100%; }

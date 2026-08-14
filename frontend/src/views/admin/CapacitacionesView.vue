@@ -556,7 +556,7 @@ async function resetCode(id: string, hasExisting: boolean = true) {
 .dfield .req { color: var(--danger); }
 .dfield-hint { font-size: 0.74rem; color: var(--muted); }
 
-.type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.type-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); gap: 10px; }
 .type-opt {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 14px 8px; border-radius: var(--r-lg);
@@ -642,7 +642,7 @@ async function resetCode(id: string, hasExisting: boolean = true) {
 .slide-right-enter-active, .slide-right-leave-active { transition: transform .3s cubic-bezier(0.32,0.72,0,1); }
 .slide-right-enter-from, .slide-right-leave-to { transform: translateX(100%); }
 
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .ac-topbar { flex-direction: column; align-items: stretch; }
   .ac-grid { grid-template-columns: 1fr; }
   .ac-drawer { width: 100vw; }

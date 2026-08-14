@@ -6,6 +6,7 @@ import { useSuscripcionStore, precioDesdeCentavos } from '../stores/suscripcion'
 import { useAuthStore } from '../stores/auth'
 import { toast } from '../utils/toast'
 import api from '../api'
+import { useScrollLock } from '../composables/useScrollLock'
 
 const cart = useCartStore()
 const susc = useSuscripcionStore()
@@ -108,6 +109,9 @@ function verPlanes() {
   cart.closeDrawer()
   router.push('/planes')
 }
+
+// La página de detrás no debe desplazarse mientras esta capa está abierta.
+useScrollLock(computed(() => cart.isDrawerOpen))
 </script>
 
 <template>
@@ -122,7 +126,7 @@ function verPlanes() {
       @click.self="cart.closeDrawer"
       @keydown="onKeydown"
     >
-      <aside class="drawer">
+      <aside class="drawer sheet-panel">
         <!-- ── Encabezado ── -->
         <header class="head">
           <div>
@@ -498,7 +502,7 @@ function verPlanes() {
 .seguro { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; color: var(--subtle); }
 
 /* ── Responsivo ────────────────────────────────────────── */
-@media (max-width: 480px) {
+@media (max-width: 639px) {
   .drawer { max-width: 100%; }
   .head, .body, .foot { padding-left: 16px; padding-right: 16px; }
   .item__thumb { width: 52px; height: 52px; }

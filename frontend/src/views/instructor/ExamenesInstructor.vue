@@ -506,7 +506,7 @@ async function eliminar(id: string) {
 </template>
 
 <style scoped>
-.ex-shell { min-height: 100vh; background: var(--bg); }
+.ex-shell { min-height: 100vh; min-height: 100dvh; background: var(--bg); }
 .ex-body { max-width: 860px; margin: 0 auto; padding: 0 28px 40px; }
 
 .ex-form-card { margin-bottom: 24px; }
@@ -588,7 +588,7 @@ async function eliminar(id: string) {
   padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border-light);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .ex-body { padding: 0 14px 32px; }
   .ex-pregunta-meta { grid-template-columns: 1fr 1fr; }
   .det-overlay { inset: 0; }
@@ -605,7 +605,7 @@ async function eliminar(id: string) {
 .res-panel {
   background: var(--surface); border-radius: var(--r-xl);
   box-shadow: 0 20px 60px rgba(0,0,0,.25);
-  width: 100%; max-width: 780px; max-height: 88vh;
+  width: 100%; max-width: 780px; max-height: 88dvh;
   display: flex; flex-direction: column; overflow: hidden;
 }
 
@@ -619,9 +619,13 @@ async function eliminar(id: string) {
 .res-loading { display: flex; justify-content: center; padding: 48px; }
 .res-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--muted); font-size: 0.9rem; }
 
-.res-table-wrap { overflow-y: auto; padding: 20px 24px; flex: 1; }
+/* overflow-y estaba, faltaba el eje X: en móvil la tabla de resultados se
+ * comprimía y no había forma de ver las columnas de la derecha. */
+.res-table-wrap { overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 20px 24px; flex: 1; }
 .res-count { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
-.res-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+/* min-width: sin él, width:100% comprime en vez de desbordar y el scroll del
+ * contenedor nunca se activa. */
+.res-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 0.88rem; }
 .res-table th { text-align: left; padding: 8px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 2px solid var(--border-light); }
 .res-table td { padding: 12px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
 .res-table tbody tr:hover { background: var(--bg); }

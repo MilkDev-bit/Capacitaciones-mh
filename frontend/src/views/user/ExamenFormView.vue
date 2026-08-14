@@ -195,7 +195,7 @@ function closeWindow() {
 <style scoped>
 /* ── Página base ─────────────────────────────────────────────────────────────── */
 .gf-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #f0f4f8;
   display: flex;
   flex-direction: column;
@@ -514,7 +514,7 @@ function closeWindow() {
   background: #fff;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .gf-header-body, .gf-question-card, .gf-footer-card { padding: 18px 18px; }
   .gf-footer-card { flex-direction: column; align-items: flex-start; }
 }

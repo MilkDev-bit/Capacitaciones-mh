@@ -5,11 +5,14 @@ import { useAuthStore } from '../../stores/auth'
 import { useTheme } from '../../composables/useTheme'
 import NotificationBell from '../../components/NotificationBell.vue'
 import { getAvatarUrl } from '../../utils/avatars'
+import { useScrollLock } from '../../composables/useScrollLock'
 
 const auth = useAuthStore()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 const sidebarOpen = ref(false)
+// Con el cajón abierto en móvil, la página de detrás no debe desplazarse.
+useScrollLock(sidebarOpen)
 const profileOpen = ref(false)
 
 const isUUID = (str: string) => /^[0-9a-fA-F-]{32,36}$/.test(str) || str.length > 25

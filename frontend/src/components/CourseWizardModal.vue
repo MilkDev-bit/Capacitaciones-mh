@@ -74,7 +74,7 @@ async function guardar() {
 
 <template>
   <div class="modal-overlay" @mousedown.self="emit('close')">
-    <div class="modal-content">
+    <div class="modal-content sheet-panel">
       <div class="modal-header">
         <h2 class="modal-title">Crear nuevo curso</h2>
         <button class="modal-close" @click="emit('close')">
@@ -176,7 +176,10 @@ async function guardar() {
 .modal-content {
   background: var(--surface); width: 100%; max-width: 600px;
   border-radius: var(--r-xl); box-shadow: var(--shadow-lg);
-  display: flex; flex-direction: column; max-height: 90vh;
+  display: flex; flex-direction: column;
+  /* dvh: con vh el modal salía más alto que el área visible en móvil y los
+   * botones del pie quedaban fuera de alcance. */
+  max-height: 90dvh;
 }
 .modal-header {
   padding: 20px 24px; border-bottom: 1px solid var(--border-light);

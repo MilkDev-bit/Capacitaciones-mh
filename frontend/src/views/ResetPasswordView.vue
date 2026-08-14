@@ -163,7 +163,7 @@ async function submit() {
 </template>
 
 <style scoped>
-.reset-page { display: flex; min-height: 100vh; }
+.reset-page { display: flex; min-height: 100vh; min-height: 100dvh; }
 
 /* ── Hero ── */
 .reset-hero {
@@ -255,7 +255,7 @@ async function submit() {
 .invalid-state h2, .success-state h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin: 0 0 10px; }
 .invalid-state p, .success-state p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin: 0 0 24px; }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .reset-hero { display: none; }
   .mobile-brand { display: flex; }
 }

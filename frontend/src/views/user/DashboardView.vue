@@ -319,7 +319,8 @@ function courseProgress(curso: any) {
 .dash-welcome p { color: rgba(255,255,255,0.6); margin-top: 6px; font-size: 0.95rem; }
 
 /* ── Stat cards (glass) ─────────────────────────────── */
-.dash-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; position: relative; z-index: 2; }
+/* De 4 a 2 a 1 sin puntos de corte. Sustituye a los dos overrides que había. */
+.dash-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 14px; position: relative; z-index: 2; }
 .dash-stat-card {
   display: flex; align-items: center; gap: 14px; padding: 18px 20px;
   border-radius: var(--r-lg);
@@ -436,14 +437,13 @@ function courseProgress(curso: any) {
 .dash-action-info p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
 
 /* ── Responsive ─────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1023px) {
   .dash-course-item { gap: 12px; }
 }
 @media (max-width: 640px) {
   .dash-hero { padding: 20px 20px 52px; margin-bottom: -32px; }
   .dash-welcome h1 { font-size: 1.6rem; }
-  .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dash-stats { gap: 10px; }
   .dash-actions { grid-template-columns: 1fr; }
   .dash-course-item { flex-wrap: wrap; }
   .dash-course-cta { width: 100%; justify-content: center; margin-top: 4px; }
@@ -462,7 +462,7 @@ function courseProgress(curso: any) {
 .lb-user strong { font-size: 0.94rem; color: var(--dark); }
 .lb-pts { font-weight: 800; color: var(--brand); font-size: 0.9rem; }
 
-@media (max-width: 400px) {
+@media (max-width: 639px) {
   .dash-stat-card { padding: 12px; gap: 8px; }
   .dash-stat-icon { width: 38px; height: 38px; flex-shrink: 0; }
   .dash-stat-info strong { font-size: 1.2rem; }

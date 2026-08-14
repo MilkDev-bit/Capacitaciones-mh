@@ -324,7 +324,7 @@ onMounted(async () => {
 .pp-mailto-btn { display: inline-flex; align-items: center; gap: 7px; }
 
 
-@media (max-width: 720px) {
+@media (max-width: 767px) {
   .pp-body { grid-template-columns: 1fr; }
   .pp-cover { height: 140px; }
   .pp-identity { flex-direction: column; align-items: flex-start; padding: 0 16px 16px; }

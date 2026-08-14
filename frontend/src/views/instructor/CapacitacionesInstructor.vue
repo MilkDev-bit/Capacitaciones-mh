@@ -560,7 +560,7 @@ function copyCode(code: string) {
   border-radius: 16px;
   width: 90%;
   max-width: 660px;
-  max-height: 85vh;
+  max-height: 85dvh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-xl);

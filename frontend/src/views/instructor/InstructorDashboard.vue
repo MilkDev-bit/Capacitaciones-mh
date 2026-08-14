@@ -170,7 +170,7 @@ const recentCourses = computed(() => capacitaciones.value.slice(0, 5))
 .inst-welcome h1 { font-size: 1.8rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; margin: 0; }
 .inst-welcome p { color: var(--muted); margin: 4px 0 0 0; font-size: 0.95rem; }
 
-.inst-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.inst-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 16px; }
 .inst-stat-card {
   display: flex; align-items: flex-start; gap: 16px; padding: 22px;
   border-radius: var(--r-lg); background: var(--surface);
@@ -193,7 +193,7 @@ const recentCourses = computed(() => capacitaciones.value.slice(0, 5))
 .inst-link-btn { background: none; border: none; color: var(--brand); font-weight: 600; font-size: 0.88rem; cursor: pointer; }
 .inst-link-btn:hover { color: var(--brand-dark); }
 
-.inst-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.inst-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; }
 .inst-action-card {
   display: flex; align-items: center; gap: 16px; padding: 20px;
   background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
@@ -230,5 +230,6 @@ const recentCourses = computed(() => capacitaciones.value.slice(0, 5))
   padding: 32px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
 
-@media (max-width: 900px) { .inst-stats { grid-template-columns: 1fr; } .inst-actions { grid-template-columns: 1fr; } .inst-shell { padding: 20px; } }
+/* El reparto de columnas lo hace auto-fit; aquí solo queda la densidad. */
+@media (max-width: 1023px) { .inst-shell { padding: 20px; } }
 </style>

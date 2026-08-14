@@ -311,7 +311,7 @@ async function eliminar(id: string) {
 .ae-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-light); margin-top: 4px; }
 .ae-card-footer span { font-size: 0.75rem; color: var(--subtle); }
 
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .ae-topbar { flex-direction: column; align-items: stretch; }
   .ae-form-row { flex-direction: column; }
   .ae-grid { grid-template-columns: 1fr; }

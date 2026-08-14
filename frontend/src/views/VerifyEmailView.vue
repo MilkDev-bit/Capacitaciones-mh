@@ -234,7 +234,7 @@ async function resend() {
 
 <style scoped>
 /* ── Layout compartido con LoginView ──────────────────────────────────────── */
-.auth-page { display: flex; min-height: 100vh; }
+.auth-page { display: flex; min-height: 100vh; min-height: 100dvh; }
 .auth-hero {
   flex: 0 0 47%;
   background:
@@ -346,12 +346,12 @@ async function resend() {
 .form-footnote { text-align: center; font-size: 0.78rem; color: var(--subtle); line-height: 1.6; margin: -4px 0 0; }
 .form-footer { text-align: center; font-size: 0.85rem; margin: 0; }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .auth-hero { display: none; }
   .auth-form-panel { padding: 32px 20px; }
   .mobile-logo { display: flex; }
 }
-@media (max-width: 420px) {
+@media (max-width: 639px) {
   .code-inputs { gap: 6px; }
   .code-box { height: 54px; font-size: 1.35rem; }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, toRef } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
 import { uploadToR2 } from '../utils/upload'
@@ -7,6 +7,7 @@ import DragDropUpload from './DragDropUpload.vue'
 import GradientPicker from './GradientPicker.vue'
 import CourseTreeEditor from './CourseTreeEditor.vue'
 import { AREAS_TEMATICAS_DC3 } from '../utils/dc3'
+import { useScrollLock } from '../composables/useScrollLock'
 
 const props = defineProps<{
   show: boolean
@@ -71,11 +72,14 @@ async function saveInfo() {
     loading.value = false
   }
 }
+
+// La página de detrás no debe desplazarse mientras esta capa está abierta.
+useScrollLock(toRef(props, "show"))
 </script>
 
 <template>
   <div class="drawer-overlay" :class="{ open: show }" @mousedown.self="emit('close')">
-    <div class="drawer-content" :class="{ open: show }">
+    <div class="drawer-content sheet-panel" :class="{ open: show }">
       <div class="drawer-header">
         <div>
           <h2 class="drawer-title">Editor de Curso</h2>
@@ -188,13 +192,7 @@ async function saveInfo() {
 .dc3-empresa-head strong { font-size: 0.92rem; color: var(--text); }
 .dc3-empresa-head p { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); }
 
-.dc3-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dc3-grid .field-label {
+.dc3-empresa .field-label {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
@@ -204,11 +202,7 @@ async function saveInfo() {
   margin-bottom: 5px;
 }
 
-.dc3-grid em { color: var(--danger); font-style: normal; }
-
-@media (max-width: 700px) {
-  .dc3-grid { grid-template-columns: 1fr; }
-}
+.dc3-empresa em { color: var(--danger); font-style: normal; }
 
 .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-overlay.open { opacity: 1; pointer-events: auto; }

@@ -719,7 +719,7 @@ function tramitarDC3Licencia(lic: any) {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 50vh;
+  max-height: 50dvh;
   overflow-y: auto;
 }
 
@@ -1113,7 +1113,7 @@ function tramitarDC3Licencia(lic: any) {
   color: var(--muted);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 639px) {
   .participante-row {
     flex-wrap: wrap;
   }

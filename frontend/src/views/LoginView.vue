@@ -414,7 +414,7 @@ async function resetPassword() {
 </template>
 
 <style scoped>
-.auth-page { display: flex; min-height: 100vh; }
+.auth-page { display: flex; min-height: 100vh; min-height: 100dvh; }
 .auth-hero {
   flex: 0 0 47%;
   background:
@@ -496,7 +496,12 @@ async function resetPassword() {
 .strength-text { font-size: 0.72rem; font-weight: 700; }
 .form-hint { font-size: 0.75rem; margin-top: 4px; }
 .error-hint { color: var(--danger); font-weight: 600; }
-.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Dos opciones de rol que se apilan solas si no caben, sin media query. */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: 10px;
+}
 .role-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 14px 10px; border: 2px solid var(--border); border-radius: var(--r); background: var(--surface); cursor: pointer; transition: all 0.18s; }
 .role-card:hover { border-color: var(--brand); }
 .role-card.selected { border-color: var(--brand); background: var(--brand-light); }
@@ -534,15 +539,25 @@ async function resetPassword() {
 .fade-slide-enter-from { opacity: 0; transform: translateY(10px); }
 .fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
 
-@media (max-width: 860px) {
+/* lg (1024): el panel ilustrado desaparece y queda solo el formulario.
+ *
+ * Subido desde 860 a propósito. Entre 860 y 1024 el hero se mostraba en una
+ * franja tan estrecha que la ilustración salía recortada y el formulario
+ * quedaba comprimido: se veían mal las dos cosas a la vez. */
+@media (max-width: 1023px) {
   .auth-hero { display: none; }
   .auth-form-panel { padding: 32px 20px; }
   .mobile-logo { display: flex; }
 }
-@media (min-width: 861px) {
+/* Complementario exacto del anterior: el acceso a la tienda solo se ofrece
+ * cuando el hero —que ya lo incluye— no está visible. */
+@media (min-width: 1024px) {
   .mobile-store-btn { display: none; }
 }
-@media (max-width: 420px) { 
+/* Antes en 420px, un valor sin relación con ningún dispositivo. Los dos campos
+ * de contraseña ya no caben lado a lado bastante antes, así que se apilan en el
+ * corte de móvil de la escala. */
+@media (max-width: 639px) {
   .pass-row { flex-direction: column; gap: 14px; }
 }
 </style>

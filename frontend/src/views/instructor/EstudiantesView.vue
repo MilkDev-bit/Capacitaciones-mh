@@ -237,7 +237,7 @@ async function asignar() {
 .ph-sub { color: var(--muted); font-size: 0.87rem; margin-top: 4px; }
 .form-card { background: var(--surface); border-radius: var(--r-lg); padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border-light); }
 .form-card-title { font-size: 1.1rem; font-weight: 800; color: var(--dark); margin-bottom: 20px; }
-.assign-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.assign-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; margin-bottom: 20px; }
 .assign-section { background: var(--bg); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
 .assign-sec-header { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .assign-sec-title { font-size: 0.82rem; font-weight: 700; color: var(--dark); }
@@ -260,7 +260,7 @@ async function asignar() {
 .assign-summary { font-size: 0.85rem; color: var(--muted); }
 .assign-summary strong { color: var(--dark); }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px; margin-bottom: 24px; }
 .stat-box { background: var(--surface); border-radius: var(--r-lg); padding: 24px; text-align: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: transform 0.2s; }
 .stat-box:hover { transform: translateY(-2px); }
 .stat-box.brand { background: var(--brand); }
@@ -269,8 +269,21 @@ async function asignar() {
 .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 .stat-box.brand .stat-lbl { color: rgba(255,255,255,.8); }
 .info-tip { background: var(--brand-light); border-radius: var(--r); padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 0.87rem; color: var(--brand-darker); margin-bottom: 16px; border-left: 3px solid var(--brand); }
-.table-card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-table { width: 100%; border-collapse: collapse; }
+/* overflow-x:auto y NO hidden: con hidden, en móvil las columnas de la derecha
+ * se recortaban sin forma de alcanzarlas. */
+.table-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* min-width es lo que hace que el scroll exista.
+ *
+ * Con solo width:100% la tabla se comprime para caber y las celdas quedan
+ * ilegibles —una columna de correos en 90px—; nunca desborda, así que el
+ * overflow-x del contenedor no llega a activarse. Con un mínimo, por debajo de
+ * él la tabla desborda y el contenedor sí ofrece scroll horizontal. */
+table { width: 100%; min-width: 520px; border-collapse: collapse; }
 th { background: var(--bg); padding: 11px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
 td { padding: 12px 16px; border-top: 1px solid var(--border-light); font-size: 0.9rem; }
 .user-cell { display: flex; align-items: center; gap: 10px; }
@@ -280,6 +293,6 @@ td { padding: 12px 16px; border-top: 1px solid var(--border-light); font-size: 0
 .empty-icon { font-size: 3rem; }
 .empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
 .empty-state p { color: var(--muted); font-size: 0.9rem; }
-@media (max-width: 900px) { .assign-grid { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .ph { flex-direction: column; } }
+/* El reparto de columnas lo hace auto-fit; aquí solo queda la cabecera. */
+@media (max-width: 767px) { .ph { flex-direction: column; } }
 </style>

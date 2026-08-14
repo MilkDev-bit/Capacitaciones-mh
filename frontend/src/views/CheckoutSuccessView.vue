@@ -175,7 +175,7 @@ async function copiarComprobante() {
 
 <style scoped>
 .success-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -260,7 +260,7 @@ h1 { margin: 0 0 10px; font-size: 1.6rem; font-weight: 800; color: #111827; }
 }
 .btn-link:hover { color: #111827; text-decoration: underline; }
 
-@media (max-width: 480px) {
+@media (max-width: 639px) {
   .success-card { padding: 34px 22px 26px; }
 }
 </style>

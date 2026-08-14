@@ -550,9 +550,11 @@ function copyCode(code: string) {
   gap: 22px;
 }
 
+/* Texto de bienvenida + panel de cifras. Se apilan solos cuando el panel baja
+ * de 280px, sin necesitar el salto que había en 900px. */
 .learning-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 22px;
   padding: 36px 44px;
   border-radius: var(--r-xl);
@@ -618,8 +620,12 @@ function copyCode(code: string) {
   color: #fff;
 }
 
+/* Las cifras van en columna dentro del hero ancho, y se reparten en fila
+ * cuando el hero se apila y hay ancho de sobra. auto-fit lo resuelve sin los
+ * dos saltos que había (3 columnas en 900, 1 en 640). */
 .learning-stats {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 10px;
   align-self: stretch;
 }
@@ -981,27 +987,15 @@ function copyCode(code: string) {
   margin-top: 4px;
 }
 
-@media (max-width: 900px) {
-  .learning-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .learning-stats {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
+/* sm (640): solo ajustes de densidad y controles a ancho completo. El reparto
+ * de columnas ya lo resuelven las rejillas de arriba. */
+@media (max-width: 639px) {
   .learning-hero {
     padding: 22px 18px;
   }
 
   .learning-hero h1 {
     font-size: 1.55rem;
-  }
-
-  .learning-stats {
-    grid-template-columns: 1fr;
   }
 
   .learning-toolbar,

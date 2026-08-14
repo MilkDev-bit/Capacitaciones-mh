@@ -537,7 +537,7 @@ function buyB2B() {
 
 /* ── ROOT ──────────────────────────────────────────────── */
 .cpv-root {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -671,7 +671,7 @@ function buyB2B() {
 
 /* ── LOADING ───────────────────────────────────────────── */
 .cpv-loading {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1192,13 +1192,13 @@ function buyB2B() {
 }
 
 /* ── RESPONSIVE ────────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .cpv-body { grid-template-columns: 1fr; }
   .cpv-right { order: -1; }
   .purchase-glass { position: static; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .cpv-nav-inner { padding: 0 16px; }
   .cpv-hero-content { padding: 0 16px 40px; }
   .cpv-body { padding: 24px 16px 60px; }

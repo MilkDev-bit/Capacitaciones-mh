@@ -6,11 +6,14 @@ import { useTheme } from '../../composables/useTheme'
 import NotificationBell from '../../components/NotificationBell.vue'
 import api from '../../api'
 import { getAvatarUrl } from '../../utils/avatars'
+import { useScrollLock } from '../../composables/useScrollLock'
 
 const auth = useAuthStore()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 const sidebarOpen = ref(false)
+// Con el cajón abierto en móvil, la página de detrás no debe desplazarse.
+useScrollLock(sidebarOpen)
 const profileOpen = ref(false)
 
 onMounted(async () => {

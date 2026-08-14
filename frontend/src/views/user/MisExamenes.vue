@@ -304,7 +304,10 @@ function tramitarDC3(e: any) {
 /* Grid */
 .exams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* auto-FIT: con auto-fill se creaban las pistas vacías, así que al filtrar
+   * y quedar pocos exámenes las tarjetas se quedaban estrechas con la fila
+   * medio en blanco. Los dos overrides de abajo sobran ya. */
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 18px;
 }
 
@@ -435,12 +438,10 @@ function tramitarDC3(e: any) {
 .empty-state p { font-size: 0.88rem; max-width: 360px; }
 
 /* Responsive */
-@media (max-width: 900px) {
-  .exams-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1023px) {
   .filter-bar { flex-direction: column; align-items: flex-start; }
 }
-@media (max-width: 560px) {
-  .exams-grid { grid-template-columns: 1fr; }
+@media (max-width: 639px) {
   .exam-thumb { height: 140px; }
   .date-range { width: 100%; }
   .date-input { flex: 1; min-width: 0; }

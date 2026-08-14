@@ -822,7 +822,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   text-align: center;
 }
 
-@media (max-width: 860px) {
+/* Este sí necesita un punto de corte: el separador "o" pasa de vertical a
+ * horizontal, y eso no lo expresa auto-fit. Alineado a md (768). */
+@media (max-width: 767px) {
   .vias__grid {
     grid-template-columns: 1fr;
   }
@@ -841,7 +843,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .store {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -1258,10 +1260,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   margin-bottom: 42px;
 }
 
+/* Cuatro cifras que se reparten solas.
+ *
+ * Antes eran 4 columnas fijas con un salto a 2 en 780px. Con auto-fit pasan de
+ * 4 a 2 a 1 según lo que quepa, sin ningún punto de corte, y funciona igual en
+ * anchos que nadie previó. El min() evita el desborde en móviles de 320px. */
 .hero__stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+  gap: 20px 12px;
   max-width: 620px;
   margin: 0 auto;
   padding: 0;
@@ -1301,10 +1308,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   max-width: 1240px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 40px;
+  /* Dos columnas mientras cada una tenga al menos 320px; por debajo se apilan
+   * solas. Sustituye al salto en 940px, que era el ancho al que casualmente
+   * dejaban de caber en el portátil de quien lo escribió. */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: clamp(28px, 4vw, 40px);
   align-items: center;
-  padding: 44px;
+  padding: clamp(26px, 4vw, 44px);
   background: linear-gradient(135deg, var(--brand-light), color-mix(in srgb, var(--brand-light) 40%, var(--surface)));
   border: 1px solid var(--brand-border);
   border-radius: var(--r-xl);
@@ -1504,10 +1514,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   text-decoration: underline;
 }
 
+/* Catálogo de cursos.
+ *
+ * auto-FIT y no auto-fill: con auto-fill se crean las pistas vacías igualmente,
+ * así que al filtrar y quedar dos resultados en una fila de cuatro, esas dos
+ * tarjetas se quedaban a un cuarto de ancho con medio catálogo en blanco al
+ * lado. auto-fit colapsa las pistas sobrantes y las tarjetas ocupan la fila.
+ *
+ * El min() evita que la pista mínima de 255px desborde en móviles de 320px. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 1fr));
+  gap: clamp(14px, 2vw, 22px);
 }
 
 .gskel {
@@ -1666,16 +1684,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   color: var(--subtle);
 }
 
-/* ══════════ RESPONSIVO ══════════ */
-@media (max-width: 940px) {
-  .b2b__inner {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    padding: 34px 26px;
-  }
-}
-
-@media (max-width: 780px) {
+/* ══════════ RESPONSIVO ══════════
+ *
+ * Escala del proyecto (ver tailwind.config.js): sm 640 · md 768 · lg 1024.
+ *
+ * Aquí quedan solo los cambios que NO puede resolver el propio layout: qué se
+ * oculta, qué cambia de disposición. El reparto de columnas lo hacen las
+ * rejillas con auto-fit, sin punto de corte. Los antiguos 940px y 560px
+ * desaparecieron por eso; el de 780 se movió a 768 (md), que es el corte de
+ * tablet vertical de la escala.
+ */
+@media (max-width: 767px) {
   .hdr__links {
     display: none;
   }
@@ -1701,11 +1720,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     padding: 52px 20px 44px;
   }
 
-  .hero__stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px 12px;
-  }
-
   .rows,
   .catalog,
   .foot__inner,
@@ -1719,7 +1733,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   }
 }
 
-@media (max-width: 560px) {
+/* sm (640): móvil. Aquí los botones pasan a ancho completo y la cabecera se
+ * compacta — decisiones de disposición, no de reparto de columnas. */
+@media (max-width: 639px) {
   .hdr__inner {
     height: 56px;
     gap: 10px;
@@ -1763,8 +1779,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     justify-content: space-between;
   }
 
+  /* En móvil se baja la pista mínima para que quepan dos tarjetas por fila en
+   * vez de una: un catálogo de una sola columna obliga a demasiado scroll. */
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
     gap: 14px;
   }
 

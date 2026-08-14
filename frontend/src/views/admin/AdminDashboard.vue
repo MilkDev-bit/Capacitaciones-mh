@@ -168,7 +168,7 @@ const statCards = computed(() => [
 .ad-welcome h1 { font-size: 1.8rem; font-weight: 800; color: var(--dark); letter-spacing: -0.02em; }
 .ad-welcome p { color: var(--muted); margin-top: 4px; font-size: 0.95rem; }
 
-.ad-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.ad-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 16px; }
 .ad-stat-card {
   display: flex; align-items: flex-start; gap: 16px; padding: 22px;
   border-radius: var(--r-lg); background: var(--surface);
@@ -191,7 +191,7 @@ const statCards = computed(() => [
 .ad-link-btn { background: none; border: none; color: var(--brand); font-weight: 600; font-size: 0.88rem; cursor: pointer; }
 .ad-link-btn:hover { color: var(--brand-dark); }
 
-.ad-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ad-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; }
 .ad-action-card {
   display: flex; align-items: center; gap: 16px; padding: 20px;
   background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg);
@@ -224,6 +224,6 @@ const statCards = computed(() => [
 .ad-recent-info strong { font-size: 0.9rem; font-weight: 700; color: var(--dark); display: block; }
 .ad-recent-info p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-@media (max-width: 900px) { .ad-stats { grid-template-columns: 1fr 1fr; } .ad-actions { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .ad-stats { grid-template-columns: 1fr; } }
+/* Las dos medias que había aquí solo cambiaban el número de columnas
+ * (4→2→1). auto-fit lo hace sin puntos de corte. */
 </style>

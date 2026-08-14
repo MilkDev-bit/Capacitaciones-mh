@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, toRef } from 'vue'
 import api from '../api'
+import { useScrollLock } from '../composables/useScrollLock'
 
 defineProps<{
   show: boolean
@@ -41,12 +42,15 @@ function selectUser(u: any) {
   emit('select', { id: u.id, name: u.name, avatar_url: u.avatar_url })
   emit('close')
 }
+
+// La página de detrás no debe desplazarse mientras esta capa está abierta.
+useScrollLock(toRef(props, "show"))
 </script>
 
 <template>
   <Transition name="modal">
     <div v-if="show" class="modal-mask" @click.self="emit('close')">
-      <div class="modal-wrapper">
+      <div class="modal-wrapper sheet-panel">
         <div class="modal-container">
           <div class="modal-header">
             <h3>Nueva Conversación</h3>
@@ -111,7 +115,9 @@ function selectUser(u: any) {
 .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); }
 .close-btn:hover { color: var(--text); }
 
-.modal-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 60vh; }
+/* Faltaba overflow-y: con más resultados que altura, la lista se cortaba sin
+ * posibilidad de desplazarla. */
+.modal-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: 60dvh; overflow-y: auto; overscroll-behavior: contain; }
 .search-input {
   width: 100%; padding: 0.75rem 1rem; border-radius: 8px;
   border: 1px solid var(--border); background: var(--background);

@@ -248,7 +248,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
 .au-assign-header h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; }
 .au-assign-header p { font-size: 0.83rem; color: rgba(255,255,255,.65); margin: 2px 0 0; }
 .au-assign-body { padding: 24px 28px; }
-.au-assign-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.au-assign-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; }
 .au-field { display: flex; flex-direction: column; gap: 6px; }
 .au-field label { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
@@ -307,7 +307,7 @@ function initials(name: string) { return (name || 'U').split(' ').map(w => w[0])
 }
 .au-role-select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(249,115,22,.15); }
 
-@media (max-width: 600px) {
+@media (max-width: 639px) {
   .tabs-bar { overflow-x: auto; padding-bottom: 4px; }
   .au-assign-grid { grid-template-columns: 1fr; }
 }

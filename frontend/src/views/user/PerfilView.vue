@@ -452,7 +452,7 @@ async function uploadCover(e: Event) {
 /* ─── Formulario ────────────────────────────────────────── */
 .fp-form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 16px;
 }
 .fp-form-narrow { grid-template-columns: 1fr; max-width: 480px; }
@@ -484,7 +484,7 @@ async function uploadCover(e: Event) {
 .fp-instructor-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
 
 /* ─── Responsive ────────────────────────────────────────── */
-@media (max-width: 680px) {
+@media (max-width: 767px) {
   .fp-cover { height: 140px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .fp-identity-bar { flex-direction: column; align-items: flex-start; padding: 0 16px 16px; }
   .fp-avatar-wrap { width: 72px; height: 72px; margin-top: -36px; }
