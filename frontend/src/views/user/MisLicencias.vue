@@ -207,7 +207,7 @@ function tramitarDC3Licencia(lic: any) {
 <template>
   <div class="mis-licencias">
     <div class="header-section">
-      <h2>Mis Licencias Corporativas</h2>
+      <h2>Licenciass</h2>
       <p class="subtitle">Gestiona los accesos que has adquirido para tu equipo.</p>
     </div>
 
@@ -245,7 +245,8 @@ function tramitarDC3Licencia(lic: any) {
                 el valor es 0 la clave desaparece del JSON y sin este fallback la
                 tarjeta pintaba " / 4" — el cupo sí, los usados en blanco.
               -->
-              <span class="value">{{ lic.usadas ?? 0 }} / {{ lic.capacidad_maxima > 0 ? lic.capacidad_maxima : '∞' }}</span>
+              <span class="value">{{ lic.usadas ?? 0 }} / {{ lic.capacidad_maxima > 0 ? lic.capacidad_maxima : '∞'
+                }}</span>
             </div>
             <div class="stat">
               <span class="label">Fecha de Compra</span>
