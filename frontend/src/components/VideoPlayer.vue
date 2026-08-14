@@ -72,7 +72,18 @@ function marcarListo() {
   clearTimeout(temporizadorTardanza)
 }
 
-function initPlayer() {
+/**
+ * Construye (o reconstruye) el reproductor.
+ *
+ * `mismoMedio` indica que se reinicializa sobre el MISMO vídeo, ya cargado —el
+ * caso de levantar el bloqueo al completar la lección—. Importa porque en esa
+ * situación el elemento no vuelve a emitir `loadedmetadata` y hay que retirar
+ * el overlay a mano. No vale con mirar `readyState` siempre: al cambiar de
+ * lección el watch corre ANTES de que el DOM actualice el src, así que
+ * `readyState` aún describe el vídeo anterior y el spinner del nuevo
+ * desaparecería antes de tiempo.
+ */
+function initPlayer(mismoMedio = false) {
   if (!videoEl.value) return
   if (player) { player.destroy(); player = null }
   marcarCargando()
@@ -226,6 +237,17 @@ function initPlayer() {
   // `canplay` mantendría el overlay durante todo el primer buffer.
   player.on('loadedmetadata', marcarListo)
   player.on('playing', marcarListo)
+
+  // Este es el caso que dejaba el overlay colgado al terminar un vídeo: al
+  // completarse la lección se reconstruye el reproductor (watch de
+  // `yaCompletada`, para que reaparezcan velocidad y avance), pero el elemento
+  // multimedia NO se recarga. `loadedmetadata` no vuelve a dispararse porque ya
+  // ocurrió, `playing` tampoco porque la reproducción terminó, y `error` menos.
+  // Sin ningún evento que lo apague, el spinner se quedaba indefinidamente.
+  //
+  // readyState >= HAVE_METADATA (1) significa que ya se conocen duración y
+  // dimensiones: exactamente lo que espera marcarListo.
+  if (mismoMedio && videoEl.value.readyState >= 1) marcarListo()
   // Pausar tampoco es cargar. Sin esto, un `waiting` justo antes de una pausa
   // dejaba el overlay puesto hasta que el usuario le diera a reproducir.
   player.on('pause', marcarListo)
@@ -263,7 +285,8 @@ watch(() => props.src, () => {
 watch(() => props.yaCompletada, (ahora, antes) => {
   if (ahora && !antes && videoEl.value) {
     const t = player?.currentTime ?? 0
-    initPlayer()
+    // true: es el mismo vídeo, solo cambian los controles.
+    initPlayer(true)
     if (t > 0) player?.once('ready', () => { if (player) player.currentTime = t })
   }
 })
@@ -298,7 +321,7 @@ onBeforeUnmount(() => {
     <div v-if="cargando || errorCarga" class="video-overlay">
       <template v-if="errorCarga">
         <p class="overlay-text">No se pudo cargar el video.</p>
-        <button type="button" class="overlay-btn" @click="initPlayer">Reintentar</button>
+        <button type="button" class="overlay-btn" @click="initPlayer()">Reintentar</button>
       </template>
       <template v-else>
         <span class="overlay-spinner" aria-hidden="true"></span>
