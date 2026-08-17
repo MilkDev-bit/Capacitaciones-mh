@@ -14,15 +14,19 @@ package handler
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
+	"Prueba-Go/gateway/internal/pdf"
 	"Prueba-Go/gateway/internal/storage"
 	cursospb "Prueba-Go/gen/cursos"
 	"Prueba-Go/pkg/dc3"
@@ -30,9 +34,57 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// tipoDocx es el MIME de un .docx. R2 lo devuelve como Content-Type y es lo que
-// hace que el navegador descargue el archivo en vez de intentar mostrarlo.
-const tipoDocx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+// tipoPDF es el MIME de la constancia que se entrega. R2 lo devuelve como
+// Content-Type y es lo que decide si el navegador la muestra o la descarga.
+//
+// El .docx ya no sale de aquí: entregarlo equivalía a dar la plantilla oficial
+// con los campos sustituidos, lista para cambiarle el nombre y la empresa sin
+// haber comprado ningún curso.
+const tipoPDF = "application/pdf"
+
+// alfabetoFolio evita los caracteres que se confunden al teclear un código
+// leído en papel: I/1, O/0, S/5, B/8.
+const alfabetoFolio = "ACDEFGHJKLMNPQRTUVWXYZ2346789"
+
+// nuevoFolio genera el código único que identifica la constancia.
+//
+// Usa crypto/rand y no math/rand: un folio adivinable permitiría montar una
+// constancia falsa y darle un código que la página de verificación aceptase,
+// que es exactamente lo que este mecanismo debe impedir.
+//
+// 12 caracteres sobre un alfabeto de 29 son unos 58 bits: de sobra para que
+// probar folios al azar no sea una vía práctica.
+func nuevoFolio() string {
+	const n = 12
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		// Sin entropía no se emite. Un folio predecible es peor que ninguno,
+		// porque el documento parecería verificable sin serlo.
+		return ""
+	}
+	out := make([]byte, n)
+	for i, v := range b {
+		out[i] = alfabetoFolio[int(v)%len(alfabetoFolio)]
+	}
+	return "MH-" + string(out[:4]) + "-" + string(out[4:8]) + "-" + string(out[8:])
+}
+
+// pieDeFolio arma la línea que se imprime al final de la constancia.
+//
+// Se incluye la URL completa para que quien reciba el papel sepa dónde
+// comprobarlo sin tener que preguntar. Si no hay URL pública configurada se
+// imprime solo el folio: mejor un código sin instrucciones que una dirección
+// inventada que no lleve a ninguna parte.
+func pieDeFolio(folio string) string {
+	if folio == "" {
+		return ""
+	}
+	base := strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/")
+	if base == "" {
+		return "Folio de verificación: " + folio
+	}
+	return "Verifica esta constancia en " + base + "/verificar  ·  Folio: " + folio
+}
 
 // ErrConstanciaIncompleta se devuelve cuando faltan datos por capturar.
 var ErrConstanciaIncompleta = errors.New("faltan datos para emitir la constancia")
@@ -218,6 +270,34 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 }
 
 // GET /api/mis-constancias
+// VerificarConstancia expone la comprobación pública de un folio.
+//
+// Es el ÚNICO endpoint DC-3 sin sesión, así que devuelve lo mínimo: a nombre de
+// quién, de qué curso y de cuándo. Sin CURP, sin RFC, sin correo y sin enlace al
+// documento —quien teclea un folio ajeno no debe llevarse el expediente de esa
+// persona ni una descarga directa—.
+func (h *DC3Handler) VerificarConstancia(ctx *gin.Context) {
+	resp, err := h.c.Cursos.VerificarConstancia(ctx.Request.Context(),
+		&cursospb.VerificarConstanciaRequest{Folio: ctx.Param("folio")})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	// 200 también cuando no es válida: que el folio no exista es una respuesta
+	// legítima de este endpoint, no un error de la petición.
+	if !resp.Valida {
+		ctx.JSON(http.StatusOK, gin.H{"valida": false})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"valida":              true,
+		"nombre_trabajador":   resp.NombreTrabajador,
+		"capacitacion_titulo": resp.CapacitacionTitulo,
+		"razon_social":        resp.RazonSocial,
+		"generada_at":         resp.GeneradaAt,
+	})
+}
+
 func (h *DC3Handler) ListMisConstancias(ctx *gin.Context) {
 	resp, err := h.c.Cursos.ListMisConstancias(ctx.Request.Context(), &cursospb.UserRequest{
 		UserId: ctx.GetString(middleware.CtxUserID),
@@ -345,6 +425,9 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		return "", &ErrIncompleta{Faltan: faltan, DeAlumno: !datos.TrabajadorCompleto}
 	}
 
+	// El folio se genera antes que el documento porque va impreso dentro de él.
+	folio := nuevoFolio()
+
 	d := dc3.Datos{
 		NombreTrabajador:    nombreTrabajador,
 		CURP:                datos.Trabajador.Curp,
@@ -363,6 +446,8 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		NombreCapacitador: datos.Empresa.NombreCapacitador,
 		FechaInicio:       datos.FechaInicio,
 		FechaFin:          datos.FechaFin,
+
+		Folio: pieDeFolio(folio),
 	}
 
 	// La segunda validación no es redundante: los banderines de arriba miran los
@@ -381,9 +466,21 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		return "", err
 	}
 
+	// El .docx no llega a salir de aquí: se convierte y solo se sube el PDF.
+	//
+	// Si la conversión falla se aborta la emisión en lugar de subir el Word.
+	// Un respaldo silencioso reintroduciría el problema justo cuando nadie mira,
+	// y de forma intermitente, que es la peor manera de tener un agujero.
+	pdfBytes, err := pdf.Convertir(ctx, "constancia.docx", doc)
+	if err != nil {
+		slog.Error("DC-3: no se pudo convertir a PDF",
+			"user_id", userID, "curso_id", cursoID, "error", err)
+		return "", fmt.Errorf("convirtiendo la constancia a PDF: %w", err)
+	}
+
 	nombreArchivo := dc3.NombreArchivo(nombreTrabajador, datos.NombreCurso)
 	url, err := storage.Default().UploadFile(ctx,
-		"constancias/"+userID+"/"+nombreArchivo, tipoDocx, bytes.NewReader(doc), int64(len(doc)))
+		"constancias/"+userID+"/"+nombreArchivo, tipoPDF, bytes.NewReader(pdfBytes), int64(len(pdfBytes)))
 	if err != nil {
 		return "", err
 	}
@@ -392,6 +489,11 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		UserId:         userID,
 		CapacitacionId: cursoID,
 		ArchivoUrl:     url,
+		Folio:          folio,
+		// Se guardan los mismos valores que se acaban de imprimir, no los que
+		// tenga el perfil cuando alguien verifique el documento meses después.
+		NombreTrabajador: nombreTrabajador,
+		RazonSocial:      datos.Empresa.RazonSocial,
 	}); err != nil {
 		// El documento ya está en R2. Se devuelve la URL igualmente para no
 		// perderla, pero se registra el fallo: sin la fila en base, el alumno no

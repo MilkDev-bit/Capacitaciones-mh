@@ -162,11 +162,15 @@ func TestRepartirFecha(t *testing.T) {
 }
 
 func TestMarcadoresCubrenLaPlantilla(t *testing.T) {
-	// La plantilla oficial tiene 59 marcadores. Si el mapa deja de cubrirlos
-	// todos, los que falten se imprimen literalmente en la constancia.
+	// 59 marcadores del formato oficial de la STPS más {Folio}, que es un
+	// añadido nuestro al pie para la verificación pública.
+	//
+	// Si el mapa deja de cubrirlos todos, los que falten se imprimen
+	// literalmente en la constancia: el alumno recibiría un documento con
+	// "{C18}" o "{Folio}" escrito encima.
 	m := marcadores(datosCompletos())
-	if len(m) != 59 {
-		t.Fatalf("esperaba 59 marcadores, se generaron %d", len(m))
+	if len(m) != 60 {
+		t.Fatalf("esperaba 60 marcadores, se generaron %d", len(m))
 	}
 }
 
@@ -175,8 +179,14 @@ func TestNombreArchivo(t *testing.T) {
 	if !strings.HasPrefix(n, "DC3-Torruco-Bautista-Javier-Trabajos-en-altura-") {
 		t.Fatalf("nombre inesperado: %s", n)
 	}
-	if !strings.HasSuffix(n, ".docx") {
-		t.Fatalf("debe terminar en .docx: %s", n)
+	// .pdf y no .docx: lo que se entrega al alumno es el PDF ya convertido.
+	// Servir el Word significaba darle la plantilla oficial rellenada, editable
+	// con dos clics, sin necesidad de haber comprado ningún curso.
+	if !strings.HasSuffix(n, ".pdf") {
+		t.Fatalf("debe terminar en .pdf: %s", n)
+	}
+	if strings.Contains(n, ".docx") {
+		t.Fatalf("no debe entregarse el documento editable: %s", n)
 	}
 
 	// Acentos y signos se descartan: el nombre viaja en una URL de R2.
@@ -211,5 +221,39 @@ func TestAreaValidaRechazaBasura(t *testing.T) {
 	// Los espacios sobrantes de un copiar y pegar no invalidan una clave buena.
 	if !AreaValida("  6000 ") {
 		t.Fatal("la clave debe aceptarse con espacios alrededor")
+	}
+}
+
+// El folio no es obligatorio: las constancias anteriores a la verificación
+// pública no lo tienen y deben seguir generándose.
+func TestFolioNoEsObligatorio(t *testing.T) {
+	d := datosCompletos()
+	d.Folio = ""
+	if faltan := d.Faltantes(); len(faltan) != 0 {
+		t.Fatalf("el folio no debe contar como campo obligatorio, se obtuvo %v", faltan)
+	}
+}
+
+// El folio llega al documento tal cual.
+//
+// Es la comprobación que sostiene todo el mecanismo de verificación: si el
+// marcador no se sustituyera, el PDF saldría con "{Folio}" impreso o sin nada,
+// y una constancia sin código es indistinguible de una falsificada.
+func TestFolioLlegaAlDocumento(t *testing.T) {
+	d := datosCompletos()
+	d.Folio = "Verifica en https://ejemplo.mx/verificar  ·  Folio: MH-ACDE-2346-KLMN"
+
+	m := marcadores(d)
+	got, ok := m["Folio"]
+	if !ok {
+		t.Fatal("falta el marcador Folio: la plantilla lo imprimiría literal")
+	}
+	if !strings.Contains(got.(string), "MH-ACDE-2346-KLMN") {
+		t.Fatalf("el folio no se conserva: %v", got)
+	}
+	// Sin mayúsculas forzadas: el pie lleva una URL y pasarla a mayúsculas la
+	// haría más difícil de teclear desde el papel.
+	if !strings.Contains(got.(string), "https://ejemplo.mx/verificar") {
+		t.Fatalf("la URL del pie debe conservarse legible: %v", got)
 	}
 }

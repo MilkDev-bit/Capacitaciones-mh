@@ -122,6 +122,12 @@ func New(d Deps) *gin.Engine {
 		api.GET("/cursos-publicos/:id", d.CursosH.GetCursoPublico)
 		// Catálogo de planes: público, alimenta la página de precios.
 		api.GET("/planes", d.CursosH.ListPlanes)
+		// Verificación de constancias DC-3 por folio.
+		//
+		// Público a propósito: lo usa quien RECIBE una constancia en papel —un
+		// patrón, un inspector— y no tiene por qué tener cuenta aquí. Devuelve
+		// solo nombre, curso, empresa y fecha; ni datos personales ni el archivo.
+		api.GET("/constancias/verificar/:folio", d.DC3H.VerificarConstancia)
 		// Stripe webhook — debe ser público y sin AuthMW
 		api.POST("/webhooks/stripe", d.CursosH.StripeWebhook)
 

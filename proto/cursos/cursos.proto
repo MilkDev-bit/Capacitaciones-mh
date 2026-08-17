@@ -100,6 +100,9 @@ service CursosService {
   rpc GuardarDatosTrabajador(DatosTrabajadorRequest) returns (EmptyResponse);
   rpc RegistrarConstanciaDC3(RegistrarConstanciaRequest) returns (EmptyResponse);
   rpc ListMisConstancias(UserRequest)         returns (ListConstanciasResponse);
+  // Consulta pública por folio. No requiere sesión: la usa quien recibe una
+  // constancia en papel y quiere comprobar que existe.
+  rpc VerificarConstancia(VerificarConstanciaRequest) returns (VerificarConstanciaResponse);
 
   // Empresa por defecto del instructor: la que se usa cuando el alumno no
   // declara patrón propio. Se captura una vez y sirve para todos sus cursos.
@@ -693,6 +696,31 @@ message RegistrarConstanciaRequest {
   string user_id         = 1;
   string capacitacion_id = 2;
   string archivo_url     = 3;
+  // Código único impreso en el documento. Es lo que permite distinguir una
+  // constancia emitida por nosotros de un PDF editado: el folio de la falsa no
+  // existe en la base.
+  string folio           = 4;
+  // Nombre y empresa tal como salieron impresos. Se guardan congelados para que
+  // la verificación confirme lo que dice el papel, no lo que diga el perfil del
+  // alumno meses después.
+  string nombre_trabajador = 5;
+  string razon_social      = 6;
+}
+
+message VerificarConstanciaRequest { string folio = 1; }
+
+// VerificarConstanciaResponse es PÚBLICA: la sirve un endpoint sin sesión.
+//
+// Por eso lleva lo justo para confirmar que la constancia es real —a nombre de
+// quién, de qué curso y de cuándo— y ni un dato más. Nada de CURP, RFC, correo
+// ni identificadores internos: quien teclea un folio ajeno no debe obtener el
+// expediente de esa persona.
+message VerificarConstanciaResponse {
+  bool   valida              = 1;
+  string nombre_trabajador   = 2;
+  string capacitacion_titulo = 3;
+  string razon_social        = 4;
+  string generada_at         = 5;
 }
 
 message ConstanciaDC3 {
@@ -700,6 +728,8 @@ message ConstanciaDC3 {
   string capacitacion_titulo = 2;
   string archivo_url         = 3;
   string generada_at         = 4;
+  // Vacío en las constancias emitidas antes de la verificación pública.
+  string folio               = 5;
 }
 
 message ListConstanciasResponse {

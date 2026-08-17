@@ -72,6 +72,18 @@ type Datos struct {
 	// Fechas en formato YYYY-MM-DD. Se descomponen en casillas.
 	FechaInicio string
 	FechaFin    string
+
+	// ── Verificación ─────────────────────────────────────────────────────────
+	//
+	// Folio es el pie que se imprime al final del documento, con el código único
+	// y la URL donde contrastarlo.
+	//
+	// No es un campo del formato oficial de la STPS: es un añadido nuestro, por
+	// eso va en un párrafo suelto al final y no en una casilla. Existe porque el
+	// PDF por sí solo no impide falsificar —se edita y el diseño se copia—; lo
+	// que hace detectable una constancia inventada es que su folio no exista en
+	// la base. Vacío deja el documento sin pie, sin romper nada.
+	Folio string
 }
 
 // ErrDatosIncompletos indica que faltan campos obligatorios de la constancia.
@@ -192,6 +204,11 @@ func Generar(d Datos) ([]byte, error) {
 }
 
 // NombreArchivo propone un nombre estable y legible para la constancia.
+//
+// La extensión es .pdf: lo que se entrega al alumno ya no es el .docx. Servir
+// el Word significaba entregarle la plantilla oficial con los campos ya
+// sustituidos, es decir, un documento en el que cambiar el nombre y la empresa
+// es cuestión de dos clics y no requiere haber comprado ningún curso.
 func NombreArchivo(nombreTrabajador, nombreCurso string) string {
 	limpia := func(s string) string {
 		s = strings.TrimSpace(s)
@@ -210,7 +227,7 @@ func NombreArchivo(nombreTrabajador, nombreCurso string) string {
 		}
 		return strings.Trim(s, "-")
 	}
-	return fmt.Sprintf("DC3-%s-%s-%d.docx",
+	return fmt.Sprintf("DC3-%s-%s-%d.pdf",
 		limpia(nombreTrabajador), limpia(nombreCurso), time.Now().Unix())
 }
 
@@ -228,6 +245,9 @@ func marcadores(d Datos) docx.PlaceholderMap {
 		"DuracionHoras":       conSufijoHoras(d.DuracionHoras),
 		"AreaTematica":        mayus(d.AreaTematica),
 		"NombreCapacitador":   mayus(d.NombreCapacitador),
+		// Sin mayus: el folio lleva una URL y forzarla a mayúsculas la haría
+		// más difícil de teclear a mano desde el papel.
+		"Folio": strings.TrimSpace(d.Folio),
 	}
 
 	// La plantilla NO tiene marcador para el giro principal: el formato oficial

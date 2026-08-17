@@ -10,6 +10,11 @@ const router = createRouter({
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/reset-password', component: () => import('../views/ResetPasswordView.vue') },
     { path: '/verificar-correo', component: () => import('../views/VerifyEmailView.vue') },
+    // Verificación pública de constancias DC-3. Sin sesión a propósito: la usa
+    // quien recibe el documento en papel, que no tiene cuenta aquí. La forma sin
+    // folio permite teclearlo a mano desde la línea impresa al pie.
+    { path: '/verificar', component: () => import('../views/shared/VerificarConstancia.vue') },
+    { path: '/verificar/:folio', component: () => import('../views/shared/VerificarConstancia.vue') },
     // Pantalla de retorno de Stripe. Pública a propósito: si la cookie tarda en
     // propagarse, el usuario ve la confirmación en vez de un rebote al login.
     { path: '/checkout/exito', component: () => import('../views/CheckoutSuccessView.vue') },

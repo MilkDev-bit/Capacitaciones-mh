@@ -264,8 +264,11 @@ type CursosRepository interface {
 	FindEmpresaInstructor(ctx context.Context, instructorID string) (*EmpresaInstructorDC3, error)
 	GuardarEmpresaInstructor(ctx context.Context, e *EmpresaInstructorDC3) error
 	FindConstancia(ctx context.Context, userID, capacitacionID string) (*ConstanciaDC3, error)
-	RegistrarConstancia(ctx context.Context, userID, capacitacionID, archivoURL string) error
+	RegistrarConstancia(ctx context.Context, c *ConstanciaEmitida) error
 	ListConstancias(ctx context.Context, userID string) ([]*ConstanciaDC3, error)
+	// VerificarConstancia devuelve (nil, nil) si el folio no existe: un código
+	// inventado es la respuesta esperada, no un fallo.
+	VerificarConstancia(ctx context.Context, folio string) (*ConstanciaVerificada, error)
 	FechaInscripcion(ctx context.Context, userID, capacitacionID string) (time.Time, error)
 
 	GetAdminDashboardStats(ctx context.Context) (*cursospb.AdminDashboardStatsResponse, error)

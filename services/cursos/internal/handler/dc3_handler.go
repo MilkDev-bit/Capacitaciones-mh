@@ -78,3 +78,17 @@ func (h *CursosHandler) ListMisConstancias(ctx context.Context, req *cursospb.Us
 	}
 	return resp, nil
 }
+
+// VerificarConstancia atiende la consulta pública por folio.
+//
+// El folio NO se registra en el log. Es el dato que permite consultar una
+// constancia sin sesión, así que dejarlo escrito en los registros lo convierte
+// en algo que se filtra con ellos.
+func (h *CursosHandler) VerificarConstancia(ctx context.Context, req *cursospb.VerificarConstanciaRequest) (*cursospb.VerificarConstanciaResponse, error) {
+	resp, err := h.svc.VerificarConstancia(ctx, req.Folio)
+	if err != nil {
+		slog.Error("VerificarConstancia", "error", err)
+		return nil, status.Error(codes.Internal, "error verificando la constancia")
+	}
+	return resp, nil
+}

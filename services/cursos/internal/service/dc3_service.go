@@ -197,7 +197,43 @@ func (s *CursosService) RegistrarConstanciaDC3(ctx context.Context, req *cursosp
 	if req.ArchivoUrl == "" {
 		return errors.New("la URL de la constancia es obligatoria")
 	}
-	return s.repo.RegistrarConstancia(ctx, req.UserId, req.CapacitacionId, req.ArchivoUrl)
+	return s.repo.RegistrarConstancia(ctx, &repository.ConstanciaEmitida{
+		UserID:           req.UserId,
+		CapacitacionID:   req.CapacitacionId,
+		ArchivoURL:       req.ArchivoUrl,
+		Folio:            strings.TrimSpace(req.Folio),
+		NombreTrabajador: strings.TrimSpace(req.NombreTrabajador),
+		RazonSocial:      strings.TrimSpace(req.RazonSocial),
+	})
+}
+
+// VerificarConstancia responde a una consulta pública por folio.
+//
+// Un folio inexistente devuelve `valida: false` y ningún dato, no un error: la
+// mitad de las consultas legítimas serán precisamente de documentos falsos, y
+// quien pregunta necesita una respuesta clara, no un 500.
+//
+// Tampoco distingue "no existe" de "está mal escrito". Decirlo permitiría
+// tantear el formato del folio a base de probar.
+func (s *CursosService) VerificarConstancia(ctx context.Context, folio string) (*cursospb.VerificarConstanciaResponse, error) {
+	folio = strings.ToUpper(strings.TrimSpace(folio))
+	if folio == "" {
+		return &cursospb.VerificarConstanciaResponse{Valida: false}, nil
+	}
+	c, err := s.repo.VerificarConstancia(ctx, folio)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return &cursospb.VerificarConstanciaResponse{Valida: false}, nil
+	}
+	return &cursospb.VerificarConstanciaResponse{
+		Valida:             true,
+		NombreTrabajador:   c.NombreTrabajador,
+		CapacitacionTitulo: c.CapacitacionTitulo,
+		RazonSocial:        c.RazonSocial,
+		GeneradaAt:         c.GeneradaAt.Format("2006-01-02"),
+	}, nil
 }
 
 // ListMisConstancias devuelve las constancias emitidas de un alumno.

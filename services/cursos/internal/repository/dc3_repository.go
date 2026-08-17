@@ -98,6 +98,36 @@ type ConstanciaDC3 struct {
 	CapacitacionTitulo string    `db:"capacitacion_titulo"`
 	ArchivoURL         string    `db:"archivo_url"`
 	GeneradaAt         time.Time `db:"generada_at"`
+	// Folio impreso en el documento. Vacío en las constancias emitidas antes
+	// de que existiera la verificación pública.
+	Folio string `db:"folio"`
+}
+
+// ConstanciaEmitida son los datos con los que se registra una constancia.
+//
+// Va como struct y no como seis parámetros sueltos porque cinco de los seis son
+// string: una llamada posicional invita a cruzar el folio con la URL sin que el
+// compilador diga nada.
+type ConstanciaEmitida struct {
+	UserID         string
+	CapacitacionID string
+	ArchivoURL     string
+	Folio          string
+	// NombreTrabajador y RazonSocial se guardan tal como salieron impresos.
+	NombreTrabajador string
+	RazonSocial      string
+}
+
+// ConstanciaVerificada es lo que devuelve una consulta pública por folio.
+//
+// Es un tipo aparte y no ConstanciaDC3 a propósito: al no tener UserID ni
+// ArchivoURL, no hay forma de que un descuido al serializar filtre el
+// identificador del alumno o un enlace directo al documento de otra persona.
+type ConstanciaVerificada struct {
+	NombreTrabajador   string    `db:"nombre_trabajador"`
+	CapacitacionTitulo string    `db:"capacitacion_titulo"`
+	RazonSocial        string    `db:"razon_social"`
+	GeneradaAt         time.Time `db:"generada_at"`
 }
 
 // FindDatosTrabajador devuelve los datos DC-3 del alumno.
@@ -186,6 +216,7 @@ func (r *postgresCursosRepository) FindConstancia(ctx context.Context, userID, c
 	c := &ConstanciaDC3{}
 	err := r.db.GetContext(ctx, c,
 		`SELECT k.user_id, k.capacitacion_id, k.archivo_url, k.generada_at,
+		        COALESCE(k.folio,'') folio,
 		        COALESCE(c.title,'') capacitacion_titulo
 		   FROM dc3_constancias k
 		   LEFT JOIN capacitaciones c ON c.id = k.capacitacion_id
@@ -204,15 +235,48 @@ func (r *postgresCursosRepository) FindConstancia(ctx context.Context, userID, c
 // El upsert sobre la PK compuesta es lo que hace idempotente la generación
 // automática: si el alumno vuelve a completar el curso, se sustituye la fila en
 // lugar de acumular constancias duplicadas del mismo curso.
-func (r *postgresCursosRepository) RegistrarConstancia(ctx context.Context, userID, capacitacionID, archivoURL string) error {
+func (r *postgresCursosRepository) RegistrarConstancia(ctx context.Context, c *ConstanciaEmitida) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO dc3_constancias (user_id, capacitacion_id, archivo_url, generada_at)
-		 VALUES ($1::uuid, $2::uuid, $3, NOW())
+		`INSERT INTO dc3_constancias (user_id, capacitacion_id, archivo_url, folio,
+		                              nombre_trabajador, razon_social, generada_at)
+		 VALUES ($1::uuid, $2::uuid, $3, NULLIF($4,''), $5, $6, NOW())
 		 ON CONFLICT (user_id, capacitacion_id) DO UPDATE
-		    SET archivo_url = EXCLUDED.archivo_url,
-		        generada_at = NOW()`,
-		userID, capacitacionID, archivoURL)
+		    SET archivo_url       = EXCLUDED.archivo_url,
+		        folio             = EXCLUDED.folio,
+		        nombre_trabajador = EXCLUDED.nombre_trabajador,
+		        razon_social      = EXCLUDED.razon_social,
+		        generada_at       = NOW()`,
+		c.UserID, c.CapacitacionID, c.ArchivoURL, c.Folio, c.NombreTrabajador, c.RazonSocial)
 	return err
+}
+
+// VerificarConstancia busca una constancia por su folio.
+//
+// Devuelve (nil, nil) cuando no existe: un folio inventado no es un error del
+// servidor, es la respuesta que busca quien está comprobando un documento.
+//
+// El nombre y la razón social se leen de la propia fila, congelados el día de
+// la emisión. No se consultan los datos actuales del alumno por dos razones:
+// si cambia de empleo la constancia debe seguir diciendo lo que dice el papel,
+// y este servicio tiene base de datos propia —la tabla de usuarios vive en la
+// de auth, así que un JOIN contra ella ni siquiera resolvería—.
+func (r *postgresCursosRepository) VerificarConstancia(ctx context.Context, folio string) (*ConstanciaVerificada, error) {
+	c := &ConstanciaVerificada{}
+	err := r.db.GetContext(ctx, c,
+		`SELECT COALESCE(k.nombre_trabajador,'') nombre_trabajador,
+		        COALESCE(k.razon_social,'')      razon_social,
+		        COALESCE(cap.title,'')           capacitacion_titulo,
+		        k.generada_at
+		   FROM dc3_constancias k
+		   LEFT JOIN capacitaciones cap ON cap.id = k.capacitacion_id
+		  WHERE k.folio = $1`, folio)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 // ListConstancias devuelve las constancias de un alumno, de la más reciente a
@@ -221,6 +285,7 @@ func (r *postgresCursosRepository) ListConstancias(ctx context.Context, userID s
 	var cs []*ConstanciaDC3
 	return cs, r.db.SelectContext(ctx, &cs,
 		`SELECT k.user_id, k.capacitacion_id, k.archivo_url, k.generada_at,
+		        COALESCE(k.folio,'') folio,
 		        COALESCE(c.title,'') capacitacion_titulo
 		   FROM dc3_constancias k
 		   LEFT JOIN capacitaciones c ON c.id = k.capacitacion_id
@@ -263,5 +328,6 @@ func (c *ConstanciaDC3) ToProto() *cursospb.ConstanciaDC3 {
 		CapacitacionTitulo: c.CapacitacionTitulo,
 		ArchivoUrl:         c.ArchivoURL,
 		GeneradaAt:         c.GeneradaAt.Format(time.RFC3339),
+		Folio:              c.Folio,
 	}
 }

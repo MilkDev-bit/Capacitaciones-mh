@@ -115,6 +115,14 @@ func Load() *Config {
 	if C.JitsiAppSecret == "" {
 		slog.Warn("JITSI_APP_SECRET vacía — las videollamadas quedarán deshabilitadas")
 	}
+	// Se avisa al arrancar y no la primera vez que alguien termina un curso.
+	//
+	// Sin Gotenberg no hay conversión a PDF y la emisión se aborta —no se cae a
+	// .docx a propósito—, así que el síntoma sería un alumno sin constancia
+	// varios días después del despliegue, sin relación aparente con la causa.
+	if strings.TrimSpace(os.Getenv("GOTENBERG_URL")) == "" {
+		slog.Warn("GOTENBERG_URL vacía — no se podrán emitir constancias DC-3 (se entregan en PDF)")
+	}
 	return &C
 }
 

@@ -297,6 +297,27 @@ func runMigrations(db *sqlx.DB) error {
 			PRIMARY KEY (user_id, capacitacion_id)
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_dc3_constancias_user ON dc3_constancias(user_id, generada_at DESC)`,
+		// Folio impreso en el documento, para la verificación pública.
+		//
+		// Nullable a propósito: las constancias emitidas antes de esto no lo
+		// tienen y no se pueden inventar hacia atrás sin reemitirlas.
+		`ALTER TABLE dc3_constancias ADD COLUMN IF NOT EXISTS folio VARCHAR(32)`,
+		// Nombre y empresa TAL COMO SALIERON IMPRESOS.
+		//
+		// Se copian en vez de consultarse al verificar. Por un lado, la tabla de
+		// usuarios vive en la base de auth y este servicio tiene la suya, así que
+		// un JOIN no resolvería. Por otro, aunque resolviera sería incorrecto: si
+		// el alumno cambia de empleo, la verificación debe seguir confirmando lo
+		// que dice el papel que tiene delante quien lo está comprobando.
+		`ALTER TABLE dc3_constancias ADD COLUMN IF NOT EXISTS nombre_trabajador VARCHAR(250)`,
+		`ALTER TABLE dc3_constancias ADD COLUMN IF NOT EXISTS razon_social VARCHAR(250)`,
+		// El índice es UNIQUE porque el folio es la identidad del documento: dos
+		// constancias con el mismo código harían ambiguo el resultado de la
+		// verificación. Parcial, para que las filas antiguas sin folio no choquen
+		// entre ellas —en Postgres los NULL no colisionan, pero dejarlo explícito
+		// evita sorpresas si algún día se rellenan con cadena vacía—.
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_dc3_constancias_folio
+		   ON dc3_constancias(folio) WHERE folio IS NOT NULL AND folio <> ''`,
 
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_type VARCHAR(20)`,
 		`ALTER TABLE curso_licencias ADD COLUMN IF NOT EXISTS curso_duracion INT`,

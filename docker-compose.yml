@@ -49,6 +49,31 @@ services:
     ports:
       - "5432:5432"
 
+  # Conversión de documentos a PDF (LibreOffice tras una API HTTP).
+  #
+  # Va en un contenedor aparte porque el gateway corre sobre distroless/static
+  # (unos 2 MB) y meter LibreOffice dentro lo llevaría cerca de 1 GB.
+  #
+  # Es una dependencia dura de la emisión de constancias: sin él no se emiten.
+  # Es deliberado — la alternativa sería entregar el .docx, que es la plantilla
+  # oficial editable y justo lo que se quiere evitar.
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    # Solo se le habla desde la red interna: no expone puertos al host. Un
+    # Gotenberg accesible desde fuera convierte cualquier documento que le
+    # manden y es un buen sitio desde el que sondear la red interna.
+    command:
+      - "gotenberg"
+      - "--api-timeout=60s"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ── Auth service ─────────────────────────────────────────────────────────────
   auth-service:
     build:
@@ -192,11 +217,18 @@ services:
       - examenes-service
       - foros-service
       - mensajes-service
+      - gotenberg
     environment:
       PORT:           "8080"
       JWT_SECRET:     ${JWT_SECRET}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:5173,http://localhost:8080,http://localhost}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+
+      # Conversión de las constancias DC-3 a PDF. Sin esto no se emiten.
+      GOTENBERG_URL: ${GOTENBERG_URL:-http://gotenberg:3000}
+      # Base pública del sitio: se imprime en el pie de la constancia junto al
+      # folio, para que quien la reciba sepa dónde comprobarla.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
 
       # Direcciones internas de los microservicios (resolución DNS de Docker)
       AUTH_ADDR:      auth-service:50051
