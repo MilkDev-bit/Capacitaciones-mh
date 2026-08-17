@@ -30,9 +30,6 @@ type Curso struct {
 	ThumbnailURL   string  `db:"thumbnail_url"`
 	Color          string  `db:"color"`
 	Precio         float64 `db:"precio"`
-	// PrecioCentavos es la fuente de verdad para cobrar. Precio (NUMERIC leído
-	// como float64) se conserva solo para respuestas legacy: convertirlo con
-	// int64(precio*100) truncaba y cobraba de menos.
 	PrecioCentavos       int64      `db:"precio_centavos"`
 	ScheduledAt          *time.Time `db:"scheduled_at"`
 	Duration             int32      `db:"duration"`

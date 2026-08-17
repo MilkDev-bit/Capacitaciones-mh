@@ -27,14 +27,23 @@ const props = withDefaults(defineProps<{
   cursoId: string
   /** El panel solo aparece cuando el curso está terminado. */
   completado: boolean
-  /** dc3_enabled de la capacitación. */
+  /**
+   * dc3_enabled de la capacitación.
+   *
+   * El default explícito NO es decorativo. Vue castea las props declaradas como
+   * `boolean` cuando no se pasan: `habilitado?: boolean` omitido llegaba como
+   * `false`, no como `undefined`, así que el guard `habilitado === false` daba
+   * positivo y el panel se cortaba antes de consultar nada. Resultado: el modal
+   * se abría en blanco y el alumno no podía capturar su CURP, con lo que el
+   * backend nunca llegaba a emitir ninguna constancia.
+   */
   habilitado?: boolean
   /**
    * `plano` quita el marco propio. Dentro del modal el panel ya está sobre una
    * tarjeta, y anidar dos bordes con el mismo radio se lee como un error.
    */
   variante?: 'tarjeta' | 'plano'
-}>(), { variante: 'tarjeta' })
+}>(), { variante: 'tarjeta', habilitado: true })
 
 const emit = defineEmits<{ (e: 'emitida', url: string): void }>()
 
@@ -44,6 +53,7 @@ const constanciaUrl = ref('')
 const trabajadorCompleto = ref(false)
 const empresaCompleta = ref(false)
 const consultado = ref(false)
+const errorCarga = ref('')
 
 const form = ref({
   curp: '', puesto: '', ocupacion_especifica: '',
@@ -94,8 +104,9 @@ const estado = computed(() => estadoDC3({
 const curpValida = computed(() => form.value.curp.trim().length === 18)
 
 async function consultar() {
-  if (!props.completado || props.habilitado === false) return
+  if (!props.completado || !props.habilitado) return
   cargando.value = true
+  errorCarga.value = ''
   try {
     const { data } = await api.get(`/capacitaciones/${props.cursoId}/dc3`)
     constanciaUrl.value = data.constancia_url || ''
@@ -121,8 +132,11 @@ async function consultar() {
       form.value.nombre_patron = data.empresa.nombre_patron || ''
       form.value.representante_trabajadores = data.empresa.representante_trabajadores || ''
     }
-  } catch {
-    // Un curso sin DC-3 responde con error; no es algo que reportar al alumno.
+  } catch (e: any) {
+    // Antes se tragaba en silencio. El precio de eso fue un modal en blanco que
+    // parecía una pantalla rota: sin mensaje, el alumno no sabe si esperar,
+    // reintentar o avisar a alguien.
+    errorCarga.value = e.response?.data?.error || 'No pudimos consultar el estado de tu constancia.'
   } finally {
     cargando.value = false
     consultado.value = true
@@ -197,7 +211,14 @@ watch(() => props.cursoId, () => {
 </script>
 
 <template>
-  <div v-if="completado && habilitado !== false && consultado"
+  <!--
+    `consultado` salió del v-if a propósito.
+    Mientras estaba aquí, cualquier fallo antes de que la consulta terminara
+    dejaba el componente sin pintar ni un carácter, y un componente invisible no
+    se puede diagnosticar mirando la pantalla. Ahora la carga y el error tienen
+    su propio estado visible.
+  -->
+  <div v-if="completado && habilitado"
        class="dc3-panel" :class="{ 'dc3-plano': variante === 'plano' }">
     <div v-if="variante !== 'plano'" class="dc3-head">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -206,8 +227,17 @@ watch(() => props.cursoId, () => {
       <strong>Constancia DC-3</strong>
     </div>
 
+    <!-- Cargando -->
+    <p v-if="estado === 'cargando'" class="dc3-lead">Consultando el estado de tu constancia…</p>
+
+    <!-- Error de consulta -->
+    <template v-else-if="errorCarga">
+      <p class="dc3-lead">{{ errorCarga }}</p>
+      <button class="btn btn-secondary" :disabled="cargando" @click="consultar">Reintentar</button>
+    </template>
+
     <!-- Lista -->
-    <template v-if="estado === 'lista'">
+    <template v-else-if="estado === 'lista'">
       <p class="dc3-lead">Tu constancia de habilidades laborales está emitida.</p>
       <div class="dc3-acciones">
         <a :href="constanciaUrl" target="_blank" rel="noopener" class="btn btn-primary" download>
