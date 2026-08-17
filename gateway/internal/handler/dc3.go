@@ -473,8 +473,15 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 	// y de forma intermitente, que es la peor manera de tener un agujero.
 	pdfBytes, err := pdf.Convertir(ctx, "constancia.docx", doc)
 	if err != nil {
+		// Se registra la URL de destino junto al error.
+		//
+		// Sin ella, "no se pudo convertir" no distingue entre un nombre de
+		// servicio que no resuelve, un puerto equivocado y una conversión que
+		// falló de verdad. Los tres se ven igual en el log y cada uno se
+		// arregla en un sitio distinto.
 		slog.Error("DC-3: no se pudo convertir a PDF",
-			"user_id", userID, "curso_id", cursoID, "error", err)
+			"user_id", userID, "curso_id", cursoID,
+			"gotenberg_url", pdf.URL(), "error", err)
 		return "", fmt.Errorf("convirtiendo la constancia a PDF: %w", err)
 	}
 

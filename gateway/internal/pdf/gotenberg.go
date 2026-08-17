@@ -95,7 +95,10 @@ func Convertir(ctx context.Context, nombre string, doc []byte) ([]byte, error) {
 
 	resp, err := clienteHTTP.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("llamando a Gotenberg: %w", err)
+		// El error de red se envuelve con la URL: "no such host" y "connection
+		// refused" apuntan a problemas distintos —nombre del servicio frente a
+		// puerto o binding— y saber cuál es ahorra un ciclo de despliegue.
+		return nil, fmt.Errorf("llamando a Gotenberg en %s: %w", base, err)
 	}
 	defer resp.Body.Close()
 

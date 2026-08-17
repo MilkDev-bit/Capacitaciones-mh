@@ -300,6 +300,10 @@ func New(d Deps) *gin.Engine {
 
 				adm.GET("/dashboard/stats", d.CursosH.GetAdminDashboardStats)
 
+				// Comprueba que el conversor a PDF responde. Devuelve el error
+				// de red entero, que es lo que el panel de logs recorta.
+				adm.GET("/diagnostico/gotenberg", d.DC3H.DiagnosticoGotenberg)
+
 				adm.GET("/capacitaciones", d.CursosH.AdminListCapacitaciones)
 				adm.POST("/asignar", d.CursosH.AdminAsignar)
 				adm.DELETE("/asignar/:id", d.CursosH.AdminDesAsignar)
