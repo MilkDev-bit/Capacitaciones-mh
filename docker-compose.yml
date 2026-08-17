@@ -58,12 +58,15 @@ services:
   # Es deliberado — la alternativa sería entregar el .docx, que es la plantilla
   # oficial editable y justo lo que se quiere evitar.
   gotenberg:
-    # Variante :8-libreoffice, no la imagen completa.
+    # Imagen propia, no la oficial a secas.
     #
-    # Solo se usa la ruta /forms/libreoffice/convert. La imagen completa arrastra
-    # además Chromium, que aquí no convierte nada y sí sería una superficie de
-    # ataque: un navegador que abre documentos que le llegan por HTTP.
-    image: gotenberg/gotenberg:8-libreoffice
+    # La plantilla DC-3 está maquetada en Arial Narrow y la imagen oficial no
+    # trae ningún sustituto métrico para esa fuente. El resultado eran campos
+    # cortados a media letra y un documento de tres páginas donde deben ser dos.
+    # Ver gotenberg/Dockerfile.
+    build:
+      context: .
+      dockerfile: gotenberg/Dockerfile
     restart: unless-stopped
     # Sin `ports`: solo se le habla desde la red interna. Un Gotenberg accesible
     # desde fuera convierte cualquier documento que le manden y es un buen sitio
@@ -73,10 +76,13 @@ services:
       # 30s por defecto se queda corto en la primera conversión, que arranca
       # LibreOffice desde cero.
       - "--api-timeout=60s"
-      # Escucha también en IPv6. En Docker no hace falta, pero mantiene este
-      # fichero alineado con lo que Railway necesita en su red privada, para que
-      # el entorno local no diverja del desplegado.
-      - "--api-bind-ip=::"
+      # NO se toca --api-bind-ip: su valor por defecto (0.0.0.0) es el correcto.
+      #
+      # Se probó con `::` pensando que la red privada de Railway era IPv6-only.
+      # No lo es: el DNS interno resuelve a IPv4, así que un Gotenberg escuchando
+      # solo en IPv6 rechaza la conexión del gateway. El síntoma era un
+      # "connection refused" con el nombre resolviendo perfectamente, que es de
+      # los que más despistan porque parece un problema de red y es de binding.
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 10s
