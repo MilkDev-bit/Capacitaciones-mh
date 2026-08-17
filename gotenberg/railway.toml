@@ -1,0 +1,24 @@
+# Configuración del servicio de conversión a PDF.
+#
+# Existe porque el railway.toml de la raíz NO es del gateway en exclusiva: se
+# aplica a todo servicio desplegado desde este repositorio, y tiene prioridad
+# sobre lo que se configure en el panel. El servicio de Gotenberg acababa
+# construyendo gateway/Dockerfile y comprobando /api/health, así que el
+# despliegue moría con "1/1 replicas never became healthy" pese a que la imagen
+# se había construido sin errores.
+#
+# Para que Railway lea este fichero hay que indicárselo en el servicio:
+#   Settings → Config-as-code → Railway Config File = gotenberg/railway.toml
+
+[build]
+builder        = "dockerfile"
+dockerfilePath = "gotenberg/Dockerfile"
+
+[deploy]
+# Gotenberg expone /health, no /api/health. Esa ruta es del gateway.
+healthcheckPath = "/health"
+# 30s no bastan: el arranque levanta LibreOffice y carga la caché de fuentes,
+# que es justo lo que esta imagen amplía.
+healthcheckTimeout      = 120
+restartPolicyType       = "on_failure"
+restartPolicyMaxRetries = 3

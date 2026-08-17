@@ -1,3 +1,13 @@
+# Configuración del GATEWAY.
+#
+# Ojo: Railway aplica este fichero a cualquier servicio que despliegue desde
+# este repositorio y tiene prioridad sobre lo que se ponga en el panel. Un
+# servicio nuevo que no declare el suyo acabará construyendo gateway/Dockerfile
+# y comprobando /api/health, aunque en la interfaz se haya elegido otra cosa.
+#
+# Cada servicio adicional necesita su propio fichero y apuntarlo en
+# Settings → Config-as-code. Ver gotenberg/railway.toml.
+
 [build]
 builder        = "dockerfile"
 dockerfilePath = "gateway/Dockerfile"
