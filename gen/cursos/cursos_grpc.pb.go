@@ -74,6 +74,7 @@ const (
 	CursosService_GuardarDatosTrabajador_FullMethodName         = "/cursos.CursosService/GuardarDatosTrabajador"
 	CursosService_RegistrarConstanciaDC3_FullMethodName         = "/cursos.CursosService/RegistrarConstanciaDC3"
 	CursosService_ListMisConstancias_FullMethodName             = "/cursos.CursosService/ListMisConstancias"
+	CursosService_VerificarConstancia_FullMethodName            = "/cursos.CursosService/VerificarConstancia"
 	CursosService_GetEmpresaInstructor_FullMethodName           = "/cursos.CursosService/GetEmpresaInstructor"
 	CursosService_GuardarEmpresaInstructor_FullMethodName       = "/cursos.CursosService/GuardarEmpresaInstructor"
 )
@@ -168,6 +169,9 @@ type CursosServiceClient interface {
 	GuardarDatosTrabajador(ctx context.Context, in *DatosTrabajadorRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	RegistrarConstanciaDC3(ctx context.Context, in *RegistrarConstanciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	ListMisConstancias(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListConstanciasResponse, error)
+	// Consulta pública por folio. No requiere sesión: la usa quien recibe una
+	// constancia en papel y quiere comprobar que existe.
+	VerificarConstancia(ctx context.Context, in *VerificarConstanciaRequest, opts ...grpc.CallOption) (*VerificarConstanciaResponse, error)
 	// Empresa por defecto del instructor: la que se usa cuando el alumno no
 	// declara patrón propio. Se captura una vez y sirve para todos sus cursos.
 	GetEmpresaInstructor(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*DatosEmpresaDC3, error)
@@ -732,6 +736,16 @@ func (c *cursosServiceClient) ListMisConstancias(ctx context.Context, in *UserRe
 	return out, nil
 }
 
+func (c *cursosServiceClient) VerificarConstancia(ctx context.Context, in *VerificarConstanciaRequest, opts ...grpc.CallOption) (*VerificarConstanciaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerificarConstanciaResponse)
+	err := c.cc.Invoke(ctx, CursosService_VerificarConstancia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) GetEmpresaInstructor(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*DatosEmpresaDC3, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DatosEmpresaDC3)
@@ -842,6 +856,9 @@ type CursosServiceServer interface {
 	GuardarDatosTrabajador(context.Context, *DatosTrabajadorRequest) (*EmptyResponse, error)
 	RegistrarConstanciaDC3(context.Context, *RegistrarConstanciaRequest) (*EmptyResponse, error)
 	ListMisConstancias(context.Context, *UserRequest) (*ListConstanciasResponse, error)
+	// Consulta pública por folio. No requiere sesión: la usa quien recibe una
+	// constancia en papel y quiere comprobar que existe.
+	VerificarConstancia(context.Context, *VerificarConstanciaRequest) (*VerificarConstanciaResponse, error)
 	// Empresa por defecto del instructor: la que se usa cuando el alumno no
 	// declara patrón propio. Se captura una vez y sirve para todos sus cursos.
 	GetEmpresaInstructor(context.Context, *UserRequest) (*DatosEmpresaDC3, error)
@@ -1020,6 +1037,9 @@ func (UnimplementedCursosServiceServer) RegistrarConstanciaDC3(context.Context, 
 }
 func (UnimplementedCursosServiceServer) ListMisConstancias(context.Context, *UserRequest) (*ListConstanciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMisConstancias not implemented")
+}
+func (UnimplementedCursosServiceServer) VerificarConstancia(context.Context, *VerificarConstanciaRequest) (*VerificarConstanciaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerificarConstancia not implemented")
 }
 func (UnimplementedCursosServiceServer) GetEmpresaInstructor(context.Context, *UserRequest) (*DatosEmpresaDC3, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetEmpresaInstructor not implemented")
@@ -2038,6 +2058,24 @@ func _CursosService_ListMisConstancias_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_VerificarConstancia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerificarConstanciaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).VerificarConstancia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_VerificarConstancia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).VerificarConstancia(ctx, req.(*VerificarConstanciaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_GetEmpresaInstructor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserRequest)
 	if err := dec(in); err != nil {
@@ -2300,6 +2338,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMisConstancias",
 			Handler:    _CursosService_ListMisConstancias_Handler,
+		},
+		{
+			MethodName: "VerificarConstancia",
+			Handler:    _CursosService_VerificarConstancia_Handler,
 		},
 		{
 			MethodName: "GetEmpresaInstructor",
