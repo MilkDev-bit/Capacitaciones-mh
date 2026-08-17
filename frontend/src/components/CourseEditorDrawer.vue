@@ -31,6 +31,7 @@ watch(() => props.show, (val) => {
       dc3_enabled: props.course.dc3_enabled === true,
       dc3_area_tematica: props.course.dc3_area_tematica || '',
       dc3_nombre_curso: props.course.dc3_nombre_curso || '',
+      dc3_duracion_horas: props.course.dc3_duracion_horas || 0,
     }
     thumbnailFile.value = null
     activeTab.value = 'info'
@@ -43,20 +44,37 @@ const cursoElegido = computed(() => cursoDelCatalogo(form.value.dc3_nombre_curso
 /**
  * Al elegir un curso del catálogo se rellena sola su área temática.
  *
- * Solo si el área está vacía: si el instructor ya eligió una a mano, pisarla
- * sería descartar una decisión suya sin avisar. Las horas NO se tocan por lo
- * mismo —`duration` gobierna también la duración que se muestra en la
- * plataforma—; se enseñan como nota para que decida él.
+ * Solo rellena lo que esté vacío: si el instructor ya eligió a mano, pisarlo
+ * sería descartar una decisión suya sin avisar.
+ *
+ * Las horas sí se rellenan ahora. Antes solo se enseñaban como nota, con el
+ * argumento de que `duration` gobernaba la duración mostrada en la plataforma —
+ * pero nunca le di un campo donde escribirlas, así que la nota no servía de
+ * nada y todas las capacitaciones se quedaron sin horas oficiales. Al ser una
+ * columna propia ya no hay conflicto con la duración del contenido.
  */
 function alElegirCurso() {
   const c = cursoElegido.value
-  if (c && !form.value.dc3_area_tematica) {
-    form.value.dc3_area_tematica = c.area
-  }
+  if (!c) return
+  if (!form.value.dc3_area_tematica) form.value.dc3_area_tematica = c.area
+  if (!form.value.dc3_duracion_horas) form.value.dc3_duracion_horas = c.horas
 }
 
 async function saveInfo() {
   if (!form.value.title) return toast.error('Título requerido')
+  // Se valida al guardar, no al emitir.
+  //
+  // Sin esto el hueco solo aparecía semanas después, cuando un alumno terminaba
+  // el curso y su constancia no salía: el instructor se enteraba por una queja y
+  // sin ninguna pista de qué faltaba.
+  if (form.value.dc3_enabled === true) {
+    if (!form.value.dc3_area_tematica) {
+      return toast.error('Elige el área temática: la constancia DC-3 no se emite sin ella')
+    }
+    if (!Number(form.value.dc3_duracion_horas)) {
+      return toast.error('Indica la duración en horas: la constancia DC-3 no se emite sin ella')
+    }
+  }
   loading.value = true
   try {
     const payload: Record<string, any> = {
@@ -67,6 +85,7 @@ async function saveInfo() {
       dc3_enabled: form.value.dc3_enabled === true,
       dc3_area_tematica: form.value.dc3_area_tematica || '',
       dc3_nombre_curso: (form.value.dc3_nombre_curso || '').trim(),
+      dc3_duracion_horas: Number(form.value.dc3_duracion_horas) || 0,
       welcome_message: form.value.welcome_message || '',
       color: form.value.color || '#f97316',
       thumbnail_url: form.value.thumbnail_url || '',
@@ -190,8 +209,28 @@ useScrollLock(toRef(props, "show"))
               </datalist>
               <small class="dc3-nota">
                 Si lo dejas vacío se usa el título del curso.
+              </small>
+            </label>
+
+            <!--
+              Duración oficial. Es obligatoria y no se deduce del contenido.
+              La constancia declara las horas del catálogo STPS: un curso con 95
+              minutos de vídeo puede ser una capacitación de 8 horas. Sin este
+              campo el documento salía sin duración y no se generaba nunca.
+            -->
+            <label class="field mt-3">
+              <span class="field-label">Duración en horas <em>*</em></span>
+              <input v-model.number="form.dc3_duracion_horas" type="number" min="1" max="999"
+                     class="field-input" placeholder="Ej: 8" />
+              <small class="dc3-nota">
+                Horas que figurarán en la constancia.
                 <template v-if="cursoElegido">
                   El catálogo indica <strong>{{ cursoElegido.horas }} h</strong> para este curso.
+                  <button v-if="form.dc3_duracion_horas !== cursoElegido.horas"
+                          type="button" class="dc3-aplicar"
+                          @click="form.dc3_duracion_horas = cursoElegido.horas">
+                    Usar {{ cursoElegido.horas }} h
+                  </button>
                 </template>
               </small>
             </label>
@@ -246,6 +285,20 @@ useScrollLock(toRef(props, "show"))
 
 .dc3-empresa em { color: var(--danger); font-style: normal; }
 .dc3-nota { display: block; margin-top: 5px; font-size: 0.75rem; color: var(--muted); line-height: 1.45; }
+
+/* Atajo para aceptar las horas del catálogo sin teclearlas. */
+.dc3-aplicar {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dc3-aplicar:hover { background: var(--bg); }
 
 .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-overlay.open { opacity: 1; pointer-events: auto; }

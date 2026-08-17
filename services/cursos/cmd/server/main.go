@@ -228,6 +228,14 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_area_tematica VARCHAR(100)`,
 		// Nombre oficial para la constancia; distinto del título comercial.
 		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_nombre_curso VARCHAR(250)`,
+		// Duración oficial en horas que declara la constancia.
+		//
+		// No se deriva de `duration`. Esa columna son minutos de contenido y
+		// además el editor de cursos nunca la envía, así que valía 0 en todas
+		// las capacitaciones: la constancia se quedaba sin "duración en horas" y
+		// no llegaba a generarse nunca. Aunque tuviera valor, tampoco serviría:
+		// 95 minutos de vídeo pueden ser 8 horas oficiales de capacitación.
+		`ALTER TABLE capacitaciones ADD COLUMN IF NOT EXISTS dc3_duracion_horas INT NOT NULL DEFAULT 0`,
 
 		// Los datos de empresa vivieron un momento aquí, por capacitación. Se
 		// retiran: el patrón es de quien emplea al trabajador, no del curso.

@@ -107,6 +107,7 @@ func cursoToJSON(resp *cursospb.CursoResponse) gin.H {
 		"dc3_enabled":           resp.Dc3Enabled,
 		"dc3_area_tematica":     resp.Dc3AreaTematica,
 		"dc3_nombre_curso":      resp.Dc3NombreCurso,
+		"dc3_duracion_horas":    resp.Dc3DuracionHoras,
 	}
 }
 
@@ -817,19 +818,20 @@ func (h *CursosHandler) InstructorListCapacitaciones(ctx *gin.Context) {
 // POST /api/instructor/capacitaciones
 func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title           string  `json:"title"           binding:"required"`
-		Description     string  `json:"description"`
-		Type            string  `json:"type"`
-		Content         string  `json:"content"`
-		IsPublic        bool    `json:"is_public"`
-		WelcomeMessage  string  `json:"welcome_message"`
-		ThumbnailURL    string  `json:"thumbnail_url"`
-		Color           string  `json:"color"`
-		Precio          float64 `json:"precio"`
-		Duration        int32   `json:"duration"`
-		Dc3Enabled      *bool   `json:"dc3_enabled"`
-		Dc3AreaTematica string  `json:"dc3_area_tematica"`
-		Dc3NombreCurso  string  `json:"dc3_nombre_curso"`
+		Title            string  `json:"title"           binding:"required"`
+		Description      string  `json:"description"`
+		Type             string  `json:"type"`
+		Content          string  `json:"content"`
+		IsPublic         bool    `json:"is_public"`
+		WelcomeMessage   string  `json:"welcome_message"`
+		ThumbnailURL     string  `json:"thumbnail_url"`
+		Color            string  `json:"color"`
+		Precio           float64 `json:"precio"`
+		Duration         int32   `json:"duration"`
+		Dc3Enabled       *bool   `json:"dc3_enabled"`
+		Dc3AreaTematica  string  `json:"dc3_area_tematica"`
+		Dc3NombreCurso   string  `json:"dc3_nombre_curso"`
+		Dc3DuracionHoras int32   `json:"dc3_duracion_horas"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -845,20 +847,21 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 		return
 	}
 	resp, err := h.c.Cursos.InstructorCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
-		UserId:          ctx.GetString(middleware.CtxUserID),
-		Title:           body.Title,
-		Description:     body.Description,
-		Type:            body.Type,
-		Content:         body.Content,
-		IsPublic:        body.IsPublic,
-		WelcomeMessage:  body.WelcomeMessage,
-		ThumbnailUrl:    body.ThumbnailURL,
-		Color:           body.Color,
-		Precio:          body.Precio,
-		Duration:        body.Duration,
-		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: areaTematica,
-		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
+		UserId:           ctx.GetString(middleware.CtxUserID),
+		Title:            body.Title,
+		Description:      body.Description,
+		Type:             body.Type,
+		Content:          body.Content,
+		IsPublic:         body.IsPublic,
+		WelcomeMessage:   body.WelcomeMessage,
+		ThumbnailUrl:     body.ThumbnailURL,
+		Color:            body.Color,
+		Precio:           body.Precio,
+		Duration:         body.Duration,
+		Dc3Enabled:       dc3Enabled,
+		Dc3AreaTematica:  areaTematica,
+		Dc3NombreCurso:   strings.TrimSpace(body.Dc3NombreCurso),
+		Dc3DuracionHoras: body.Dc3DuracionHoras,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -870,19 +873,20 @@ func (h *CursosHandler) InstructorCreateCapacitacion(ctx *gin.Context) {
 // PUT /api/instructor/capacitaciones/:id
 func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title           string  `json:"title"`
-		Description     string  `json:"description"`
-		Type            string  `json:"type"`
-		Content         string  `json:"content"`
-		IsPublic        bool    `json:"is_public"`
-		WelcomeMessage  string  `json:"welcome_message"`
-		ThumbnailURL    string  `json:"thumbnail_url"`
-		Color           string  `json:"color"`
-		Precio          float64 `json:"precio"`
-		Duration        int32   `json:"duration"`
-		Dc3Enabled      *bool   `json:"dc3_enabled"`
-		Dc3AreaTematica string  `json:"dc3_area_tematica"`
-		Dc3NombreCurso  string  `json:"dc3_nombre_curso"`
+		Title            string  `json:"title"`
+		Description      string  `json:"description"`
+		Type             string  `json:"type"`
+		Content          string  `json:"content"`
+		IsPublic         bool    `json:"is_public"`
+		WelcomeMessage   string  `json:"welcome_message"`
+		ThumbnailURL     string  `json:"thumbnail_url"`
+		Color            string  `json:"color"`
+		Precio           float64 `json:"precio"`
+		Duration         int32   `json:"duration"`
+		Dc3Enabled       *bool   `json:"dc3_enabled"`
+		Dc3AreaTematica  string  `json:"dc3_area_tematica"`
+		Dc3NombreCurso   string  `json:"dc3_nombre_curso"`
+		Dc3DuracionHoras int32   `json:"dc3_duracion_horas"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -898,21 +902,22 @@ func (h *CursosHandler) InstructorUpdateCapacitacion(ctx *gin.Context) {
 		return
 	}
 	resp, err := h.c.Cursos.InstructorUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
-		CursoId:         ctx.Param("id"),
-		UserId:          ctx.GetString(middleware.CtxUserID),
-		Title:           body.Title,
-		Description:     body.Description,
-		Type:            body.Type,
-		Content:         body.Content,
-		IsPublic:        body.IsPublic,
-		WelcomeMessage:  body.WelcomeMessage,
-		ThumbnailUrl:    body.ThumbnailURL,
-		Color:           body.Color,
-		Precio:          body.Precio,
-		Duration:        body.Duration,
-		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: areaTematica,
-		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
+		CursoId:          ctx.Param("id"),
+		UserId:           ctx.GetString(middleware.CtxUserID),
+		Title:            body.Title,
+		Description:      body.Description,
+		Type:             body.Type,
+		Content:          body.Content,
+		IsPublic:         body.IsPublic,
+		WelcomeMessage:   body.WelcomeMessage,
+		ThumbnailUrl:     body.ThumbnailURL,
+		Color:            body.Color,
+		Precio:           body.Precio,
+		Duration:         body.Duration,
+		Dc3Enabled:       dc3Enabled,
+		Dc3AreaTematica:  areaTematica,
+		Dc3NombreCurso:   strings.TrimSpace(body.Dc3NombreCurso),
+		Dc3DuracionHoras: body.Dc3DuracionHoras,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1069,18 +1074,19 @@ func (h *CursosHandler) AdminListCapacitaciones(ctx *gin.Context) {
 // POST /api/admin/capacitaciones
 func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title           string `json:"title"           binding:"required"`
-		Description     string `json:"description"`
-		Type            string `json:"type"`
-		Content         string `json:"content"`
-		IsPublic        bool   `json:"is_public"`
-		WelcomeMessage  string `json:"welcome_message"`
-		ThumbnailURL    string `json:"thumbnail_url"`
-		Color           string `json:"color"`
-		Duration        int32  `json:"duration"`
-		Dc3Enabled      *bool  `json:"dc3_enabled"`
-		Dc3AreaTematica string `json:"dc3_area_tematica"`
-		Dc3NombreCurso  string `json:"dc3_nombre_curso"`
+		Title            string `json:"title"           binding:"required"`
+		Description      string `json:"description"`
+		Type             string `json:"type"`
+		Content          string `json:"content"`
+		IsPublic         bool   `json:"is_public"`
+		WelcomeMessage   string `json:"welcome_message"`
+		ThumbnailURL     string `json:"thumbnail_url"`
+		Color            string `json:"color"`
+		Duration         int32  `json:"duration"`
+		Dc3Enabled       *bool  `json:"dc3_enabled"`
+		Dc3AreaTematica  string `json:"dc3_area_tematica"`
+		Dc3NombreCurso   string `json:"dc3_nombre_curso"`
+		Dc3DuracionHoras int32  `json:"dc3_duracion_horas"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1096,19 +1102,20 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 		return
 	}
 	resp, err := h.c.Cursos.AdminCreateCapacitacion(ctx.Request.Context(), &cursospb.CreateCursoRequest{
-		UserId:          ctx.GetString(middleware.CtxUserID),
-		Title:           body.Title,
-		Description:     body.Description,
-		Type:            body.Type,
-		Content:         body.Content,
-		IsPublic:        body.IsPublic,
-		WelcomeMessage:  body.WelcomeMessage,
-		ThumbnailUrl:    body.ThumbnailURL,
-		Color:           body.Color,
-		Duration:        body.Duration,
-		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: areaTematica,
-		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
+		UserId:           ctx.GetString(middleware.CtxUserID),
+		Title:            body.Title,
+		Description:      body.Description,
+		Type:             body.Type,
+		Content:          body.Content,
+		IsPublic:         body.IsPublic,
+		WelcomeMessage:   body.WelcomeMessage,
+		ThumbnailUrl:     body.ThumbnailURL,
+		Color:            body.Color,
+		Duration:         body.Duration,
+		Dc3Enabled:       dc3Enabled,
+		Dc3AreaTematica:  areaTematica,
+		Dc3NombreCurso:   strings.TrimSpace(body.Dc3NombreCurso),
+		Dc3DuracionHoras: body.Dc3DuracionHoras,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -1120,18 +1127,19 @@ func (h *CursosHandler) AdminCreateCapacitacion(ctx *gin.Context) {
 // PUT /api/admin/capacitaciones/:id
 func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 	var body struct {
-		Title           string `json:"title"`
-		Description     string `json:"description"`
-		Type            string `json:"type"`
-		Content         string `json:"content"`
-		IsPublic        bool   `json:"is_public"`
-		WelcomeMessage  string `json:"welcome_message"`
-		ThumbnailURL    string `json:"thumbnail_url"`
-		Color           string `json:"color"`
-		Duration        int32  `json:"duration"`
-		Dc3Enabled      *bool  `json:"dc3_enabled"`
-		Dc3AreaTematica string `json:"dc3_area_tematica"`
-		Dc3NombreCurso  string `json:"dc3_nombre_curso"`
+		Title            string `json:"title"`
+		Description      string `json:"description"`
+		Type             string `json:"type"`
+		Content          string `json:"content"`
+		IsPublic         bool   `json:"is_public"`
+		WelcomeMessage   string `json:"welcome_message"`
+		ThumbnailURL     string `json:"thumbnail_url"`
+		Color            string `json:"color"`
+		Duration         int32  `json:"duration"`
+		Dc3Enabled       *bool  `json:"dc3_enabled"`
+		Dc3AreaTematica  string `json:"dc3_area_tematica"`
+		Dc3NombreCurso   string `json:"dc3_nombre_curso"`
+		Dc3DuracionHoras int32  `json:"dc3_duracion_horas"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -1147,20 +1155,21 @@ func (h *CursosHandler) AdminUpdateCapacitacion(ctx *gin.Context) {
 		return
 	}
 	resp, err := h.c.Cursos.AdminUpdateCapacitacion(ctx.Request.Context(), &cursospb.UpdateCursoRequest{
-		CursoId:         ctx.Param("id"),
-		UserId:          ctx.GetString(middleware.CtxUserID),
-		Title:           body.Title,
-		Description:     body.Description,
-		Type:            body.Type,
-		Content:         body.Content,
-		IsPublic:        body.IsPublic,
-		WelcomeMessage:  body.WelcomeMessage,
-		ThumbnailUrl:    body.ThumbnailURL,
-		Color:           body.Color,
-		Duration:        body.Duration,
-		Dc3Enabled:      dc3Enabled,
-		Dc3AreaTematica: areaTematica,
-		Dc3NombreCurso:  strings.TrimSpace(body.Dc3NombreCurso),
+		CursoId:          ctx.Param("id"),
+		UserId:           ctx.GetString(middleware.CtxUserID),
+		Title:            body.Title,
+		Description:      body.Description,
+		Type:             body.Type,
+		Content:          body.Content,
+		IsPublic:         body.IsPublic,
+		WelcomeMessage:   body.WelcomeMessage,
+		ThumbnailUrl:     body.ThumbnailURL,
+		Color:            body.Color,
+		Duration:         body.Duration,
+		Dc3Enabled:       dc3Enabled,
+		Dc3AreaTematica:  areaTematica,
+		Dc3NombreCurso:   strings.TrimSpace(body.Dc3NombreCurso),
+		Dc3DuracionHoras: body.Dc3DuracionHoras,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

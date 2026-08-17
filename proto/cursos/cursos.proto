@@ -142,6 +142,13 @@ message CreateCursoRequest {
   // No es el título comercial: "Curso Trabajos en alturas" se vende así, pero
   // en la DC-3 figura "SEGURIDAD EN TRABAJOS ALTURAS". Vacío usa el título.
   string dc3_nombre_curso = 16;
+  // Duración OFICIAL en horas que declara la constancia.
+  //
+  // Deliberadamente separada de `duration`, que son minutos de contenido en la
+  // plataforma. Son cifras distintas: un curso con 95 minutos de vídeo puede
+  // ser legalmente una capacitación de 8 horas según el catálogo STPS. Derivarla
+  // de `duration` habría puesto "2 h" en un documento oficial que debe decir 8.
+  int32 dc3_duracion_horas = 17;
 }
 
 message UpdateCursoRequest {
@@ -162,6 +169,8 @@ message UpdateCursoRequest {
   bool   dc3_enabled     = 16;
   string dc3_area_tematica = 17;
   string dc3_nombre_curso  = 18;
+  // Horas oficiales de la constancia. Ver CreateCursoRequest.
+  int32  dc3_duracion_horas = 19;
 }
 
 message InscribirseRequest {
@@ -205,6 +214,7 @@ message CursoResponse {
   bool   dc3_enabled     = 20;
   string dc3_area_tematica = 21;
   string dc3_nombre_curso  = 22;
+  int32  dc3_duracion_horas = 23;
 }
 
 message ListCursosResponse {

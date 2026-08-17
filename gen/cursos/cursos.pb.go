@@ -266,8 +266,15 @@ type CreateCursoRequest struct {
 	// No es el título comercial: "Curso Trabajos en alturas" se vende así, pero
 	// en la DC-3 figura "SEGURIDAD EN TRABAJOS ALTURAS". Vacío usa el título.
 	Dc3NombreCurso string `protobuf:"bytes,16,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Duración OFICIAL en horas que declara la constancia.
+	//
+	// Deliberadamente separada de `duration`, que son minutos de contenido en la
+	// plataforma. Son cifras distintas: un curso con 95 minutos de vídeo puede
+	// ser legalmente una capacitación de 8 horas según el catálogo STPS. Derivarla
+	// de `duration` habría puesto "2 h" en un documento oficial que debe decir 8.
+	Dc3DuracionHoras int32 `protobuf:"varint,17,opt,name=dc3_duracion_horas,json=dc3DuracionHoras,proto3" json:"dc3_duracion_horas,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CreateCursoRequest) Reset() {
@@ -412,6 +419,13 @@ func (x *CreateCursoRequest) GetDc3NombreCurso() string {
 	return ""
 }
 
+func (x *CreateCursoRequest) GetDc3DuracionHoras() int32 {
+	if x != nil {
+		return x.Dc3DuracionHoras
+	}
+	return 0
+}
+
 type UpdateCursoRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	CursoId         string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
@@ -431,8 +445,10 @@ type UpdateCursoRequest struct {
 	Dc3Enabled      bool                   `protobuf:"varint,16,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	Dc3AreaTematica string                 `protobuf:"bytes,17,opt,name=dc3_area_tematica,json=dc3AreaTematica,proto3" json:"dc3_area_tematica,omitempty"`
 	Dc3NombreCurso  string                 `protobuf:"bytes,18,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Horas oficiales de la constancia. Ver CreateCursoRequest.
+	Dc3DuracionHoras int32 `protobuf:"varint,19,opt,name=dc3_duracion_horas,json=dc3DuracionHoras,proto3" json:"dc3_duracion_horas,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *UpdateCursoRequest) Reset() {
@@ -582,6 +598,13 @@ func (x *UpdateCursoRequest) GetDc3NombreCurso() string {
 		return x.Dc3NombreCurso
 	}
 	return ""
+}
+
+func (x *UpdateCursoRequest) GetDc3DuracionHoras() int32 {
+	if x != nil {
+		return x.Dc3DuracionHoras
+	}
+	return 0
 }
 
 type InscribirseRequest struct {
@@ -779,6 +802,7 @@ type CursoResponse struct {
 	Dc3Enabled           bool                   `protobuf:"varint,20,opt,name=dc3_enabled,json=dc3Enabled,proto3" json:"dc3_enabled,omitempty"`
 	Dc3AreaTematica      string                 `protobuf:"bytes,21,opt,name=dc3_area_tematica,json=dc3AreaTematica,proto3" json:"dc3_area_tematica,omitempty"`
 	Dc3NombreCurso       string                 `protobuf:"bytes,22,opt,name=dc3_nombre_curso,json=dc3NombreCurso,proto3" json:"dc3_nombre_curso,omitempty"`
+	Dc3DuracionHoras     int32                  `protobuf:"varint,23,opt,name=dc3_duracion_horas,json=dc3DuracionHoras,proto3" json:"dc3_duracion_horas,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -958,6 +982,13 @@ func (x *CursoResponse) GetDc3NombreCurso() string {
 		return x.Dc3NombreCurso
 	}
 	return ""
+}
+
+func (x *CursoResponse) GetDc3DuracionHoras() int32 {
+	if x != nil {
+		return x.Dc3DuracionHoras
+	}
+	return 0
 }
 
 type ListCursosResponse struct {
@@ -4985,7 +5016,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rCodigoRequest\x12\x16\n" +
 	"\x06codigo\x18\x01 \x01(\tR\x06codigo\":\n" +
 	"\x13AsignacionIDRequest\x12#\n" +
-	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xff\x03\n" +
+	"\rasignacion_id\x18\x01 \x01(\tR\fasignacionId\"\xad\x04\n" +
 	"\x12CreateCursoRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -5004,7 +5035,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\vdc3_enabled\x18\x0e \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
 	"\x11dc3_area_tematica\x18\x0f \x01(\tR\x0fdc3AreaTematica\x12(\n" +
-	"\x10dc3_nombre_curso\x18\x10 \x01(\tR\x0edc3NombreCurso\"\x9a\x04\n" +
+	"\x10dc3_nombre_curso\x18\x10 \x01(\tR\x0edc3NombreCurso\x12,\n" +
+	"\x12dc3_duracion_horas\x18\x11 \x01(\x05R\x10dc3DuracionHoras\"\xc8\x04\n" +
 	"\x12UpdateCursoRequest\x12\x19\n" +
 	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -5024,7 +5056,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\vdc3_enabled\x18\x10 \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
 	"\x11dc3_area_tematica\x18\x11 \x01(\tR\x0fdc3AreaTematica\x12(\n" +
-	"\x10dc3_nombre_curso\x18\x12 \x01(\tR\x0edc3NombreCurso\"H\n" +
+	"\x10dc3_nombre_curso\x18\x12 \x01(\tR\x0edc3NombreCurso\x12,\n" +
+	"\x12dc3_duracion_horas\x18\x13 \x01(\x05R\x10dc3DuracionHoras\"H\n" +
 	"\x12InscribirseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bcurso_id\x18\x02 \x01(\tR\acursoId\"@\n" +
@@ -5035,7 +5068,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
-	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xb8\x05\n" +
+	"\texamen_id\x18\x04 \x01(\tR\bexamenId\"\xe6\x05\n" +
 	"\rCursoResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -5060,7 +5093,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\vdc3_enabled\x18\x14 \x01(\bR\n" +
 	"dc3Enabled\x12*\n" +
 	"\x11dc3_area_tematica\x18\x15 \x01(\tR\x0fdc3AreaTematica\x12(\n" +
-	"\x10dc3_nombre_curso\x18\x16 \x01(\tR\x0edc3NombreCurso\"C\n" +
+	"\x10dc3_nombre_curso\x18\x16 \x01(\tR\x0edc3NombreCurso\x12,\n" +
+	"\x12dc3_duracion_horas\x18\x17 \x01(\x05R\x10dc3DuracionHoras\"C\n" +
 	"\x12ListCursosResponse\x12-\n" +
 	"\x06cursos\x18\x01 \x03(\v2\x15.cursos.CursoResponseR\x06cursos\"t\n" +
 	"\x0eEstudianteInfo\x12\x17\n" +

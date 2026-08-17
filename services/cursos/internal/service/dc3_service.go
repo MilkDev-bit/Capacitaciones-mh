@@ -81,7 +81,7 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 		// El nombre oficial manda; el título comercial es el respaldo para los
 		// cursos que aún no lo tienen capturado.
 		NombreCurso:        nombreParaConstancia(curso.DC3NombreCurso, curso.Title),
-		DuracionHoras:      horasDeMinutos(curso.Duration),
+		DuracionHoras:      duracionParaConstancia(curso.DC3DuracionHoras, curso.Duration),
 		EmpresaCompleta:    empresaCompleta(empresa) && strings.TrimSpace(curso.DC3AreaTematica) != "",
 		TrabajadorCompleto: trabajadorCompleto(trabajador),
 	}
@@ -260,6 +260,23 @@ func nombreParaConstancia(oficial, titulo string) string {
 // un curso de 90 minutos son 2 horas de formación, no 1. Un curso sin duración
 // registrada devuelve cadena vacía, que Faltantes() detecta y convierte en un
 // aviso al instructor.
+// duracionParaConstancia elige las horas que declara el documento.
+//
+// Manda la duración oficial que captura el instructor. El respaldo desde los
+// minutos de contenido existe solo para las capacitaciones creadas antes de que
+// hubiera campo, y es aproximado por definición: las horas de una DC-3 son las
+// del catálogo STPS, no las que dure el vídeo.
+//
+// Que devuelva "" cuando no hay ninguna de las dos es intencionado: `Faltantes`
+// lo detecta y frena la emisión. Un documento oficial con la duración en blanco
+// o inventada es peor que no emitirlo.
+func duracionParaConstancia(horasOficiales, minutosContenido int32) string {
+	if horasOficiales > 0 {
+		return strconv.Itoa(int(horasOficiales))
+	}
+	return horasDeMinutos(minutosContenido)
+}
+
 func horasDeMinutos(minutos int32) string {
 	if minutos <= 0 {
 		return ""
