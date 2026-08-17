@@ -54,6 +54,8 @@ const trabajadorCompleto = ref(false)
 const empresaCompleta = ref(false)
 const consultado = ref(false)
 const errorCarga = ref('')
+/** Campos que el servidor reportó como vacíos en el último intento de emisión. */
+const faltantes = ref<string[]>([])
 
 const form = ref({
   curp: '', puesto: '', ocupacion_especifica: '',
@@ -165,13 +167,20 @@ async function enviar() {
     })
     trabajadorCompleto.value = true
     editando.value = false
-    // 202 significa "guardado, pero falta el instructor". No es un error y no
-    // debe pintarse en rojo.
+    // 202 significa "guardado, pero el documento no salió".
+    //
+    // Aquí se ponía `empresaCompleta = false` a pelo, y era una invención: el
+    // cliente no había comprobado nada de la empresa. Bastaba con que faltara
+    // la duración del curso para que el panel acusara al instructor de no haber
+    // capturado unos datos que sí tenía. Ahora se vuelve a preguntar al
+    // servidor, que es el único que sabe qué falta.
     if (status === 202) {
-      empresaCompleta.value = false
+      faltantes.value = Array.isArray(data.faltan) ? data.faltan : []
       toast.success(data.mensaje || 'Guardamos tus datos')
+      await consultar()
       return
     }
+    faltantes.value = []
     constanciaUrl.value = data.constancia_url || ''
     if (constanciaUrl.value) {
       emit('emitida', constanciaUrl.value)
@@ -333,10 +342,17 @@ watch(() => props.cursoId, () => {
 
     <!-- Falta que el instructor configure la empresa -->
     <template v-else-if="estado === 'falta-empresa'">
+      <!--
+        Se nombra el área temática además de la empresa porque el backend mete
+        las dos cosas en la misma bandera: un curso con la empresa perfectamente
+        capturada pero sin área marcada cae aquí, y el instructor se pondría a
+        revisar su perfil sin encontrar nada mal.
+      -->
       <p class="dc3-lead">
         Tus datos están guardados. Falta que el instructor complete los datos de la
-        empresa y los agentes capacitadores de esta capacitación; en cuanto lo haga,
-        emitimos tu constancia automáticamente y la verás en <b>Mis constancias</b>.
+        empresa y el capacitador en su perfil, y el área temática de esta
+        capacitación; en cuanto lo haga, emitimos tu constancia automáticamente y la
+        verás en <b>Mis constancias</b>.
       </p>
       <button class="btn btn-ghost" @click="editando = true">Revisar mis datos</button>
     </template>
@@ -349,9 +365,18 @@ watch(() => props.cursoId, () => {
     -->
     <template v-else>
       <p class="dc3-lead">
-        Tus datos y los de la capacitación están completos, pero el documento no
-        llegó a generarse. Vuelve a intentarlo; si sigue sin salir, avisa a tu
-        instructor de que revise la duración y el área temática del curso.
+        Tus datos están guardados, pero el documento todavía no se puede generar.
+      </p>
+      <!--
+        La lista viene del servidor, que es quien intentó armar el documento.
+        Sin ella el mensaje tenía que elegir un culpable a ciegas y solía elegir
+        mal; con ella el alumno sabe exactamente qué pedirle a su instructor.
+      -->
+      <ul v-if="faltantes.length" class="dc3-faltantes">
+        <li v-for="f in faltantes" :key="f">{{ f }}</li>
+      </ul>
+      <p v-else class="dc3-lead">
+        Avisa a tu instructor de que revise la duración y el área temática del curso.
       </p>
       <div class="dc3-acciones">
         <button class="btn btn-primary" :disabled="guardando" @click="reintentar">
@@ -416,6 +441,14 @@ watch(() => props.cursoId, () => {
 .dc3-hint, .dc3-error { font-size: 0.75rem; }
 .dc3-hint { color: var(--muted); }
 .dc3-error { color: var(--danger); }
+
+.dc3-faltantes {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
 
 /* Dentro del modal el marco lo pone el propio modal. */
 .dc3-plano {

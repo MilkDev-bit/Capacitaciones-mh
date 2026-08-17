@@ -19,6 +19,11 @@ var allowedPrefixes = map[string]bool{
 	"foro":       true,
 	"mensajes":   true,
 	"entregas":   true,
+	// Logotipo de empresa de la cabecera de la constancia DC-3. El servidor lo
+	// vuelve a descargar al emitir, y solo acepta URLs que cuelguen del bucket
+	// propio, así que el prefijo tiene que estar permitido aquí o la subida
+	// muere con un 400 antes de empezar.
+	"dc3-logos": true,
 }
 
 // PresignHandler genera URLs pre-firmadas para subidas directas al bucket R2.

@@ -37,6 +37,31 @@ const tipoDocx = "application/vnd.openxmlformats-officedocument.wordprocessingml
 // ErrConstanciaIncompleta se devuelve cuando faltan datos por capturar.
 var ErrConstanciaIncompleta = errors.New("faltan datos para emitir la constancia")
 
+// ErrIncompleta detalla QUÉ falta y a quién le toca ponerlo.
+//
+// El error plano no bastaba y el precio fue alto: `emitir` lo devolvía tanto
+// cuando faltaban datos del alumno como cuando faltaba algo del curso, y quien
+// lo recibía tenía que inventarse la causa. La respuesta 202 acabó afirmando
+// "tu instructor debe completar los datos de la empresa" en casos donde la
+// empresa estaba completa y lo que faltaba era otra cosa, mandando a la gente a
+// revisar justo donde no estaba el problema.
+//
+// Ahora la lista viaja hasta el cliente y nadie tiene que adivinar.
+type ErrIncompleta struct {
+	// Faltan son los campos vacíos, con el nombre que entiende el usuario.
+	Faltan []string
+	// DeAlumno indica si lo que falta lo puede resolver el propio alumno.
+	DeAlumno bool
+}
+
+func (e *ErrIncompleta) Error() string {
+	return "faltan datos para emitir la constancia: " + strings.Join(e.Faltan, ", ")
+}
+
+// Is permite seguir usando errors.Is(err, ErrConstanciaIncompleta) en las
+// ramas que solo necesitan saber que faltó algo, sin romper a quien ya lo hacía.
+func (e *ErrIncompleta) Is(target error) bool { return target == ErrConstanciaIncompleta }
+
 type DC3Handler struct {
 	c *clients.Clients
 }
@@ -167,12 +192,19 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 
 	url, err := h.emitir(ctx.Request.Context(), userID, cursoID,
 		ctx.GetString(middleware.CtxUserName))
-	if errors.Is(err, ErrConstanciaIncompleta) {
-		// 202: lo del alumno quedó guardado, pero falta que el instructor
-		// configure la empresa. No es un fallo suyo y no debe leerse como tal.
+	var incompleta *ErrIncompleta
+	if errors.As(err, &incompleta) {
+		// 202: lo del alumno quedó guardado, pero el documento no salió.
+		//
+		// El mensaje ya no presume la causa. Antes decía siempre "tu instructor
+		// debe completar los datos de la empresa", incluso cuando la empresa
+		// estaba completa y lo que faltaba era la duración del curso: el alumno
+		// reclamaba por algo que su instructor ya había hecho.
 		ctx.JSON(http.StatusAccepted, gin.H{
 			"guardado": true,
-			"mensaje":  "Guardamos tus datos. Tu instructor debe completar los datos de la empresa para emitir la constancia.",
+			"faltan":   incompleta.Faltan,
+			"mensaje": "Guardamos tus datos, pero aún no se puede emitir la constancia. Falta: " +
+				strings.Join(incompleta.Faltan, "; ") + ".",
 		})
 		return
 	}
@@ -303,7 +335,14 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		return datos.ConstanciaUrl, nil
 	}
 	if !datos.EmpresaCompleta || !datos.TrabajadorCompleto {
-		return "", ErrConstanciaIncompleta
+		var faltan []string
+		if !datos.TrabajadorCompleto {
+			faltan = append(faltan, "tus datos (CURP, puesto y ocupación)")
+		}
+		if !datos.EmpresaCompleta {
+			faltan = append(faltan, "los datos de la empresa y el área temática del curso")
+		}
+		return "", &ErrIncompleta{Faltan: faltan, DeAlumno: !datos.TrabajadorCompleto}
 	}
 
 	d := dc3.Datos{
@@ -331,7 +370,10 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 	// pasa los banderines y aun así no puede emitir constancia.
 	if faltan := d.Faltantes(); len(faltan) > 0 {
 		slog.Info("DC-3: datos insuficientes", "user_id", userID, "curso_id", cursoID, "faltan", faltan)
-		return "", ErrConstanciaIncompleta
+		// Estos campos no los captura el alumno: salen del curso y del perfil del
+		// instructor. Devolver la lista es lo que evita el mensaje genérico que
+		// mandaba a revisar la empresa cuando el hueco estaba en otro sitio.
+		return "", &ErrIncompleta{Faltan: faltan}
 	}
 
 	doc, err := dc3.Generar(d)
