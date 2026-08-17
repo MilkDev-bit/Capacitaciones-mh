@@ -58,16 +58,25 @@ services:
   # Es deliberado — la alternativa sería entregar el .docx, que es la plantilla
   # oficial editable y justo lo que se quiere evitar.
   gotenberg:
-    image: gotenberg/gotenberg:8
+    # Variante :8-libreoffice, no la imagen completa.
+    #
+    # Solo se usa la ruta /forms/libreoffice/convert. La imagen completa arrastra
+    # además Chromium, que aquí no convierte nada y sí sería una superficie de
+    # ataque: un navegador que abre documentos que le llegan por HTTP.
+    image: gotenberg/gotenberg:8-libreoffice
     restart: unless-stopped
-    # Solo se le habla desde la red interna: no expone puertos al host. Un
-    # Gotenberg accesible desde fuera convierte cualquier documento que le
-    # manden y es un buen sitio desde el que sondear la red interna.
+    # Sin `ports`: solo se le habla desde la red interna. Un Gotenberg accesible
+    # desde fuera convierte cualquier documento que le manden y es un buen sitio
+    # desde el que sondear la red interna.
     command:
       - "gotenberg"
+      # 30s por defecto se queda corto en la primera conversión, que arranca
+      # LibreOffice desde cero.
       - "--api-timeout=60s"
-      - "--chromium-disable-javascript=true"
-      - "--chromium-allow-list=file:///tmp/.*"
+      # Escucha también en IPv6. En Docker no hace falta, pero mantiene este
+      # fichero alineado con lo que Railway necesita en su red privada, para que
+      # el entorno local no diverja del desplegado.
+      - "--api-bind-ip=::"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 10s

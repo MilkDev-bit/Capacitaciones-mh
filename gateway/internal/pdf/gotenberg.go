@@ -79,9 +79,9 @@ func Convertir(ctx context.Context, nombre string, doc []byte) ([]byte, error) {
 	if _, err := parte.Write(doc); err != nil {
 		return nil, fmt.Errorf("escribiendo el documento: %w", err)
 	}
-	// Sin esto, un documento cuyas fuentes no estén en el contenedor se
-	// re-pagina y las casillas de la CURP se desalinean.
-	_ = w.WriteField("pdfa", "")
+	// No se envía `pdfa`: ese campo selecciona un perfil PDF/A concreto
+	// (PDF/A-1b, PDF/A-3b…) y mandarlo vacío es un valor inválido, no un
+	// "por defecto". La conversión normal ya conserva la maquetación.
 	if err := w.Close(); err != nil {
 		return nil, fmt.Errorf("cerrando la petición: %w", err)
 	}
