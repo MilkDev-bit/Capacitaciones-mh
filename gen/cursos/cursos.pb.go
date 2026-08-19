@@ -4468,8 +4468,14 @@ type DatosTrabajadorDC3 struct {
 	Curp                string                 `protobuf:"bytes,1,opt,name=curp,proto3" json:"curp,omitempty"`
 	Puesto              string                 `protobuf:"bytes,2,opt,name=puesto,proto3" json:"puesto,omitempty"`
 	OcupacionEspecifica string                 `protobuf:"bytes,3,opt,name=ocupacion_especifica,json=ocupacionEspecifica,proto3" json:"ocupacion_especifica,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Logotipo de la empresa del alumno, para el lado IZQUIERDO de la constancia.
+	//
+	// Solo tiene sentido si declara empresa propia: ese lado es del patrón. Quien
+	// no la declara recibe el logotipo del instructor en ambos lados, porque
+	// entonces el patrón que figura en el documento es el suyo.
+	LogoUrl       string `protobuf:"bytes,4,opt,name=logo_url,json=logoUrl,proto3" json:"logo_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DatosTrabajadorDC3) Reset() {
@@ -4519,6 +4525,13 @@ func (x *DatosTrabajadorDC3) GetPuesto() string {
 func (x *DatosTrabajadorDC3) GetOcupacionEspecifica() string {
 	if x != nil {
 		return x.OcupacionEspecifica
+	}
+	return ""
+}
+
+func (x *DatosTrabajadorDC3) GetLogoUrl() string {
+	if x != nil {
+		return x.LogoUrl
 	}
 	return ""
 }
@@ -4718,9 +4731,19 @@ type DatosDC3Response struct {
 	// es justo lo que necesita saber para decidir si declara su propio patrón.
 	EmpresaOrigen string `protobuf:"bytes,10,opt,name=empresa_origen,json=empresaOrigen,proto3" json:"empresa_origen,omitempty"`
 	// Área temática del curso (catálogo STPS). Vive en la capacitación.
-	AreaTematica  string `protobuf:"bytes,11,opt,name=area_tematica,json=areaTematica,proto3" json:"area_tematica,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	AreaTematica string `protobuf:"bytes,11,opt,name=area_tematica,json=areaTematica,proto3" json:"area_tematica,omitempty"`
+	// Logotipos ya resueltos para la cabecera, para que el Gateway no tenga que
+	// repetir aquí la regla de precedencia entre alumno e instructor.
+	//
+	//	logo_patron_url       → izquierda: la empresa que emplea al trabajador
+	//	logo_capacitador_url  → derecha:   quien imparte la capacitación
+	//
+	// Coinciden cuando el alumno no declara empresa propia, porque entonces el
+	// patrón que figura en el documento es el del instructor.
+	LogoPatronUrl      string `protobuf:"bytes,12,opt,name=logo_patron_url,json=logoPatronUrl,proto3" json:"logo_patron_url,omitempty"`
+	LogoCapacitadorUrl string `protobuf:"bytes,13,opt,name=logo_capacitador_url,json=logoCapacitadorUrl,proto3" json:"logo_capacitador_url,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DatosDC3Response) Reset() {
@@ -4826,6 +4849,20 @@ func (x *DatosDC3Response) GetEmpresaOrigen() string {
 func (x *DatosDC3Response) GetAreaTematica() string {
 	if x != nil {
 		return x.AreaTematica
+	}
+	return ""
+}
+
+func (x *DatosDC3Response) GetLogoPatronUrl() string {
+	if x != nil {
+		return x.LogoPatronUrl
+	}
+	return ""
+}
+
+func (x *DatosDC3Response) GetLogoCapacitadorUrl() string {
+	if x != nil {
+		return x.LogoCapacitadorUrl
 	}
 	return ""
 }
@@ -5551,11 +5588,12 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\rnombre_patron\x18\x03 \x01(\tR\fnombrePatron\x12=\n" +
 	"\x1arepresentante_trabajadores\x18\x04 \x01(\tR\x19representanteTrabajadores\x12-\n" +
 	"\x12nombre_capacitador\x18\x06 \x01(\tR\x11nombreCapacitador\x12\x19\n" +
-	"\blogo_url\x18\a \x01(\tR\alogoUrlJ\x04\b\x05\x10\x06\"s\n" +
+	"\blogo_url\x18\a \x01(\tR\alogoUrlJ\x04\b\x05\x10\x06\"\x8e\x01\n" +
 	"\x12DatosTrabajadorDC3\x12\x12\n" +
 	"\x04curp\x18\x01 \x01(\tR\x04curp\x12\x16\n" +
 	"\x06puesto\x18\x02 \x01(\tR\x06puesto\x121\n" +
-	"\x14ocupacion_especifica\x18\x03 \x01(\tR\x13ocupacionEspecifica\"\x96\x01\n" +
+	"\x14ocupacion_especifica\x18\x03 \x01(\tR\x13ocupacionEspecifica\x12\x19\n" +
+	"\blogo_url\x18\x04 \x01(\tR\alogoUrl\"\x96\x01\n" +
 	"\x16DatosTrabajadorRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x120\n" +
 	"\x05datos\x18\x02 \x01(\v2\x1a.cursos.DatosTrabajadorDC3R\x05datos\x121\n" +
@@ -5565,7 +5603,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\aempresa\x18\x02 \x01(\v2\x17.cursos.DatosEmpresaDC3R\aempresa\"S\n" +
 	"\x0fDatosDC3Request\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
-	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\"\xda\x03\n" +
+	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\"\xb4\x04\n" +
 	"\x10DatosDC3Response\x121\n" +
 	"\aempresa\x18\x01 \x01(\v2\x17.cursos.DatosEmpresaDC3R\aempresa\x12:\n" +
 	"\n" +
@@ -5580,7 +5618,9 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x0econstancia_url\x18\t \x01(\tR\rconstanciaUrl\x12%\n" +
 	"\x0eempresa_origen\x18\n" +
 	" \x01(\tR\rempresaOrigen\x12#\n" +
-	"\rarea_tematica\x18\v \x01(\tR\fareaTematica\"\xe5\x01\n" +
+	"\rarea_tematica\x18\v \x01(\tR\fareaTematica\x12&\n" +
+	"\x0flogo_patron_url\x18\f \x01(\tR\rlogoPatronUrl\x120\n" +
+	"\x14logo_capacitador_url\x18\r \x01(\tR\x12logoCapacitadorUrl\"\xe5\x01\n" +
 	"\x1aRegistrarConstanciaRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12'\n" +
 	"\x0fcapacitacion_id\x18\x02 \x01(\tR\x0ecapacitacionId\x12\x1f\n" +

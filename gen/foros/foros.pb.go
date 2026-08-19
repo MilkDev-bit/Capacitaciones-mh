@@ -254,11 +254,17 @@ func (x *CreatePostRequest) GetMediaType() string {
 }
 
 type CreateComentarioRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Contenido     string                 `protobuf:"bytes,3,opt,name=contenido,proto3" json:"contenido,omitempty"`
-	ParentId      string                 `protobuf:"bytes,4,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	PostId    string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	UserId    string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Contenido string                 `protobuf:"bytes,3,opt,name=contenido,proto3" json:"contenido,omitempty"`
+	ParentId  string                 `protobuf:"bytes,4,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
+	// Adjunto ya subido a R2, igual que en las publicaciones: por la API viaja la
+	// URL, nunca el binario. El formulario de comentarios permitía elegir un
+	// archivo desde hacía tiempo, pero no había dónde guardarlo y se descartaba
+	// en silencio.
+	MediaUrl      string `protobuf:"bytes,5,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
+	MediaType     string `protobuf:"bytes,6,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -317,6 +323,20 @@ func (x *CreateComentarioRequest) GetContenido() string {
 func (x *CreateComentarioRequest) GetParentId() string {
 	if x != nil {
 		return x.ParentId
+	}
+	return ""
+}
+
+func (x *CreateComentarioRequest) GetMediaUrl() string {
+	if x != nil {
+		return x.MediaUrl
+	}
+	return ""
+}
+
+func (x *CreateComentarioRequest) GetMediaType() string {
+	if x != nil {
+		return x.MediaType
 	}
 	return ""
 }
@@ -682,6 +702,8 @@ type ComentarioResponse struct {
 	// Curso al que pertenece el hilo. El foro no tiene URL propia: se ve dentro
 	// de la capacitación, así que es lo que necesita el enlace de la campana.
 	CapacitacionId string `protobuf:"bytes,11,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	MediaUrl       string `protobuf:"bytes,12,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
+	MediaType      string `protobuf:"bytes,13,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -789,6 +811,20 @@ func (x *ComentarioResponse) GetParentUserId() string {
 func (x *ComentarioResponse) GetCapacitacionId() string {
 	if x != nil {
 		return x.CapacitacionId
+	}
+	return ""
+}
+
+func (x *ComentarioResponse) GetMediaUrl() string {
+	if x != nil {
+		return x.MediaUrl
+	}
+	return ""
+}
+
+func (x *ComentarioResponse) GetMediaType() string {
+	if x != nil {
+		return x.MediaType
 	}
 	return ""
 }
@@ -939,12 +975,15 @@ const file_foros_foros_proto_rawDesc = "" +
 	"\tcontenido\x18\x04 \x01(\tR\tcontenido\x12\x1b\n" +
 	"\tmedia_url\x18\x05 \x01(\tR\bmediaUrl\x12\x1d\n" +
 	"\n" +
-	"media_type\x18\x06 \x01(\tR\tmediaType\"\x86\x01\n" +
+	"media_type\x18\x06 \x01(\tR\tmediaType\"\xc2\x01\n" +
 	"\x17CreateComentarioRequest\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1c\n" +
 	"\tcontenido\x18\x03 \x01(\tR\tcontenido\x12\x1b\n" +
-	"\tparent_id\x18\x04 \x01(\tR\bparentId\"]\n" +
+	"\tparent_id\x18\x04 \x01(\tR\bparentId\x12\x1b\n" +
+	"\tmedia_url\x18\x05 \x01(\tR\bmediaUrl\x12\x1d\n" +
+	"\n" +
+	"media_type\x18\x06 \x01(\tR\tmediaType\"]\n" +
 	"\x13PostReactionRequest\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -972,7 +1011,7 @@ const file_foros_foros_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\tR\tcreatedAt\">\n" +
 	"\x11ListPostsResponse\x12)\n" +
-	"\x05posts\x18\x01 \x03(\v2\x13.foros.PostResponseR\x05posts\"\xed\x02\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.foros.PostResponseR\x05posts\"\xa9\x03\n" +
 	"\x12ComentarioResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\apost_id\x18\x02 \x01(\tR\x06postId\x12\x17\n" +
@@ -987,7 +1026,10 @@ const file_foros_foros_proto_rawDesc = "" +
 	"postUserId\x12$\n" +
 	"\x0eparent_user_id\x18\n" +
 	" \x01(\tR\fparentUserId\x12'\n" +
-	"\x0fcapacitacion_id\x18\v \x01(\tR\x0ecapacitacionId\"V\n" +
+	"\x0fcapacitacion_id\x18\v \x01(\tR\x0ecapacitacionId\x12\x1b\n" +
+	"\tmedia_url\x18\f \x01(\tR\bmediaUrl\x12\x1d\n" +
+	"\n" +
+	"media_type\x18\r \x01(\tR\tmediaType\"V\n" +
 	"\x17ListComentariosResponse\x12;\n" +
 	"\vcomentarios\x18\x01 \x03(\v2\x19.foros.ComentarioResponseR\vcomentarios\"A\n" +
 	"\x10ReactionResponse\x12-\n" +
