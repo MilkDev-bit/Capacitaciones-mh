@@ -249,8 +249,11 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 		return
 	}
 
+	// reemitir=true: el alumno acaba de enviar sus datos, así que si ya había
+	// constancia hay que rehacerla con lo recién capturado. Devolverle la
+	// anterior sería ignorar en silencio la corrección que acaba de hacer.
 	url, err := h.emitir(ctx.Request.Context(), userID, cursoID,
-		ctx.GetString(middleware.CtxUserName))
+		ctx.GetString(middleware.CtxUserName), true)
 	var incompleta *ErrIncompleta
 	if errors.As(err, &incompleta) {
 		// 202: lo del alumno quedó guardado, pero el documento no salió.
@@ -326,7 +329,11 @@ func (h *DC3Handler) EmitirEnSegundoPlano(userID, cursoID, nombre string) {
 		ctx, cancel := contextoCorto()
 		defer cancel()
 
-		url, err := h.emitir(ctx, userID, cursoID, nombre)
+		// reemitir=false: la emisión automática se dispara al completar el curso
+		// y puede repetirse —reintentos del webhook, el alumno rehaciendo una
+		// lección—. Regenerar en cada disparo subiría un documento nuevo a R2
+		// cada vez, con folio distinto, invalidando el que ya tenga en la mano.
+		url, err := h.emitir(ctx, userID, cursoID, nombre, false)
 		switch {
 		case errors.Is(err, ErrConstanciaIncompleta):
 			slog.Info("DC-3: constancia pendiente de datos",
@@ -410,7 +417,22 @@ func (h *DC3Handler) descargarLogo(ctx context.Context, url string) []byte {
 // par (alumno, curso), devuelve su URL sin regenerar nada. Eso evita que una
 // relectura de lecciones o un reintento produzcan documentos duplicados con
 // fechas distintas.
-func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajador string) (string, error) {
+// emitir arma la constancia y la sube. Devuelve la URL del documento.
+//
+// `reemitir` decide qué hacer si ya existe una:
+//
+//	false → se devuelve la existente. Es lo que protege la emisión automática
+//	        de los reintentos del webhook y de que el alumno recorra el curso
+//	        otra vez: sin esto se acumularían documentos duplicados.
+//	true  → se genera de nuevo. Lo pide quien acaba de cambiar algo que va
+//	        impreso en el papel.
+//
+// La distinción faltaba y el precio era alto en los dos sentidos. Un alumno que
+// corregía una CURP mal tecleada seguía descargando la constancia con la CURP
+// equivocada —y una DC-3 con la CURP mal es inválida—. Y al arreglar la
+// plantilla, las constancias ya emitidas se quedaban congeladas con el formato
+// roto, sin ninguna forma de regenerarlas.
+func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajador string, reemitir bool) (string, error) {
 	datos, err := h.c.Cursos.GetDatosDC3(ctx, &cursospb.DatosDC3Request{
 		UserId:         userID,
 		CapacitacionId: cursoID,
@@ -418,7 +440,7 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 	if err != nil {
 		return "", err
 	}
-	if datos.ConstanciaUrl != "" {
+	if datos.ConstanciaUrl != "" && !reemitir {
 		return datos.ConstanciaUrl, nil
 	}
 	if !datos.EmpresaCompleta || !datos.TrabajadorCompleto {

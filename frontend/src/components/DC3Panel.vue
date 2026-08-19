@@ -295,6 +295,8 @@ watch(() => props.cursoId, () => {
       </div>
       <small class="dc3-hint">
         La tienes siempre disponible en <b>Mis constancias</b>, dentro de tu perfil.
+        Si algún dato no es correcto, corrígelo y volveremos a generarla: el
+        documento anterior deja de ser el válido y el folio cambia.
       </small>
     </template>
 
