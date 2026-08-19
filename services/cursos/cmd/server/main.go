@@ -285,6 +285,11 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS rfc VARCHAR(20) NOT NULL DEFAULT ''`,
 		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS nombre_patron VARCHAR(200) NOT NULL DEFAULT ''`,
 		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS representante_trabajadores VARCHAR(200) NOT NULL DEFAULT ''`,
+		// Logotipo de la empresa del alumno, para el lado izquierdo del documento.
+		//
+		// Solo se usa si declara empresa propia: ese lado corresponde al patrón.
+		// Quien no la declara recibe el del instructor en ambos lados.
+		`ALTER TABLE dc3_datos_trabajador ADD COLUMN IF NOT EXISTS logo_url TEXT NOT NULL DEFAULT ''`,
 
 		// Constancia emitida. La PK compuesta es lo que hace idempotente la
 		// generación automática: si el alumno vuelve a completar el curso o el

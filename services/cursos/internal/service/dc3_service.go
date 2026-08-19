@@ -50,27 +50,45 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 	// La elección es en BLOQUE, nunca campo a campo: media empresa del alumno
 	// más media del instructor daría un documento que no corresponde a ninguna
 	// entidad real.
+	instructorID := ""
+	if curso.InstructorID != nil {
+		instructorID = *curso.InstructorID
+	}
+	// El instructor se consulta SIEMPRE, declare el alumno empresa o no: de él
+	// salen el capacitador acreditado y el logotipo del lado derecho, que no
+	// cambian porque el trabajador tenga empleador propio.
+	respaldo, errE := s.repo.FindEmpresaInstructor(ctx, instructorID)
+	if errE != nil {
+		return nil, errE
+	}
+
 	empresa, origen := trabajador.EmpresaDelAlumno(), "alumno"
 	if empresa == nil {
-		instructorID := ""
-		if curso.InstructorID != nil {
-			instructorID = *curso.InstructorID
-		}
-		respaldo, errE := s.repo.FindEmpresaInstructor(ctx, instructorID)
-		if errE != nil {
-			return nil, errE
-		}
 		empresa, origen = respaldo.ToProto(), "instructor"
-	} else {
-		// El capacitador y el logo son SIEMPRE del instructor, incluso cuando el
-		// patrón es el del alumno: quien imparte no cambia porque el trabajador
-		// tenga empleador propio.
-		if curso.InstructorID != nil {
-			if respaldo, _ := s.repo.FindEmpresaInstructor(ctx, *curso.InstructorID); respaldo != nil {
-				empresa.NombreCapacitador = respaldo.NombreCapacitador
-				empresa.LogoUrl = respaldo.LogoURL
-			}
-		}
+	} else if respaldo != nil {
+		empresa.NombreCapacitador = respaldo.NombreCapacitador
+		empresa.LogoUrl = respaldo.LogoURL
+	}
+
+	// Los dos logotipos de la cabecera.
+	//
+	//   izquierda → el patrón: la empresa que emplea al trabajador
+	//   derecha   → el agente capacitador: quien imparte
+	//
+	// Coinciden cuando el alumno no declara empresa propia, porque entonces el
+	// patrón que figura en el documento ES el del instructor. Poner el logotipo
+	// del alumno a la derecha sería atribuirle una capacitación que no impartió.
+	logoCapacitador := ""
+	if respaldo != nil {
+		logoCapacitador = respaldo.LogoURL
+	}
+	// `trabajador` es nil mientras el alumno no ha capturado nada —es el caso
+	// normal la primera vez—, así que no se puede desreferenciar sin comprobarlo.
+	// El resto del método lo evita llamando a métodos que aceptan el receptor
+	// nulo; aquí se accede a un campo y hay que hacerlo explícito.
+	logoPatron := logoCapacitador
+	if origen == "alumno" && trabajador != nil && strings.TrimSpace(trabajador.LogoURL) != "" {
+		logoPatron = trabajador.LogoURL
 	}
 
 	resp := &cursospb.DatosDC3Response{
@@ -84,6 +102,9 @@ func (s *CursosService) GetDatosDC3(ctx context.Context, req *cursospb.DatosDC3R
 		DuracionHoras:      duracionParaConstancia(curso.DC3DuracionHoras, curso.Duration),
 		EmpresaCompleta:    empresaCompleta(empresa) && strings.TrimSpace(curso.DC3AreaTematica) != "",
 		TrabajadorCompleto: trabajadorCompleto(trabajador),
+
+		LogoPatronUrl:      logoPatron,
+		LogoCapacitadorUrl: logoCapacitador,
 	}
 
 	// Periodo declarado: de la inscripción a hoy. Si no hay inscripción —el
@@ -138,6 +159,7 @@ func (s *CursosService) GuardarDatosTrabajador(ctx context.Context, req *cursosp
 		CURP:                curp,
 		Puesto:              puesto,
 		OcupacionEspecifica: ocupacion,
+		LogoURL:             strings.TrimSpace(req.Datos.LogoUrl),
 	}
 
 	// El patrón del alumno se acepta entero o no se acepta. Guardar dos de los

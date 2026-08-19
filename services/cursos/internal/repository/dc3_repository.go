@@ -33,6 +33,9 @@ type DatosTrabajadorDC3 struct {
 	RFC             string `db:"rfc"`
 	NombrePatron    string `db:"nombre_patron"`
 	RepTrabajadores string `db:"representante_trabajadores"`
+	// Logotipo de su empresa, para el lado izquierdo de la constancia. Solo se
+	// usa si declara empresa propia: ese lado es del patrón.
+	LogoURL string `db:"logo_url"`
 }
 
 // TieneEmpresa dice si el alumno declaró un patrón propio.
@@ -138,7 +141,8 @@ func (r *postgresCursosRepository) FindDatosTrabajador(ctx context.Context, user
 	d := &DatosTrabajadorDC3{}
 	err := r.db.GetContext(ctx, d,
 		`SELECT user_id, curp, puesto, ocupacion_especifica, actualizado_at,
-		        razon_social, rfc, nombre_patron, representante_trabajadores
+		        razon_social, rfc, nombre_patron, representante_trabajadores,
+		        COALESCE(logo_url,'') logo_url
 		   FROM dc3_datos_trabajador WHERE user_id = $1`, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -157,8 +161,8 @@ func (r *postgresCursosRepository) GuardarDatosTrabajador(ctx context.Context, d
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO dc3_datos_trabajador
 		    (user_id, curp, puesto, ocupacion_especifica,
-		     razon_social, rfc, nombre_patron, representante_trabajadores, actualizado_at)
-		 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, NOW())
+		     razon_social, rfc, nombre_patron, representante_trabajadores, logo_url, actualizado_at)
+		 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 		 ON CONFLICT (user_id) DO UPDATE
 		    SET curp = EXCLUDED.curp,
 		        puesto = EXCLUDED.puesto,
@@ -167,9 +171,10 @@ func (r *postgresCursosRepository) GuardarDatosTrabajador(ctx context.Context, d
 		        rfc = EXCLUDED.rfc,
 		        nombre_patron = EXCLUDED.nombre_patron,
 		        representante_trabajadores = EXCLUDED.representante_trabajadores,
+		        logo_url = EXCLUDED.logo_url,
 		        actualizado_at = NOW()`,
 		d.UserID, d.CURP, d.Puesto, d.OcupacionEspecifica,
-		d.RazonSocial, d.RFC, d.NombrePatron, d.RepTrabajadores)
+		d.RazonSocial, d.RFC, d.NombrePatron, d.RepTrabajadores, d.LogoURL)
 	return err
 }
 
@@ -318,6 +323,7 @@ func (d *DatosTrabajadorDC3) ToProto() *cursospb.DatosTrabajadorDC3 {
 		Curp:                d.CURP,
 		Puesto:              d.Puesto,
 		OcupacionEspecifica: d.OcupacionEspecifica,
+		LogoUrl:             d.LogoURL,
 	}
 }
 

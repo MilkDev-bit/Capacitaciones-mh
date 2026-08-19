@@ -26,17 +26,25 @@ import (
 //go:embed plantilla/dc3.docx
 var plantilla []byte
 
-// logoEmpresa es la imagen de la cabecera que SÍ se sustituye.
+// Las dos imágenes de la cabecera, en el orden en que aparecen.
 //
-// La constancia lleva dos logotipos arriba, uno junto al otro:
+//	image1.jpg   5198x4536 px, 1.8 MB → logotipo IZQUIERDO (patrón)
+//	image2.jpeg   204x162 px,  14 KB  → logotipo DERECHO (agente capacitador)
 //
-//	image1.jpg   ~1.8 MB, logo de la empresa   → configurable
-//	image2.jpeg  ~14 KB, sello del formato     → NO se toca nunca
+// Ambas se sustituyen. Un comentario anterior aquí describía la segunda como
+// "el sello del formato" que no debía tocarse nunca; era falso. Se extrajo del
+// .docx y es el mismo logotipo comercial que la primera, solo que más pequeño.
+// Mientras se dio por buena esa descripción, toda constancia salía con el
+// logotipo de la plantilla en el lado derecho, fuese de quien fuese quien la
+// emitía.
 //
-// Sustituir el segundo alteraría un elemento oficial del documento. Si algún
-// día hace falta cambiarlo, tiene que ser cambiando la plantilla, no en
-// tiempo de generación.
-const logoEmpresa = "word/media/image1.jpg"
+// El desequilibrio de tamaños no es un error de la plantilla original: la
+// izquierda se guardó a resolución de cámara y se dibuja a 0.93 pulgadas. Por
+// eso el .docx pesa casi 2 MB y LibreOffice tarda en convertirlo.
+const (
+	logoIzquierdo = "word/media/image1.jpg"
+	logoDerecho   = "word/media/image2.jpeg"
+)
 
 // Datos es todo lo que necesita una constancia.
 //
@@ -58,11 +66,19 @@ type Datos struct {
 	NombrePatron        string
 	NombreRepresentante string
 
-	// Logo de la empresa, en bytes de imagen ya decodificados.
+	// Logos de la cabecera, en bytes de imagen ya decodificados.
 	//
-	// La cabecera de la constancia lleva DOS imágenes y solo esta se sustituye
-	// (ver logoEmpresa). Vacío deja el de la plantilla.
-	Logo []byte
+	// La constancia lleva DOS: a la izquierda el del patrón —la empresa que
+	// emplea al trabajador— y a la derecha el de quien imparte la capacitación.
+	// Cuando el alumno no declara empresa propia coinciden, porque el patrón que
+	// figura en el documento es el del instructor.
+	//
+	// Vacíos dejan el de la plantilla. Antes solo se sustituía el izquierdo y el
+	// derecho quedaba siempre con el logotipo de la plantilla, que es de otra
+	// empresa: una constancia emitida por un instructor con logo propio salía
+	// con dos marcas distintas y una de ellas ajena.
+	LogoPatron      []byte
+	LogoCapacitador []byte
 
 	// ── Curso ────────────────────────────────────────────────────────────────
 	NombreCurso       string
@@ -186,8 +202,11 @@ func Generar(d Datos) ([]byte, error) {
 		return nil, fmt.Errorf("reemplazando marcadores: %w", err)
 	}
 
-	if len(d.Logo) > 0 {
-		doc.SetFile(logoEmpresa, d.Logo)
+	if len(d.LogoPatron) > 0 {
+		doc.SetFile(logoIzquierdo, d.LogoPatron)
+	}
+	if len(d.LogoCapacitador) > 0 {
+		doc.SetFile(logoDerecho, d.LogoCapacitador)
 	}
 
 	destino, err := os.CreateTemp("", "dc3-salida-*.docx")

@@ -101,11 +101,20 @@ func (h *ForosHandler) ListForoComentarios(ctx *gin.Context) {
 // POST /api/foro/posts/:post_id/comentarios
 func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 	var body struct {
-		Contenido string `json:"contenido" binding:"required"`
+		Contenido string `json:"contenido"`
 		ParentID  string `json:"parent_id"`
+		MediaURL  string `json:"media_url"`
+		MediaType string `json:"media_type"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa el comentario"})
+		return
+	}
+	// `binding:"required"` se retiró de Contenido: un comentario que solo
+	// adjunta una imagen es válido, igual que lo es una publicación sin texto.
+	// La comprobación se hace aquí para poder decir qué falta.
+	if strings.TrimSpace(body.Contenido) == "" && body.MediaURL == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "escribe un comentario o adjunta un archivo"})
 		return
 	}
 	md := metadata.Pairs("x-user-name", foroASCII(ctx.GetString(middleware.CtxUserName)))
@@ -116,6 +125,8 @@ func (h *ForosHandler) CreateForoComentario(ctx *gin.Context) {
 		UserId:    autorID,
 		Contenido: body.Contenido,
 		ParentId:  body.ParentID,
+		MediaUrl:  body.MediaURL,
+		MediaType: body.MediaType,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

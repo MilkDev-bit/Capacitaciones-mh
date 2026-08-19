@@ -806,34 +806,47 @@ async function toggleComentarioReaction(postId: string, comId: string, emoji: st
   }
 }
 
+/**
+ * Publica un comentario o una respuesta.
+ *
+ * Enviaba `multipart/form-data` mientras el gateway hacía `ShouldBindJSON`, así
+ * que TODOS los comentarios morían con un 400 antes de llegar al servicio: no
+ * es que fallaran los adjuntos, es que no se podía comentar nada.
+ *
+ * Ahora sigue el mismo camino que `crearPost`: el archivo sube primero a R2 y
+ * por la API viaja solo su URL. El gateway nunca recibe binarios en el cuerpo.
+ */
 async function crearComentario(postId: string, parentId?: string) {
   const mapKey = parentId || postId
   const texto = nuevoComentario.value[mapKey]
-  const hasFile = activeComentarioFileKey.value === mapKey && activeComentarioFile.value
+  const hasFile = activeComentarioFileKey.value === mapKey && !!activeComentarioFile.value
 
   if (!texto?.trim() && !hasFile) return
-
-  const formData = new FormData()
-  formData.append('contenido', texto || '')
-  if (parentId) formData.append('parent_id', parentId)
-  if (isComentarioPrivate.value[mapKey]) formData.append('is_private', 'true')
-  if (hasFile && activeComentarioFile.value) {
-    formData.append('media', activeComentarioFile.value)
-  }
 
   const loadingToast = hasFile ? toast.loading('Subiendo archivo...') : null
 
   try {
-    await api.post(`/foro/posts/${postId}/comentarios`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    const payload: Record<string, any> = { contenido: texto?.trim() || '' }
+    if (parentId) payload.parent_id = parentId
+
+    if (hasFile && activeComentarioFile.value) {
+      const archivo = activeComentarioFile.value
+      const esVideo = archivo.type.startsWith('video/')
+      payload.media_url = await uploadToR2(archivo, esVideo ? 'videos' : 'documents')
+      payload.media_type = esVideo ? 'video' : 'image'
+    }
+
+    await api.post(`/foro/posts/${postId}/comentarios`, payload)
     nuevoComentario.value[mapKey] = ''
     if (hasFile) removeComentarioFile()
     replyingTo.value = null
     const res = await api.get(`/foro/posts/${postId}/comentarios`)
     comentariosMap.value[postId] = res.data || []
-  } catch {
-    toast.error('Error al publicar comentario')
+  } catch (e: any) {
+    // Se muestra el motivo del servidor cuando lo hay. El mensaje genérico
+    // anterior fue parte del problema: un 400 constante parecía un fallo
+    // intermitente de red en vez de un contrato roto.
+    toast.error(e.response?.data?.error || 'Error al publicar comentario')
   } finally {
     loadingToast?.close()
   }

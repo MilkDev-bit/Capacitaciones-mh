@@ -42,12 +42,24 @@ type ForoComentario struct {
 	Contenido string    `db:"contenido"`
 	Reactions []byte    `db:"reactions"`
 	CreatedAt time.Time `db:"created_at"`
+	// Adjunto, con el mismo modelo que las publicaciones: la URL de R2, no el
+	// binario. NULL en los comentarios anteriores a que existiera la columna.
+	MediaURL  *string `db:"media_url"`
+	MediaType *string `db:"media_type"`
 
 	// Autores a los que hay que avisar. Solo los rellena CreateComentario:
 	// el listado no los necesita y traerlos costaría dos joins por comentario.
 	PostUserID     string `db:"post_user_id"`
 	ParentUserID   string `db:"parent_user_id"`
 	CapacitacionID string `db:"capacitacion_id"`
+}
+
+// deref devuelve el valor de un puntero de texto, o cadena vacía si es NULL.
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func (c *ForoComentario) ToProto() *forospb.ComentarioResponse {
@@ -62,6 +74,8 @@ func (c *ForoComentario) ToProto() *forospb.ComentarioResponse {
 		PostUserId:     c.PostUserID,
 		ParentUserId:   c.ParentUserID,
 		CapacitacionId: c.CapacitacionID,
+		MediaUrl:       deref(c.MediaURL),
+		MediaType:      deref(c.MediaType),
 	}
 }
 
@@ -160,6 +174,7 @@ func (r *postgresForosRepository) ListComentarios(ctx context.Context, postID, u
 	query := `SELECT c.id, c.post_id, c.parent_id, c.user_id,
 		        COALESCE(c.user_name,'') user_name,
 		        c.contenido, c.created_at,
+		        c.media_url, c.media_type,
 		        COALESCE(
 		         (SELECT json_agg(json_build_object(
 		            'emoji', sub.emoji,
@@ -187,8 +202,9 @@ func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *for
 		parentID = &req.ParentId
 	}
 	err := r.db.QueryRowContext(ctx,
-		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido,parent_id) VALUES($1::uuid,$2::uuid,$3,$4,$5::uuid) RETURNING id`,
-		req.PostId, req.UserId, userName, req.Contenido, parentID,
+		`INSERT INTO foro_comentarios(post_id,user_id,user_name,contenido,parent_id,media_url,media_type)
+		 VALUES($1::uuid,$2::uuid,$3,$4,$5::uuid,NULLIF($6,''),NULLIF($7,'')) RETURNING id`,
+		req.PostId, req.UserId, userName, req.Contenido, parentID, req.MediaUrl, req.MediaType,
 	).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -201,6 +217,7 @@ func (r *postgresForosRepository) CreateComentario(ctx context.Context, req *for
 		`SELECT c.id, c.post_id, c.parent_id, c.user_id,
 		        COALESCE(c.user_name,'') user_name,
 		        c.contenido, '[]'::json as reactions, c.created_at,
+		        c.media_url, c.media_type,
 		        COALESCE(p.user_id::text, '')  AS post_user_id,
 		        COALESCE(pc.user_id::text, '') AS parent_user_id,
 		        COALESCE(l.capacitacion_id::text, '') AS capacitacion_id

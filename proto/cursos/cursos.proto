@@ -639,6 +639,12 @@ message DatosTrabajadorDC3 {
   string curp                 = 1;
   string puesto               = 2;
   string ocupacion_especifica = 3;
+  // Logotipo de la empresa del alumno, para el lado IZQUIERDO de la constancia.
+  //
+  // Solo tiene sentido si declara empresa propia: ese lado es del patrón. Quien
+  // no la declara recibe el logotipo del instructor en ambos lados, porque
+  // entonces el patrón que figura en el documento es el suyo.
+  string logo_url             = 4;
 }
 
 message DatosTrabajadorRequest {
@@ -690,6 +696,17 @@ message DatosDC3Response {
   string empresa_origen = 10;
   // Área temática del curso (catálogo STPS). Vive en la capacitación.
   string area_tematica = 11;
+
+  // Logotipos ya resueltos para la cabecera, para que el Gateway no tenga que
+  // repetir aquí la regla de precedencia entre alumno e instructor.
+  //
+  //   logo_patron_url       → izquierda: la empresa que emplea al trabajador
+  //   logo_capacitador_url  → derecha:   quien imparte la capacitación
+  //
+  // Coinciden cuando el alumno no declara empresa propia, porque entonces el
+  // patrón que figura en el documento es el del instructor.
+  string logo_patron_url      = 12;
+  string logo_capacitador_url = 13;
 }
 
 message RegistrarConstanciaRequest {

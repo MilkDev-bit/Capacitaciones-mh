@@ -96,6 +96,13 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS user_name TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE foro_posts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
 		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES foro_comentarios(id) ON DELETE CASCADE`,
+		// Adjunto de un comentario. Igual que en las publicaciones, se guarda la
+		// URL de R2 y nunca el binario.
+		//
+		// El formulario dejaba elegir un archivo desde hacía tiempo, pero no
+		// existía columna donde guardarlo: el archivo se descartaba sin avisar.
+		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS media_url TEXT`,
+		`ALTER TABLE foro_comentarios ADD COLUMN IF NOT EXISTS media_type VARCHAR(20)`,
 		`CREATE TABLE IF NOT EXISTS foro_post_reactions (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			post_id UUID NOT NULL REFERENCES foro_posts(id) ON DELETE CASCADE,

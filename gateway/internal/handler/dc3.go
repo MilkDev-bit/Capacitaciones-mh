@@ -148,6 +148,9 @@ func (h *DC3Handler) EstadoConstancia(ctx *gin.Context) {
 		// lo que necesita el alumno para decidir si declara su propio patrón.
 		"empresa":        datos.Empresa,
 		"empresa_origen": datos.EmpresaOrigen,
+		// Para que el formulario pueda mostrar el logotipo ya guardado en vez de
+		// pedirlo otra vez en cada corrección.
+		"logo_patron_url": datos.LogoPatronUrl,
 	})
 }
 
@@ -218,6 +221,9 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 		RFC             string `json:"rfc"`
 		NombrePatron    string `json:"nombre_patron"`
 		RepTrabajadores string `json:"representante_trabajadores"`
+		// Logotipo de su empresa, ya subido a R2. Solo se aplica si declara
+		// empresa propia: es el lado izquierdo del documento, el del patrón.
+		LogoURL string `json:"logo_url"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos capturados"})
@@ -230,6 +236,7 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 			Curp:                body.CURP,
 			Puesto:              body.Puesto,
 			OcupacionEspecifica: body.OcupacionEspecifica,
+			LogoUrl:             body.LogoURL,
 		},
 		Empresa: &cursospb.DatosEmpresaDC3{
 			RazonSocial:               body.RazonSocial,
@@ -438,7 +445,11 @@ func (h *DC3Handler) emitir(ctx context.Context, userID, cursoID, nombreTrabajad
 		RFC:                 datos.Empresa.Rfc,
 		NombrePatron:        datos.Empresa.NombrePatron,
 		NombreRepresentante: datos.Empresa.RepresentanteTrabajadores,
-		Logo:                h.descargarLogo(ctx, datos.Empresa.LogoUrl),
+
+		// La precedencia entre alumno e instructor ya la resolvió cursos-service;
+		// aquí solo se descargan las dos imágenes que decidió.
+		LogoPatron:      h.descargarLogo(ctx, datos.LogoPatronUrl),
+		LogoCapacitador: h.descargarLogo(ctx, datos.LogoCapacitadorUrl),
 
 		NombreCurso:       datos.NombreCurso,
 		DuracionHoras:     datos.DuracionHoras,

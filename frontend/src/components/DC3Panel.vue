@@ -22,6 +22,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
 import { estadoDC3 } from '../utils/dc3'
+import { uploadToR2 } from '../utils/upload'
 
 const props = withDefaults(defineProps<{
   cursoId: string
@@ -65,6 +66,38 @@ const form = ref({
 /** Empresa a la que saldrá la constancia si el alumno no declara la suya. */
 const empresaRespaldo = ref('')
 const tieneEmpresaPropia = ref(false)
+
+/** Logotipo del patrón, ya subido a R2. Vacío usa el del instructor. */
+const logoUrl = ref('')
+const subiendoLogo = ref(false)
+
+/**
+ * Sube el logotipo a R2 y guarda solo su URL.
+ *
+ * Mismo camino que las portadas y los avatares: por la API nunca viaja el
+ * binario. El límite de tamaño se comprueba antes de subir porque el servidor
+ * descarta cualquier logo de más de 4 MB al emitir, y descubrirlo entonces
+ * dejaría al alumno con una constancia sin su logotipo y sin explicación.
+ */
+async function subirLogo(e: Event) {
+  const input = e.target as HTMLInputElement
+  const archivo = input.files?.[0]
+  input.value = '' // permite reelegir el mismo fichero tras un fallo
+  if (!archivo) return
+
+  if (archivo.size > 4 * 1024 * 1024) {
+    toast.error('El logotipo no puede superar 4 MB')
+    return
+  }
+  subiendoLogo.value = true
+  try {
+    logoUrl.value = await uploadToR2(archivo, 'dc3-logos')
+  } catch {
+    toast.error('No se pudo subir el logotipo')
+  } finally {
+    subiendoLogo.value = false
+  }
+}
 
 /**
  * El bloque de empresa se acepta entero o vacío.
@@ -118,6 +151,9 @@ async function consultar() {
     // quién va su constancia antes de decidir si declara la suya.
     tieneEmpresaPropia.value = data.empresa_origen === 'alumno'
     empresaRespaldo.value = data.empresa?.razon_social || ''
+    // Solo se precarga si es SUYO. Con empresa del instructor, `logo_patron_url`
+    // trae el de él, y mostrarlo aquí haría creer al alumno que ya subió uno.
+    logoUrl.value = tieneEmpresaPropia.value ? (data.logo_patron_url || '') : ''
 
     if (data.trabajador) {
       // Se precargan para que corregir un dato no obligue a teclear todo.
@@ -164,6 +200,9 @@ async function enviar() {
       rfc: form.value.rfc.trim().toUpperCase(),
       nombre_patron: form.value.nombre_patron.trim(),
       representante_trabajadores: form.value.representante_trabajadores.trim(),
+      // Se manda vacío si no declara empresa: el lado izquierdo es del patrón y
+      // sin empresa propia ese patrón es el del instructor.
+      logo_url: empresaPropiaCompleta.value ? logoUrl.value : '',
     })
     trabajadorCompleto.value = true
     editando.value = false
@@ -326,6 +365,33 @@ watch(() => props.cursoId, () => {
           Completa los cuatro datos o déjalos todos vacíos: una constancia con
           media empresa no corresponde a ninguna entidad real.
         </small>
+
+        <!--
+          Logotipo del patrón. Solo tiene sentido con empresa propia declarada:
+          ocupa el lado izquierdo del documento, que es el del empleador. Quien
+          no declara empresa recibe el del instructor en ambos lados, porque
+          entonces el patrón que figura en la constancia es el suyo.
+        -->
+        <div v-if="!empresaPropiaVacia" class="dc3-logo">
+          <div class="dc3-sub">
+            <strong>Logotipo de tu empresa</strong>
+            <p>Aparece a la izquierda de la constancia. Opcional: si no lo subes
+              se usa el de quien imparte la capacitación.</p>
+          </div>
+          <div class="dc3-logo-fila">
+            <img v-if="logoUrl" :src="logoUrl" alt="Logotipo de tu empresa" class="dc3-logo-vista" />
+            <span v-else class="dc3-logo-vacio">Sin logotipo</span>
+            <label class="btn btn-secondary btn-sm dc3-logo-btn">
+              {{ subiendoLogo ? 'Subiendo…' : (logoUrl ? 'Cambiar' : 'Subir logotipo') }}
+              <input type="file" accept="image/png,image/jpeg" hidden
+                     :disabled="subiendoLogo" @change="subirLogo" />
+            </label>
+            <button v-if="logoUrl" type="button" class="btn btn-ghost btn-sm"
+                    :disabled="subiendoLogo" @click="logoUrl = ''">
+              Quitar
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="dc3-acciones">
@@ -441,6 +507,41 @@ watch(() => props.cursoId, () => {
 .dc3-hint, .dc3-error { font-size: 0.75rem; }
 .dc3-hint { color: var(--muted); }
 .dc3-error { color: var(--danger); }
+
+.dc3-logo { margin-top: 4px; }
+
+.dc3-logo-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.dc3-logo-vista {
+  width: 96px;
+  height: 72px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 4px;
+}
+
+.dc3-logo-vacio {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 72px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* El input va oculto dentro del label: un file input nativo no se puede
+   estilar y quedaría fuera del sistema visual del resto del formulario. */
+.dc3-logo-btn { cursor: pointer; }
 
 .dc3-faltantes {
   margin: 0 0 16px;

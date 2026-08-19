@@ -40,6 +40,12 @@ message CreateComentarioRequest {
   string user_id   = 2;
   string contenido = 3;
   string parent_id = 4;
+  // Adjunto ya subido a R2, igual que en las publicaciones: por la API viaja la
+  // URL, nunca el binario. El formulario de comentarios permitía elegir un
+  // archivo desde hacía tiempo, pero no había dónde guardarlo y se descartaba
+  // en silencio.
+  string media_url  = 5;
+  string media_type = 6;
 }
 
 message PostReactionRequest {
@@ -101,6 +107,9 @@ message ComentarioResponse {
   // Curso al que pertenece el hilo. El foro no tiene URL propia: se ve dentro
   // de la capacitación, así que es lo que necesita el enlace de la campana.
   string capacitacion_id = 11;
+
+  string media_url  = 12;
+  string media_type = 13;
 }
 
 message ListComentariosResponse {

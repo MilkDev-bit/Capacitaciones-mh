@@ -1,0 +1,467 @@
+Date : 2026-08-18 17:09:55
+Directory : /home/MictDev/Projects/Capacitaciones-mh
+Total : 298 files,  85306 codes, 5266 comments, 9700 blanks, all 100272 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| Go                 |        123 |     39,994 |      3,577 |      5,401 |     48,972 |
+| vue                |         71 |     29,792 |        442 |      3,201 |     33,435 |
+| JSON               |          7 |      8,173 |          0 |         10 |      8,183 |
+| TypeScript         |         34 |      2,851 |        550 |        497 |      3,898 |
+| PostCSS            |          2 |      1,017 |        150 |        114 |      1,281 |
+| Go Checksum File   |         11 |        832 |          0 |         11 |        843 |
+| Python             |          2 |        818 |          0 |         10 |        828 |
+| MS SQL             |          5 |        384 |        268 |        137 |        789 |
+| YAML               |          4 |        353 |        107 |         38 |        498 |
+| Go Module File     |         13 |        304 |          2 |         62 |        368 |
+| Markdown           |          2 |        243 |          0 |         64 |        307 |
+| Docker             |         11 |        192 |         48 |         82 |        322 |
+| Shell Script       |          2 |        113 |         49 |         26 |        188 |
+| Properties         |          2 |         74 |          5 |         16 |         95 |
+| Makefile           |          1 |         71 |         42 |         18 |        131 |
+| JavaScript         |          2 |         31 |         23 |          2 |         56 |
+| Go Work File       |          1 |         16 |          2 |          2 |         20 |
+| HTML               |          1 |         16 |          0 |          1 |         17 |
+| Ignore             |          1 |         11 |          0 |          4 |         15 |
+| JSON with Comments |          1 |         11 |          0 |          1 |         12 |
+| Dotenv             |          1 |          9 |          1 |          2 |         12 |
+| XML                |          1 |          1 |          0 |          1 |          2 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                     | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                        |        298 |     85,306 |      5,266 |      9,700 |    100,272 |
+| . (Files)                                                                                                |         15 |      1,875 |        216 |        201 |      2,292 |
+| .github                                                                                                  |          1 |         41 |          2 |         11 |         54 |
+| .github/workflows                                                                                        |          1 |         41 |          2 |         11 |         54 |
+| frontend                                                                                                 |        120 |     41,920 |      1,172 |      3,864 |     46,956 |
+| frontend (Files)                                                                                         |         15 |      8,307 |         33 |         60 |      8,400 |
+| frontend/src                                                                                             |        105 |     33,613 |      1,139 |      3,804 |     38,556 |
+| frontend/src (Files)                                                                                     |          3 |         89 |          5 |         18 |        112 |
+| frontend/src/assets                                                                                      |          3 |      1,018 |        150 |        115 |      1,283 |
+| frontend/src/components                                                                                  |         35 |      9,595 |        210 |        989 |     10,794 |
+| frontend/src/components (Files)                                                                          |         28 |      8,807 |        202 |        895 |      9,904 |
+| frontend/src/components/icons                                                                            |          5 |         46 |          0 |          5 |         51 |
+| frontend/src/components/store                                                                            |          2 |        742 |          8 |         89 |        839 |
+| frontend/src/composables                                                                                 |         13 |      1,269 |        302 |        239 |      1,810 |
+| frontend/src/router                                                                                      |          1 |        102 |         21 |          7 |        130 |
+| frontend/src/stores                                                                                      |          8 |        753 |        107 |        165 |      1,025 |
+| frontend/src/utils                                                                                       |          6 |        556 |         90 |         44 |        690 |
+| frontend/src/views                                                                                       |         36 |     20,231 |        254 |      2,227 |     22,712 |
+| frontend/src/views (Files)                                                                               |          8 |      2,597 |         37 |        295 |      2,929 |
+| frontend/src/views/admin                                                                                 |          5 |      1,522 |          3 |        142 |      1,667 |
+| frontend/src/views/instructor                                                                            |          7 |      2,708 |         13 |        273 |      2,994 |
+| frontend/src/views/shared                                                                                |          6 |      4,510 |         77 |        538 |      5,125 |
+| frontend/src/views/user                                                                                  |         10 |      8,894 |        124 |        979 |      9,997 |
+| gateway                                                                                                  |         29 |      6,448 |      1,067 |        834 |      8,349 |
+| gateway (Files)                                                                                          |          3 |        244 |         11 |         24 |        279 |
+| gateway/cmd                                                                                              |          1 |         94 |         14 |         18 |        126 |
+| gateway/cmd/server                                                                                       |          1 |         94 |         14 |         18 |        126 |
+| gateway/internal                                                                                         |         25 |      6,110 |      1,042 |        792 |      7,944 |
+| gateway/internal/clients                                                                                 |          1 |         53 |          7 |          8 |         68 |
+| gateway/internal/config                                                                                  |          1 |        148 |         35 |         28 |        211 |
+| gateway/internal/handler                                                                                 |         15 |      4,409 |        725 |        515 |      5,649 |
+| gateway/internal/hub                                                                                     |          3 |        828 |        135 |        126 |      1,089 |
+| gateway/internal/middleware                                                                              |          2 |        223 |         18 |         32 |        273 |
+| gateway/internal/pdf                                                                                     |          1 |         68 |         47 |         13 |        128 |
+| gateway/internal/router                                                                                  |          1 |        222 |         55 |         49 |        326 |
+| gateway/internal/storage                                                                                 |          1 |        159 |         20 |         21 |        200 |
+| gen                                                                                                      |         16 |     18,998 |        786 |      2,461 |     22,245 |
+| gen (Files)                                                                                              |          2 |         44 |          2 |          6 |         52 |
+| gen/auth                                                                                                 |          2 |      1,141 |         88 |        155 |      1,384 |
+| gen/cursos                                                                                               |          2 |      7,145 |        255 |        880 |      8,280 |
+| gen/examenes                                                                                             |          2 |      1,657 |         70 |        226 |      1,953 |
+| gen/foros                                                                                                |          2 |      1,206 |         68 |        170 |      1,444 |
+| gen/lecciones                                                                                            |          2 |      4,316 |        137 |        555 |      5,008 |
+| gen/mensajes                                                                                             |          2 |      1,624 |         58 |        224 |      1,906 |
+| gen/usuarios                                                                                             |          2 |      1,865 |        108 |        245 |      2,218 |
+| gotenberg                                                                                                |          2 |         41 |         25 |         12 |         78 |
+| internal                                                                                                 |         30 |      4,341 |        201 |        619 |      5,161 |
+| internal/cache                                                                                           |          1 |         11 |          3 |          5 |         19 |
+| internal/config                                                                                          |          1 |         97 |         35 |         30 |        162 |
+| internal/db                                                                                              |          2 |        377 |          5 |         58 |        440 |
+| internal/handlers                                                                                        |         18 |      3,058 |         65 |        382 |      3,505 |
+| internal/middleware                                                                                      |          3 |        275 |         14 |         51 |        340 |
+| internal/models                                                                                          |          1 |        137 |          0 |         16 |        153 |
+| internal/repository                                                                                      |          1 |         64 |         16 |         13 |         93 |
+| internal/sanitize                                                                                        |          1 |         10 |         10 |          6 |         26 |
+| internal/service                                                                                         |          1 |         86 |         26 |         23 |        135 |
+| internal/storage                                                                                         |          1 |        226 |         27 |         35 |        288 |
+| migrations                                                                                               |          4 |        301 |        230 |         96 |        627 |
+| pkg                                                                                                      |         11 |      1,298 |        301 |        213 |      1,812 |
+| pkg/dc3                                                                                                  |          4 |        415 |        135 |         66 |        616 |
+| pkg/mailer                                                                                               |          4 |        613 |        100 |        100 |        813 |
+| pkg/money                                                                                                |          3 |        270 |         66 |         47 |        383 |
+| scratch                                                                                                  |          3 |        205 |          0 |          7 |        212 |
+| scripts                                                                                                  |          2 |        113 |         49 |         26 |        188 |
+| services                                                                                                 |         65 |      9,725 |      1,217 |      1,356 |     12,298 |
+| services/auth                                                                                            |          9 |      1,013 |        140 |        176 |      1,329 |
+| services/auth (Files)                                                                                    |          3 |        115 |          3 |         17 |        135 |
+| services/auth/cmd                                                                                        |          1 |        135 |         17 |         20 |        172 |
+| services/auth/cmd/server                                                                                 |          1 |        135 |         17 |         20 |        172 |
+| services/auth/internal                                                                                   |          5 |        763 |        120 |        139 |      1,022 |
+| services/auth/internal/config                                                                            |          1 |         93 |         19 |         22 |        134 |
+| services/auth/internal/handler                                                                           |          1 |        140 |         14 |         20 |        174 |
+| services/auth/internal/model                                                                             |          1 |         19 |          4 |          4 |         27 |
+| services/auth/internal/repository                                                                        |          1 |        129 |         19 |         23 |        171 |
+| services/auth/internal/service                                                                           |          1 |        382 |         64 |         70 |        516 |
+| services/cursos                                                                                          |         15 |      3,766 |        589 |        485 |      4,840 |
+| services/cursos (Files)                                                                                  |          3 |        112 |          2 |         13 |        127 |
+| services/cursos/cmd                                                                                      |          1 |        265 |         62 |         21 |        348 |
+| services/cursos/cmd/server                                                                               |          1 |        265 |         62 |         21 |        348 |
+| services/cursos/internal                                                                                 |         11 |      3,389 |        525 |        451 |      4,365 |
+| services/cursos/internal/handler                                                                         |          3 |        481 |         39 |         79 |        599 |
+| services/cursos/internal/repository                                                                      |          4 |      1,561 |        251 |        193 |      2,005 |
+| services/cursos/internal/service                                                                         |          4 |      1,347 |        235 |        179 |      1,761 |
+| services/examenes                                                                                        |          7 |        736 |         16 |        101 |        853 |
+| services/examenes (Files)                                                                                |          3 |        104 |          0 |         12 |        116 |
+| services/examenes/cmd                                                                                    |          1 |        107 |          2 |         12 |        121 |
+| services/examenes/cmd/server                                                                             |          1 |        107 |          2 |         12 |        121 |
+| services/examenes/internal                                                                               |          3 |        525 |         14 |         77 |        616 |
+| services/examenes/internal/handler                                                                       |          1 |        105 |          3 |         21 |        129 |
+| services/examenes/internal/repository                                                                    |          1 |        284 |          7 |         36 |        327 |
+| services/examenes/internal/service                                                                       |          1 |        136 |          4 |         20 |        160 |
+| services/foros                                                                                           |          7 |        621 |         10 |         75 |        706 |
+| services/foros (Files)                                                                                   |          3 |        104 |          0 |         12 |        116 |
+| services/foros/cmd                                                                                       |          1 |        119 |          2 |         12 |        133 |
+| services/foros/cmd/server                                                                                |          1 |        119 |          2 |         12 |        133 |
+| services/foros/internal                                                                                  |          3 |        398 |          8 |         51 |        457 |
+| services/foros/internal/handler                                                                          |          1 |         79 |          1 |         14 |         94 |
+| services/foros/internal/repository                                                                       |          1 |        262 |          7 |         25 |        294 |
+| services/foros/internal/service                                                                          |          1 |         57 |          0 |         12 |         69 |
+| services/lecciones                                                                                       |         12 |      2,082 |        332 |        310 |      2,724 |
+| services/lecciones (Files)                                                                               |          3 |        104 |          0 |         12 |        116 |
+| services/lecciones/cmd                                                                                   |          1 |        198 |         16 |         27 |        241 |
+| services/lecciones/cmd/server                                                                            |          1 |        198 |         16 |         27 |        241 |
+| services/lecciones/internal                                                                              |          8 |      1,780 |        316 |        271 |      2,367 |
+| services/lecciones/internal/badges                                                                       |          1 |        169 |         28 |         23 |        220 |
+| services/lecciones/internal/gameschemas                                                                  |          1 |         49 |        127 |         11 |        187 |
+| services/lecciones/internal/handler                                                                      |          1 |        228 |         10 |         43 |        281 |
+| services/lecciones/internal/repository                                                                   |          2 |        842 |         67 |        107 |      1,016 |
+| services/lecciones/internal/service                                                                      |          3 |        492 |         84 |         87 |        663 |
+| services/mensajes                                                                                        |          8 |        838 |         77 |        116 |      1,031 |
+| services/mensajes (Files)                                                                                |          3 |        104 |          0 |         12 |        116 |
+| services/mensajes/cmd                                                                                    |          1 |        105 |          4 |         12 |        121 |
+| services/mensajes/cmd/server                                                                             |          1 |        105 |          4 |         12 |        121 |
+| services/mensajes/internal                                                                               |          4 |        629 |         73 |         92 |        794 |
+| services/mensajes/internal/handler                                                                       |          1 |         81 |          0 |         17 |         98 |
+| services/mensajes/internal/repository                                                                    |          2 |        319 |         47 |         44 |        410 |
+| services/mensajes/internal/service                                                                       |          1 |        229 |         26 |         31 |        286 |
+| services/usuarios                                                                                        |          7 |        669 |         53 |         93 |        815 |
+| services/usuarios (Files)                                                                                |          3 |        104 |          0 |         12 |        116 |
+| services/usuarios/cmd                                                                                    |          1 |         96 |          3 |         13 |        112 |
+| services/usuarios/cmd/server                                                                             |          1 |         96 |          3 |         13 |        112 |
+| services/usuarios/internal                                                                               |          3 |        469 |         50 |         68 |        587 |
+| services/usuarios/internal/handler                                                                       |          1 |        114 |          8 |         18 |        140 |
+| services/usuarios/internal/repository                                                                    |          1 |        235 |         26 |         29 |        290 |
+| services/usuarios/internal/service                                                                       |          1 |        120 |         16 |         21 |        157 |
++----------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                                                 | language           | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| /home/MictDev/Projects/Capacitaciones-mh/.dockerignore                                                   | Ignore             |         11 |          0 |          4 |         15 |
+| /home/MictDev/Projects/Capacitaciones-mh/.env                                                            | Dotenv             |          9 |          1 |          2 |         12 |
+| /home/MictDev/Projects/Capacitaciones-mh/.github/workflows/ci.yml                                        | YAML               |         41 |          2 |         11 |         54 |
+| /home/MictDev/Projects/Capacitaciones-mh/Dockerfile                                                      | Docker             |         25 |          5 |         12 |         42 |
+| /home/MictDev/Projects/Capacitaciones-mh/MIGRACION-RESEND.md                                             | Markdown           |         92 |          0 |         37 |        129 |
+| /home/MictDev/Projects/Capacitaciones-mh/Makefile                                                        | Makefile           |         71 |         42 |         18 |        131 |
+| /home/MictDev/Projects/Capacitaciones-mh/buf.gen.yaml                                                    | YAML               |         10 |          0 |          1 |         11 |
+| /home/MictDev/Projects/Capacitaciones-mh/buf.yaml                                                        | YAML               |          9 |          0 |          1 |         10 |
+| /home/MictDev/Projects/Capacitaciones-mh/docker-compose.yml                                              | YAML               |        293 |        105 |         25 |        423 |
+| /home/MictDev/Projects/Capacitaciones-mh/fix_encoding.py                                                 | Python             |         28 |          0 |          4 |         32 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/.oxlintrc.json                                         | JSON               |         10 |          0 |          1 |         11 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/Dockerfile                                             | Docker             |         11 |          2 |          2 |         15 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/RESPONSIVE.md                                          | Markdown           |        151 |          0 |         27 |        178 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/env.d.ts                                               | TypeScript         |          0 |          1 |          1 |          2 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/eslint.config.ts                                       | TypeScript         |         21 |          2 |          6 |         29 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/index.html                                             | HTML               |         16 |          0 |          1 |         17 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/nginx.conf                                             | Properties         |         44 |          5 |         10 |         59 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/package-lock.json                                      | JSON               |      7,895 |          0 |          1 |      7,896 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/package.json                                           | JSON               |         61 |          0 |          1 |         62 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/postcss.config.js                                      | JavaScript         |          6 |          0 |          1 |          7 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/App.vue                                            | vue                |         39 |          2 |          5 |         46 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/api.ts                                             | TypeScript         |         17 |          0 |          4 |         21 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/assets/base.css                                    | PostCSS            |         82 |          0 |         17 |         99 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/assets/logo.svg                                    | XML                |          1 |          0 |          1 |          2 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/assets/main.css                                    | PostCSS            |        935 |        150 |         97 |      1,182 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/AppSidebar.vue                          | vue                |        208 |          0 |         29 |        237 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CameraCapture.vue                       | vue                |        245 |          4 |         35 |        284 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CartDrawer.vue                          | vue                |        479 |         13 |         52 |        544 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/ContentTypeSelector.vue                 | vue                |        186 |          0 |          5 |        191 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CourseCard.vue                          | vue                |        127 |          0 |         19 |        146 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CourseEditorDrawer.vue                  | vue                |        287 |         17 |         32 |        336 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CourseSidebar.vue                       | vue                |        324 |          6 |         30 |        360 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CourseTreeEditor.vue                    | vue                |      1,172 |         18 |        129 |      1,319 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CourseWizardModal.vue                   | vue                |        255 |          0 |         21 |        276 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/CreateGroupModal.vue                    | vue                |        199 |          1 |         21 |        221 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DC3EmpresaInstructor.vue                | vue                |        236 |         11 |         33 |        280 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DC3Modal.vue                            | vue                |        121 |          9 |         16 |        146 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DC3Panel.test.ts                        | TypeScript         |         73 |         24 |         20 |        117 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DC3Panel.vue                            | vue                |        402 |         35 |         41 |        478 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DashboardCharts.vue                     | vue                |        183 |          0 |         15 |        198 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/DragDropUpload.vue                      | vue                |        265 |          0 |         40 |        305 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/EmptyState.vue                          | vue                |         52 |          0 |          4 |         56 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/GameConfigEditor.vue                    | vue                |        610 |         10 |         52 |        672 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/GradientPicker.vue                      | vue                |         86 |          0 |          7 |         93 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/HelloWorld.vue                          | vue                |         36 |          0 |          6 |         42 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/InteractiveActivity.vue                 | vue                |      1,862 |         39 |        116 |      2,017 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/LlamadaTimbrando.vue                    | vue                |        210 |          0 |         25 |        235 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/NotificationBell.vue                    | vue                |        349 |          5 |         55 |        409 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/SearchUserModal.vue                     | vue                |        132 |          0 |         17 |        149 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/TheWelcome.vue                          | vue                |         82 |          0 |         14 |         96 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/VideoCallModal.vue                      | vue                |        197 |          0 |         21 |        218 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/VideoPlayer.vue                         | vue                |        353 |         10 |         29 |        392 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/WelcomeItem.vue                         | vue                |         76 |          0 |         11 |         87 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/icons/IconCommunity.vue                 | vue                |          7 |          0 |          1 |          8 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/icons/IconDocumentation.vue             | vue                |          7 |          0 |          1 |          8 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/icons/IconEcosystem.vue                 | vue                |          7 |          0 |          1 |          8 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/icons/IconSupport.vue                   | vue                |          7 |          0 |          1 |          8 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/icons/IconTooling.vue                   | vue                |         18 |          0 |          1 |         19 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/store/CourseCarousel.vue                | vue                |        392 |          7 |         51 |        450 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/components/store/CourseTile.vue                    | vue                |        350 |          1 |         38 |        389 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/escena.test.ts                         | TypeScript         |        133 |          8 |         20 |        161 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/escena.ts                              | TypeScript         |        116 |         39 |         21 |        176 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/notificaciones.test.ts                 | TypeScript         |         89 |         12 |         17 |        118 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/notificaciones.ts                      | TypeScript         |         39 |         42 |         12 |         93 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/progresion.test.ts                     | TypeScript         |        147 |          9 |         22 |        178 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/progresion.ts                          | TypeScript         |         90 |         49 |         13 |        152 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useLlamadas.test.ts                    | TypeScript         |        170 |          4 |         28 |        202 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useLlamadas.ts                         | TypeScript         |        156 |         38 |         29 |        223 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useReveal.test.ts                      | TypeScript         |         84 |          9 |         18 |        111 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useReveal.ts                           | TypeScript         |        107 |         36 |         25 |        168 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useScrollLock.test.ts                  | TypeScript         |         75 |         30 |         20 |        125 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useScrollLock.ts                       | TypeScript         |         16 |         13 |          6 |         35 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/composables/useTheme.ts                            | TypeScript         |         47 |         13 |          8 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/main.ts                                            | TypeScript         |         33 |          3 |          9 |         45 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/router/index.ts                                    | TypeScript         |        102 |         21 |          7 |        130 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/auth.test.ts                                | TypeScript         |        152 |          6 |         40 |        198 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/auth.ts                                     | TypeScript         |         98 |         15 |         12 |        125 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/cart.test.ts                                | TypeScript         |        136 |         12 |         47 |        195 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/cart.ts                                     | TypeScript         |        120 |         37 |         21 |        178 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/counter.ts                                  | TypeScript         |         10 |          0 |          3 |         13 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/dc3.ts                                      | TypeScript         |         17 |         18 |          5 |         40 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/suscripcion.test.ts                         | TypeScript         |        110 |          4 |         23 |        137 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/stores/suscripcion.ts                              | TypeScript         |        110 |         15 |         14 |        139 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/avatars.ts                                   | TypeScript         |        235 |         10 |          6 |        251 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/dc3.test.ts                                  | TypeScript         |         71 |         20 |         12 |        103 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/dc3.ts                                       | TypeScript         |         74 |         55 |          9 |        138 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/recaptcha.ts                                 | TypeScript         |         27 |          0 |          4 |         31 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/toast.ts                                     | TypeScript         |        133 |          0 |          8 |        141 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/utils/upload.ts                                    | TypeScript         |         16 |          5 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/AboutView.vue                                | vue                |         14 |          0 |          2 |         16 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/CheckoutSuccessView.vue                      | vue                |        233 |          5 |         29 |        267 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/CursoPublicView.vue                          | vue                |      1,125 |         21 |        146 |      1,292 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/HomeView.vue                                 | vue                |          8 |          0 |          2 |         10 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/LoginView.vue                                | vue                |        522 |          0 |         42 |        564 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/ResetPasswordView.vue                        | vue                |        233 |          6 |         24 |        263 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/UnirseView.vue                               | vue                |        143 |          0 |         15 |        158 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/VerifyEmailView.vue                          | vue                |        319 |          5 |         35 |        359 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/admin/AdminDashboard.vue                     | vue                |        209 |          0 |         21 |        230 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/admin/AdminLayout.vue                        | vue                |        136 |          3 |         11 |        150 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/admin/CapacitacionesView.vue                 | vue                |        599 |          0 |         52 |        651 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/admin/ExamenesView.vue                       | vue                |        292 |          0 |         29 |        321 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/admin/UsuariosView.vue                       | vue                |        286 |          0 |         29 |        315 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/CapacitacionesInstructor.vue      | vue                |        622 |          1 |         73 |        696 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/EntregasView.vue                  | vue                |        473 |          3 |         62 |        538 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/EstudiantesView.vue               | vue                |        280 |          0 |         19 |        299 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/ExamenesInstructor.vue            | vue                |        714 |          1 |         65 |        780 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/InstructorDashboard.vue           | vue                |        214 |          0 |         22 |        236 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/InstructorLayout.vue              | vue                |        148 |          3 |         11 |        162 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/instructor/InstructorPerfilView.vue          | vue                |        257 |          5 |         21 |        283 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/ComoFuncionaView.vue                  | vue                |        746 |         12 |        104 |        862 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/MensajesView.vue                      | vue                |      1,169 |         30 |        105 |      1,304 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/PlanesView.vue                        | vue                |        476 |          3 |         36 |        515 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/PublicProfileView.vue                 | vue                |        299 |          0 |         38 |        337 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/StoreView.vue                         | vue                |      1,581 |         25 |        221 |      1,827 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/shared/VerificarConstancia.vue               | vue                |        239 |          7 |         34 |        280 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/DashboardView.vue                       | vue                |        487 |          4 |         38 |        529 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/ExamenFormView.vue                      | vue                |        482 |         11 |         29 |        522 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/MisCapacitaciones.vue                   | vue                |      1,021 |          2 |         96 |      1,119 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/MisConstancias.vue                      | vue                |        173 |          1 |         24 |        198 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/MisExamenes.vue                         | vue                |        410 |         12 |         37 |        459 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/MisLicencias.vue                        | vue                |        963 |         10 |        141 |      1,114 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/PerfilView.vue                          | vue                |        454 |          8 |         37 |        499 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/ResponderExamen.vue                     | vue                |        216 |          6 |         20 |        242 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/UserLayout.vue                          | vue                |        228 |          9 |         17 |        254 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/src/views/user/VerCapacitacion.vue                     | vue                |      4,460 |         61 |        540 |      5,061 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/tailwind.config.js                                     | JavaScript         |         25 |         23 |          1 |         49 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/tsconfig.app.json                                      | JSON               |         12 |          0 |          2 |         14 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/tsconfig.json                                          | JSON with Comments |         11 |          0 |          1 |         12 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/tsconfig.node.json                                     | JSON               |         17 |          0 |          3 |         20 |
+| /home/MictDev/Projects/Capacitaciones-mh/frontend/vite.config.ts                                         | TypeScript         |         27 |          0 |          2 |         29 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/Dockerfile                                              | Docker             |         29 |         11 |         16 |         56 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/cmd/server/main.go                                      | Go                 |         94 |         14 |         18 |        126 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/go.mod                                                  | Go Module File     |         62 |          0 |          7 |         69 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/go.sum                                                  | Go Checksum File   |        153 |          0 |          1 |        154 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/clients/clients.go                             | Go                 |         53 |          7 |          8 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/config/config.go                               | Go                 |        148 |         35 |         28 |        211 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/auth.go                                | Go                 |        209 |         21 |         29 |        259 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/compras.go                             | Go                 |        338 |         80 |         60 |        478 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/cursos.go                              | Go                 |      1,029 |        158 |         96 |      1,283 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/dc3.go                                 | Go                 |        330 |        138 |         45 |        513 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/diagnostic.go                          | Go                 |         55 |         16 |          9 |         80 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/examenes.go                            | Go                 |        322 |         13 |         34 |        369 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/foros.go                               | Go                 |        180 |         16 |         22 |        218 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/lecciones.go                           | Go                 |        696 |         62 |         52 |        810 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/llamadas.go                            | Go                 |        176 |         56 |         27 |        259 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/mensajes.go                            | Go                 |        321 |         31 |         43 |        395 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/notificar.go                           | Go                 |         73 |         38 |         12 |        123 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/presign.go                             | Go                 |         60 |          7 |         14 |         81 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/suscripciones.go                       | Go                 |        264 |         49 |         29 |        342 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/usuarios.go                            | Go                 |        211 |         18 |         21 |        250 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/handler/ws.go                                  | Go                 |        145 |         22 |         22 |        189 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/hub/hub.go                                     | Go                 |         84 |         14 |         13 |        111 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/hub/llamadas.go                                | Go                 |        376 |        102 |         47 |        525 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/hub/llamadas_test.go                           | Go                 |        368 |         19 |         66 |        453 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/middleware/auth.go                             | Go                 |        151 |         12 |         19 |        182 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/middleware/ratelimit.go                        | Go                 |         72 |          6 |         13 |         91 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/pdf/gotenberg.go                               | Go                 |         68 |         47 |         13 |        128 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/router/router.go                               | Go                 |        222 |         55 |         49 |        326 |
+| /home/MictDev/Projects/Capacitaciones-mh/gateway/internal/storage/r2.go                                  | Go                 |        159 |         20 |         21 |        200 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/auth/auth.pb.go                                             | Go                 |        776 |         23 |        123 |        922 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/auth/auth_grpc.pb.go                                        | Go                 |        365 |         65 |         32 |        462 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/cursos/cursos.pb.go                                         | Go                 |      5,016 |        156 |        750 |      5,922 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/cursos/cursos_grpc.pb.go                                    | Go                 |      2,129 |         99 |        130 |      2,358 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/examenes/examenes.pb.go                                     | Go                 |      1,220 |         27 |        190 |      1,437 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/examenes/examenes_grpc.pb.go                                | Go                 |        437 |         43 |         36 |        516 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/foros/foros.pb.go                                           | Go                 |        913 |         29 |        142 |      1,084 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/foros/foros_grpc.pb.go                                      | Go                 |        293 |         39 |         28 |        360 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/go.mod                                                      | Go Module File     |         12 |          2 |          5 |         19 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/go.sum                                                      | Go Checksum File   |         32 |          0 |          1 |         33 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/lecciones/lecciones.pb.go                                   | Go                 |      3,231 |         72 |        483 |      3,786 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/lecciones/lecciones_grpc.pb.go                              | Go                 |      1,085 |         65 |         72 |      1,222 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/mensajes/mensajes.pb.go                                     | Go                 |      1,187 |         27 |        188 |      1,402 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/mensajes/mensajes_grpc.pb.go                                | Go                 |        437 |         31 |         36 |        504 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/usuarios/usuarios.pb.go                                     | Go                 |      1,320 |         39 |        203 |      1,562 |
+| /home/MictDev/Projects/Capacitaciones-mh/gen/usuarios/usuarios_grpc.pb.go                                | Go                 |        545 |         69 |         42 |        656 |
+| /home/MictDev/Projects/Capacitaciones-mh/go.mod                                                          | Go Module File     |         66 |          0 |          5 |         71 |
+| /home/MictDev/Projects/Capacitaciones-mh/go.sum                                                          | Go Checksum File   |        161 |          0 |          1 |        162 |
+| /home/MictDev/Projects/Capacitaciones-mh/go.work                                                         | Go Work File       |         16 |          2 |          2 |         20 |
+| /home/MictDev/Projects/Capacitaciones-mh/gotenberg/Dockerfile                                            | Docker             |         11 |         25 |          6 |         42 |
+| /home/MictDev/Projects/Capacitaciones-mh/gotenberg/fonts-dc3.conf                                        | Properties         |         30 |          0 |          6 |         36 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/cache/cache.go                                         | Go                 |         11 |          3 |          5 |         19 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/config/config.go                                       | Go                 |         97 |         35 |         30 |        162 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/db/db.go                                               | Go                 |         42 |          5 |         10 |         57 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/db/schema.go                                           | Go                 |        335 |          0 |         48 |        383 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/auth.go                                       | Go                 |        186 |         10 |         27 |        223 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/capacitaciones.go                             | Go                 |        225 |          0 |         17 |        242 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/email.go                                      | Go                 |         68 |         10 |         16 |         94 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/examenes.go                                   | Go                 |        458 |          1 |         43 |        502 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/foros.go                                      | Go                 |        383 |          4 |         52 |        439 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/helpers.go                                    | Go                 |         17 |          0 |          4 |         21 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/instructor.go                                 | Go                 |        544 |          2 |         51 |        597 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/intermedias.go                                | Go                 |        190 |          0 |         33 |        223 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/lecciones.go                                  | Go                 |        241 |          1 |         34 |        276 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/migrate.go                                    | Go                 |        122 |          9 |         22 |        153 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/notificaciones.go                             | Go                 |         88 |          2 |         15 |        105 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/perfil.go                                     | Go                 |        158 |          6 |         19 |        183 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/presign.go                                    | Go                 |         62 |          5 |         11 |         78 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/recaptcha.go                                  | Go                 |         43 |          0 |          6 |         49 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/scoring.go                                    | Go                 |         26 |          5 |          4 |         35 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/scoring_test.go                               | Go                 |         74 |          2 |          7 |         83 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/usuarios.go                                   | Go                 |        105 |          2 |         14 |        121 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/handlers/validation.go                                 | Go                 |         68 |          6 |          7 |         81 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/middleware/auth.go                                     | Go                 |         79 |          6 |         16 |        101 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/middleware/auth_test.go                                | Go                 |        115 |          6 |         25 |        146 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/middleware/ratelimit.go                                | Go                 |         81 |          2 |         10 |         93 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/models/models.go                                       | Go                 |        137 |          0 |         16 |        153 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/repository/user.go                                     | Go                 |         64 |         16 |         13 |         93 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/sanitize/sanitize.go                                   | Go                 |         10 |         10 |          6 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/service/auth_service.go                                | Go                 |         86 |         26 |         23 |        135 |
+| /home/MictDev/Projects/Capacitaciones-mh/internal/storage/r2.go                                          | Go                 |        226 |         27 |         35 |        288 |
+| /home/MictDev/Projects/Capacitaciones-mh/main.go                                                         | Go                 |        211 |         23 |         42 |        276 |
+| /home/MictDev/Projects/Capacitaciones-mh/migrations/001_retirar_videollamadas.sql                        | MS SQL             |         10 |         34 |          8 |         52 |
+| /home/MictDev/Projects/Capacitaciones-mh/migrations/001_retirar_videollamadas_railway.sql                | MS SQL             |         53 |         51 |         24 |        128 |
+| /home/MictDev/Projects/Capacitaciones-mh/migrations/002_pagos_y_suscripciones.sql                        | MS SQL             |        155 |         84 |         49 |        288 |
+| /home/MictDev/Projects/Capacitaciones-mh/migrations/conciliacion.sql                                     | MS SQL             |         83 |         61 |         15 |        159 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/dc3/dc3.go                                                  | Go                 |        203 |         97 |         36 |        336 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/dc3/dc3_test.go                                             | Go                 |        197 |         38 |         25 |        260 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/dc3/go.mod                                                  | Go Module File     |          4 |          0 |          4 |          8 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/dc3/go.sum                                                  | Go Checksum File   |         11 |          0 |          1 |         12 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/mailer/go.mod                                               | Go Module File     |          2 |          0 |          2 |          4 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/mailer/mailer.go                                            | Go                 |        141 |         33 |         24 |        198 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/mailer/mailer_test.go                                       | Go                 |        135 |          0 |         17 |        152 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/mailer/templates.go                                         | Go                 |        335 |         67 |         57 |        459 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/money/go.mod                                                | Go Module File     |          2 |          0 |          2 |          4 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/money/money.go                                              | Go                 |        123 |         56 |         28 |        207 |
+| /home/MictDev/Projects/Capacitaciones-mh/pkg/money/money_test.go                                         | Go                 |        145 |         10 |         17 |        172 |
+| /home/MictDev/Projects/Capacitaciones-mh/respaldo_videollamadas.sql                                      | MS SQL             |         83 |         38 |         41 |        162 |
+| /home/MictDev/Projects/Capacitaciones-mh/scratch/check_db.go                                             | Go                 |         27 |          0 |          5 |         32 |
+| /home/MictDev/Projects/Capacitaciones-mh/scratch/package-lock.json                                       | JSON               |        162 |          0 |          1 |        163 |
+| /home/MictDev/Projects/Capacitaciones-mh/scratch/package.json                                            | JSON               |         16 |          0 |          1 |         17 |
+| /home/MictDev/Projects/Capacitaciones-mh/scripts/backup_db.sh                                            | Shell Script       |         38 |         17 |         11 |         66 |
+| /home/MictDev/Projects/Capacitaciones-mh/scripts/video_faststart.sh                                      | Shell Script       |         75 |         32 |         15 |        122 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/Dockerfile                                        | Docker             |         18 |          3 |         10 |         31 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/cmd/server/main.go                                | Go                 |        135 |         17 |         20 |        172 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/go.mod                                            | Go Module File     |         26 |          0 |          6 |         32 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/go.sum                                            | Go Checksum File   |         71 |          0 |          1 |         72 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/internal/config/config.go                         | Go                 |         93 |         19 |         22 |        134 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/internal/handler/auth_handler.go                  | Go                 |        140 |         14 |         20 |        174 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/internal/model/user.go                            | Go                 |         19 |          4 |          4 |         27 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/internal/repository/user_repository.go            | Go                 |        129 |         19 |         23 |        171 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/auth/internal/service/auth_service.go                  | Go                 |        382 |         64 |         70 |        516 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/Dockerfile                                      | Docker             |         18 |          2 |          6 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/cmd/server/main.go                              | Go                 |        265 |         62 |         21 |        348 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/go.mod                                          | Go Module File     |         25 |          0 |          6 |         31 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/go.sum                                          | Go Checksum File   |         69 |          0 |          1 |         70 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/handler/cursos_handler.go              | Go                 |        318 |         21 |         53 |        392 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/handler/dc3_handler.go                 | Go                 |         69 |         14 |         12 |         95 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/handler/suscripciones_handler.go       | Go                 |         94 |          4 |         14 |        112 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/repository/cursos_repository.go        | Go                 |        716 |         66 |         89 |        871 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/repository/dc3_repository.go           | Go                 |        241 |         69 |         24 |        334 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/repository/ordenes_repository.go       | Go                 |        219 |         52 |         30 |        301 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/repository/suscripciones_repository.go | Go                 |        385 |         64 |         50 |        499 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/service/cursos_service.go              | Go                 |        818 |         89 |        109 |      1,016 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/service/dc3_service.go                 | Go                 |        212 |         83 |         28 |        323 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/service/metodos_pago.go                | Go                 |         56 |         29 |         13 |         98 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/cursos/internal/service/suscripciones_service.go       | Go                 |        261 |         34 |         29 |        324 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/Dockerfile                                    | Docker             |         16 |          0 |          6 |         22 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/cmd/server/main.go                            | Go                 |        107 |          2 |         12 |        121 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/go.mod                                        | Go Module File     |         21 |          0 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/go.sum                                        | Go Checksum File   |         67 |          0 |          1 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/internal/handler/examenes_handler.go          | Go                 |        105 |          3 |         21 |        129 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/internal/repository/examenes_repository.go    | Go                 |        284 |          7 |         36 |        327 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/examenes/internal/service/examenes_service.go          | Go                 |        136 |          4 |         20 |        160 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/Dockerfile                                       | Docker             |         16 |          0 |          6 |         22 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/cmd/server/main.go                               | Go                 |        119 |          2 |         12 |        133 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/go.mod                                           | Go Module File     |         21 |          0 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/go.sum                                           | Go Checksum File   |         67 |          0 |          1 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/internal/handler/foros_handler.go                | Go                 |         79 |          1 |         14 |         94 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/internal/repository/foros_repository.go          | Go                 |        262 |          7 |         25 |        294 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/foros/internal/service/foros_service.go                | Go                 |         57 |          0 |         12 |         69 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/Dockerfile                                   | Docker             |         16 |          0 |          6 |         22 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/cmd/server/main.go                           | Go                 |        198 |         16 |         27 |        241 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/go.mod                                       | Go Module File     |         21 |          0 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/go.sum                                       | Go Checksum File   |         67 |          0 |          1 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/badges/badges.go                    | Go                 |        169 |         28 |         23 |        220 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/gameschemas/schemas.go              | Go                 |         49 |        127 |         11 |        187 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/handler/lecciones_handler.go        | Go                 |        228 |         10 |         43 |        281 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/repository/curso_tree.go            | Go                 |         66 |         14 |         16 |         96 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/repository/lecciones_repository.go  | Go                 |        776 |         53 |         91 |        920 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/service/lecciones_service.go        | Go                 |        315 |         40 |         60 |        415 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/service/progresion.go               | Go                 |         56 |         30 |         11 |         97 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/lecciones/internal/service/progresion_test.go          | Go                 |        121 |         14 |         16 |        151 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/Dockerfile                                    | Docker             |         16 |          0 |          6 |         22 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/cmd/server/main.go                            | Go                 |        105 |          4 |         12 |        121 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/go.mod                                        | Go Module File     |         21 |          0 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/go.sum                                        | Go Checksum File   |         67 |          0 |          1 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/internal/handler/mensajes_handler.go          | Go                 |         81 |          0 |         17 |         98 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/internal/repository/contactos.go              | Go                 |         82 |         41 |         16 |        139 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/internal/repository/mensajes_repository.go    | Go                 |        237 |          6 |         28 |        271 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/mensajes/internal/service/mensajes_service.go          | Go                 |        229 |         26 |         31 |        286 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/Dockerfile                                    | Docker             |         16 |          0 |          6 |         22 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/cmd/server/main.go                            | Go                 |         96 |          3 |         13 |        112 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/go.mod                                        | Go Module File     |         21 |          0 |          5 |         26 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/go.sum                                        | Go Checksum File   |         67 |          0 |          1 |         68 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/internal/handler/usuarios_handler.go          | Go                 |        114 |          8 |         18 |        140 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/internal/repository/usuario_repository.go     | Go                 |        235 |         26 |         29 |        290 |
+| /home/MictDev/Projects/Capacitaciones-mh/services/usuarios/internal/service/usuarios_service.go          | Go                 |        120 |         16 |         21 |        157 |
+| /home/MictDev/Projects/Capacitaciones-mh/write_clean.py                                                  | Python             |        790 |          0 |          6 |        796 |
+| Total                                                                                                    |                    |     85,306 |      5,266 |      9,700 |    100,272 |
++----------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
