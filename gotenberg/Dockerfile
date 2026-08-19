@@ -33,9 +33,17 @@ RUN apt-get update -qq \
 COPY gotenberg/fonts-dc3.conf /etc/fonts/conf.d/99-dc3.conf
 
 RUN fc-cache -f \
-    # Falla el build si la fuente no está: es preferible a desplegar una imagen
-    # que genera constancias mal maquetadas y descubrirlo por una queja.
-    && fc-match "Arial Narrow" | grep -qi "narrow" \
-    && echo "OK: Arial Narrow resuelve a una fuente estrecha"
+    && echo "=== Resolución de fuentes de la plantilla DC-3 ===" \
+    && echo -n "Arial Narrow -> " && fc-match "Arial Narrow" \
+    && echo -n "Arial        -> " && fc-match "Arial" \
+    # El build falla si Arial Narrow no resuelve a una Liberation Narrow.
+    #
+    # No es celo excesivo: la primera constancia que se generó en producción
+    # incrustó NotoSans en lugar de una condensada, y ese es exactamente el
+    # fallo silencioso que se quiere impedir. Una imagen sin esta fuente produce
+    # documentos con los campos cortados, y eso solo se descubre cuando alguien
+    # abre el PDF y se queja.
+    && fc-match "Arial Narrow" | grep -qi "LiberationSansNarrow" \
+    && echo "OK: Arial Narrow resuelve a Liberation Sans Narrow"
 
 USER gotenberg

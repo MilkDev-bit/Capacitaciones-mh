@@ -20,6 +20,26 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # Comprueba que gen/ corresponde a los .proto actuales.
+      #
+      # Va ANTES del build a propósito. Sin este paso, olvidarse de `make
+      # generate` se manifiesta como una lista de "unknown field X" repartida
+      # entre los servicios que usan el campo nuevo, y hay que deducir la causa
+      # común. Ha pasado dos veces, y las dos el fallo se descubrió en el
+      # despliegue en vez de aquí.
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Protos y código generado sincronizados
+        run: |
+          buf generate
+          if ! git diff --quiet -- gen/; then
+            echo "::error::gen/ no corresponde a los .proto. Ejecuta 'make generate && make tidy' y commitea gen/."
+            git diff --stat -- gen/
+            exit 1
+          fi
+
       - name: Build
         run: go build ./...
 
