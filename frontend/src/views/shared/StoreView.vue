@@ -1157,35 +1157,33 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 /* Ondas: tres planos a distinta velocidad. En SVG y no en imagen para que
    hereden --brand y funcionen igual en claro y oscuro sin duplicar recursos. */
-/* El sobreancho lo dan left/right, NO una width.
+/* Ondas del hero.
  *
- * Estaban los tres a la vez, y en un absoluto eso es contradictorio: con left,
- * right y width declarados el navegador descarta `right`. Funcionaba por
- * coincidencia —112% es justo lo que dan -6% y -6%—, así que tocar uno de los
- * dos márgenes no habría surtido efecto y el desajuste habría costado un rato
- * de buscar por el sitio equivocado.
+ * El `width` explícito es OBLIGATORIO y no redundante con left/right. Un <svg>
+ * es un elemento reemplazado con proporción intrínseca: sin `width`, el
+ * navegador NO lo estira de un borde al otro, lo deduce del viewBox (1440x420)
+ * y de la altura, y la banda acaba a media pantalla.
  *
- * El margen existe para que el parallax pueda desplazar las ondas en
+ * `max-width: none` es la corrección de verdad. En main.css hay un
+ * `svg { max-width: 100% }` como cortafuegos contra el scroll lateral —regla
+ * correcta y que conviene conservar—, pero aquí recortaba el 112% a 100%: con
+ * left, right y width sobredeterminados el navegador descarta `right`, la banda
+ * quedaba anclada a la izquierda y dejaba un 6% de blanco al final. En una
+ * pantalla ancha eso son más de cien píxeles.
+ *
+ * El sobreancho existe para que el parallax pueda desplazar las ondas en
  * horizontal sin descubrir el borde: onda--cerca llega a -72px con el hero al
- * máximo, y un 6% cubre eso holgadamente en cualquier ancho de escritorio.
+ * máximo, y un 6% lo cubre de sobra. No hay riesgo de desborde porque `.hero`
+ * y `.hero__bg` recortan con overflow.
  */
 .hero__waves {
   position: absolute;
   left: -6%;
-  right: -6%;
   bottom: -1px;
+  width: 112%;
+  max-width: none;
   height: 62%;
   display: block;
-  /* Exención del cortafuegos `svg { max-width: 100% }` de main.css.
-   *
-   * Esa regla global existe para que un medio suelto no saque scroll lateral en
-   * toda la página, y es correcta. Pero aquí el sobreancho es intencionado, y al
-   * recortarse a 100% el navegador descartaba `right` y anclaba la banda por la
-   * izquierda: quedaba un 6% de la ventana sin cubrir a la derecha —más de cien
-   * píxeles de blanco— que solo se apreciaba en pantallas anchas.
-   *
-   * No hay riesgo de desborde: `.hero` y `.hero__bg` recortan con overflow. */
-  max-width: none;
 }
 
 .onda {
