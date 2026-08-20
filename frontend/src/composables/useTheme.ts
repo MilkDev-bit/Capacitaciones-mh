@@ -19,13 +19,28 @@ const COLOR_BARRA = { claro: '#ffffff', oscuro: '#1d1d1f' }
 
 function sincronizarThemeColor(oscuro: boolean) {
   if (typeof document === 'undefined') return
-  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-  if (!meta) {
-    meta = document.createElement('meta')
+  const color = oscuro ? COLOR_BARRA.oscuro : COLOR_BARRA.claro
+
+  // Se actualizan TODAS, no solo la primera.
+  //
+  // index.html declara una para que exista desde el primer byte, pero si algún
+  // día se añade otra con `media` —el patrón habitual para claro/oscuro— la que
+  // quedara sin tocar seguiría ganando en su media query y el color volvería a
+  // descuadrarse solo en un tema. Es un fallo que solo se ve en un móvil real.
+  const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+  if (metas.length === 0) {
+    const meta = document.createElement('meta')
     meta.name = 'theme-color'
+    meta.content = color
     document.head.appendChild(meta)
+    return
   }
-  meta.content = oscuro ? COLOR_BARRA.oscuro : COLOR_BARRA.claro
+  metas.forEach(m => {
+    // Si tuviera `media`, se retira: el tema lo manda el conmutador de la app,
+    // no la preferencia del sistema.
+    m.removeAttribute('media')
+    m.content = color
+  })
 }
 
 if (typeof window !== 'undefined') {

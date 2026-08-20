@@ -5,6 +5,23 @@
     <link rel="icon" type="image/png" href="/favicon.ico?v=3">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Plataforma de aprendizaje profesional">
+
+    <!--
+      Color de la barra de estado del móvil (la zona del notch).
+
+      Va en el HTML estático a propósito. Antes lo creaba useTheme.ts al
+      arrancar Vue, y hasta ese momento no existía: durante la carga el
+      navegador no tenía ninguna indicación y la resolvía por su cuenta
+      —Safari muestrea el borde superior de la página—, tiñendo la barra de
+      verde y dejando la hora y la batería ilegibles.
+
+      Aquí solo está el valor inicial. useTheme.ts lo sigue actualizando al
+      cambiar de tema, porque el conmutador de la app no depende de
+      prefers-color-scheme y una variante por media query no bastaría.
+    -->
+    <meta name="theme-color" content="#ffffff">
+    <!-- iOS en modo pantalla completa ignora theme-color y usa esto. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
