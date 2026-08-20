@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { renderMarkdown } from '../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -17,6 +18,28 @@ const susc = useSuscripcionStore()
 const id = route.params.id as string
 const curso = ref<any>(null)
 const loading = ref(true)
+
+/** Descripción plegada por defecto; se despliega con "Mostrar más". */
+const descripcionAbierta = ref(false)
+
+const descripcionCurso = computed(() =>
+  curso.value?.welcome_message ||
+  curso.value?.description ||
+  'Aprende y desarrolla nuevas habilidades profesionales con este curso diseñado por expertos en la materia.'
+)
+
+/**
+ * Solo se ofrece plegar si hay algo que plegar.
+ *
+ * El umbral va sobre el número de caracteres y no sobre la altura medida: leer
+ * la altura obligaría a esperar al renderizado y el botón aparecería con un
+ * parpadeo. 320 caracteres son unas cinco líneas en móvil, que es donde el
+ * texto empieza a estorbar.
+ */
+const descripcionEsLarga = computed(() => descripcionCurso.value.length > 320)
+
+/** HTML ya saneado. Nunca se pinta `descripcionCurso` en crudo con v-html. */
+const descripcionHtml = computed(() => renderMarkdown(descripcionCurso.value))
 const buying = ref(false)
 const enrolling = ref(false)
 const codigoForm = ref('')
@@ -325,7 +348,30 @@ function buyB2B() {
           <!-- About card -->
           <div class="glass-card">
             <h2 class="glass-card-title">Sobre este curso</h2>
-            <p class="glass-card-text">{{ curso.welcome_message || curso.description || 'Aprende y desarrolla nuevas habilidades profesionales con este curso diseñado por expertos en la materia.' }}</p>
+            <!--
+              Plegada por defecto.
+              Las descripciones de los cursos llegan a varios miles de
+              caracteres, y desplegadas empujaban el temario y el botón de
+              compra tan abajo que en móvil había que hacer scroll durante
+              varias pantallas para llegar a ellos.
+
+              `pre-line` conserva los saltos que escribió el instructor; hasta
+              ahora se colapsaban todos y el texto salía como un solo bloque.
+            -->
+            <!--
+              v-html sobre renderMarkdown, que sanea SIEMPRE. Esta ficha es
+              pública y quien escribe la descripción es un instructor, no un
+              administrador: sin sanear, un <script> en ese campo se ejecutaría
+              en el navegador de cualquier visitante.
+            -->
+            <div class="glass-card-text glass-card-text--desc md-render"
+                 :class="{ 'is-plegado': !descripcionAbierta }"
+                 v-html="descripcionHtml" />
+            <button v-if="descripcionEsLarga" type="button" class="desc-toggle"
+                    :aria-expanded="descripcionAbierta"
+                    @click="descripcionAbierta = !descripcionAbierta">
+              {{ descripcionAbierta ? 'Mostrar menos' : 'Mostrar más' }}
+            </button>
 
             <!-- What you'll learn -->
             <div class="learn-grid">
@@ -882,6 +928,30 @@ function buyB2B() {
   align-items: center;
   gap: 8px;
 }
+
+/* Descripción del curso: plegada, con los saltos del instructor conservados. */
+.glass-card-text--desc { overflow-wrap: anywhere; }
+
+.glass-card-text--desc.is-plegado {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.desc-toggle {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  /* Objetivo táctil: el texto solo mide 18px de alto. */
+  min-height: var(--touch-min, 44px);
+}
+.desc-toggle:hover { text-decoration: underline; }
 
 .glass-card-text {
   font-size: 0.95rem;

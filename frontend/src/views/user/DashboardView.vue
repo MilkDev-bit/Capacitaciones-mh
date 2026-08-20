@@ -356,8 +356,28 @@ function courseProgress(curso: any) {
 
 /* ── Sections ───────────────────────────────────────── */
 .dash-section { display: flex; flex-direction: column; gap: 14px; }
-.dash-section-head { display: flex; justify-content: space-between; align-items: center; }
-.dash-section-head h2 { font-size: 1.05rem; font-weight: 800; color: var(--dark); }
+/* Cabecera de sección: título a la izquierda, control a la derecha.
+ *
+ * `flex-wrap` y el `min-width: 0` del título no son decorativos. Sin ellos, un
+ * control ancho —el selector de curso, que lleva el título completo— empuja al
+ * h2 y este encoge hasta partirse palabra por palabra: "Salón / de la / Fama /
+ * (Top / 5)" en una columna de cinco líneas. Al permitir el salto, en móvil
+ * cada uno ocupa su propia fila y el título se lee entero. */
+.dash-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+}
+.dash-section-head h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--dark);
+  min-width: 0;
+  /* Crece para ocupar el hueco, pero nunca por debajo de su contenido. */
+  flex: 1 1 auto;
+}
 .btn-link {
   background: none; border: none; color: var(--brand);
   font-size: 0.84rem; font-weight: 700; cursor: pointer; transition: color 0.15s;
@@ -449,7 +469,16 @@ function courseProgress(curso: any) {
   .dash-course-cta { width: 100%; justify-content: center; margin-top: 4px; }
 }
 /* ── Leaderboard Widget ──────────────────────────────── */
-.lb-select { padding: 6px 14px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--dark); font-weight: 600; font-size: 0.88rem; outline: none; }
+/* `max-width` en vez de dejarlo crecer: el texto de las opciones es el título
+ * completo del curso, que puede ser muy largo. En móvil ocupa la fila entera,
+ * que es donde queda tras el salto de la cabecera. */
+.lb-select {
+  padding: 6px 14px; border-radius: var(--r-md); border: 1px solid var(--border);
+  background: var(--surface); color: var(--dark); font-weight: 600;
+  font-size: 0.88rem; outline: none;
+  max-width: 100%; min-width: 0;
+}
+@media (max-width: 639px) { .lb-select { width: 100%; } }
 .lb-card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-sm); }
 .lb-loading, .lb-empty { text-align: center; color: var(--muted); padding: 20px 0; font-size: 0.9rem; }
 .lb-list { display: flex; flex-direction: column; gap: 8px; }

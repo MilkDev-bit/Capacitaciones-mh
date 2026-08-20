@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, toRef, computed } from 'vue'
+import MarkdownEditor from './MarkdownEditor.vue'
 import api from '../api'
 import { toast } from '../utils/toast'
 import { uploadToR2 } from '../utils/upload'
@@ -142,7 +143,13 @@ useScrollLock(toRef(props, "show"))
           </div>
           <div class="field mt-4">
             <label>Descripción</label>
-            <textarea v-model="form.description" class="field-input" rows="3"></textarea>
+            <MarkdownEditor v-model="form.description" :filas="8"
+              placeholder="De qué trata el curso, a quién va dirigido y qué se lleva quien lo termina." />
+          </div>
+          <div class="field mt-4">
+            <label>Mensaje de bienvenida</label>
+            <MarkdownEditor v-model="form.welcome_message" :filas="4"
+              placeholder="Lo primero que lee el alumno al abrir la capacitación." />
           </div>
           <div class="field mt-4">
             <label>Precio Individual (MXN)</label>

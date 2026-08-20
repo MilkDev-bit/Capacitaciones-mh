@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import { renderMarkdown } from '../../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
@@ -25,6 +26,9 @@ const router = useRouter()
 const cursoId = route.params.id as string
 const authStore = useAuthStore()
 const dc3 = useDC3Store()
+
+/** Mensaje de bienvenida con formato, ya saneado. */
+const bienvenidaHtml = computed(() => renderMarkdown(curso.value?.welcome_message))
 const currentUser = computed(() => authStore.user)
 
 const curso = ref<any>(null)
@@ -1179,7 +1183,7 @@ function tramitarDC3() {
               </div>
               <div>
                 <h3>Acerca de este curso</h3>
-                <p>{{ curso.welcome_message }}</p>
+                <div class="md-render" v-html="bienvenidaHtml" />
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import MarkdownEditor from '../../components/MarkdownEditor.vue'
 import api from '../../api'
 import DragDropUpload from '../../components/DragDropUpload.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -308,7 +309,8 @@ async function resetCode(id: string, hasExisting: boolean = true) {
               </div>
               <div class="dfield dfield-full">
                 <label>Mensaje de bienvenida</label>
-                <textarea class="field-input" v-model="form.welcome_message" rows="2" placeholder="Mensaje que veran los estudiantes al abrir el curso..." style="resize:vertical"></textarea>
+                <MarkdownEditor v-model="form.welcome_message" :filas="4"
+                  placeholder="Mensaje que verán los estudiantes al abrir el curso" />
                 <span class="dfield-hint">Se muestra en la pantalla principal del curso</span>
               </div>
             </div>
