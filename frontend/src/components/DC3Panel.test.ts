@@ -84,10 +84,12 @@ describe('DC3Panel', () => {
     // Tras guardar, el servidor ya reporta al trabajador como completo.
     get.mockResolvedValue({ data: { ...sinDatos, trabajador_completo: true } })
 
-    const [curp, puesto, ocupacion] = w.findAll('input')
+    const [curp, puesto] = w.findAll('input')
     await curp!.setValue('ABCD901031HDFXYZ01')
     await puesto!.setValue('Supervisor')
-    await ocupacion!.setValue('04.6 Supervisores')
+    // La ocupación es un selector del Catálogo Nacional de Ocupaciones, no
+    // texto libre: la casilla del formato oficial pide la clave.
+    await w.find('select').setValue('04.6')
     await w.find('button.btn-primary').trigger('click')
     await flushPromises()
 

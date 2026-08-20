@@ -21,7 +21,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
-import { estadoDC3 } from '../utils/dc3'
+import { estadoDC3, OCUPACIONES_CNO, ocupacionCNO } from '../utils/dc3'
 import { uploadToR2 } from '../utils/upload'
 
 const props = withDefaults(defineProps<{
@@ -138,6 +138,21 @@ const estado = computed(() => estadoDC3({
 
 const curpValida = computed(() => form.value.curp.trim().length === 18)
 
+/**
+ * El valor guardado no pertenece al catálogo.
+ *
+ * Ocurre con lo capturado antes de que este campo fuera un selector. No se
+ * descarta en silencio: se muestra marcado como no válido, porque borrarlo sin
+ * avisar dejaría al alumno sin saber por qué su constancia dejó de emitirse.
+ */
+const ocupacionFueraDeCatalogo = computed(() => {
+  const v = form.value.ocupacion_especifica.trim()
+  return v !== '' && !ocupacionCNO(v)
+})
+
+const ocupacionValida = computed(() =>
+  form.value.ocupacion_especifica.trim() !== '' && !ocupacionFueraDeCatalogo.value)
+
 async function consultar() {
   if (!props.completado || !props.habilitado) return
   cargando.value = true
@@ -184,6 +199,10 @@ async function consultar() {
 async function enviar() {
   if (!curpValida.value) {
     toast.error('La CURP debe tener 18 caracteres')
+    return
+  }
+  if (!ocupacionValida.value) {
+    toast.error('Elige tu ocupación del Catálogo Nacional de Ocupaciones')
     return
   }
   if (empresaAMedias.value) {
@@ -319,11 +338,31 @@ watch(() => props.cursoId, () => {
           <span>Puesto <em>*</em></span>
           <input v-model="form.puesto" class="field-input" placeholder="Ej: Supervisor" />
         </label>
+        <!--
+          Selector, no texto libre.
+          La casilla del formato oficial pide la CLAVE del Catálogo Nacional de
+          Ocupaciones, no el nombre del puesto. Escribiéndola a mano salieron
+          constancias con "SUPERVISOR" en ese recuadro, que describe lo que la
+          persona hace pero no es una ocupación del catálogo.
+        -->
         <label class="dc3-field dc3-field-full">
           <span>Ocupación específica <em>*</em></span>
-          <input v-model="form.ocupacion_especifica" class="field-input"
-                 placeholder="Ej: 04.6 Supervisores en la construcción" />
-          <small class="dc3-hint">Clave y nombre del Catálogo Nacional de Ocupaciones.</small>
+          <select v-model="form.ocupacion_especifica" class="field-input">
+            <option value="">Selecciona una ocupación…</option>
+            <!-- Valor heredado que no está en el catálogo: se muestra para que
+                 se vea qué había, pero obliga a elegir uno válido. -->
+            <option v-if="ocupacionFueraDeCatalogo" :value="form.ocupacion_especifica">
+              {{ form.ocupacion_especifica }} (no válida, elige una del catálogo)
+            </option>
+            <option v-for="o in OCUPACIONES_CNO" :key="o.clave" :value="o.clave">
+              {{ o.clave }} — {{ o.denominacion }}
+            </option>
+          </select>
+          <small class="dc3-hint">
+            Área o subárea del Catálogo Nacional de Ocupaciones, la misma lista
+            que aparece al reverso de la constancia. Elige la que corresponda a
+            tu trabajo; el puesto concreto va en el campo de arriba.
+          </small>
         </label>
       </div>
 
@@ -398,7 +437,7 @@ watch(() => props.cursoId, () => {
 
       <div class="dc3-acciones">
         <button class="btn btn-primary"
-                :disabled="guardando || !curpValida || empresaAMedias" @click="enviar">
+                :disabled="guardando || !curpValida || !ocupacionValida || empresaAMedias" @click="enviar">
           {{ guardando ? 'Emitiendo…' : 'Emitir mi constancia' }}
         </button>
         <button v-if="editando" class="btn btn-ghost" :disabled="guardando"

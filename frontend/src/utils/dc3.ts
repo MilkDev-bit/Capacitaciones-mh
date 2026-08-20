@@ -135,3 +135,97 @@ export function estadoDC3(e: EntradaEstadoDC3): EstadoDC3 {
   if (!e.empresaCompleta) return 'falta-empresa'
   return 'sin-emitir'
 }
+
+/** Una entrada del Catálogo Nacional de Ocupaciones. */
+export type OcupacionCNO = { clave: string; denominacion: string }
+
+/**
+ * Áreas y subáreas ocupacionales del Catálogo Nacional de Ocupaciones.
+ *
+ * Transcritas del REVERSO de la plantilla oficial. Son 66 y NO son lo mismo que
+ * las áreas temáticas: el reverso del formato lleva dos catálogos distintos y
+ * cada uno alimenta una casilla distinta del anverso.
+ *
+ *   Ocupación específica    -> este catálogo (01, 01.1, 05.1, 11.3 ...)
+ *   Área temática del curso -> el otro catálogo (1000 ... 9000)
+ *
+ * La casilla pide la CLAVE, no el nombre del puesto. Mientras fue un campo de
+ * texto libre se emitieron constancias con "SUPERVISOR" escrito ahí, que es lo
+ * que la persona hace pero no una ocupación del catálogo.
+ *
+ * Debe coincidir con `Ocupaciones` de pkg/dc3/dc3.go.
+ */
+export const OCUPACIONES_CNO: OcupacionCNO[] = [
+  { clave: '01', denominacion: 'Cultivo, crianza y aprovechamiento' },
+  { clave: '01.1', denominacion: 'Agricultura y silvicultura' },
+  { clave: '01.2', denominacion: 'Ganadería' },
+  { clave: '01.3', denominacion: 'Pesca y acuacultura' },
+  { clave: '02', denominacion: 'Extracción y suministro' },
+  { clave: '02.1', denominacion: 'Exploración' },
+  { clave: '02.2', denominacion: 'Extracción' },
+  { clave: '02.3', denominacion: 'Refinación y beneficio' },
+  { clave: '02.4', denominacion: 'Provisión de energía' },
+  { clave: '02.5', denominacion: 'Provisión de agua' },
+  { clave: '03', denominacion: 'Construcción' },
+  { clave: '03.1', denominacion: 'Planeación y dirección de obras' },
+  { clave: '03.2', denominacion: 'Edificación y urbanización' },
+  { clave: '03.3', denominacion: 'Acabado' },
+  { clave: '03.4', denominacion: 'Instalación y mantenimiento' },
+  { clave: '04', denominacion: 'Tecnología' },
+  { clave: '04.1', denominacion: 'Mecánica' },
+  { clave: '04.2', denominacion: 'Electricidad' },
+  { clave: '04.3', denominacion: 'Electrónica' },
+  { clave: '04.4', denominacion: 'Informática' },
+  { clave: '04.5', denominacion: 'Telecomunicaciones' },
+  { clave: '04.6', denominacion: 'Procesos industriales' },
+  { clave: '05', denominacion: 'Procesamiento y fabricación' },
+  { clave: '05.1', denominacion: 'Minerales no metálicos' },
+  { clave: '05.2', denominacion: 'Metales' },
+  { clave: '05.3', denominacion: 'Alimentos y bebidas' },
+  { clave: '05.4', denominacion: 'Textiles y prendas de vestir' },
+  { clave: '05.5', denominacion: 'Materia orgánica' },
+  { clave: '05.6', denominacion: 'Productos químicos' },
+  { clave: '05.7', denominacion: 'Productos metálicos y de hule y plástico' },
+  { clave: '05.8', denominacion: 'Productos eléctricos y electrónicos' },
+  { clave: '05.9', denominacion: 'Productos impresos' },
+  { clave: '06', denominacion: 'Transporte' },
+  { clave: '06.1', denominacion: 'Ferroviario' },
+  { clave: '06.2', denominacion: 'Autotransporte' },
+  { clave: '06.3', denominacion: 'Aéreo' },
+  { clave: '06.4', denominacion: 'Marítimo y fluvial' },
+  { clave: '06.5', denominacion: 'Servicios de apoyo' },
+  { clave: '07', denominacion: 'Provisión de bienes y servicios' },
+  { clave: '07.1', denominacion: 'Comercio' },
+  { clave: '07.2', denominacion: 'Alimentación y hospedaje' },
+  { clave: '07.3', denominacion: 'Turismo' },
+  { clave: '07.4', denominacion: 'Deporte y esparcimiento' },
+  { clave: '07.5', denominacion: 'Servicios personales' },
+  { clave: '07.6', denominacion: 'Reparación de artículos de uso doméstico y personal' },
+  { clave: '07.7', denominacion: 'Limpieza' },
+  { clave: '07.8', denominacion: 'Servicio postal y mensajería' },
+  { clave: '08', denominacion: 'Gestión y soporte administrativo' },
+  { clave: '08.1', denominacion: 'Bolsa, banca y seguros' },
+  { clave: '08.2', denominacion: 'Administración' },
+  { clave: '08.3', denominacion: 'Servicios legales' },
+  { clave: '09', denominacion: 'Salud y protección social' },
+  { clave: '09.1', denominacion: 'Servicios médicos' },
+  { clave: '09.2', denominacion: 'Inspección sanitaria y del medio ambiente' },
+  { clave: '09.3', denominacion: 'Seguridad social' },
+  { clave: '09.4', denominacion: 'Protección de bienes y/o personas' },
+  { clave: '10', denominacion: 'Comunicación' },
+  { clave: '10.1', denominacion: 'Publicación' },
+  { clave: '10.2', denominacion: 'Radio, cine, televisión y teatro' },
+  { clave: '10.3', denominacion: 'Interpretación artística' },
+  { clave: '10.4', denominacion: 'Traducción e interpretación lingüística' },
+  { clave: '10.5', denominacion: 'Publicidad, propaganda y relaciones públicas' },
+  { clave: '11', denominacion: 'Desarrollo y extensión del conocimiento' },
+  { clave: '11.1', denominacion: 'Investigación' },
+  { clave: '11.2', denominacion: 'Enseñanza' },
+  { clave: '11.3', denominacion: 'Difusión cultural' },
+]
+
+/** Busca una ocupación por su clave. */
+export function ocupacionCNO(clave: string): OcupacionCNO | undefined {
+  const c = clave.trim()
+  return OCUPACIONES_CNO.find(o => o.clave === c)
+}

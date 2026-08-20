@@ -88,6 +88,10 @@ func TestRFCConGuiones(t *testing.T) {
 
 func TestCodigoOcupacion(t *testing.T) {
 	casos := map[string]string{
+		// Forma principal desde que el campo es un selector: solo la clave.
+		"04.6":                                 "04.6",
+		"05.1":                                 "05.1",
+		"09":                                   "09",
 		"04.6 Supervisores en la construcción": "04.6",
 		"4.6 Supervisores":                     "04.6", // se normaliza a dos dígitos
 		"1234 Algo":                            "1234",
@@ -255,5 +259,46 @@ func TestFolioLlegaAlDocumento(t *testing.T) {
 	// haría más difícil de teclear desde el papel.
 	if !strings.Contains(got.(string), "https://ejemplo.mx/verificar") {
 		t.Fatalf("la URL del pie debe conservarse legible: %v", got)
+	}
+}
+
+// Los dos catálogos del reverso son distintos y no deben cruzarse.
+//
+// Es el error que produjo la primera tanda de constancias: en la casilla de
+// ocupación se escribía el puesto ("SUPERVISOR") o una clave de área temática
+// ("6000"), y ninguna de las dos cosas pertenece al Catálogo Nacional de
+// Ocupaciones.
+func TestOcupacionesYAreasNoSeCruzan(t *testing.T) {
+	if len(Ocupaciones) != 66 {
+		t.Fatalf("el catálogo de ocupaciones debe tener 66 claves, tiene %d", len(Ocupaciones))
+	}
+	for _, clave := range []string{"01", "01.1", "05.1", "09.4", "11.3"} {
+		if !OcupacionValida(clave) {
+			t.Fatalf("%s debería ser una ocupación válida", clave)
+		}
+	}
+	// Una clave de área temática NO es una ocupación.
+	for clave := range AreasTematicas {
+		if OcupacionValida(clave) {
+			t.Fatalf("%s es un área temática y no debería aceptarse como ocupación", clave)
+		}
+	}
+	// Ni al revés.
+	for clave := range Ocupaciones {
+		if AreaValida(clave) {
+			t.Fatalf("%s es una ocupación y no debería aceptarse como área temática", clave)
+		}
+	}
+}
+
+func TestOcupacionValidaRechazaTextoLibre(t *testing.T) {
+	for _, v := range []string{"", "SUPERVISOR", "Supervisor de construcción", "6000", "1", "05.99", "05.1 Minerales"} {
+		if OcupacionValida(v) {
+			t.Fatalf("%q no debería aceptarse como clave de ocupación", v)
+		}
+	}
+	// Los espacios de un copiar y pegar no invalidan una clave buena.
+	if !OcupacionValida("  05.1 ") {
+		t.Fatal("la clave debe aceptarse con espacios alrededor")
 	}
 }

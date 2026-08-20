@@ -153,6 +153,10 @@ func (s *CursosService) GuardarDatosTrabajador(ctx context.Context, req *cursosp
 	if puesto == "" || ocupacion == "" {
 		return errors.New("el puesto y la ocupación específica son obligatorios")
 	}
+	// La clave del Catálogo Nacional de Ocupaciones se valida en el Gateway, no
+	// aquí: el catálogo vive en pkg/dc3 junto al generador, e importarlo desde
+	// este servicio traería una librería de ofimática a un módulo que no sabe
+	// nada de documentos —y obligaría a tocar go.mod y su Dockerfile—.
 
 	d := &repository.DatosTrabajadorDC3{
 		UserID:              req.UserId,

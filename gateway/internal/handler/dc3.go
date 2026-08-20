@@ -230,6 +230,22 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 		return
 	}
 
+	// La ocupación es una CLAVE del Catálogo Nacional de Ocupaciones, no texto
+	// libre: es lo que se imprime en esa casilla del formato oficial. Se valida
+	// aquí por lo mismo que el área temática —el selector del formulario solo
+	// protege a quien pasa por él— y aquí en concreto porque el catálogo vive en
+	// pkg/dc3, que este módulo ya importa.
+	//
+	// Rechaza también lo capturado antes de que el campo fuera un selector: hay
+	// constancias emitidas con "SUPERVISOR" ahí, que describe el puesto pero no
+	// es una ocupación del catálogo.
+	if !dc3.OcupacionValida(body.OcupacionEspecifica) {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "elige tu ocupación del Catálogo Nacional de Ocupaciones (por ejemplo 05.1 o 09.4)",
+		})
+		return
+	}
+
 	if _, err := h.c.Cursos.GuardarDatosTrabajador(ctx.Request.Context(), &cursospb.DatosTrabajadorRequest{
 		UserId: userID,
 		Datos: &cursospb.DatosTrabajadorDC3{
