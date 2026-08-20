@@ -1,6 +1,6 @@
 # Diff Summary
 
-Date : 2026-08-13 10:55:40
+Date : 2026-08-20 13:23:55
 
 Directory /home/MictDev/Projects/Capacitaciones-mh
 

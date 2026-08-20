@@ -16,13 +16,29 @@ FROM gotenberg/gotenberg:8-libreoffice
 
 USER root
 
-# fonts-liberation (1.x) incluye Liberation Sans Narrow, métricamente compatible
-# con Arial Narrow. Si la imagen base ya lo trae, esto no hace nada; instalarlo
-# explícitamente evita que una actualización de la base lo retire sin avisar y
-# nos devuelva el problema en silencio.
+# La variante Narrow va en un paquete APARTE de fonts-liberation.
+#
+# Se dio por hecho que fonts-liberation la incluía y no es cierto: ese paquete
+# trae Liberation Sans, Serif y Mono, todas de ancho normal. Con solo eso,
+# fc-match resolvía "Arial Narrow" a "Liberation Sans" —la comprobación de más
+# abajo lo delató— y volvíamos al mismo documento descuadrado.
+#
+# Se instalan dos candidatos, en orden de preferencia:
+#
+#   fonts-liberation-sans-narrow → Liberation Sans Narrow, compatible métrica
+#                                  directa de Arial Narrow.
+#   fonts-urw-base35             → Nimbus Sans Narrow, compatible de Helvetica
+#                                  Narrow. Arial es métricamente Helvetica, así
+#                                  que sirve igual y está en cualquier Debian.
+#
+# Se instalan de uno en uno y sin abortar: si un paquete no existe en la versión
+# de Debian de la imagen base, interesa seguir y que decida la comprobación
+# final, no que reviente el apt por un nombre.
 RUN apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-        fonts-liberation \
+    && for p in fonts-liberation fonts-liberation-sans-narrow fonts-urw-base35; do \
+         DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "$p" \
+           || echo "AVISO: no se pudo instalar $p"; \
+       done \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # La regla de sustitución es lo que realmente cierra el problema.

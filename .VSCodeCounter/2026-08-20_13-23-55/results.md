@@ -1,34 +1,34 @@
 # Summary
 
-Date : 2026-08-13 10:55:40
+Date : 2026-08-20 13:23:55
 
 Directory /home/MictDev/Projects/Capacitaciones-mh
 
-Total : 266 files,  77990 codes, 3447 comments, 8660 blanks, all 90097 lines
+Total : 298 files,  85558 codes, 5391 comments, 9726 blanks, all 100675 lines
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
 
 ## Languages
 | language | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Go | 112 | 35,977 | 2,407 | 4,853 | 43,237 |
-| vue | 65 | 27,726 | 319 | 2,943 | 30,988 |
+| Go | 123 | 40,130 | 3,670 | 5,415 | 49,215 |
+| vue | 71 | 29,892 | 448 | 3,211 | 33,551 |
 | JSON | 7 | 8,173 | 0 | 10 | 8,183 |
-| TypeScript | 24 | 2,055 | 278 | 337 | 2,670 |
-| PostCSS | 2 | 912 | 14 | 93 | 1,019 |
-| Go Checksum File | 10 | 822 | 0 | 10 | 832 |
+| TypeScript | 34 | 2,851 | 550 | 497 | 3,898 |
+| PostCSS | 2 | 1,017 | 150 | 114 | 1,281 |
+| Go Checksum File | 11 | 832 | 0 | 11 | 843 |
 | Python | 2 | 818 | 0 | 10 | 828 |
 | MS SQL | 5 | 384 | 268 | 137 | 789 |
-| Go Module File | 12 | 296 | 2 | 57 | 355 |
-| YAML | 4 | 251 | 43 | 31 | 325 |
-| Docker | 10 | 179 | 18 | 76 | 273 |
+| YAML | 4 | 364 | 114 | 40 | 518 |
+| Go Module File | 13 | 304 | 2 | 62 | 368 |
+| Markdown | 2 | 243 | 0 | 64 | 307 |
+| Docker | 11 | 197 | 67 | 82 | 346 |
 | Shell Script | 2 | 113 | 49 | 26 | 188 |
-| Markdown | 1 | 92 | 0 | 37 | 129 |
-| Makefile | 1 | 62 | 40 | 17 | 119 |
-| Properties | 1 | 44 | 5 | 10 | 59 |
-| JavaScript | 2 | 23 | 1 | 2 | 26 |
+| Properties | 2 | 74 | 5 | 16 | 95 |
+| Makefile | 1 | 71 | 42 | 18 | 131 |
+| JavaScript | 2 | 31 | 23 | 2 | 56 |
+| Go Work File | 1 | 16 | 2 | 2 | 20 |
 | HTML | 1 | 16 | 0 | 1 | 17 |
-| Go Work File | 1 | 15 | 2 | 2 | 19 |
 | Ignore | 1 | 11 | 0 | 4 | 15 |
 | JSON with Comments | 1 | 11 | 0 | 1 | 12 |
 | Dotenv | 1 | 9 | 1 | 2 | 12 |
@@ -37,55 +37,57 @@ Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-
 ## Directories
 | path | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| . | 266 | 77,990 | 3,447 | 8,660 | 90,097 |
-| . (Files) | 15 | 1,764 | 148 | 193 | 2,105 |
-| .github | 1 | 41 | 2 | 11 | 54 |
-| .github/workflows | 1 | 41 | 2 | 11 | 54 |
-| frontend | 103 | 38,794 | 619 | 3,398 | 42,811 |
-| frontend (Files) | 14 | 8,148 | 11 | 33 | 8,192 |
-| frontend/src | 89 | 30,646 | 608 | 3,365 | 34,619 |
-| frontend/src (Files) | 3 | 87 | 3 | 18 | 108 |
-| frontend/src/assets | 3 | 913 | 14 | 94 | 1,021 |
-| frontend/src/components | 30 | 8,253 | 109 | 826 | 9,188 |
-| frontend/src/components (Files) | 23 | 7,465 | 101 | 732 | 8,298 |
+| . | 298 | 85,558 | 5,391 | 9,726 | 100,675 |
+| . (Files) | 15 | 1,875 | 216 | 201 | 2,292 |
+| .github | 1 | 52 | 9 | 13 | 74 |
+| .github/workflows | 1 | 52 | 9 | 13 | 74 |
+| frontend | 120 | 42,020 | 1,178 | 3,874 | 47,072 |
+| frontend (Files) | 15 | 8,307 | 33 | 60 | 8,400 |
+| frontend/src | 105 | 33,713 | 1,145 | 3,814 | 38,672 |
+| frontend/src (Files) | 3 | 89 | 5 | 18 | 112 |
+| frontend/src/assets | 3 | 1,018 | 150 | 115 | 1,283 |
+| frontend/src/components | 35 | 9,683 | 216 | 998 | 10,897 |
+| frontend/src/components (Files) | 28 | 8,895 | 208 | 904 | 10,007 |
 | frontend/src/components/icons | 5 | 46 | 0 | 5 | 51 |
 | frontend/src/components/store | 2 | 742 | 8 | 89 | 839 |
-| frontend/src/composables | 7 | 711 | 150 | 125 | 986 |
-| frontend/src/router | 1 | 99 | 18 | 7 | 124 |
-| frontend/src/stores | 7 | 736 | 89 | 160 | 985 |
-| frontend/src/utils | 4 | 411 | 15 | 23 | 449 |
-| frontend/src/views | 34 | 19,436 | 210 | 2,112 | 21,758 |
-| frontend/src/views (Files) | 8 | 2,525 | 36 | 289 | 2,850 |
-| frontend/src/views/admin | 5 | 1,519 | 3 | 142 | 1,664 |
-| frontend/src/views/instructor | 7 | 2,688 | 8 | 274 | 2,970 |
-| frontend/src/views/shared | 5 | 4,212 | 63 | 505 | 4,780 |
-| frontend/src/views/user | 9 | 8,492 | 100 | 902 | 9,494 |
-| gateway | 24 | 4,726 | 447 | 588 | 5,761 |
-| gateway (Files) | 3 | 233 | 6 | 23 | 262 |
-| gateway/cmd | 1 | 88 | 9 | 16 | 113 |
-| gateway/cmd/server | 1 | 88 | 9 | 16 | 113 |
-| gateway/internal | 20 | 4,405 | 432 | 549 | 5,386 |
+| frontend/src/composables | 13 | 1,269 | 302 | 239 | 1,810 |
+| frontend/src/router | 1 | 102 | 21 | 7 | 130 |
+| frontend/src/stores | 8 | 753 | 107 | 165 | 1,025 |
+| frontend/src/utils | 6 | 556 | 90 | 44 | 690 |
+| frontend/src/views | 36 | 20,243 | 254 | 2,228 | 22,725 |
+| frontend/src/views (Files) | 8 | 2,597 | 37 | 295 | 2,929 |
+| frontend/src/views/admin | 5 | 1,522 | 3 | 142 | 1,667 |
+| frontend/src/views/instructor | 7 | 2,708 | 13 | 273 | 2,994 |
+| frontend/src/views/shared | 6 | 4,510 | 77 | 538 | 5,125 |
+| frontend/src/views/user | 10 | 8,906 | 124 | 980 | 10,010 |
+| gateway | 29 | 6,492 | 1,105 | 837 | 8,434 |
+| gateway (Files) | 3 | 244 | 11 | 24 | 279 |
+| gateway/cmd | 1 | 94 | 14 | 18 | 126 |
+| gateway/cmd/server | 1 | 94 | 14 | 18 | 126 |
+| gateway/internal | 25 | 6,154 | 1,080 | 795 | 8,029 |
 | gateway/internal/clients | 1 | 53 | 7 | 8 | 68 |
-| gateway/internal/config | 1 | 129 | 22 | 25 | 176 |
-| gateway/internal/handler | 13 | 3,556 | 328 | 407 | 4,291 |
-| gateway/internal/hub | 1 | 78 | 9 | 12 | 99 |
+| gateway/internal/config | 1 | 148 | 35 | 28 | 211 |
+| gateway/internal/handler | 15 | 4,453 | 763 | 518 | 5,734 |
+| gateway/internal/hub | 3 | 828 | 135 | 126 | 1,089 |
 | gateway/internal/middleware | 2 | 223 | 18 | 32 | 273 |
-| gateway/internal/router | 1 | 213 | 34 | 45 | 292 |
-| gateway/internal/storage | 1 | 153 | 14 | 20 | 187 |
-| gen | 16 | 17,779 | 663 | 2,303 | 20,745 |
+| gateway/internal/pdf | 1 | 68 | 47 | 13 | 128 |
+| gateway/internal/router | 1 | 222 | 55 | 49 | 326 |
+| gateway/internal/storage | 1 | 159 | 20 | 21 | 200 |
+| gen | 16 | 19,056 | 803 | 2,468 | 22,327 |
 | gen (Files) | 2 | 44 | 2 | 6 | 52 |
 | gen/auth | 2 | 1,141 | 88 | 155 | 1,384 |
-| gen/cursos | 2 | 6,078 | 154 | 745 | 6,977 |
+| gen/cursos | 2 | 7,169 | 268 | 883 | 8,320 |
 | gen/examenes | 2 | 1,657 | 70 | 226 | 1,953 |
-| gen/foros | 2 | 1,180 | 60 | 167 | 1,407 |
+| gen/foros | 2 | 1,240 | 72 | 174 | 1,486 |
 | gen/lecciones | 2 | 4,316 | 137 | 555 | 5,008 |
 | gen/mensajes | 2 | 1,624 | 58 | 224 | 1,906 |
-| gen/usuarios | 2 | 1,739 | 94 | 225 | 2,058 |
-| internal | 30 | 4,381 | 199 | 626 | 5,206 |
+| gen/usuarios | 2 | 1,865 | 108 | 245 | 2,218 |
+| gotenberg | 2 | 46 | 44 | 12 | 102 |
+| internal | 30 | 4,341 | 201 | 619 | 5,161 |
 | internal/cache | 1 | 11 | 3 | 5 | 19 |
 | internal/config | 1 | 97 | 35 | 30 | 162 |
 | internal/db | 2 | 377 | 5 | 58 | 440 |
-| internal/handlers | 18 | 3,098 | 63 | 389 | 3,550 |
+| internal/handlers | 18 | 3,058 | 65 | 382 | 3,505 |
 | internal/middleware | 3 | 275 | 14 | 51 | 340 |
 | internal/models | 1 | 137 | 0 | 16 | 153 |
 | internal/repository | 1 | 64 | 16 | 13 | 93 |
@@ -93,12 +95,13 @@ Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-
 | internal/service | 1 | 86 | 26 | 23 | 135 |
 | internal/storage | 1 | 226 | 27 | 35 | 288 |
 | migrations | 4 | 301 | 230 | 96 | 627 |
-| pkg | 7 | 883 | 166 | 147 | 1,196 |
+| pkg | 11 | 1,305 | 313 | 213 | 1,831 |
+| pkg/dc3 | 4 | 422 | 147 | 66 | 635 |
 | pkg/mailer | 4 | 613 | 100 | 100 | 813 |
 | pkg/money | 3 | 270 | 66 | 47 | 383 |
 | scratch | 3 | 205 | 0 | 7 | 212 |
 | scripts | 2 | 113 | 49 | 26 | 188 |
-| services | 61 | 9,003 | 924 | 1,265 | 11,192 |
+| services | 65 | 9,752 | 1,243 | 1,360 | 12,355 |
 | services/auth | 9 | 1,013 | 140 | 176 | 1,329 |
 | services/auth (Files) | 3 | 115 | 3 | 17 | 135 |
 | services/auth/cmd | 1 | 135 | 17 | 20 | 172 |
@@ -109,14 +112,14 @@ Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-
 | services/auth/internal/model | 1 | 19 | 4 | 4 | 27 |
 | services/auth/internal/repository | 1 | 129 | 19 | 23 | 171 |
 | services/auth/internal/service | 1 | 382 | 64 | 70 | 516 |
-| services/cursos | 11 | 3,118 | 326 | 401 | 3,845 |
-| services/cursos (Files) | 3 | 118 | 2 | 13 | 133 |
-| services/cursos/cmd | 1 | 220 | 14 | 16 | 250 |
-| services/cursos/cmd/server | 1 | 220 | 14 | 16 | 250 |
-| services/cursos/internal | 7 | 2,780 | 310 | 372 | 3,462 |
-| services/cursos/internal/handler | 2 | 412 | 25 | 67 | 504 |
-| services/cursos/internal/repository | 3 | 1,298 | 164 | 167 | 1,629 |
-| services/cursos/internal/service | 2 | 1,070 | 121 | 138 | 1,329 |
+| services/cursos | 15 | 3,778 | 607 | 488 | 4,873 |
+| services/cursos (Files) | 3 | 112 | 2 | 13 | 127 |
+| services/cursos/cmd | 1 | 266 | 66 | 21 | 353 |
+| services/cursos/cmd/server | 1 | 266 | 66 | 21 | 353 |
+| services/cursos/internal | 11 | 3,400 | 539 | 454 | 4,393 |
+| services/cursos/internal/handler | 3 | 481 | 39 | 79 | 599 |
+| services/cursos/internal/repository | 4 | 1,565 | 253 | 193 | 2,011 |
+| services/cursos/internal/service | 4 | 1,354 | 247 | 182 | 1,783 |
 | services/examenes | 7 | 736 | 16 | 101 | 853 |
 | services/examenes (Files) | 3 | 104 | 0 | 12 | 116 |
 | services/examenes/cmd | 1 | 107 | 2 | 12 | 121 |
@@ -125,13 +128,13 @@ Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-
 | services/examenes/internal/handler | 1 | 105 | 3 | 21 | 129 |
 | services/examenes/internal/repository | 1 | 284 | 7 | 36 | 327 |
 | services/examenes/internal/service | 1 | 136 | 4 | 20 | 160 |
-| services/foros | 7 | 608 | 5 | 74 | 687 |
+| services/foros | 7 | 636 | 18 | 76 | 730 |
 | services/foros (Files) | 3 | 104 | 0 | 12 | 116 |
-| services/foros/cmd | 1 | 119 | 2 | 12 | 133 |
-| services/foros/cmd/server | 1 | 119 | 2 | 12 | 133 |
-| services/foros/internal | 3 | 385 | 3 | 50 | 438 |
+| services/foros/cmd | 1 | 121 | 7 | 12 | 140 |
+| services/foros/cmd/server | 1 | 121 | 7 | 12 | 140 |
+| services/foros/internal | 3 | 411 | 11 | 52 | 474 |
 | services/foros/internal/handler | 1 | 79 | 1 | 14 | 94 |
-| services/foros/internal/repository | 1 | 249 | 2 | 24 | 275 |
+| services/foros/internal/repository | 1 | 275 | 10 | 26 | 311 |
 | services/foros/internal/service | 1 | 57 | 0 | 12 | 69 |
 | services/lecciones | 12 | 2,082 | 332 | 310 | 2,724 |
 | services/lecciones (Files) | 3 | 104 | 0 | 12 | 116 |
@@ -151,13 +154,13 @@ Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-
 | services/mensajes/internal/handler | 1 | 81 | 0 | 17 | 98 |
 | services/mensajes/internal/repository | 2 | 319 | 47 | 44 | 410 |
 | services/mensajes/internal/service | 1 | 229 | 26 | 31 | 286 |
-| services/usuarios | 7 | 608 | 28 | 87 | 723 |
+| services/usuarios | 7 | 669 | 53 | 93 | 815 |
 | services/usuarios (Files) | 3 | 104 | 0 | 12 | 116 |
 | services/usuarios/cmd | 1 | 96 | 3 | 13 | 112 |
 | services/usuarios/cmd/server | 1 | 96 | 3 | 13 | 112 |
-| services/usuarios/internal | 3 | 408 | 25 | 62 | 495 |
-| services/usuarios/internal/handler | 1 | 108 | 5 | 18 | 131 |
-| services/usuarios/internal/repository | 1 | 205 | 17 | 26 | 248 |
-| services/usuarios/internal/service | 1 | 95 | 3 | 18 | 116 |
+| services/usuarios/internal | 3 | 469 | 50 | 68 | 587 |
+| services/usuarios/internal/handler | 1 | 114 | 8 | 18 | 140 |
+| services/usuarios/internal/repository | 1 | 235 | 26 | 29 | 290 |
+| services/usuarios/internal/service | 1 | 120 | 16 | 21 | 157 |
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
