@@ -41,25 +41,28 @@ RUN apt-get update -qq \
        done \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# La regla de sustitución es lo que realmente cierra el problema.
+# La regla de sustitución es lo que cierra el problema.
 #
 # Tener la fuente instalada no basta: fontconfig tiene que saber que "Arial
-# Narrow" debe resolverse a "Liberation Sans Narrow". Sin la regla puede elegir
-# cualquier otra familia por proximidad de nombre y volvemos a lo mismo.
+# Narrow" debe resolverse a una de las estrechas. Sin la regla elige por
+# proximidad de nombre y "Liberation Sans" gana por parecido, que es de ancho
+# normal.
 COPY gotenberg/fonts-dc3.conf /etc/fonts/conf.d/99-dc3.conf
 
+# El build FALLA si Arial Narrow no resuelve a una fuente estrecha.
+#
+# No es celo excesivo. La primera constancia emitida en producción incrustó
+# NotoSans en vez de una condensada: convertía sin error, subía a R2 sin error,
+# y el fallo solo se veía abriendo el PDF. Este guard ya evitó una vez que
+# volviera a desplegarse esa misma imagen.
+#
+# Se acepta cualquier familia estrecha —Liberation o Nimbus— porque lo que
+# importa es el ancho del glifo, no de qué paquete salió.
 RUN fc-cache -f \
     && echo "=== Resolución de fuentes de la plantilla DC-3 ===" \
     && echo -n "Arial Narrow -> " && fc-match "Arial Narrow" \
     && echo -n "Arial        -> " && fc-match "Arial" \
-    # El build falla si Arial Narrow no resuelve a una Liberation Narrow.
-    #
-    # No es celo excesivo: la primera constancia que se generó en producción
-    # incrustó NotoSans en lugar de una condensada, y ese es exactamente el
-    # fallo silencioso que se quiere impedir. Una imagen sin esta fuente produce
-    # documentos con los campos cortados, y eso solo se descubre cuando alguien
-    # abre el PDF y se queja.
-    && fc-match "Arial Narrow" | grep -qi "LiberationSansNarrow" \
-    && echo "OK: Arial Narrow resuelve a Liberation Sans Narrow"
+    && fc-match "Arial Narrow" | grep -qiE "narrow|condensed" \
+    && echo "OK: Arial Narrow resuelve a una fuente estrecha"
 
 USER gotenberg
