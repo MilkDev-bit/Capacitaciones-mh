@@ -81,3 +81,38 @@ describe('markdownATexto', () => {
     expect(markdownATexto('')).toBe('')
   })
 })
+
+describe('renderMarkdown · variante chat', () => {
+  it('conserva lo que se usa al escribir', () => {
+    const html = renderMarkdown('**urgente** y ~~listo~~\n\n- uno\n- dos', 'chat')
+    expect(html).toContain('<strong>urgente</strong>')
+    expect(html).toContain('<li>uno</li>')
+  })
+
+  it('descarta títulos y separadores', () => {
+    // En una burbuja quedan fuera de lugar, y un h3 permite escribir a tamaño
+    // gigante en la conversación de otra persona.
+    const html = renderMarkdown('### GRITO\n\n---\n\n> cita', 'chat')
+    expect(html).not.toContain('<h3')
+    expect(html).not.toContain('<hr')
+    expect(html).not.toContain('<blockquote')
+  })
+
+  it('sanea igual que la variante completa', () => {
+    const html = renderMarkdown('<script>alert(1)</script>', 'chat')
+    expect(html).not.toContain('<script')
+  })
+
+  it('un esquema peligroso nunca llega a ser un href', () => {
+    // Se afirma sobre el ATRIBUTO, no sobre la cadena suelta: si marked no
+    // llega a formar el enlace, "javascript:" se queda como texto escapado y
+    // visible, que es inofensivo. Lo que no debe existir nunca es un <a> que
+    // apunte ahí.
+    const html = renderMarkdown('[pulsa](javascript:alert(1))', 'chat')
+    expect(html).not.toMatch(/href=["']?javascript:/i)
+  })
+
+  it('la variante completa sí permite títulos', () => {
+    expect(renderMarkdown('### Temario', 'completo')).toContain('<h3')
+  })
+})

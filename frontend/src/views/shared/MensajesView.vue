@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { renderMarkdown, markdownATexto } from '../../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
@@ -275,7 +276,9 @@ function refreshConvEntry(msg: Mensaje) {
   const unread = activePeerId.value !== peerId && msg.emisor_id !== auth.user?.id ? 1 : 0
   const preview = msg.attachment_url
     ? (msg.attachment_type?.startsWith('image/') ? '📷 Imagen' : msg.attachment_type?.startsWith('video/') ? '🎥 Video' : '📎 Archivo')
-    : msg.contenido
+    // Sin marcas: en el listado de conversaciones se pinta como texto, así que
+    // los asteriscos y guiones del Markdown se verían en crudo.
+    : markdownATexto(msg.contenido)
   if (conv) {
     conv.last_message = preview
     conv.last_time    = msg.created_at
@@ -752,9 +755,16 @@ onUnmounted(() => {
                         <span>{{ msg.contenido.replace('📞', '').trim() }}</span>
                       </div>
                     </template>
-                    <!-- Mensaje normal -->
+                    <!--
+                      Mensaje normal, con formato.
+                      v-html sobre renderMarkdown, que sanea siempre. La
+                      variante `chat` recorta la lista blanca: sin títulos ni
+                      separadores, que en una burbuja quedan fuera de lugar y
+                      permitirían escribir a tamaño gigante en la conversación
+                      de otra persona.
+                    -->
                     <template v-else>
-                      <p>{{ msg.contenido }}</p>
+                      <div class="md-render md-chat" v-html="renderMarkdown(msg.contenido, 'chat')" />
                     </template>
                   </div>
                   
@@ -1015,6 +1025,11 @@ onUnmounted(() => {
 }
 
 .msgs-list { display: flex; flex-direction: column; gap: .15rem; }
+
+/* Dentro de una burbuja el último párrafo no debe dejar hueco antes de la
+ * hora: la burbuja ya tiene su propio padding. */
+.md-chat :deep(p:last-child) { margin-bottom: 0; }
+.md-chat :deep(ul), .md-chat :deep(ol) { margin-bottom: 0.4em; }
 
 .bubble {
   padding: .75rem 1rem; border-radius: 18px; max-width: 100%;

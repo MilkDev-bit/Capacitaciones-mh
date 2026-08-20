@@ -33,6 +33,21 @@ const ETIQUETAS = [
   'a', 'hr',
 ]
 
+/**
+ * Subconjunto para burbujas de chat.
+ *
+ * Sin títulos, sin separadores y sin bloques de cita: en un mensaje corto
+ * quedan fuera de lugar, y un `h3` permite además escribir a tamaño gigante en
+ * una conversación ajena. Lo que sí se conserva es lo que la gente usa de
+ * verdad al escribir: énfasis, tachado, listas y enlaces.
+ */
+const ETIQUETAS_CHAT = [
+  'p', 'br', 'strong', 'em', 'u', 's',
+  'ul', 'ol', 'li',
+  'code',
+  'a',
+]
+
 /** Solo lo imprescindible para los enlaces. */
 const ATRIBUTOS = ['href', 'title', 'target', 'rel']
 
@@ -64,7 +79,10 @@ DOMPurify.addHook('afterSanitizeAttributes', (nodo) => {
  * Devuelve cadena vacía para una entrada vacía, de modo que quien llama pueda
  * decidir si muestra un texto por defecto.
  */
-export function renderMarkdown(texto: string | null | undefined): string {
+export function renderMarkdown(
+  texto: string | null | undefined,
+  variante: 'completo' | 'chat' = 'completo',
+): string {
   const fuente = (texto || '').trim()
   if (!fuente) return ''
 
@@ -73,7 +91,7 @@ export function renderMarkdown(texto: string | null | undefined): string {
   const html = marked.parse(fuente, { async: false }) as string
 
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ETIQUETAS,
+    ALLOWED_TAGS: variante === 'chat' ? ETIQUETAS_CHAT : ETIQUETAS,
     ALLOWED_ATTR: ATRIBUTOS,
     // Los esquemas peligrosos (`javascript:`, `data:`) quedan fuera.
     ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\/)/i,
