@@ -376,7 +376,21 @@ func (r *postgresCursosRepository) Update(ctx context.Context, req *cursospb.Upd
 	// los índices de scheduled_at y del WHERE en las tres ramas. Con `len(args)`
 	// basta con añadir el argumento al slice: una columna nueva no puede volver
 	// a dejar un WHERE apuntando al marcador equivocado.
-	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12, dc3_area_tematica=$13, dc3_nombre_curso=$14, dc3_duracion_horas=$15`
+	// Los campos DC-3 se conservan si llegan vacíos.
+	//
+	// proto3 no distingue "cadena vacía" de "no enviado", así que un cliente que
+	// no conozca estos campos —el panel de admin, una pantalla vieja en caché,
+	// una integración futura— los borraba con solo guardar el curso. Y el efecto
+	// no se ve al guardar: aparece semanas después, cuando un alumno termina y su
+	// constancia no se emite porque el curso perdió el área temática.
+	//
+	// Con COALESCE(NULLIF(...)) un valor vacío significa "no lo toques". Se puede
+	// cambiar por otro valor, pero no vaciar desde aquí; para dejar de emitir
+	// constancias está dc3_enabled, que es lo que expresa esa intención.
+	query := `UPDATE capacitaciones SET title=$1, description=$2, type=$3, file_path=$4, content=$5, is_public=$6, welcome_message=$7, thumbnail_url=$8, color=$9, precio=$10, precio_centavos=ROUND($10::NUMERIC*100)::BIGINT, duration=$11, dc3_enabled=$12,
+	    dc3_area_tematica  = COALESCE(NULLIF($13,''), dc3_area_tematica),
+	    dc3_nombre_curso   = COALESCE(NULLIF($14,''), dc3_nombre_curso),
+	    dc3_duracion_horas = COALESCE(NULLIF($15,0),  dc3_duracion_horas)`
 	args := []interface{}{
 		req.Title, req.Description, req.Type, req.FilePath, req.Content,
 		req.IsPublic, req.WelcomeMessage, req.ThumbnailUrl, color,
