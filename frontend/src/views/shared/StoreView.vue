@@ -209,6 +209,21 @@ function irAPanel() {
   router.push(rol === 'admin' ? '/admin' : rol === 'instructor' ? '/instructor' : '/usuario')
 }
 
+/**
+ * Etiqueta del atajo, según el teclado de quien mira.
+ *
+ * El manejador siempre aceptó las dos teclas, pero la etiqueta estaba fija en
+ * "⌘K": a todo el que no usa un Mac —la mayoría aquí— se le anunciaba una tecla
+ * que su teclado no tiene.
+ *
+ * Se mira `userAgent` y no `platform`, que está obsoleto y los navegadores han
+ * empezado a congelar. Ante la duda se muestra Ctrl, que es lo correcto en
+ * Windows y Linux; equivocarse hacia el Mac afecta a menos gente.
+ */
+const atajoBuscar = computed(() =>
+  /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘K' : 'Ctrl K'
+)
+
 // Atajo ⌘K / Ctrl+K para enfocar el buscador — patrón esperado en un catálogo.
 function onKeydown(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -353,7 +368,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           </svg>
           <input id="store-search" v-model="search" type="search" placeholder="Busca por tema, curso o formato…"
             autocomplete="off" aria-label="Buscar cursos" @keydown.enter="irACatalogo" />
-          <kbd v-if="!search" class="hero__kbd">⌘K</kbd>
+          <kbd v-if="!search" class="hero__kbd">{{ atajoBuscar }}</kbd>
           <button v-else class="hero__clear" aria-label="Limpiar búsqueda" @click="search = ''">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round">
@@ -1142,14 +1157,35 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 /* Ondas: tres planos a distinta velocidad. En SVG y no en imagen para que
    hereden --brand y funcionen igual en claro y oscuro sin duplicar recursos. */
+/* El sobreancho lo dan left/right, NO una width.
+ *
+ * Estaban los tres a la vez, y en un absoluto eso es contradictorio: con left,
+ * right y width declarados el navegador descarta `right`. Funcionaba por
+ * coincidencia —112% es justo lo que dan -6% y -6%—, así que tocar uno de los
+ * dos márgenes no habría surtido efecto y el desajuste habría costado un rato
+ * de buscar por el sitio equivocado.
+ *
+ * El margen existe para que el parallax pueda desplazar las ondas en
+ * horizontal sin descubrir el borde: onda--cerca llega a -72px con el hero al
+ * máximo, y un 6% cubre eso holgadamente en cualquier ancho de escritorio.
+ */
 .hero__waves {
   position: absolute;
   left: -6%;
   right: -6%;
   bottom: -1px;
-  width: 112%;
   height: 62%;
   display: block;
+  /* Exención del cortafuegos `svg { max-width: 100% }` de main.css.
+   *
+   * Esa regla global existe para que un medio suelto no saque scroll lateral en
+   * toda la página, y es correcta. Pero aquí el sobreancho es intencionado, y al
+   * recortarse a 100% el navegador descartaba `right` y anclaba la banda por la
+   * izquierda: quedaba un 6% de la ventana sin cubrir a la derecha —más de cien
+   * píxeles de blanco— que solo se apreciaba en pantallas anchas.
+   *
+   * No hay riesgo de desborde: `.hero` y `.hero__bg` recortan con overflow. */
+  max-width: none;
 }
 
 .onda {
