@@ -15,10 +15,20 @@ builder        = "dockerfile"
 dockerfilePath = "gotenberg/Dockerfile"
 
 [deploy]
-# Gotenberg expone /health, no /api/health. Esa ruta es del gateway.
-healthcheckPath = "/health"
-# 30s no bastan: el arranque levanta LibreOffice y carga la caché de fuentes,
-# que es justo lo que esta imagen amplía.
-healthcheckTimeout      = 120
+# SIN healthcheck, a propósito.
+#
+# Gotenberg expone /health, pero Railway sondea el puerto que él inyecta en
+# PORT, no el 3000 que le fijamos con API_PORT. El resultado era un despliegue
+# que se declaraba fallido —"1/1 replicas never became healthy"— con el proceso
+# perfectamente arrancado y respondiendo.
+#
+# Se puede alinear poniendo API_PORT_FROM_ENV=PORT en el servicio, pero entonces
+# el puerto lo elige Railway y hay que reflejarlo en el GOTENBERG_URL del
+# gateway cada vez que cambie. Se prefiere un puerto fijo y conocido.
+#
+# La comprobación no se pierde, cambia de sitio y mejora: el gateway avisa al
+# arrancar si falta GOTENBERG_URL, y /api/admin/diagnostico/gotenberg convierte
+# la plantilla real y contesta qué fuente usó. Eso verifica el camino completo,
+# no solo que el proceso conteste a un ping.
 restartPolicyType       = "on_failure"
 restartPolicyMaxRetries = 3
