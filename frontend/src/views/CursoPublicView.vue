@@ -252,11 +252,11 @@ function buyB2B() {
         </button>
         <div class="cpv-nav-right">
           <button class="cpv-nav-btn ghost" @click="router.push('/tienda')">
-            ← Catálogo
+            Catálogo
           </button>
           <template v-if="auth.isLoggedIn">
             <button class="cpv-nav-btn ghost" @click="cart.openDrawer">
-              🛒 Carrito ({{ cart.totalItems }})
+              Carrito ({{ cart.totalItems }})
             </button>
             <button class="cpv-nav-btn primary" @click="router.push(auth.user?.role === 'instructor' ? '/instructor' : '/usuario')">
               Mi Panel
@@ -264,7 +264,7 @@ function buyB2B() {
           </template>
           <template v-else>
             <button class="cpv-nav-btn ghost" @click="cart.openDrawer">
-              🛒 Carrito ({{ cart.totalItems }})
+              Carrito ({{ cart.totalItems }})
             </button>
             <button class="cpv-nav-btn ghost" @click="router.push('/login')">Iniciar sesión</button>
             <button class="cpv-nav-btn primary" @click="router.push('/login')">Registrarse</button>
