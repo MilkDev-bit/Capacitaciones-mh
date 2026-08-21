@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { resumenMarkdown } from '../utils/markdown'
 
 interface Course {
   id: string
@@ -91,7 +92,7 @@ const progressColor = computed(() => {
       <h3 class="text-sm font-bold text-gray-900 leading-snug line-clamp-2">{{ course.title }}</h3>
 
       <p class="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">
-        {{ course.description || 'Sin descripción' }}
+        {{ resumenMarkdown(course.description) || 'Sin descripción' }}
       </p>
 
       <div v-if="mode === 'enrolled' && (course.total_lecciones ?? 0) > 0" class="mt-1">

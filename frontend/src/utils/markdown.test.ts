@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderMarkdown, markdownATexto } from './markdown'
+import { renderMarkdown, markdownATexto, resumenMarkdown } from './markdown'
 
 describe('renderMarkdown · formato', () => {
   it('convierte negritas, cursivas y listas', () => {
@@ -114,5 +114,47 @@ describe('renderMarkdown · variante chat', () => {
 
   it('la variante completa sí permite títulos', () => {
     expect(renderMarkdown('### Temario', 'completo')).toContain('<h3')
+  })
+})
+
+describe('resumenMarkdown', () => {
+  /**
+   * Regresión de las tarjetas del catálogo y del subtítulo de la ficha: la
+   * descripción salía en crudo, con los asteriscos y los guiones a la vista.
+   */
+  it('quita las marcas de Markdown', () => {
+    const r = resumenMarkdown('**Subtítulo** Aprende a identificar riesgos.')
+    expect(r).toBe('Subtítulo Aprende a identificar riesgos.')
+    expect(r).not.toContain('*')
+  })
+
+  it('aplana listas y saltos en una sola línea', () => {
+    const r = resumenMarkdown('# Temario\n\n- Arneses\n- Líneas de vida')
+    expect(r).toBe('Temario Arneses Líneas de vida')
+    expect(r).not.toContain('\n')
+  })
+
+  it('devuelve cadena vacía si no hay texto', () => {
+    expect(resumenMarkdown('')).toBe('')
+    expect(resumenMarkdown(null)).toBe('')
+    expect(resumenMarkdown(undefined)).toBe('')
+    expect(resumenMarkdown('   ')).toBe('')
+  })
+
+  it('no toca lo que ya cabe', () => {
+    expect(resumenMarkdown('Curso corto', 220)).toBe('Curso corto')
+  })
+
+  it('recorta por palabra entera y añade puntos suspensivos', () => {
+    const r = resumenMarkdown('palabra '.repeat(60), 40)
+    expect(r.length).toBeLessThanOrEqual(41)
+    expect(r.endsWith('…')).toBe(true)
+    // Sin sílabas partidas: lo anterior a los puntos es una palabra completa.
+    expect(r.slice(0, -1).trim().split(' ').pop()).toBe('palabra')
+  })
+
+  // El HTML que colara el instructor tampoco debe llegar como etiqueta.
+  it('no deja etiquetas HTML', () => {
+    expect(resumenMarkdown('<img src=x onerror=alert(1)>hola')).not.toContain('<')
   })
 })

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
+import { resumenMarkdown } from '../../utils/markdown'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -151,7 +152,7 @@ const recentCourses = computed(() => capacitaciones.value.slice(0, 5))
             </div>
             <div class="inst-recent-info">
               <strong>{{ c.title }}</strong>
-              <p>{{ c.description || 'Sin descripción' }}</p>
+              <p>{{ resumenMarkdown(c.description) || 'Sin descripción' }}</p>
             </div>
             <span class="badge" :class="c.is_public ? 'badge-success' : 'badge-warning'">
               {{ c.is_public ? 'Público' : 'Privado' }}

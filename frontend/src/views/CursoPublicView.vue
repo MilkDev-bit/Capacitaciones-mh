@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { renderMarkdown } from '../utils/markdown'
+import { renderMarkdown, resumenMarkdown } from '../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -318,7 +318,7 @@ function buyB2B() {
             <span v-else class="cpv-chip paid">Premium</span>
           </div>
           <h1 class="cpv-title" v-reveal>{{ curso.title }}</h1>
-          <p class="cpv-subtitle" v-reveal="1">{{ curso.description || 'Desarrolla tus habilidades profesionales con este curso de expertos.' }}</p>
+          <p class="cpv-subtitle" v-reveal="1">{{ resumenMarkdown(curso.description, 180) || 'Desarrolla tus habilidades profesionales con este curso de expertos.' }}</p>
 
           <!-- Mobile CTA -->
           <div class="cpv-mobile-cta">

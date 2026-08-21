@@ -42,7 +42,10 @@ async function consultar() {
   }
   try {
     const { data } = await api.get('/perfil')
-    versionUsuario.value = data?.aviso_version ?? ''
+    // El perfil viene anidado bajo `user`; el nivel de arriba solo lleva `user`
+    // y `stats`. Leerlo plano daba undefined, y como "sin versión" significa
+    // "no ha aceptado", el modal reaparecía incluso recién aceptado.
+    versionUsuario.value = data?.user?.aviso_version ?? ''
   } catch {
     // Si no se puede consultar, NO se bloquea la aplicación. Un fallo de red no
     // debe dejar a nadie sin poder usar su cuenta; se volverá a preguntar en la

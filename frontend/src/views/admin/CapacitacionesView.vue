@@ -6,6 +6,7 @@ import DragDropUpload from '../../components/DragDropUpload.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
 import { uploadToR2 } from '../../utils/upload'
+import { resumenMarkdown } from '../../utils/markdown'
 
 const capacitaciones = ref<any[]>([])
 const loading = ref(false)
@@ -227,7 +228,7 @@ async function resetCode(id: string, hasExisting: boolean = true) {
         </div>
         <div class="ac-card-body">
           <h3>{{ c.title }}</h3>
-          <p class="ac-card-desc">{{ c.description || 'Sin descripcion' }}</p>
+          <p class="ac-card-desc">{{ resumenMarkdown(c.description) || 'Sin descripcion' }}</p>
           <div class="course-code-wrapper" style="margin-top: 10px; margin-bottom: 12px; background: var(--surface); border: 1px dashed var(--border); padding: 8px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
             <div v-if="c.codigo_acceso" style="display: flex; align-items: center; gap: 6px; cursor: pointer;" @click="copyCode(c.codigo_acceso)" title="Haz clic para copiar">
               <span style="font-size: 0.78rem; color: var(--muted); font-weight: 600;">Código:</span>

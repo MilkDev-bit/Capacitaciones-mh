@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { resumenMarkdown } from '../../utils/markdown'
 
 export interface StoreCourse {
   id: string
@@ -126,7 +127,7 @@ const esNuevo = computed(() => {
 
     <div class="tile__body">
       <h3 class="tile__title">{{ course.title }}</h3>
-      <p class="tile__desc">{{ course.description || 'Capacitación profesional certificada.' }}</p>
+      <p class="tile__desc">{{ resumenMarkdown(course.description) || 'Capacitación profesional certificada.' }}</p>
 
       <ul class="tile__meta" v-if="duracionTexto || course.total_lecciones">
         <li v-if="duracionTexto">

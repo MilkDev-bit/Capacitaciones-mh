@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { resumenMarkdown } from '../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -77,7 +78,7 @@ function typeLabel(t: string) {
         <div class="invite-badge">Invitaci&oacute;n a curso</div>
         <div class="code-box">{{ codigo.toUpperCase() }}</div>
         <h2 class="course-title">{{ curso.title }}</h2>
-        <p class="course-desc">{{ curso.description || 'Sin descripci\u00f3n' }}</p>
+        <p class="course-desc">{{ resumenMarkdown(curso.description) || 'Sin descripción' }}</p>
         <span class="type-tag">{{ typeLabel(curso.type) }}</span>
 
         <button v-if="auth.isLoggedIn" class="btn-join" :disabled="joining" @click="unirse">

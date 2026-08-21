@@ -5,6 +5,7 @@ import { toast } from '../../utils/toast'
 import CourseWizardModal from '../../components/CourseWizardModal.vue'
 import CourseEditorDrawer from '../../components/CourseEditorDrawer.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import { resumenMarkdown } from '../../utils/markdown'
 
 const courses = ref<any[]>([])
 const loading = ref(false)
@@ -149,7 +150,7 @@ function copyCode(code: string) {
         </div>
         <div class="course-body">
           <h3 class="course-title">{{ c.title }}</h3>
-          <p class="course-desc">{{ c.description || 'Sin descripción' }}</p>
+          <p class="course-desc">{{ resumenMarkdown(c.description) || 'Sin descripción' }}</p>
 
           <div class="course-footer">
             <div class="course-code-wrapper">

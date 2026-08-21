@@ -7,6 +7,7 @@ import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
 import { useCartStore } from '../../stores/cart'
 import { useDC3Store } from '../../stores/dc3'
+import { resumenMarkdown } from '../../utils/markdown'
 
 const auth = useAuthStore()
 const cartStore = useCartStore()
@@ -364,7 +365,7 @@ function copyCode(code: string) {
             <div class="course-card-top">
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
-            <p class="course-desc">{{ c.description || 'Sin descripcion disponible.' }}</p>
+            <p class="course-desc">{{ resumenMarkdown(c.description) || 'Sin descripcion disponible.' }}</p>
             <div class="progress-wrap">
               <div class="progress-top">
                 <span class="progress-label">{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
@@ -497,7 +498,7 @@ function copyCode(code: string) {
               <span class="course-lessons">Libre acceso</span>
             </div>
             <h3 class="course-title">{{ c.title }}</h3>
-            <p class="course-desc">{{ c.description || 'Sin descripción disponible.' }}</p>
+            <p class="course-desc">{{ resumenMarkdown(c.description) || 'Sin descripción disponible.' }}</p>
             <div class="course-footer-row">
               <span v-if="c.inscrito" class="badge badge-green">Ya inscrito</span>
               <button

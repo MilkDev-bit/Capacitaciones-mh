@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { renderMarkdown } from '../../utils/markdown'
+import { renderMarkdown, resumenMarkdown } from '../../utils/markdown'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
@@ -1090,7 +1090,7 @@ function tramitarDC3() {
                 <div class="ver-welcome-content">
                   <span class="ver-welcome-badge">Módulo de Capacitación</span>
                   <h1 class="ver-welcome-title">{{ curso?.title }}</h1>
-                  <p class="ver-welcome-desc">{{ curso?.description }}</p>
+                  <p class="ver-welcome-desc">{{ resumenMarkdown(curso?.description) }}</p>
                   <button class="btn btn-primary btn-large mt-6" @click="startCourse">
                     {{ progreso > 0 ? 'Continuar curso' : 'Comenzar curso' }}
                   </button>

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
+import { resumenMarkdown } from '../../utils/markdown'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -188,7 +189,7 @@ function courseProgress(curso: any) {
             <div class="dash-course-band"></div>
             <div class="dash-course-info">
               <h3>{{ c.title }}</h3>
-              <p>{{ c.description }}</p>
+              <p>{{ resumenMarkdown(c.description) }}</p>
               <div class="dash-course-progress">
                 <div class="dash-progress-row">
                   <span>{{ c.lecciones_completadas || 0 }}/{{ c.total_lecciones || 0 }} completadas</span>
