@@ -1070,13 +1070,50 @@ func (h *CursosHandler) InstructorDeleteLicencia(ctx *gin.Context) {
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 // GET /api/admin/dashboard/stats
+// GET /api/admin/dashboard/stats
+//
+// El importe SALE DE `ordenes`, no de GetAdminDashboardStats.
+//
+// El cálculo viejo sumaba `capacitaciones.precio` cruzando con `inscripciones`,
+// así que contaba como venta cualquier alta a un curso de pago —incluidas las
+// que entraron por suscripción, por código de licencia o a mano— y las valoraba
+// al precio de catálogo de HOY. Tras vaciar las ventas de prueba, el panel
+// seguía enseñando $408.52 y "2 transacciones" con la tabla de órdenes vacía:
+// eran dos inscripciones al curso de $215, no dos cobros.
+//
+// Se mezclan las dos llamadas aquí, en el gateway, en vez de cambiar el proto:
+// el dinero se toma de finanzas (en centavos y enteros) y el resto —licencias,
+// conteos— de las estadísticas de siempre. Así el panel y la pantalla de
+// Finanzas no pueden discrepar, porque leen lo mismo.
 func (h *CursosHandler) GetAdminDashboardStats(ctx *gin.Context) {
 	resp, err := h.c.Cursos.GetAdminDashboardStats(ctx.Request.Context(), &cursospb.EmptyRequest{})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, resp)
+
+	salida := gin.H{
+		"licencias_vendidas":   resp.LicenciasVendidas,
+		"compras_individuales": resp.ComprasIndividuales,
+	}
+
+	// Si finanzas falla, se devuelve el resto del panel sin los importes en
+	// vez de tumbar la pantalla entera. Lo que NO se hace es caer de vuelta al
+	// cálculo viejo: preferimos no enseñar cifra a enseñar una inventada.
+	fin, errFin := h.c.Cursos.GetFinanzasAdmin(ctx.Request.Context(), &cursospb.EmptyRequest{})
+	if errFin == nil && fin != nil {
+		salida["bruto_centavos"] = fin.BrutoCentavos
+		salida["comision_centavos"] = fin.ComisionCentavos
+		salida["neto_centavos"] = fin.NetoCentavos
+		salida["transacciones"] = fin.Transacciones
+		salida["sin_comision"] = fin.SinComision
+		salida["moneda"] = fin.Moneda
+	} else {
+		slog.Warn("panel de admin sin importes: finanzas no respondió", "error", errFin)
+		salida["finanzas_no_disponible"] = true
+	}
+
+	ctx.JSON(http.StatusOK, salida)
 }
 
 // GET /api/admin/capacitaciones

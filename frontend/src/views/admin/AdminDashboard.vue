@@ -58,25 +58,38 @@ async function loadData() {
 
 onMounted(loadData)
 
+/**
+ * Pie de la tarjeta de ventas.
+ *
+ * Si quedan cobros sin la comisión traída de Stripe, el neto es un piso y hay
+ * que decirlo: enseñarlo como cifra cerrada sería enseñar un número mejor que
+ * el real.
+ */
+const netoSub = computed(() => {
+  const f = finStats.value
+  if (!f || f.finanzas_no_disponible) return 'Importes no disponibles'
+  const n = entero(f.transacciones || 0)
+  if ((f.sin_comision || 0) > 0) return `${n} transacciones · falta comisión de ${entero(f.sin_comision)}`
+  return `${n} transacciones · ver Finanzas`
+})
+
 const statCards = computed(() => [
   { label: 'Usuarios', value: entero(stats.value.users), icon: 'users', accent: '#7c3aed', bg: '#ede9fe', sub: `${entero(stats.value.instructors)} instructores · ${entero(stats.value.students)} estudiantes` },
   { label: 'Capacitaciones', value: entero(stats.value.courses), icon: 'book', accent: '#ea580c', bg: '#fff7ed', sub: 'Cursos creados' },
-  // `$${'{'}v.toFixed(2)}` daba "$15239.12": sin separador de miles y sin
-  // locale. A partir de cinco cifras deja de leerse de un vistazo, que es justo
-  // lo único que se le pide a una tarjeta de resumen.
-  //
-  // Esta cifra es la ESTIMADA del panel viejo (3.6% + 3 MXN por transacción),
-  // no la real de Stripe. Se dice en el subtítulo y se enlaza a Finanzas, que
-  // sí trae la comisión que Stripe cobró.
+  // Ahora sale de `ordenes`, igual que Finanzas, y ya no de sumar el precio de
+  // catálogo de las inscripciones. Ese cálculo contaba como venta cualquier
+  // alta a un curso de pago: con la tabla de órdenes vacía seguía enseñando
+  // $408.52 por dos inscripciones que nadie pagó.
   {
-    label: 'Ventas netas (aprox.)',
-    value: pesos(Math.round((finStats.value?.total_ventas_netas || 0) * 100)),
+    label: 'Ventas netas',
+    value: pesos(finStats.value?.neto_centavos ?? 0),
     icon: 'money', accent: '#059669', bg: '#d1fae5',
-    sub: `${entero(finStats.value?.total_transacciones || 0)} transacciones · ver Finanzas`,
+    sub: netoSub.value,
     ruta: '/admin/finanzas',
   },
   { label: 'Licencias B2B', value: entero(finStats.value?.licencias_vendidas || 0), icon: 'briefcase', accent: '#2563eb', bg: '#dbeafe', sub: 'Ventas empresariales', ruta: '/admin/licencias' },
 ])
+
 </script>
 
 <template>
