@@ -34,6 +34,8 @@ service AuthService {
   // cambio. El código de un solo uso prueba que además controla el buzón, de
   // modo que una sesión robada no baste para tomar la cuenta.
   rpc SolicitarCambioPassword(SolicitarCambioPasswordRequest) returns (EmptyResponse);
+  // Aceptación del aviso para cuentas ya existentes, o cuando cambia la versión.
+  rpc AceptarAviso(AceptarAvisoRequest) returns (EmptyResponse);
   rpc CambiarPasswordConOTP(CambiarPasswordConOTPRequest) returns (EmptyResponse);
 
   // Invalida todas las sesiones de un usuario (solo admin).
@@ -57,6 +59,9 @@ message RegisterRequest {
   string password        = 3;
   string role            = 4; // "user" por defecto
   string recaptcha_token = 5;
+  // Versión del aviso de privacidad que aceptó al registrarse. Vacía = no
+  // aceptó, y el alta se rechaza: es donde empieza el tratamiento de sus datos.
+  string aviso_version   = 6;
 }
 
 message LoginRequest {
@@ -80,6 +85,11 @@ message ForgotPasswordRequest {
 message ResetPasswordRequest {
   string reset_token   = 1;
   string new_password  = 2;
+}
+
+message AceptarAvisoRequest {
+  string user_id = 1;
+  string version = 2;
 }
 
 message SolicitarCambioPasswordRequest {

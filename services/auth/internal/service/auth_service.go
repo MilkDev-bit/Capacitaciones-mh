@@ -65,6 +65,7 @@ var (
 	ErrCodeExpired      = errors.New("código de verificación expirado")
 	ErrTooManyAttempts  = errors.New("demasiados intentos fallidos")
 	ErrResendTooSoon    = errors.New("espera antes de solicitar otro código")
+	ErrAvisoNoAceptado  = errors.New("debes aceptar el aviso de privacidad")
 )
 
 // maxVerificationAttempts limita el fuerza-bruta sobre un código de 6 dígitos
@@ -86,6 +87,9 @@ type RegisterInput struct {
 	Password       string
 	Role           string
 	RecaptchaToken string
+	// AvisoVersion es la versión del aviso de privacidad aceptada. Vacía hace
+	// fallar el alta.
+	AvisoVersion string
 }
 
 type LoginResult struct {
@@ -127,6 +131,13 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 		}
 	}
 
+	// Sin aceptación no hay alta: el registro es donde empieza el tratamiento
+	// de los datos, y guardarlos antes de que la persona haya visto para qué es
+	// justo lo que el aviso debe impedir.
+	if strings.TrimSpace(in.AvisoVersion) == "" {
+		return nil, ErrAvisoNoAceptado
+	}
+
 	email := normalizeEmail(in.Email)
 
 	// Pre-chequeo explícito: da un mensaje claro sin depender del nombre del
@@ -164,6 +175,15 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*LoginRes
 			return nil, ErrEmailTaken
 		}
 		return nil, fmt.Errorf("create user: %w", err)
+	}
+
+	// La constancia se guarda en cuanto existe la fila. Si esto fallara, el alta
+	// no se revierte —la cuenta ya está creada y el usuario espera su código—,
+	// pero queda registrado: al entrar se le volverá a pedir, porque su versión
+	// aparecerá vacía.
+	if err := s.users.RegistrarAceptacionAviso(ctx, u.ID, strings.TrimSpace(in.AvisoVersion)); err != nil {
+		slog.Error("Register: no se pudo registrar la aceptación del aviso",
+			"user_id", u.ID, "error", err)
 	}
 
 	// No se emite JWT todavía: la cuenta no vale nada hasta confirmar el buzón.
@@ -611,4 +631,18 @@ func (s *AuthService) CambiarPasswordConOTP(ctx context.Context, userID, code, n
 	}
 	tvCache.Delete(userID)
 	return nil
+}
+
+// AceptarAviso deja constancia de que el usuario aceptó una versión del aviso.
+//
+// Sirve para las cuentas creadas antes de que esto existiera y para cuando se
+// publica una versión nueva. No comprueba cuál es la vigente a propósito: esa
+// decisión vive en el frontend, que es quien muestra el texto, y validarla aquí
+// obligaría a mantener el número en dos sitios que se desincronizarían.
+func (s *AuthService) AceptarAviso(ctx context.Context, userID, version string) error {
+	v := strings.TrimSpace(version)
+	if v == "" {
+		return ErrAvisoNoAceptado
+	}
+	return s.users.RegistrarAceptacionAviso(ctx, userID, v)
 }

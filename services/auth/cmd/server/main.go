@@ -153,6 +153,18 @@ func runMigrations(db *sqlx.DB) error {
 		// Seis dígitos son un millón de combinaciones: sin límite de intentos se
 		// agotan en minutos con un script.
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS pwd_otp_intentos INT NOT NULL DEFAULT 0`,
+
+		// Constancia de aceptación del aviso de privacidad.
+		//
+		// Se guarda la VERSIÓN, no un booleano: un «ya aceptó» a secas queda sin
+		// sentido en cuanto se cambia una línea del aviso, porque deja de saberse
+		// a qué texto dio su conformidad la persona. Con la versión, actualizar
+		// el aviso hace que todo el mundo vuelva a verlo.
+		//
+		// Nulo en las cuentas creadas antes de que esto existiera: a esas se les
+		// pide al entrar.
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS aviso_version TEXT`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS aviso_aceptado_at TIMESTAMPTZ`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) DEFAULT ''`,

@@ -105,14 +105,14 @@ func (h *AuthHandler) ResetPassword(ctx context.Context, req *authpb.ResetPasswo
 
 func (h *AuthHandler) SolicitarCambioPassword(ctx context.Context, req *authpb.SolicitarCambioPasswordRequest) (*authpb.EmptyResponse, error) {
 	if err := h.svc.SolicitarCambioPassword(ctx, req.UserId); err != nil {
-		return nil, mapErr(err)
+		return nil, mapError(err, "SolicitarCambioPassword")
 	}
 	return &authpb.EmptyResponse{}, nil
 }
 
 func (h *AuthHandler) CambiarPasswordConOTP(ctx context.Context, req *authpb.CambiarPasswordConOTPRequest) (*authpb.EmptyResponse, error) {
 	if err := h.svc.CambiarPasswordConOTP(ctx, req.UserId, req.Codigo, req.NuevaPassword); err != nil {
-		return nil, mapErr(err)
+		return nil, mapError(err, "CambiarPasswordConOTP")
 	}
 	return &authpb.EmptyResponse{}, nil
 }
@@ -153,6 +153,10 @@ func mapError(err error, op string) error {
 		return status.Error(codes.ResourceExhausted, "demasiados intentos, solicita un código nuevo")
 	case errors.Is(err, service.ErrResendTooSoon):
 		return status.Error(codes.Unavailable, "espera unos segundos antes de solicitar otro código")
+	// InvalidArgument y no PermissionDenied: no es que le falten permisos, es
+	// que la petición llegó sin un dato obligatorio.
+	case errors.Is(err, service.ErrAvisoNoAceptado):
+		return status.Error(codes.InvalidArgument, "debes aceptar el aviso de privacidad")
 	default:
 		slog.Error("unhandled error", "op", op, "error", err)
 		return status.Error(codes.Internal, "error interno del servidor")
@@ -184,4 +188,11 @@ func toAuthResponse(r *service.LoginResult) *authpb.AuthResponse {
 		User:                 userToProto(r.User),
 		RequiresVerification: r.RequiresVerification,
 	}
+}
+
+func (h *AuthHandler) AceptarAviso(ctx context.Context, req *authpb.AceptarAvisoRequest) (*authpb.EmptyResponse, error) {
+	if err := h.svc.AceptarAviso(ctx, req.UserId, req.Version); err != nil {
+		return nil, mapError(err, "AceptarAviso")
+	}
+	return &authpb.EmptyResponse{}, nil
 }

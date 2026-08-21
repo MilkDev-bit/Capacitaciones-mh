@@ -36,6 +36,9 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		Password       string `json:"password"        binding:"required,min=8"`
 		Role           string `json:"role"`
 		RecaptchaToken string `json:"recaptchaToken"`
+		// Versión del aviso de privacidad que aceptó. Vacía hace fallar el alta
+		// en el servicio: el registro es donde empieza el tratamiento de datos.
+		AvisoVersion string `json:"aviso_version"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		// El error crudo del validador ("Key: 'Email' Error:Field validation
@@ -51,6 +54,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		Password:       body.Password,
 		Role:           body.Role,
 		RecaptchaToken: body.RecaptchaToken,
+		AvisoVersion:   body.AvisoVersion,
 	})
 	if err != nil {
 		h.handleGRPCError(ctx, err)
@@ -307,4 +311,27 @@ func (h *AuthHandler) CambiarPassword(ctx *gin.Context) {
 	// Se limpia la cookie para que el frontend no siga creyendo que hay sesión.
 	h.clearAuthCookie(ctx)
 	ctx.JSON(http.StatusOK, gin.H{"cambiada": true})
+}
+
+// POST /api/perfil/aviso
+//
+// Deja constancia de que este usuario aceptó una versión del aviso. Lo usan las
+// cuentas creadas antes de que el consentimiento se registrara y las que ven
+// una versión nueva del texto.
+func (h *AuthHandler) AceptarAviso(ctx *gin.Context) {
+	var body struct {
+		Version string `json:"version"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos"})
+		return
+	}
+	if _, err := h.c.Auth.AceptarAviso(ctx.Request.Context(), &authpb.AceptarAvisoRequest{
+		UserId:  ctx.GetString(middleware.CtxUserID),
+		Version: body.Version,
+	}); err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"aceptado": true})
 }

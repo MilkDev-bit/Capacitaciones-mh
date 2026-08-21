@@ -23,6 +23,7 @@ type Usuario struct {
 	Phone                string    `db:"phone"`
 	Specialty            string    `db:"specialty"`
 	CreatedAt            time.Time `db:"created_at"`
+	AvisoVersion         string    `db:"aviso_version"`
 	CursosInscritos      int32
 	LeccionesCompletadas int32
 	TotalLecciones       int32
@@ -37,6 +38,7 @@ func (u *Usuario) ToProto() *usuariospb.PerfilResponse {
 		Bio: u.Bio, AvatarUrl: u.AvatarURL, CoverUrl: u.CoverURL,
 		Phone: u.Phone, Specialty: u.Specialty,
 		CreatedAt:            u.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		AvisoVersion:         u.AvisoVersion,
 		CursosInscritos:      u.CursosInscritos,
 		LeccionesCompletadas: u.LeccionesCompletadas,
 		TotalLecciones:       u.TotalLecciones,
@@ -78,7 +80,8 @@ func (r *postgresUsuarioRepository) FindByID(ctx context.Context, id string) (*U
 	err := r.db.GetContext(ctx, u,
 		`SELECT id, name, email, role, COALESCE(bio,'') bio, COALESCE(avatar_url,'') avatar_url,
 		        COALESCE(cover_url,'') cover_url, COALESCE(phone,'') phone,
-		        COALESCE(specialty,'') specialty, created_at
+		        COALESCE(specialty,'') specialty, created_at,
+		        COALESCE(aviso_version,'') aviso_version
 		   FROM users WHERE id = $1`, id)
 	if err != nil {
 		return nil, err

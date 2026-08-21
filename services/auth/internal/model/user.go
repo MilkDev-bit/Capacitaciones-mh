@@ -13,6 +13,9 @@ type User struct {
 	TokenVersion  int       `db:"token_version"`
 	EmailVerified bool      `db:"email_verified"`
 	CreatedAt     time.Time `db:"created_at"`
+	// AvisoVersion es la versión del aviso de privacidad que aceptó. Vacía en
+	// las cuentas anteriores a que existiera el registro de consentimiento.
+	AvisoVersion string `db:"aviso_version"`
 }
 
 // EmailVerification agrupa el estado del código de 6 dígitos de un usuario.

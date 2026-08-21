@@ -153,6 +153,10 @@ message PerfilResponse {
   int32  cursos_creados        = 15;
   int32  estudiantes_total     = 16;
   int32  examenes_creados      = 17;
+  // Versión del aviso de privacidad que aceptó. Vacía = nunca lo aceptó, que es
+  // el caso de las cuentas anteriores al registro de consentimiento. El frontend
+  // la compara con la vigente para decidir si vuelve a mostrarlo.
+  string aviso_version         = 18;
 }
 
 message ListUsersResponse {

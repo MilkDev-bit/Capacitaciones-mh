@@ -47,6 +47,9 @@ type UserRepository interface {
 	// quién es, porque su endpoint es público, y un código corto ahí sería
 	// adivinable contra cualquier cuenta. Este siempre va contra el id de la
 	// sesión.
+	// RegistrarAceptacionAviso deja constancia de qué versión aceptó y cuándo.
+	RegistrarAceptacionAviso(ctx context.Context, userID, version string) error
+
 	StorePasswordOTP(ctx context.Context, userID, codeHash string, expira time.Time) error
 	GetPasswordOTP(ctx context.Context, userID string) (*model.PasswordOTP, error)
 	IncrementPasswordOTPAttempts(ctx context.Context, userID string) error
@@ -66,7 +69,8 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 // userColumns es la proyección compartida por FindByEmail/FindByID/FindByResetToken.
 // Centralizarla evita que una columna nueva se olvide en una de las tres consultas.
 const userColumns = `id, name, email, password_hash, role, token_version,
-	COALESCE(email_verified, true) AS email_verified, created_at`
+	COALESCE(email_verified, true) AS email_verified, created_at,
+	COALESCE(aviso_version, '') AS aviso_version`
 
 func (r *postgresUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	u := &model.User{}
@@ -135,6 +139,13 @@ func (r *postgresUserRepository) ClearPasswordResetToken(ctx context.Context, us
 }
 
 // ── Verificación de correo ────────────────────────────────────────────────────
+
+func (r *postgresUserRepository) RegistrarAceptacionAviso(ctx context.Context, userID, version string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users SET aviso_version = $1, aviso_aceptado_at = NOW() WHERE id = $2`,
+		version, userID)
+	return err
+}
 
 func (r *postgresUserRepository) StorePasswordOTP(ctx context.Context, userID, codeHash string, expira time.Time) error {
 	_, err := r.db.ExecContext(ctx,

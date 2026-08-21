@@ -6,6 +6,7 @@ import router from '../router'
 import { useRoute } from 'vue-router'
 import { toast } from '../utils/toast'
 import { getRecaptchaToken } from '../utils/recaptcha'
+import { AVISO_VERSION } from '../utils/aviso'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -13,6 +14,15 @@ const route = useRoute()
 // directamente el formulario de alta en lugar del de inicio de sesión.
 const tabInicial = route.query.tab === 'register' ? 'register' : 'login'
 const tab = ref<'login' | 'register' | 'forgot'>(tabInicial)
+
+/**
+ * Aceptación del aviso de privacidad en el alta.
+ *
+ * Sin marcar por defecto y sin excepciones: una casilla premarcada no es
+ * consentimiento. Se manda la VERSIÓN, no un booleano, para poder distinguir
+ * después quién aceptó qué texto cuando el aviso cambie.
+ */
+const avisoAceptado = ref(false)
 
 const email = ref('')
 const password = ref('')
@@ -132,15 +142,19 @@ async function register() {
   if (passStrength.value < 50) {
     toast.error('La contraseña es muy débil. Usa mayúsculas y números.'); return
   }
+  if (!avisoAceptado.value) {
+    toast.error('Debes aceptar el aviso de privacidad para crear tu cuenta.'); return
+  }
   
   regLoading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('register')
     const nuevoEmail = regEmail.value
-    await api.post('/register', { name: regName.value, email: nuevoEmail, password: regPassword.value, recaptchaToken: recaptcha_token })
+    await api.post('/register', { name: regName.value, email: nuevoEmail, password: regPassword.value, recaptchaToken: recaptcha_token, aviso_version: AVISO_VERSION })
 
     // El alta ya no inicia sesión: hay que confirmar el correo primero.
     regName.value = ''; regEmail.value = ''; regPassword.value = ''; regConfirmPassword.value = ''
+    avisoAceptado.value = false
     localStorage.setItem('pending_verification_email', nuevoEmail)
     toast.success('¡Cuenta creada! Te enviamos un código de 6 dígitos.')
     router.push({ path: '/verificar-correo', query: { email: nuevoEmail } })
@@ -349,7 +363,16 @@ async function resetPassword() {
               </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading || !passwordsMatch || passStrength < 50">
+            <label class="aviso-check">
+              <input v-model="avisoAceptado" type="checkbox" required />
+              <span>
+                He leído y acepto el
+                <RouterLink to="/privacidad" target="_blank" class="aviso-enlace">aviso de privacidad</RouterLink>
+                y el tratamiento de mis datos para emitir mi constancia DC-3.
+              </span>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading || !passwordsMatch || passStrength < 50 || !avisoAceptado">
               <span v-if="regLoading" class="btn-spinner"></span>
               {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
             </button>
@@ -514,6 +537,20 @@ async function resetPassword() {
 .role-card small { font-size: 0.72rem; color: var(--muted); line-height: 1.2; }
 .submit-btn { width: 100%; margin-top: 4px; display: flex; justify-content: center; align-items: center; gap: 8px; }
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.aviso-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.aviso-check input { margin-top: 3px; flex-shrink: 0; }
+.aviso-enlace { color: var(--brand); text-decoration: underline; }
+
 .recaptcha-notice {
   text-align: center; font-size: 0.72rem; color: var(--muted);
   display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;

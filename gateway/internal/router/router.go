@@ -211,6 +211,7 @@ func New(d Deps) *gin.Engine {
 			// se envía junto a la contraseña nueva. Hasta ahora el perfil admitía
 			// una contraseña sin comprobar nada —y el gateway la descartaba en
 			// silencio—, así que una sesión robada bastaba para tomar la cuenta.
+			auth.POST("/perfil/aviso", d.AuthH.AceptarAviso)
 			auth.POST("/perfil/password/codigo", d.AuthH.SolicitarCambioPassword)
 			auth.POST("/perfil/password", d.AuthH.CambiarPassword)
 
