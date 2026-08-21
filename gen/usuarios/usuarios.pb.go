@@ -686,8 +686,12 @@ type PerfilResponse struct {
 	CursosCreados        int32 `protobuf:"varint,15,opt,name=cursos_creados,json=cursosCreados,proto3" json:"cursos_creados,omitempty"`
 	EstudiantesTotal     int32 `protobuf:"varint,16,opt,name=estudiantes_total,json=estudiantesTotal,proto3" json:"estudiantes_total,omitempty"`
 	ExamenesCreados      int32 `protobuf:"varint,17,opt,name=examenes_creados,json=examenesCreados,proto3" json:"examenes_creados,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Versión del aviso de privacidad que aceptó. Vacía = nunca lo aceptó, que es
+	// el caso de las cuentas anteriores al registro de consentimiento. El frontend
+	// la compara con la vigente para decidir si vuelve a mostrarlo.
+	AvisoVersion  string `protobuf:"bytes,18,opt,name=aviso_version,json=avisoVersion,proto3" json:"aviso_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PerfilResponse) Reset() {
@@ -837,6 +841,13 @@ func (x *PerfilResponse) GetExamenesCreados() int32 {
 		return x.ExamenesCreados
 	}
 	return 0
+}
+
+func (x *PerfilResponse) GetAvisoVersion() string {
+	if x != nil {
+		return x.AvisoVersion
+	}
+	return ""
 }
 
 type ListUsersResponse struct {
@@ -1383,7 +1394,7 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x11AwardBadgeRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"badge_slug\x18\x02 \x01(\tR\tbadgeSlug\"\xaa\x04\n" +
+	"badge_slug\x18\x02 \x01(\tR\tbadgeSlug\"\xcf\x04\n" +
 	"\x0ePerfilResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1404,7 +1415,8 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x0ftotal_lecciones\x18\x0e \x01(\x05R\x0etotalLecciones\x12%\n" +
 	"\x0ecursos_creados\x18\x0f \x01(\x05R\rcursosCreados\x12+\n" +
 	"\x11estudiantes_total\x18\x10 \x01(\x05R\x10estudiantesTotal\x12)\n" +
-	"\x10examenes_creados\x18\x11 \x01(\x05R\x0fexamenesCreados\"V\n" +
+	"\x10examenes_creados\x18\x11 \x01(\x05R\x0fexamenesCreados\x12#\n" +
+	"\raviso_version\x18\x12 \x01(\tR\favisoVersion\"V\n" +
 	"\x11ListUsersResponse\x12+\n" +
 	"\x05users\x18\x01 \x03(\v2\x15.usuarios.UserSummaryR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"\x99\x01\n" +

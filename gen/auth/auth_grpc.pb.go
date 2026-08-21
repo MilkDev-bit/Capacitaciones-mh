@@ -19,15 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName               = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName                  = "/auth.AuthService/Login"
-	AuthService_ValidateToken_FullMethodName          = "/auth.AuthService/ValidateToken"
-	AuthService_Logout_FullMethodName                 = "/auth.AuthService/Logout"
-	AuthService_ForgotPassword_FullMethodName         = "/auth.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName          = "/auth.AuthService/ResetPassword"
-	AuthService_RevokeUserSessions_FullMethodName     = "/auth.AuthService/RevokeUserSessions"
-	AuthService_VerifyEmail_FullMethodName            = "/auth.AuthService/VerifyEmail"
-	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
+	AuthService_Register_FullMethodName                = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName                   = "/auth.AuthService/Login"
+	AuthService_ValidateToken_FullMethodName           = "/auth.AuthService/ValidateToken"
+	AuthService_Logout_FullMethodName                  = "/auth.AuthService/Logout"
+	AuthService_ForgotPassword_FullMethodName          = "/auth.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName           = "/auth.AuthService/ResetPassword"
+	AuthService_SolicitarCambioPassword_FullMethodName = "/auth.AuthService/SolicitarCambioPassword"
+	AuthService_AceptarAviso_FullMethodName            = "/auth.AuthService/AceptarAviso"
+	AuthService_CambiarPasswordConOTP_FullMethodName   = "/auth.AuthService/CambiarPasswordConOTP"
+	AuthService_RevokeUserSessions_FullMethodName      = "/auth.AuthService/RevokeUserSessions"
+	AuthService_VerifyEmail_FullMethodName             = "/auth.AuthService/VerifyEmail"
+	AuthService_ResendVerificationCode_FullMethodName  = "/auth.AuthService/ResendVerificationCode"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -52,6 +55,15 @@ type AuthServiceClient interface {
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Verifica token de reset y actualiza la contraseña.
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// ── Cambio de contraseña con sesión iniciada ───────────────────────────────
+	//
+	// Distinto de ForgotPassword/ResetPassword: aquí ya se sabe quién pide el
+	// cambio. El código de un solo uso prueba que además controla el buzón, de
+	// modo que una sesión robada no baste para tomar la cuenta.
+	SolicitarCambioPassword(ctx context.Context, in *SolicitarCambioPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Aceptación del aviso para cuentas ya existentes, o cuando cambia la versión.
+	AceptarAviso(ctx context.Context, in *AceptarAvisoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	CambiarPasswordConOTP(ctx context.Context, in *CambiarPasswordConOTPRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Invalida todas las sesiones de un usuario (solo admin).
 	RevokeUserSessions(ctx context.Context, in *RevokeRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Confirma la propiedad del buzón con el código de 6 dígitos enviado en el
@@ -131,6 +143,36 @@ func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPassword
 	return out, nil
 }
 
+func (c *authServiceClient) SolicitarCambioPassword(ctx context.Context, in *SolicitarCambioPasswordRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, AuthService_SolicitarCambioPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) AceptarAviso(ctx context.Context, in *AceptarAvisoRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, AuthService_AceptarAviso_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) CambiarPasswordConOTP(ctx context.Context, in *CambiarPasswordConOTPRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, AuthService_CambiarPasswordConOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) RevokeUserSessions(ctx context.Context, in *RevokeRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
@@ -183,6 +225,15 @@ type AuthServiceServer interface {
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*EmptyResponse, error)
 	// Verifica token de reset y actualiza la contraseña.
 	ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error)
+	// ── Cambio de contraseña con sesión iniciada ───────────────────────────────
+	//
+	// Distinto de ForgotPassword/ResetPassword: aquí ya se sabe quién pide el
+	// cambio. El código de un solo uso prueba que además controla el buzón, de
+	// modo que una sesión robada no baste para tomar la cuenta.
+	SolicitarCambioPassword(context.Context, *SolicitarCambioPasswordRequest) (*EmptyResponse, error)
+	// Aceptación del aviso para cuentas ya existentes, o cuando cambia la versión.
+	AceptarAviso(context.Context, *AceptarAvisoRequest) (*EmptyResponse, error)
+	CambiarPasswordConOTP(context.Context, *CambiarPasswordConOTPRequest) (*EmptyResponse, error)
 	// Invalida todas las sesiones de un usuario (solo admin).
 	RevokeUserSessions(context.Context, *RevokeRequest) (*EmptyResponse, error)
 	// Confirma la propiedad del buzón con el código de 6 dígitos enviado en el
@@ -219,6 +270,15 @@ func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPas
 }
 func (UnimplementedAuthServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedAuthServiceServer) SolicitarCambioPassword(context.Context, *SolicitarCambioPasswordRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SolicitarCambioPassword not implemented")
+}
+func (UnimplementedAuthServiceServer) AceptarAviso(context.Context, *AceptarAvisoRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AceptarAviso not implemented")
+}
+func (UnimplementedAuthServiceServer) CambiarPasswordConOTP(context.Context, *CambiarPasswordConOTPRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CambiarPasswordConOTP not implemented")
 }
 func (UnimplementedAuthServiceServer) RevokeUserSessions(context.Context, *RevokeRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeUserSessions not implemented")
@@ -358,6 +418,60 @@ func _AuthService_ResetPassword_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_SolicitarCambioPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SolicitarCambioPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SolicitarCambioPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_SolicitarCambioPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SolicitarCambioPassword(ctx, req.(*SolicitarCambioPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_AceptarAviso_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AceptarAvisoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).AceptarAviso(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_AceptarAviso_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).AceptarAviso(ctx, req.(*AceptarAvisoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_CambiarPasswordConOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CambiarPasswordConOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CambiarPasswordConOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_CambiarPasswordConOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CambiarPasswordConOTP(ctx, req.(*CambiarPasswordConOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_RevokeUserSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RevokeRequest)
 	if err := dec(in); err != nil {
@@ -442,6 +556,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetPassword",
 			Handler:    _AuthService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "SolicitarCambioPassword",
+			Handler:    _AuthService_SolicitarCambioPassword_Handler,
+		},
+		{
+			MethodName: "AceptarAviso",
+			Handler:    _AuthService_AceptarAviso_Handler,
+		},
+		{
+			MethodName: "CambiarPasswordConOTP",
+			Handler:    _AuthService_CambiarPasswordConOTP_Handler,
 		},
 		{
 			MethodName: "RevokeUserSessions",
