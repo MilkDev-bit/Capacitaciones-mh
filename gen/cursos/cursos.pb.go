@@ -5454,15 +5454,19 @@ func (x *PuntoMensual) GetNetoCentavos() int64 {
 }
 
 type TransaccionFin struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Cliente          string                 `protobuf:"bytes,2,opt,name=cliente,proto3" json:"cliente,omitempty"`
-	Email            string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Fecha            string                 `protobuf:"bytes,4,opt,name=fecha,proto3" json:"fecha,omitempty"` // RFC3339
-	BrutoCentavos    int64                  `protobuf:"varint,5,opt,name=bruto_centavos,json=brutoCentavos,proto3" json:"bruto_centavos,omitempty"`
-	ComisionCentavos int64                  `protobuf:"varint,6,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
-	NetoCentavos     int64                  `protobuf:"varint,7,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
-	ComisionConocida bool                   `protobuf:"varint,8,opt,name=comision_conocida,json=comisionConocida,proto3" json:"comision_conocida,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Nombre y correo NO salen de la base de cursos: `users` vive en la de auth.
+	// El servicio devuelve el user_id y el gateway resuelve los otros dos por
+	// gRPC contra usuarios.
+	Cliente          string `protobuf:"bytes,2,opt,name=cliente,proto3" json:"cliente,omitempty"`
+	Email            string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	UserId           string `protobuf:"bytes,11,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Fecha            string `protobuf:"bytes,4,opt,name=fecha,proto3" json:"fecha,omitempty"` // RFC3339
+	BrutoCentavos    int64  `protobuf:"varint,5,opt,name=bruto_centavos,json=brutoCentavos,proto3" json:"bruto_centavos,omitempty"`
+	ComisionCentavos int64  `protobuf:"varint,6,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos     int64  `protobuf:"varint,7,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	ComisionConocida bool   `protobuf:"varint,8,opt,name=comision_conocida,json=comisionConocida,proto3" json:"comision_conocida,omitempty"`
 	// 'curso' para una compra suelta, 'suscripcion' para un cobro recurrente.
 	Origen        string `protobuf:"bytes,9,opt,name=origen,proto3" json:"origen,omitempty"`
 	Concepto      string `protobuf:"bytes,10,opt,name=concepto,proto3" json:"concepto,omitempty"`
@@ -5517,6 +5521,13 @@ func (x *TransaccionFin) GetCliente() string {
 func (x *TransaccionFin) GetEmail() string {
 	if x != nil {
 		return x.Email
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -6453,11 +6464,12 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x03mes\x18\x01 \x01(\tR\x03mes\x12%\n" +
 	"\x0ebruto_centavos\x18\x02 \x01(\x03R\rbrutoCentavos\x12+\n" +
 	"\x11comision_centavos\x18\x03 \x01(\x03R\x10comisionCentavos\x12#\n" +
-	"\rneto_centavos\x18\x04 \x01(\x03R\fnetoCentavos\"\xc0\x02\n" +
+	"\rneto_centavos\x18\x04 \x01(\x03R\fnetoCentavos\"\xd9\x02\n" +
 	"\x0eTransaccionFin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\acliente\x18\x02 \x01(\tR\acliente\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x17\n" +
+	"\auser_id\x18\v \x01(\tR\x06userId\x12\x14\n" +
 	"\x05fecha\x18\x04 \x01(\tR\x05fecha\x12%\n" +
 	"\x0ebruto_centavos\x18\x05 \x01(\x03R\rbrutoCentavos\x12+\n" +
 	"\x11comision_centavos\x18\x06 \x01(\x03R\x10comisionCentavos\x12#\n" +
