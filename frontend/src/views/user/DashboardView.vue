@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { resumenMarkdown } from '../../utils/markdown'
+import { listaDe } from '../../utils/lista'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -24,7 +25,7 @@ async function loadLeaderboard(cursoId: string) {
   loadingLeaderboard.value = true
   try {
     const res = await api.get(`/capacitaciones/${cursoId}/leaderboard?top=5`)
-    leaderboardList.value = res.data?.entries || res.data || []
+    leaderboardList.value = listaDe(res.data, 'entries')
   } catch {
     leaderboardList.value = []
   } finally {

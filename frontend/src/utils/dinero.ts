@@ -28,6 +28,17 @@ export function pesos(centavos: number | null | undefined, decimales = true): st
 }
 
 /**
+ * Entero con separador de miles: 15239 → "15,239".
+ *
+ * Los contadores del panel se pintaban en crudo. Con tres cifras da igual, pero
+ * a partir de cuatro deja de leerse de un vistazo, que es lo único que se le
+ * pide a una tarjeta de resumen.
+ */
+export function entero(n: number | null | undefined): string {
+  return new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 }).format(n || 0)
+}
+
+/**
  * Porcentaje de una parte sobre un total, acotado entre 0 y 100.
  *
  * Los anillos de los indicadores dibujan este valor, y un porcentaje fuera de

@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
+import { listaDe } from '../../utils/lista'
 
 const entregas = ref<any[]>([])
 const capacitaciones = ref<any[]>([])
@@ -38,10 +39,11 @@ async function load() {
         : api.get('/instructor/entregas'),
       api.get('/instructor/capacitaciones'),
     ])
-    entregas.value = entRes.data?.entregas || entRes.data || []
-    if (capRes.data) {
-      capacitaciones.value = capRes.data
-    }
+    // listaDe y no `a || b || []`: cuando no hay entregas el backend responde
+    // `{}` —protobuf borra el repeated vacío— y un objeto vacío es truthy, así
+    // que ganaba a `[]` y la vista reventaba al filtrar sobre un objeto.
+    entregas.value = listaDe(entRes.data, 'entregas')
+    capacitaciones.value = listaDe(capRes.data, 'cursos')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al cargar las entregas')
   } finally {

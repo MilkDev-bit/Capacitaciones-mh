@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pesos, porcentaje, mesCorto, fechaHora } from './dinero'
+import { pesos, entero, porcentaje, mesCorto, fechaHora } from './dinero'
 
 describe('pesos', () => {
   it('convierte centavos a pesos con dos decimales', () => {
@@ -90,5 +90,42 @@ describe('fechaHora', () => {
   it('devuelve vacío si la fecha no sirve', () => {
     expect(fechaHora('')).toBe('')
     expect(fechaHora('no-es-fecha')).toBe('')
+  })
+})
+
+describe('entero', () => {
+  /**
+   * Regresión de las tarjetas del panel: se pintaba el número en crudo y a
+   * partir de cuatro cifras dejaba de leerse de un vistazo.
+   */
+  it('separa los miles', () => {
+    expect(entero(15239)).toBe('15,239')
+    expect(entero(1234567)).toBe('1,234,567')
+  })
+
+  it('no toca los números cortos', () => {
+    expect(entero(5)).toBe('5')
+    expect(entero(999)).toBe('999')
+  })
+
+  it('trata la ausencia de valor como cero', () => {
+    expect(entero(0)).toBe('0')
+    expect(entero(null)).toBe('0')
+    expect(entero(undefined)).toBe('0')
+  })
+})
+
+describe('formato de importes en las tarjetas', () => {
+  /**
+   * El panel hacía `$${v.toFixed(2)}` y salía "$15239.12": sin separador de
+   * miles, sin locale y con el símbolo pegado a mano.
+   */
+  it('pone separador de miles donde antes no lo había', () => {
+    const alaAntigua = `$${(15239.12).toFixed(2)}`
+    expect(alaAntigua).toBe('$15239.12')
+
+    const ahora = pesos(Math.round(15239.12 * 100))
+    expect(ahora).toContain('15,239.12')
+    expect(ahora).not.toBe(alaAntigua)
   })
 })
