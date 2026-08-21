@@ -16,7 +16,6 @@ import (
 
 	"github.com/stripe/stripe-go/v86"
 	"github.com/stripe/stripe-go/v86/checkout/session"
-	"google.golang.org/grpc/metadata"
 )
 
 // precioDe devuelve el importe a cobrar priorizando la columna en centavos.
@@ -973,7 +972,7 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 	correoComprador, nombreComprador := datosDelComprador(ctx)
 	clienteID := ""
 	if RequiereCliente(total.StripeAmount()) {
-		clienteID = s.clienteStripeDe(ctx, userID, correoComprador, nombreComprador)
+		clienteID = s.clienteStripeDe(ctx, req.UserId, correoComprador, nombreComprador)
 	}
 	metodos, opcionesPago := metodosDePago(total.StripeAmount(), clienteID != "")
 	params := &stripe.CheckoutSessionParams{
