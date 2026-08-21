@@ -143,9 +143,12 @@ func (s *CursosService) Inscribirse(ctx context.Context, userID, cursoID string)
 	return s.repo.Inscribirse(ctx, userID, cursoID)
 }
 
-func (s *CursosService) UnirseConCodigo(ctx context.Context, userID, codigo string) error {
-	_, err := s.repo.UnirseConCodigo(ctx, userID, codigo)
-	return err
+func (s *CursosService) UnirseConCodigo(ctx context.Context, userID, codigo string) (*cursospb.CursoResponse, error) {
+	curso, err := s.repo.UnirseConCodigo(ctx, userID, codigo)
+	if err != nil {
+		return nil, err
+	}
+	return curso.ToProto(), nil
 }
 
 // ── Instructor ────────────────────────────────────────────────────────────────

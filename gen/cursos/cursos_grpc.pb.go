@@ -95,7 +95,13 @@ type CursosServiceClient interface {
 	ListMisCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	GetCurso(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	Inscribirse(ctx context.Context, in *InscribirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
-	UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// Devuelve el curso al que se acaba de unir, no EmptyResponse.
+	//
+	// El repositorio ya lo tenía —resuelve el código a un curso para poder
+	// inscribir— y el servicio lo descartaba. El precio de tirarlo era doble: el
+	// mensaje de confirmación decía «Te uniste a "undefined"», y la notificación
+	// enlazaba al listado en vez de al curso, porque tampoco había id.
+	UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	UnirseConLicencia(ctx context.Context, in *UnirseConLicenciaRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
 	// el Gateway necesita esos datos para construir el correo de confirmación y
@@ -246,9 +252,9 @@ func (c *cursosServiceClient) Inscribirse(ctx context.Context, in *InscribirseRe
 	return out, nil
 }
 
-func (c *cursosServiceClient) UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *cursosServiceClient) UnirseConCodigo(ctx context.Context, in *UnirseRequest, opts ...grpc.CallOption) (*CursoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmptyResponse)
+	out := new(CursoResponse)
 	err := c.cc.Invoke(ctx, CursosService_UnirseConCodigo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -782,7 +788,13 @@ type CursosServiceServer interface {
 	ListMisCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
 	GetCurso(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	Inscribirse(context.Context, *InscribirseRequest) (*EmptyResponse, error)
-	UnirseConCodigo(context.Context, *UnirseRequest) (*EmptyResponse, error)
+	// Devuelve el curso al que se acaba de unir, no EmptyResponse.
+	//
+	// El repositorio ya lo tenía —resuelve el código a un curso para poder
+	// inscribir— y el servicio lo descartaba. El precio de tirarlo era doble: el
+	// mensaje de confirmación decía «Te uniste a "undefined"», y la notificación
+	// enlazaba al listado en vez de al curso, porque tampoco había id.
+	UnirseConCodigo(context.Context, *UnirseRequest) (*CursoResponse, error)
 	UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error)
 	// Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
 	// el Gateway necesita esos datos para construir el correo de confirmación y
@@ -891,7 +903,7 @@ func (UnimplementedCursosServiceServer) GetCurso(context.Context, *CursoIDReques
 func (UnimplementedCursosServiceServer) Inscribirse(context.Context, *InscribirseRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Inscribirse not implemented")
 }
-func (UnimplementedCursosServiceServer) UnirseConCodigo(context.Context, *UnirseRequest) (*EmptyResponse, error) {
+func (UnimplementedCursosServiceServer) UnirseConCodigo(context.Context, *UnirseRequest) (*CursoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UnirseConCodigo not implemented")
 }
 func (UnimplementedCursosServiceServer) UnirseConLicencia(context.Context, *UnirseConLicenciaRequest) (*EmptyResponse, error) {

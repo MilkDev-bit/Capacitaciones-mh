@@ -213,7 +213,12 @@ async function unirseConCodigo() {
   try {
     {
       const res = await api.post('/inscripciones', { codigo: code })
-      codigoSuccess.value = `Te uniste a "${res.data.title}"`
+      // El respaldo no es cosmético: este mensaje decía «Te uniste a
+      // "undefined"» porque el endpoint nunca devolvió un título. Ahora sí lo
+      // hace, pero si algún día vuelve a faltar es mejor una frase correcta y
+      // vaga que una que enseñe el hueco.
+      const titulo = (res.data?.title || '').trim()
+      codigoSuccess.value = titulo ? `Te uniste a "${titulo}"` : 'Te uniste al curso'
       codigoInput.value = ''
       await loadMis()
       setTimeout(() => {

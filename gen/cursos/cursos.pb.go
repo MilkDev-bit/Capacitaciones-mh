@@ -5655,7 +5655,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x15ListMisCapacitaciones\x12\x13.cursos.UserRequest\x1a\x1a.cursos.ListCursosResponse\x129\n" +
 	"\bGetCurso\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12@\n" +
 	"\vInscribirse\x12\x1a.cursos.InscribirseRequest\x1a\x15.cursos.EmptyResponse\x12?\n" +
-	"\x0fUnirseConCodigo\x12\x15.cursos.UnirseRequest\x1a\x15.cursos.EmptyResponse\x12L\n" +
+	"\x0fUnirseConCodigo\x12\x15.cursos.UnirseRequest\x1a\x15.cursos.CursoResponse\x12L\n" +
 	"\x11UnirseConLicencia\x12 .cursos.UnirseConLicenciaRequest\x1a\x15.cursos.EmptyResponse\x12E\n" +
 	"\rWebhookEnroll\x12\x1c.cursos.WebhookEnrollRequest\x1a\x16.cursos.EnrollResponse\x12V\n" +
 	"\x16WebhookComprarLicencia\x12%.cursos.WebhookComprarLicenciaRequest\x1a\x15.cursos.EmptyResponse\x12c\n" +
@@ -5877,7 +5877,7 @@ var file_cursos_cursos_proto_depIdxs = []int32{
 	11, // 78: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
 	10, // 79: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
 	16, // 80: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
-	16, // 81: cursos.CursosService.UnirseConCodigo:output_type -> cursos.EmptyResponse
+	10, // 81: cursos.CursosService.UnirseConCodigo:output_type -> cursos.CursoResponse
 	16, // 82: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
 	50, // 83: cursos.CursosService.WebhookEnroll:output_type -> cursos.EnrollResponse
 	16, // 84: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse

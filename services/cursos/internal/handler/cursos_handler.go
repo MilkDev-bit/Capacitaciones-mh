@@ -78,11 +78,12 @@ func (h *CursosHandler) Inscribirse(ctx context.Context, req *cursospb.Inscribir
 	return &cursospb.EmptyResponse{}, nil
 }
 
-func (h *CursosHandler) UnirseConCodigo(ctx context.Context, req *cursospb.UnirseRequest) (*cursospb.EmptyResponse, error) {
-	if err := h.svc.UnirseConCodigo(ctx, req.UserId, req.Codigo); err != nil {
+func (h *CursosHandler) UnirseConCodigo(ctx context.Context, req *cursospb.UnirseRequest) (*cursospb.CursoResponse, error) {
+	curso, err := h.svc.UnirseConCodigo(ctx, req.UserId, req.Codigo)
+	if err != nil {
 		return nil, mapErr(err)
 	}
-	return &cursospb.EmptyResponse{}, nil
+	return curso, nil
 }
 
 func (h *CursosHandler) UnirseConLicencia(ctx context.Context, req *cursospb.UnirseConLicenciaRequest) (*cursospb.EmptyResponse, error) {

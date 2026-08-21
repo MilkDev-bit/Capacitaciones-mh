@@ -17,7 +17,13 @@ service CursosService {
   rpc ListMisCapacitaciones(UserRequest) returns (ListCursosResponse);
   rpc GetCurso(CursoIDRequest) returns (CursoResponse);
   rpc Inscribirse(InscribirseRequest) returns (EmptyResponse);
-  rpc UnirseConCodigo(UnirseRequest) returns (EmptyResponse);
+  // Devuelve el curso al que se acaba de unir, no EmptyResponse.
+  //
+  // El repositorio ya lo tenía —resuelve el código a un curso para poder
+  // inscribir— y el servicio lo descartaba. El precio de tirarlo era doble: el
+  // mensaje de confirmación decía «Te uniste a "undefined"», y la notificación
+  // enlazaba al listado en vez de al curso, porque tampoco había id.
+  rpc UnirseConCodigo(UnirseRequest) returns (CursoResponse);
   rpc UnirseConLicencia(UnirseConLicenciaRequest) returns (EmptyResponse);
   // Los webhooks devuelven el detalle de lo comprado (no EmptyResponse) porque
   // el Gateway necesita esos datos para construir el correo de confirmación y
