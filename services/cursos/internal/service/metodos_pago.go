@@ -75,23 +75,92 @@ func oxxoDiasVigencia() int64 {
 	return dias
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Transferencia bancaria (SPEI)
+//
+// En Stripe el método NO se llama "spei": es `customer_balance` con
+// `bank_transfer.type = mx_bank_transfer`. Stripe le asigna al comprador una
+// CLABE de referencia y acredita el pago cuando el dinero llega.
+//
+// Es de notificación diferida, igual que OXXO: la sesión se completa cuando el
+// comprador recibe los datos bancarios, no cuando paga. El acceso al curso lo
+// otorga `checkout.session.async_payment_succeeded`, que el webhook ya maneja.
+//
+// Apagado por defecto: exige que el método esté activado en la cuenta de Stripe
+// y que las sesiones creen un Customer. Encenderlo sin lo primero no degrada el
+// checkout, lo ROMPE —Stripe rechaza la creación de la sesión entera y el
+// comprador se queda sin poder pagar ni con tarjeta—, así que la activación es
+// un acto deliberado y no el estado por defecto.
+// ─────────────────────────────────────────────────────────────────────────────
+
+func speiHabilitado() bool {
+	return os.Getenv("SPEI_HABILITADO") == "1"
+}
+
+// speiAplica dice si un importe puede pagarse por transferencia.
+//
+// No tiene el tope de $10,000 de OXXO, pero sí un mínimo: una transferencia por
+// unos pocos pesos no tiene sentido y la comisión se come el importe.
+const speiMinimoCentavosPorDefecto int64 = 1_000 // $10.00 MXN
+
+func speiAplica(importeCentavos int64) bool {
+	if !speiHabilitado() {
+		return false
+	}
+	return importeCentavos >= enteroDeEnv("SPEI_MONTO_MINIMO_CENTAVOS", speiMinimoCentavosPorDefecto)
+}
+
+// RequiereCliente dice si conviene resolver el Customer antes de la sesión.
+//
+// La transferencia no funciona sin uno: la documentación de Stripe exige
+// indicar el `customer` en la sesión cuando se ofrece `customer_balance`,
+// porque la CLABE de referencia se emite a nombre de un cliente concreto.
+//
+// Se consulta ANTES de armar los métodos para no crear un Customer en cada
+// compra con tarjeta, que no lo necesita.
+func RequiereCliente(importeCentavos int64) bool {
+	return speiAplica(importeCentavos)
+}
+
 // metodosDePago devuelve los métodos aplicables a un importe y sus opciones.
 //
-// OXXO solo entra en pagos únicos en MXN y dentro de su rango de importe. Las
-// suscripciones NO deben usar esta función: OXXO no admite cobros recurrentes
-// ni modo setup, así que ahí la lista se queda en tarjeta.
-func metodosDePago(importeCentavos int64) ([]*string, *stripe.CheckoutSessionPaymentMethodOptionsParams) {
+// `tieneCliente` es determinante, no informativo: sin Customer la transferencia
+// NO se ofrece. Mandar `customer_balance` sin cliente hace fallar la creación de
+// la sesión entera, y entonces el comprador se queda sin poder pagar ni con
+// tarjeta. Ante la duda se prefiere perder el método de pago antes que la venta.
+//
+// OXXO y SPEI solo entran en pagos únicos en MXN. Las suscripciones NO deben
+// usar esta función: ninguno de los dos admite cobros recurrentes, y Stripe
+// tampoco admite transferencia en Checkout en modo suscripción.
+func metodosDePago(importeCentavos int64, tieneCliente bool) ([]*string, *stripe.CheckoutSessionPaymentMethodOptionsParams) {
 	metodos := []string{"card"}
+	opciones := &stripe.CheckoutSessionPaymentMethodOptionsParams{}
+	hayOpciones := false
 
-	if !oxxoAplica(importeCentavos) {
-		return stripe.StringSlice(metodos), nil
+	if oxxoAplica(importeCentavos) {
+		metodos = append(metodos, "oxxo")
+		opciones.OXXO = &stripe.CheckoutSessionPaymentMethodOptionsOXXOParams{
+			ExpiresAfterDays: stripe.Int64(oxxoDiasVigencia()),
+		}
+		hayOpciones = true
 	}
 
-	metodos = append(metodos, "oxxo")
-	opciones := &stripe.CheckoutSessionPaymentMethodOptionsParams{
-		OXXO: &stripe.CheckoutSessionPaymentMethodOptionsOXXOParams{
-			ExpiresAfterDays: stripe.Int64(oxxoDiasVigencia()),
-		},
+	if speiAplica(importeCentavos) && tieneCliente {
+		metodos = append(metodos, "customer_balance")
+		opciones.CustomerBalance = &stripe.CheckoutSessionPaymentMethodOptionsCustomerBalanceParams{
+			FundingType: stripe.String("bank_transfer"),
+			BankTransfer: &stripe.CheckoutSessionPaymentMethodOptionsCustomerBalanceBankTransferParams{
+				Type: stripe.String("mx_bank_transfer"),
+			},
+		}
+		hayOpciones = true
+	}
+
+	// nil y no una estructura vacía: mandar `payment_method_options: {}` no es
+	// lo mismo que no mandarlo, y conviene no cambiar lo que ya funcionaba en
+	// las sesiones que solo admiten tarjeta.
+	if !hayOpciones {
+		return stripe.StringSlice(metodos), nil
 	}
 	return stripe.StringSlice(metodos), opciones
 }

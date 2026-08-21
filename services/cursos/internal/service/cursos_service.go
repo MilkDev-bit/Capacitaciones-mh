@@ -463,7 +463,14 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 	}
 
 	// Crear sesión
-	metodos, opcionesPago := metodosDePago(amount)
+	// Datos del comprador: se leen antes de armar la sesión porque de ellos
+	// depende si se puede ofrecer transferencia bancaria.
+	correoComprador, nombreComprador := datosDelComprador(ctx)
+	clienteID := ""
+	if RequiereCliente(amount) {
+		clienteID = s.clienteStripeDe(ctx, req.UserId, correoComprador, nombreComprador)
+	}
+	metodos, opcionesPago := metodosDePago(amount, clienteID != "")
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes:   metodos,
 		PaymentMethodOptions: opcionesPago,
@@ -492,10 +499,13 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 		},
 	}
 
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
-			params.CustomerEmail = stripe.String(vals[0])
-		}
+	// `customer` y `customer_email` son EXCLUYENTES en Stripe: mandar los dos
+	// hace fallar la sesión. Cuando hay cliente gana él, y el correo viaja
+	// dentro del propio Customer.
+	if clienteID != "" {
+		params.Customer = stripe.String(clienteID)
+	} else if correoComprador != "" {
+		params.CustomerEmail = stripe.String(correoComprador)
 	}
 
 	if stripe.Key == "" {
@@ -571,7 +581,14 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	clientRef := "b2b_direct||" + req.UserId + "||" + curso.ID + "||" + fmt.Sprintf("%d", req.Cantidad)
 
 	// Crear sesión
-	metodos, opcionesPago := metodosDePago(amount)
+	// Datos del comprador: se leen antes de armar la sesión porque de ellos
+	// depende si se puede ofrecer transferencia bancaria.
+	correoComprador, nombreComprador := datosDelComprador(ctx)
+	clienteID := ""
+	if RequiereCliente(amount) {
+		clienteID = s.clienteStripeDe(ctx, req.UserId, correoComprador, nombreComprador)
+	}
+	metodos, opcionesPago := metodosDePago(amount, clienteID != "")
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes:   metodos,
 		PaymentMethodOptions: opcionesPago,
@@ -600,10 +617,13 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 		},
 	}
 
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
-			params.CustomerEmail = stripe.String(vals[0])
-		}
+	// `customer` y `customer_email` son EXCLUYENTES en Stripe: mandar los dos
+	// hace fallar la sesión. Cuando hay cliente gana él, y el correo viaja
+	// dentro del propio Customer.
+	if clienteID != "" {
+		params.Customer = stripe.String(clienteID)
+	} else if correoComprador != "" {
+		params.CustomerEmail = stripe.String(correoComprador)
 	}
 
 	if stripe.Key == "" {
@@ -948,7 +968,14 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 
 	// El tope de OXXO aplica al total del carrito, no a cada renglón: es lo que
 	// Stripe cobra en una sola operación.
-	metodos, opcionesPago := metodosDePago(total.StripeAmount())
+	// Datos del comprador: se leen antes de armar la sesión porque de ellos
+	// depende si se puede ofrecer transferencia bancaria.
+	correoComprador, nombreComprador := datosDelComprador(ctx)
+	clienteID := ""
+	if RequiereCliente(total.StripeAmount()) {
+		clienteID = s.clienteStripeDe(ctx, userID, correoComprador, nombreComprador)
+	}
+	metodos, opcionesPago := metodosDePago(total.StripeAmount(), clienteID != "")
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes:   metodos,
 		PaymentMethodOptions: opcionesPago,
@@ -970,10 +997,13 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 		params.AddMetadata(k, v)
 	}
 
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if vals := md.Get("x-user-email"); len(vals) > 0 && vals[0] != "" {
-			params.CustomerEmail = stripe.String(vals[0])
-		}
+	// `customer` y `customer_email` son EXCLUYENTES en Stripe: mandar los dos
+	// hace fallar la sesión. Cuando hay cliente gana él, y el correo viaja
+	// dentro del propio Customer.
+	if clienteID != "" {
+		params.Customer = stripe.String(clienteID)
+	} else if correoComprador != "" {
+		params.CustomerEmail = stripe.String(correoComprador)
 	}
 
 	// La clave de idempotencia deriva de la orden y su intento, no de un UUID

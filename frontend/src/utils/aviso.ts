@@ -14,8 +14,14 @@
  * SUBIR ESTE VALOR al cambiar el texto de AvisoPrivacidad.vue. Si no se sube,
  * los usuarios existentes no vuelven a aceptar y quedará registrado que
  * aceptaron una versión que ya no es la que está publicada.
+ *
+ * El sufijo de letra permite más de una revisión el mismo día. Aquí hizo falta
+ * porque el texto se corrigió horas después de publicarse: citaba la LFPDPPP de
+ * 2010, que está abrogada, y al INAI, que ya no existe. Quien hubiera aceptado
+ * la versión anterior debe volver a ver el aviso, porque lo que aceptó decía
+ * otra cosa.
  */
-export const AVISO_VERSION = '2026-08-21'
+export const AVISO_VERSION = '2026-08-21b'
 
 /** Clave del consentimiento de quien navega SIN cuenta. */
 const CLAVE_BANNER = 'aviso_privacidad_banner'

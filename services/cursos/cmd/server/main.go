@@ -353,6 +353,19 @@ func runMigrations(db *sqlx.DB) error {
 		// NULL y 0 no son lo mismo: NULL es "aún no consultado a Stripe" y 0 es
 		// "consultado, y no hubo comisión". Tratarlos igual haría que el
 		// histórico sin rellenar pareciera libre de comisiones.
+		// Clientes de Stripe, necesarios para la transferencia bancaria (SPEI):
+		// la CLABE de referencia se emite a nombre de un cliente que ya debe
+		// existir al crear la sesión. Se guarda para REUTILIZARLO; crear uno por
+		// compra repartiría los saldos entre varios clientes y haría imposible
+		// conciliar las transferencias.
+		//
+		// Sin FK a users: vive en la base de auth, no en esta.
+		`CREATE TABLE IF NOT EXISTS stripe_clientes (
+			user_id            UUID PRIMARY KEY,
+			stripe_customer_id VARCHAR(255) NOT NULL UNIQUE,
+			created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+
 		// Envuelto en un DO condicional y no un ALTER a secas: `ordenes` y
 		// `suscripcion_facturas` las crea migrations/002, que se aplica a mano.
 		// Un ALTER sobre una tabla que todavía no existe aborta las migraciones
