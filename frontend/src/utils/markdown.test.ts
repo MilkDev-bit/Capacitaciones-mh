@@ -158,3 +158,31 @@ describe('resumenMarkdown', () => {
     expect(resumenMarkdown('<img src=x onerror=alert(1)>hola')).not.toContain('<')
   })
 })
+
+describe('markdownATexto: separación entre bloques', () => {
+  /**
+   * Regresión del subtítulo de la ficha: "SubtítuloAprende a identificar…".
+   * `textContent` pega bloques contiguos y el salto de párrafo desaparecía.
+   */
+  it('separa párrafos con un espacio', () => {
+    expect(markdownATexto('**Subtítulo**\n\nAprende a identificar riesgos.'))
+      .toBe('Subtítulo Aprende a identificar riesgos.')
+  })
+
+  it('separa encabezado de su párrafo', () => {
+    expect(markdownATexto('## Temario\n\nArneses y líneas de vida.'))
+      .toBe('Temario Arneses y líneas de vida.')
+  })
+
+  it('separa los elementos de una lista', () => {
+    expect(markdownATexto('- Arneses\n- Eslingas')).toBe('Arneses Eslingas')
+  })
+
+  it('convierte el salto forzado en espacio', () => {
+    expect(markdownATexto('uno  \ndos')).toBe('uno dos')
+  })
+
+  it('no mete espacios dentro de una frase con negritas', () => {
+    expect(markdownATexto('trabajo **seguro** en alturas')).toBe('trabajo seguro en alturas')
+  })
+})

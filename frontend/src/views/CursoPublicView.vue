@@ -308,7 +308,7 @@ function buyB2B() {
               {{ typeLabel[curso.type] || 'Curso' }}
             </span>
             <span v-if="curso.duration" class="cpv-chip free">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />
               </svg>
@@ -840,17 +840,35 @@ function buyB2B() {
   gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  /* Sin esto los distintivos se estiran a la altura del más alto: en cuanto
+   * uno pasaba a dos líneas, el de al lado crecía con él y quedaba como un
+   * óvalo. */
+  align-items: center;
 }
 
 .cpv-chip {
-  display: inline-block;
-  padding: 4px 13px;
+  /* Flex y no inline-block: dentro va un icono y una etiqueta, y en
+   * inline-block el icono contaba como palabra suelta. Al encogerse la fila,
+   * la etiqueta caía debajo del icono y el distintivo salía en dos pisos. */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Un distintivo de dos palabras no se parte nunca; si no cabe, que la fila
+   * lo mande a la línea siguiente entero. */
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 5px 13px;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.4;
   backdrop-filter: blur(8px);
   letter-spacing: 0.02em;
 }
+
+/* El icono conserva su tamaño aunque la fila vaya justa. */
+.cpv-chip svg { flex-shrink: 0; display: block; }
+.cpv-chip .inline-svg { display: inline-flex; }
 
 .cpv-chip.type {
   background: var(--surface);
