@@ -310,6 +310,15 @@ func New(d Deps) *gin.Engine {
 
 				adm.GET("/dashboard/stats", d.CursosH.GetAdminDashboardStats)
 
+				// Panel financiero. Sale de lo que se cobró de verdad
+				// (ordenes + suscripcion_facturas), no del precio de catálogo.
+				adm.GET("/finanzas", d.CursosH.GetFinanzasAdmin)
+				// Trae de Stripe la comisión de los cobros que aún no la tienen.
+				// Idempotente: se llama hasta que "restantes" da cero.
+				adm.POST("/comisiones/rellenar", d.CursosH.RellenarComisiones)
+
+				adm.GET("/licencias", d.CursosH.AdminListLicenciasEmpresas)
+
 				// Comprueba que el conversor a PDF responde. Devuelve el error
 				// de red entero, que es lo que el panel de logs recorta.
 				adm.GET("/diagnostico/gotenberg", d.DC3H.DiagnosticoGotenberg)

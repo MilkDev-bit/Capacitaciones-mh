@@ -651,12 +651,22 @@ func (h *CursosHandler) cerrarOrden(ctx context.Context, sessionID, estado, moti
 	if sessionID == "" {
 		return
 	}
-	if _, err := h.c.Cursos.ActualizarEstadoOrden(ctx, &cursospb.ActualizarEstadoOrdenRequest{
+	req := &cursospb.ActualizarEstadoOrdenRequest{
 		StripeSessionId:     sessionID,
 		Estado:              estado,
 		MotivoFallo:         motivo,
 		StripePaymentIntent: paymentIntent,
-	}); err != nil {
+	}
+
+	// La comisión solo se pregunta al marcar la orden como pagada: es el único
+	// momento en que hay un cobro del que Stripe pueda informar. Si todavía no
+	// está liquidado, `conComision` no toca nada y la columna se queda en NULL
+	// para que el relleno la recoja luego.
+	if estado == "pagada" {
+		conComision(req, paymentIntent)
+	}
+
+	if _, err := h.c.Cursos.ActualizarEstadoOrden(ctx, req); err != nil {
 		slog.Error("no se pudo actualizar el estado de la orden",
 			"session_id", sessionID, "estado", estado, "error", err)
 	}

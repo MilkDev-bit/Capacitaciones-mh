@@ -205,6 +205,8 @@ type CursosRepository interface {
 	OrdenesRepository
 	// Planes, suscripciones y asientos.
 	SuscripcionesRepository
+	// Panel financiero, licencias por empresa y relleno de comisiones.
+	FinanzasRepository
 
 	List(ctx context.Context) ([]*Curso, error)
 	ListPublicos(ctx context.Context) ([]*Curso, error)

@@ -70,6 +70,10 @@ const (
 	CursosService_AdminAsignar_FullMethodName                   = "/cursos.CursosService/AdminAsignar"
 	CursosService_AdminDesAsignar_FullMethodName                = "/cursos.CursosService/AdminDesAsignar"
 	CursosService_GetAdminDashboardStats_FullMethodName         = "/cursos.CursosService/GetAdminDashboardStats"
+	CursosService_GetFinanzasAdmin_FullMethodName               = "/cursos.CursosService/GetFinanzasAdmin"
+	CursosService_AdminListLicenciasEmpresas_FullMethodName     = "/cursos.CursosService/AdminListLicenciasEmpresas"
+	CursosService_ListOrdenesSinComision_FullMethodName         = "/cursos.CursosService/ListOrdenesSinComision"
+	CursosService_RegistrarComisionOrden_FullMethodName         = "/cursos.CursosService/RegistrarComisionOrden"
 	CursosService_GetDatosDC3_FullMethodName                    = "/cursos.CursosService/GetDatosDC3"
 	CursosService_GuardarDatosTrabajador_FullMethodName         = "/cursos.CursosService/GuardarDatosTrabajador"
 	CursosService_RegistrarConstanciaDC3_FullMethodName         = "/cursos.CursosService/RegistrarConstanciaDC3"
@@ -163,6 +167,16 @@ type CursosServiceClient interface {
 	AdminDesAsignar(ctx context.Context, in *AsignacionIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminDashboardStatsResponse, error)
+	// Panel financiero. Sale de `ordenes` y `suscripcion_facturas`, que es lo que
+	// se cobró de verdad, y no del precio de catálogo.
+	GetFinanzasAdmin(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*FinanzasAdminResponse, error)
+	// Licencias agrupadas por empresa compradora, para la pantalla de admin.
+	AdminListLicenciasEmpresas(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminListLicenciasEmpresasResponse, error)
+	// Relleno del histórico de comisiones. El servicio devuelve qué cobros
+	// siguen sin comisión y el gateway, que es quien habla con Stripe, la
+	// consulta y la devuelve por RegistrarComisionOrden.
+	ListOrdenesSinComision(ctx context.Context, in *ListOrdenesSinComisionRequest, opts ...grpc.CallOption) (*ListOrdenesSinComisionResponse, error)
+	RegistrarComisionOrden(ctx context.Context, in *RegistrarComisionOrdenRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// ── Constancias DC-3 ──────────────────────────────────────────────────────
 	//
 	// La constancia se arma con tres orígenes: los datos del trabajador (los
@@ -702,6 +716,46 @@ func (c *cursosServiceClient) GetAdminDashboardStats(ctx context.Context, in *Em
 	return out, nil
 }
 
+func (c *cursosServiceClient) GetFinanzasAdmin(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*FinanzasAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FinanzasAdminResponse)
+	err := c.cc.Invoke(ctx, CursosService_GetFinanzasAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminListLicenciasEmpresas(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AdminListLicenciasEmpresasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminListLicenciasEmpresasResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminListLicenciasEmpresas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListOrdenesSinComision(ctx context.Context, in *ListOrdenesSinComisionRequest, opts ...grpc.CallOption) (*ListOrdenesSinComisionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListOrdenesSinComisionResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListOrdenesSinComision_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) RegistrarComisionOrden(ctx context.Context, in *RegistrarComisionOrdenRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_RegistrarComisionOrden_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) GetDatosDC3(ctx context.Context, in *DatosDC3Request, opts ...grpc.CallOption) (*DatosDC3Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DatosDC3Response)
@@ -856,6 +910,16 @@ type CursosServiceServer interface {
 	AdminDesAsignar(context.Context, *AsignacionIDRequest) (*EmptyResponse, error)
 	// Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
 	GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error)
+	// Panel financiero. Sale de `ordenes` y `suscripcion_facturas`, que es lo que
+	// se cobró de verdad, y no del precio de catálogo.
+	GetFinanzasAdmin(context.Context, *EmptyRequest) (*FinanzasAdminResponse, error)
+	// Licencias agrupadas por empresa compradora, para la pantalla de admin.
+	AdminListLicenciasEmpresas(context.Context, *EmptyRequest) (*AdminListLicenciasEmpresasResponse, error)
+	// Relleno del histórico de comisiones. El servicio devuelve qué cobros
+	// siguen sin comisión y el gateway, que es quien habla con Stripe, la
+	// consulta y la devuelve por RegistrarComisionOrden.
+	ListOrdenesSinComision(context.Context, *ListOrdenesSinComisionRequest) (*ListOrdenesSinComisionResponse, error)
+	RegistrarComisionOrden(context.Context, *RegistrarComisionOrdenRequest) (*EmptyResponse, error)
 	// ── Constancias DC-3 ──────────────────────────────────────────────────────
 	//
 	// La constancia se arma con tres orígenes: los datos del trabajador (los
@@ -1037,6 +1101,18 @@ func (UnimplementedCursosServiceServer) AdminDesAsignar(context.Context, *Asigna
 }
 func (UnimplementedCursosServiceServer) GetAdminDashboardStats(context.Context, *EmptyRequest) (*AdminDashboardStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAdminDashboardStats not implemented")
+}
+func (UnimplementedCursosServiceServer) GetFinanzasAdmin(context.Context, *EmptyRequest) (*FinanzasAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFinanzasAdmin not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminListLicenciasEmpresas(context.Context, *EmptyRequest) (*AdminListLicenciasEmpresasResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListLicenciasEmpresas not implemented")
+}
+func (UnimplementedCursosServiceServer) ListOrdenesSinComision(context.Context, *ListOrdenesSinComisionRequest) (*ListOrdenesSinComisionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOrdenesSinComision not implemented")
+}
+func (UnimplementedCursosServiceServer) RegistrarComisionOrden(context.Context, *RegistrarComisionOrdenRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegistrarComisionOrden not implemented")
 }
 func (UnimplementedCursosServiceServer) GetDatosDC3(context.Context, *DatosDC3Request) (*DatosDC3Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDatosDC3 not implemented")
@@ -1998,6 +2074,78 @@ func _CursosService_GetAdminDashboardStats_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_GetFinanzasAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).GetFinanzasAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_GetFinanzasAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).GetFinanzasAdmin(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminListLicenciasEmpresas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminListLicenciasEmpresas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminListLicenciasEmpresas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminListLicenciasEmpresas(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListOrdenesSinComision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrdenesSinComisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListOrdenesSinComision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListOrdenesSinComision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListOrdenesSinComision(ctx, req.(*ListOrdenesSinComisionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_RegistrarComisionOrden_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegistrarComisionOrdenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).RegistrarComisionOrden(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_RegistrarComisionOrden_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).RegistrarComisionOrden(ctx, req.(*RegistrarComisionOrdenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_GetDatosDC3_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DatosDC3Request)
 	if err := dec(in); err != nil {
@@ -2334,6 +2482,22 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAdminDashboardStats",
 			Handler:    _CursosService_GetAdminDashboardStats_Handler,
+		},
+		{
+			MethodName: "GetFinanzasAdmin",
+			Handler:    _CursosService_GetFinanzasAdmin_Handler,
+		},
+		{
+			MethodName: "AdminListLicenciasEmpresas",
+			Handler:    _CursosService_AdminListLicenciasEmpresas_Handler,
+		},
+		{
+			MethodName: "ListOrdenesSinComision",
+			Handler:    _CursosService_ListOrdenesSinComision_Handler,
+		},
+		{
+			MethodName: "RegistrarComisionOrden",
+			Handler:    _CursosService_RegistrarComisionOrden_Handler,
 		},
 		{
 			MethodName: "GetDatosDC3",

@@ -2790,6 +2790,12 @@ type FacturaSuscripcionRequest struct {
 	UrlPdf               string                 `protobuf:"bytes,7,opt,name=url_pdf,json=urlPdf,proto3" json:"url_pdf,omitempty"`
 	PeriodoInicio        string                 `protobuf:"bytes,8,opt,name=periodo_inicio,json=periodoInicio,proto3" json:"periodo_inicio,omitempty"`
 	PeriodoFin           string                 `protobuf:"bytes,9,opt,name=periodo_fin,json=periodoFin,proto3" json:"periodo_fin,omitempty"`
+	// Mismo criterio que en la orden: la comisión la dicta Stripe, no un
+	// porcentaje nuestro.
+	ComisionConocida     bool   `protobuf:"varint,10,opt,name=comision_conocida,json=comisionConocida,proto3" json:"comision_conocida,omitempty"`
+	ComisionCentavos     int64  `protobuf:"varint,11,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos         int64  `protobuf:"varint,12,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	BalanceTransactionId string `protobuf:"bytes,13,opt,name=balance_transaction_id,json=balanceTransactionId,proto3" json:"balance_transaction_id,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -2883,6 +2889,34 @@ func (x *FacturaSuscripcionRequest) GetPeriodoInicio() string {
 func (x *FacturaSuscripcionRequest) GetPeriodoFin() string {
 	if x != nil {
 		return x.PeriodoFin
+	}
+	return ""
+}
+
+func (x *FacturaSuscripcionRequest) GetComisionConocida() bool {
+	if x != nil {
+		return x.ComisionConocida
+	}
+	return false
+}
+
+func (x *FacturaSuscripcionRequest) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *FacturaSuscripcionRequest) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+func (x *FacturaSuscripcionRequest) GetBalanceTransactionId() string {
+	if x != nil {
+		return x.BalanceTransactionId
 	}
 	return ""
 }
@@ -3426,8 +3460,19 @@ type ActualizarEstadoOrdenRequest struct {
 	Estado              string                 `protobuf:"bytes,2,opt,name=estado,proto3" json:"estado,omitempty"` // 'pagada' | 'cumplida' | 'fallida'
 	MotivoFallo         string                 `protobuf:"bytes,3,opt,name=motivo_fallo,json=motivoFallo,proto3" json:"motivo_fallo,omitempty"`
 	StripePaymentIntent string                 `protobuf:"bytes,4,opt,name=stripe_payment_intent,json=stripePaymentIntent,proto3" json:"stripe_payment_intent,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Lo que Stripe se quedó, tal como lo reporta el BalanceTransaction del
+	// cobro. No se calcula aquí: las tarifas cambian por método de pago (OXXO,
+	// tarjeta internacional, MSI) y llevan IVA.
+	//
+	// `comision_conocida` distingue "todavía no se ha consultado" de "se
+	// consultó y fue cero". Sin esa bandera, un cero se guardaría como si Stripe
+	// no hubiera cobrado nada e inflaría la ganancia neta.
+	ComisionConocida     bool   `protobuf:"varint,5,opt,name=comision_conocida,json=comisionConocida,proto3" json:"comision_conocida,omitempty"`
+	ComisionCentavos     int64  `protobuf:"varint,6,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos         int64  `protobuf:"varint,7,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	BalanceTransactionId string `protobuf:"bytes,8,opt,name=balance_transaction_id,json=balanceTransactionId,proto3" json:"balance_transaction_id,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ActualizarEstadoOrdenRequest) Reset() {
@@ -3484,6 +3529,34 @@ func (x *ActualizarEstadoOrdenRequest) GetMotivoFallo() string {
 func (x *ActualizarEstadoOrdenRequest) GetStripePaymentIntent() string {
 	if x != nil {
 		return x.StripePaymentIntent
+	}
+	return ""
+}
+
+func (x *ActualizarEstadoOrdenRequest) GetComisionConocida() bool {
+	if x != nil {
+		return x.ComisionConocida
+	}
+	return false
+}
+
+func (x *ActualizarEstadoOrdenRequest) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *ActualizarEstadoOrdenRequest) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+func (x *ActualizarEstadoOrdenRequest) GetBalanceTransactionId() string {
+	if x != nil {
+		return x.BalanceTransactionId
 	}
 	return ""
 }
@@ -5204,6 +5277,716 @@ func (x *ListConstanciasResponse) GetConstancias() []*ConstanciaDC3 {
 	return nil
 }
 
+// Importes SIEMPRE en centavos y en enteros.
+//
+// El resto del panel usaba `float` y arrastraba el error de coma flotante hasta
+// la pantalla de la directiva. Un centavo perdido por redondeo en cada orden se
+// nota al sumar un año de ventas.
+type FinanzasAdminResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	BrutoCentavos    int64                  `protobuf:"varint,1,opt,name=bruto_centavos,json=brutoCentavos,proto3" json:"bruto_centavos,omitempty"`
+	ComisionCentavos int64                  `protobuf:"varint,2,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos     int64                  `protobuf:"varint,3,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	Moneda           string                 `protobuf:"bytes,4,opt,name=moneda,proto3" json:"moneda,omitempty"`
+	Transacciones    int32                  `protobuf:"varint,5,opt,name=transacciones,proto3" json:"transacciones,omitempty"`
+	// Cobros ya liquidados a los que todavía no se les ha traído la comisión de
+	// Stripe. Mientras esto no sea cero, el neto de arriba es un piso, no la
+	// cifra final, y la pantalla tiene que decirlo.
+	SinComision            int32             `protobuf:"varint,6,opt,name=sin_comision,json=sinComision,proto3" json:"sin_comision,omitempty"`
+	Serie                  []*PuntoMensual   `protobuf:"bytes,7,rep,name=serie,proto3" json:"serie,omitempty"`
+	TransaccionesRecientes []*TransaccionFin `protobuf:"bytes,8,rep,name=transacciones_recientes,json=transaccionesRecientes,proto3" json:"transacciones_recientes,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *FinanzasAdminResponse) Reset() {
+	*x = FinanzasAdminResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinanzasAdminResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinanzasAdminResponse) ProtoMessage() {}
+
+func (x *FinanzasAdminResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinanzasAdminResponse.ProtoReflect.Descriptor instead.
+func (*FinanzasAdminResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *FinanzasAdminResponse) GetBrutoCentavos() int64 {
+	if x != nil {
+		return x.BrutoCentavos
+	}
+	return 0
+}
+
+func (x *FinanzasAdminResponse) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *FinanzasAdminResponse) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+func (x *FinanzasAdminResponse) GetMoneda() string {
+	if x != nil {
+		return x.Moneda
+	}
+	return ""
+}
+
+func (x *FinanzasAdminResponse) GetTransacciones() int32 {
+	if x != nil {
+		return x.Transacciones
+	}
+	return 0
+}
+
+func (x *FinanzasAdminResponse) GetSinComision() int32 {
+	if x != nil {
+		return x.SinComision
+	}
+	return 0
+}
+
+func (x *FinanzasAdminResponse) GetSerie() []*PuntoMensual {
+	if x != nil {
+		return x.Serie
+	}
+	return nil
+}
+
+func (x *FinanzasAdminResponse) GetTransaccionesRecientes() []*TransaccionFin {
+	if x != nil {
+		return x.TransaccionesRecientes
+	}
+	return nil
+}
+
+type PuntoMensual struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Mes              string                 `protobuf:"bytes,1,opt,name=mes,proto3" json:"mes,omitempty"` // AAAA-MM
+	BrutoCentavos    int64                  `protobuf:"varint,2,opt,name=bruto_centavos,json=brutoCentavos,proto3" json:"bruto_centavos,omitempty"`
+	ComisionCentavos int64                  `protobuf:"varint,3,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos     int64                  `protobuf:"varint,4,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PuntoMensual) Reset() {
+	*x = PuntoMensual{}
+	mi := &file_cursos_cursos_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PuntoMensual) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PuntoMensual) ProtoMessage() {}
+
+func (x *PuntoMensual) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PuntoMensual.ProtoReflect.Descriptor instead.
+func (*PuntoMensual) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *PuntoMensual) GetMes() string {
+	if x != nil {
+		return x.Mes
+	}
+	return ""
+}
+
+func (x *PuntoMensual) GetBrutoCentavos() int64 {
+	if x != nil {
+		return x.BrutoCentavos
+	}
+	return 0
+}
+
+func (x *PuntoMensual) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *PuntoMensual) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+type TransaccionFin struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Cliente          string                 `protobuf:"bytes,2,opt,name=cliente,proto3" json:"cliente,omitempty"`
+	Email            string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Fecha            string                 `protobuf:"bytes,4,opt,name=fecha,proto3" json:"fecha,omitempty"` // RFC3339
+	BrutoCentavos    int64                  `protobuf:"varint,5,opt,name=bruto_centavos,json=brutoCentavos,proto3" json:"bruto_centavos,omitempty"`
+	ComisionCentavos int64                  `protobuf:"varint,6,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos     int64                  `protobuf:"varint,7,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	ComisionConocida bool                   `protobuf:"varint,8,opt,name=comision_conocida,json=comisionConocida,proto3" json:"comision_conocida,omitempty"`
+	// 'curso' para una compra suelta, 'suscripcion' para un cobro recurrente.
+	Origen        string `protobuf:"bytes,9,opt,name=origen,proto3" json:"origen,omitempty"`
+	Concepto      string `protobuf:"bytes,10,opt,name=concepto,proto3" json:"concepto,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransaccionFin) Reset() {
+	*x = TransaccionFin{}
+	mi := &file_cursos_cursos_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransaccionFin) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransaccionFin) ProtoMessage() {}
+
+func (x *TransaccionFin) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransaccionFin.ProtoReflect.Descriptor instead.
+func (*TransaccionFin) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *TransaccionFin) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetCliente() string {
+	if x != nil {
+		return x.Cliente
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetFecha() string {
+	if x != nil {
+		return x.Fecha
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetBrutoCentavos() int64 {
+	if x != nil {
+		return x.BrutoCentavos
+	}
+	return 0
+}
+
+func (x *TransaccionFin) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *TransaccionFin) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+func (x *TransaccionFin) GetComisionConocida() bool {
+	if x != nil {
+		return x.ComisionConocida
+	}
+	return false
+}
+
+func (x *TransaccionFin) GetOrigen() string {
+	if x != nil {
+		return x.Origen
+	}
+	return ""
+}
+
+func (x *TransaccionFin) GetConcepto() string {
+	if x != nil {
+		return x.Concepto
+	}
+	return ""
+}
+
+type AdminLicenciaEmpresa struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Nombre             string                 `protobuf:"bytes,2,opt,name=nombre,proto3" json:"nombre,omitempty"`
+	CapacitacionId     string                 `protobuf:"bytes,3,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
+	CapacitacionTitulo string                 `protobuf:"bytes,4,opt,name=capacitacion_titulo,json=capacitacionTitulo,proto3" json:"capacitacion_titulo,omitempty"`
+	CompradorId        string                 `protobuf:"bytes,5,opt,name=comprador_id,json=compradorId,proto3" json:"comprador_id,omitempty"`
+	CompradorNombre    string                 `protobuf:"bytes,6,opt,name=comprador_nombre,json=compradorNombre,proto3" json:"comprador_nombre,omitempty"`
+	CompradorEmail     string                 `protobuf:"bytes,7,opt,name=comprador_email,json=compradorEmail,proto3" json:"comprador_email,omitempty"`
+	PrecioCentavos     int64                  `protobuf:"varint,8,opt,name=precio_centavos,json=precioCentavos,proto3" json:"precio_centavos,omitempty"`
+	CapacidadMaxima    int32                  `protobuf:"varint,9,opt,name=capacidad_maxima,json=capacidadMaxima,proto3" json:"capacidad_maxima,omitempty"`
+	Usadas             int32                  `protobuf:"varint,10,opt,name=usadas,proto3" json:"usadas,omitempty"`
+	CodigoAcceso       string                 `protobuf:"bytes,11,opt,name=codigo_acceso,json=codigoAcceso,proto3" json:"codigo_acceso,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AdminLicenciaEmpresa) Reset() {
+	*x = AdminLicenciaEmpresa{}
+	mi := &file_cursos_cursos_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminLicenciaEmpresa) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminLicenciaEmpresa) ProtoMessage() {}
+
+func (x *AdminLicenciaEmpresa) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminLicenciaEmpresa.ProtoReflect.Descriptor instead.
+func (*AdminLicenciaEmpresa) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *AdminLicenciaEmpresa) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetNombre() string {
+	if x != nil {
+		return x.Nombre
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCapacitacionId() string {
+	if x != nil {
+		return x.CapacitacionId
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCapacitacionTitulo() string {
+	if x != nil {
+		return x.CapacitacionTitulo
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCompradorId() string {
+	if x != nil {
+		return x.CompradorId
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCompradorNombre() string {
+	if x != nil {
+		return x.CompradorNombre
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCompradorEmail() string {
+	if x != nil {
+		return x.CompradorEmail
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetPrecioCentavos() int64 {
+	if x != nil {
+		return x.PrecioCentavos
+	}
+	return 0
+}
+
+func (x *AdminLicenciaEmpresa) GetCapacidadMaxima() int32 {
+	if x != nil {
+		return x.CapacidadMaxima
+	}
+	return 0
+}
+
+func (x *AdminLicenciaEmpresa) GetUsadas() int32 {
+	if x != nil {
+		return x.Usadas
+	}
+	return 0
+}
+
+func (x *AdminLicenciaEmpresa) GetCodigoAcceso() string {
+	if x != nil {
+		return x.CodigoAcceso
+	}
+	return ""
+}
+
+func (x *AdminLicenciaEmpresa) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type AdminListLicenciasEmpresasResponse struct {
+	state          protoimpl.MessageState  `protogen:"open.v1"`
+	Licencias      []*AdminLicenciaEmpresa `protobuf:"bytes,1,rep,name=licencias,proto3" json:"licencias,omitempty"`
+	TotalLicencias int32                   `protobuf:"varint,2,opt,name=total_licencias,json=totalLicencias,proto3" json:"total_licencias,omitempty"`
+	TotalAsientos  int32                   `protobuf:"varint,3,opt,name=total_asientos,json=totalAsientos,proto3" json:"total_asientos,omitempty"`
+	AsientosUsados int32                   `protobuf:"varint,4,opt,name=asientos_usados,json=asientosUsados,proto3" json:"asientos_usados,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *AdminListLicenciasEmpresasResponse) Reset() {
+	*x = AdminListLicenciasEmpresasResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListLicenciasEmpresasResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListLicenciasEmpresasResponse) ProtoMessage() {}
+
+func (x *AdminListLicenciasEmpresasResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListLicenciasEmpresasResponse.ProtoReflect.Descriptor instead.
+func (*AdminListLicenciasEmpresasResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *AdminListLicenciasEmpresasResponse) GetLicencias() []*AdminLicenciaEmpresa {
+	if x != nil {
+		return x.Licencias
+	}
+	return nil
+}
+
+func (x *AdminListLicenciasEmpresasResponse) GetTotalLicencias() int32 {
+	if x != nil {
+		return x.TotalLicencias
+	}
+	return 0
+}
+
+func (x *AdminListLicenciasEmpresasResponse) GetTotalAsientos() int32 {
+	if x != nil {
+		return x.TotalAsientos
+	}
+	return 0
+}
+
+func (x *AdminListLicenciasEmpresasResponse) GetAsientosUsados() int32 {
+	if x != nil {
+		return x.AsientosUsados
+	}
+	return 0
+}
+
+type ListOrdenesSinComisionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limite        int32                  `protobuf:"varint,1,opt,name=limite,proto3" json:"limite,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListOrdenesSinComisionRequest) Reset() {
+	*x = ListOrdenesSinComisionRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListOrdenesSinComisionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListOrdenesSinComisionRequest) ProtoMessage() {}
+
+func (x *ListOrdenesSinComisionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListOrdenesSinComisionRequest.ProtoReflect.Descriptor instead.
+func (*ListOrdenesSinComisionRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *ListOrdenesSinComisionRequest) GetLimite() int32 {
+	if x != nil {
+		return x.Limite
+	}
+	return 0
+}
+
+type OrdenSinComision struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	StripePaymentIntent string                 `protobuf:"bytes,2,opt,name=stripe_payment_intent,json=stripePaymentIntent,proto3" json:"stripe_payment_intent,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *OrdenSinComision) Reset() {
+	*x = OrdenSinComision{}
+	mi := &file_cursos_cursos_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrdenSinComision) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrdenSinComision) ProtoMessage() {}
+
+func (x *OrdenSinComision) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrdenSinComision.ProtoReflect.Descriptor instead.
+func (*OrdenSinComision) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *OrdenSinComision) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *OrdenSinComision) GetStripePaymentIntent() string {
+	if x != nil {
+		return x.StripePaymentIntent
+	}
+	return ""
+}
+
+type ListOrdenesSinComisionResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Ordenes []*OrdenSinComision    `protobuf:"bytes,1,rep,name=ordenes,proto3" json:"ordenes,omitempty"`
+	// Cuántas quedan en total, para poder informar del avance.
+	Restantes     int32 `protobuf:"varint,2,opt,name=restantes,proto3" json:"restantes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListOrdenesSinComisionResponse) Reset() {
+	*x = ListOrdenesSinComisionResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListOrdenesSinComisionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListOrdenesSinComisionResponse) ProtoMessage() {}
+
+func (x *ListOrdenesSinComisionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListOrdenesSinComisionResponse.ProtoReflect.Descriptor instead.
+func (*ListOrdenesSinComisionResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *ListOrdenesSinComisionResponse) GetOrdenes() []*OrdenSinComision {
+	if x != nil {
+		return x.Ordenes
+	}
+	return nil
+}
+
+func (x *ListOrdenesSinComisionResponse) GetRestantes() int32 {
+	if x != nil {
+		return x.Restantes
+	}
+	return 0
+}
+
+type RegistrarComisionOrdenRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	OrdenId              string                 `protobuf:"bytes,1,opt,name=orden_id,json=ordenId,proto3" json:"orden_id,omitempty"`
+	ComisionCentavos     int64                  `protobuf:"varint,2,opt,name=comision_centavos,json=comisionCentavos,proto3" json:"comision_centavos,omitempty"`
+	NetoCentavos         int64                  `protobuf:"varint,3,opt,name=neto_centavos,json=netoCentavos,proto3" json:"neto_centavos,omitempty"`
+	BalanceTransactionId string                 `protobuf:"bytes,4,opt,name=balance_transaction_id,json=balanceTransactionId,proto3" json:"balance_transaction_id,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *RegistrarComisionOrdenRequest) Reset() {
+	*x = RegistrarComisionOrdenRequest{}
+	mi := &file_cursos_cursos_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegistrarComisionOrdenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegistrarComisionOrdenRequest) ProtoMessage() {}
+
+func (x *RegistrarComisionOrdenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegistrarComisionOrdenRequest.ProtoReflect.Descriptor instead.
+func (*RegistrarComisionOrdenRequest) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *RegistrarComisionOrdenRequest) GetOrdenId() string {
+	if x != nil {
+		return x.OrdenId
+	}
+	return ""
+}
+
+func (x *RegistrarComisionOrdenRequest) GetComisionCentavos() int64 {
+	if x != nil {
+		return x.ComisionCentavos
+	}
+	return 0
+}
+
+func (x *RegistrarComisionOrdenRequest) GetNetoCentavos() int64 {
+	if x != nil {
+		return x.NetoCentavos
+	}
+	return 0
+}
+
+func (x *RegistrarComisionOrdenRequest) GetBalanceTransactionId() string {
+	if x != nil {
+		return x.BalanceTransactionId
+	}
+	return ""
+}
+
 var File_cursos_cursos_proto protoreflect.FileDescriptor
 
 const file_cursos_cursos_proto_rawDesc = "" +
@@ -5456,7 +6239,7 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\n" +
 	"prueba_fin\x18\t \x01(\tR\tpruebaFin\x120\n" +
 	"\x14cancelar_al_terminar\x18\n" +
-	" \x01(\bR\x12cancelarAlTerminar\"\xda\x02\n" +
+	" \x01(\bR\x12cancelarAlTerminar\"\x8f\x04\n" +
 	"\x19FacturaSuscripcionRequest\x124\n" +
 	"\x16stripe_subscription_id\x18\x01 \x01(\tR\x14stripeSubscriptionId\x12*\n" +
 	"\x11stripe_invoice_id\x18\x02 \x01(\tR\x0fstripeInvoiceId\x12\x16\n" +
@@ -5467,7 +6250,12 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\aurl_pdf\x18\a \x01(\tR\x06urlPdf\x12%\n" +
 	"\x0eperiodo_inicio\x18\b \x01(\tR\rperiodoInicio\x12\x1f\n" +
 	"\vperiodo_fin\x18\t \x01(\tR\n" +
-	"periodoFin\"\x95\x01\n" +
+	"periodoFin\x12+\n" +
+	"\x11comision_conocida\x18\n" +
+	" \x01(\bR\x10comisionConocida\x12+\n" +
+	"\x11comision_centavos\x18\v \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\f \x01(\x03R\fnetoCentavos\x124\n" +
+	"\x16balance_transaction_id\x18\r \x01(\tR\x14balanceTransactionId\"\x95\x01\n" +
 	"\x19AccesoSuscripcionResponse\x12!\n" +
 	"\ftiene_acceso\x18\x01 \x01(\bR\vtieneAcceso\x12\x16\n" +
 	"\x06origen\x18\x02 \x01(\tR\x06origen\x12%\n" +
@@ -5507,12 +6295,16 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x04tipo\x18\x02 \x01(\tR\x04tipo\"7\n" +
 	"\x14EventoStripeResponse\x12\x1f\n" +
 	"\vprimera_vez\x18\x01 \x01(\bR\n" +
-	"primeraVez\"\xb9\x01\n" +
+	"primeraVez\"\xee\x02\n" +
 	"\x1cActualizarEstadoOrdenRequest\x12*\n" +
 	"\x11stripe_session_id\x18\x01 \x01(\tR\x0fstripeSessionId\x12\x16\n" +
 	"\x06estado\x18\x02 \x01(\tR\x06estado\x12!\n" +
 	"\fmotivo_fallo\x18\x03 \x01(\tR\vmotivoFallo\x122\n" +
-	"\x15stripe_payment_intent\x18\x04 \x01(\tR\x13stripePaymentIntent\"\x8e\x02\n" +
+	"\x15stripe_payment_intent\x18\x04 \x01(\tR\x13stripePaymentIntent\x12+\n" +
+	"\x11comision_conocida\x18\x05 \x01(\bR\x10comisionConocida\x12+\n" +
+	"\x11comision_centavos\x18\x06 \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\a \x01(\x03R\fnetoCentavos\x124\n" +
+	"\x16balance_transaction_id\x18\b \x01(\tR\x14balanceTransactionId\"\x8e\x02\n" +
 	"\x1bAdminDashboardStatsResponse\x12.\n" +
 	"\x13total_ventas_brutas\x18\x01 \x01(\x02R\x11totalVentasBrutas\x12,\n" +
 	"\x12total_ventas_netas\x18\x02 \x01(\x02R\x10totalVentasNetas\x12/\n" +
@@ -5647,7 +6439,66 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"generadaAt\x12\x14\n" +
 	"\x05folio\x18\x05 \x01(\tR\x05folio\"R\n" +
 	"\x17ListConstanciasResponse\x127\n" +
-	"\vconstancias\x18\x01 \x03(\v2\x15.cursos.ConstanciaDC3R\vconstancias2\x90$\n" +
+	"\vconstancias\x18\x01 \x03(\v2\x15.cursos.ConstanciaDC3R\vconstancias\"\xee\x02\n" +
+	"\x15FinanzasAdminResponse\x12%\n" +
+	"\x0ebruto_centavos\x18\x01 \x01(\x03R\rbrutoCentavos\x12+\n" +
+	"\x11comision_centavos\x18\x02 \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\x03 \x01(\x03R\fnetoCentavos\x12\x16\n" +
+	"\x06moneda\x18\x04 \x01(\tR\x06moneda\x12$\n" +
+	"\rtransacciones\x18\x05 \x01(\x05R\rtransacciones\x12!\n" +
+	"\fsin_comision\x18\x06 \x01(\x05R\vsinComision\x12*\n" +
+	"\x05serie\x18\a \x03(\v2\x14.cursos.PuntoMensualR\x05serie\x12O\n" +
+	"\x17transacciones_recientes\x18\b \x03(\v2\x16.cursos.TransaccionFinR\x16transaccionesRecientes\"\x99\x01\n" +
+	"\fPuntoMensual\x12\x10\n" +
+	"\x03mes\x18\x01 \x01(\tR\x03mes\x12%\n" +
+	"\x0ebruto_centavos\x18\x02 \x01(\x03R\rbrutoCentavos\x12+\n" +
+	"\x11comision_centavos\x18\x03 \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\x04 \x01(\x03R\fnetoCentavos\"\xc0\x02\n" +
+	"\x0eTransaccionFin\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\acliente\x18\x02 \x01(\tR\acliente\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x14\n" +
+	"\x05fecha\x18\x04 \x01(\tR\x05fecha\x12%\n" +
+	"\x0ebruto_centavos\x18\x05 \x01(\x03R\rbrutoCentavos\x12+\n" +
+	"\x11comision_centavos\x18\x06 \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\a \x01(\x03R\fnetoCentavos\x12+\n" +
+	"\x11comision_conocida\x18\b \x01(\bR\x10comisionConocida\x12\x16\n" +
+	"\x06origen\x18\t \x01(\tR\x06origen\x12\x1a\n" +
+	"\bconcepto\x18\n" +
+	" \x01(\tR\bconcepto\"\xbf\x03\n" +
+	"\x14AdminLicenciaEmpresa\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12'\n" +
+	"\x0fcapacitacion_id\x18\x03 \x01(\tR\x0ecapacitacionId\x12/\n" +
+	"\x13capacitacion_titulo\x18\x04 \x01(\tR\x12capacitacionTitulo\x12!\n" +
+	"\fcomprador_id\x18\x05 \x01(\tR\vcompradorId\x12)\n" +
+	"\x10comprador_nombre\x18\x06 \x01(\tR\x0fcompradorNombre\x12'\n" +
+	"\x0fcomprador_email\x18\a \x01(\tR\x0ecompradorEmail\x12'\n" +
+	"\x0fprecio_centavos\x18\b \x01(\x03R\x0eprecioCentavos\x12)\n" +
+	"\x10capacidad_maxima\x18\t \x01(\x05R\x0fcapacidadMaxima\x12\x16\n" +
+	"\x06usadas\x18\n" +
+	" \x01(\x05R\x06usadas\x12#\n" +
+	"\rcodigo_acceso\x18\v \x01(\tR\fcodigoAcceso\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\f \x01(\tR\tcreatedAt\"\xd9\x01\n" +
+	"\"AdminListLicenciasEmpresasResponse\x12:\n" +
+	"\tlicencias\x18\x01 \x03(\v2\x1c.cursos.AdminLicenciaEmpresaR\tlicencias\x12'\n" +
+	"\x0ftotal_licencias\x18\x02 \x01(\x05R\x0etotalLicencias\x12%\n" +
+	"\x0etotal_asientos\x18\x03 \x01(\x05R\rtotalAsientos\x12'\n" +
+	"\x0fasientos_usados\x18\x04 \x01(\x05R\x0easientosUsados\"7\n" +
+	"\x1dListOrdenesSinComisionRequest\x12\x16\n" +
+	"\x06limite\x18\x01 \x01(\x05R\x06limite\"V\n" +
+	"\x10OrdenSinComision\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
+	"\x15stripe_payment_intent\x18\x02 \x01(\tR\x13stripePaymentIntent\"r\n" +
+	"\x1eListOrdenesSinComisionResponse\x122\n" +
+	"\aordenes\x18\x01 \x03(\v2\x18.cursos.OrdenSinComisionR\aordenes\x12\x1c\n" +
+	"\trestantes\x18\x02 \x01(\x05R\trestantes\"\xc2\x01\n" +
+	"\x1dRegistrarComisionOrdenRequest\x12\x19\n" +
+	"\borden_id\x18\x01 \x01(\tR\aordenId\x12+\n" +
+	"\x11comision_centavos\x18\x02 \x01(\x03R\x10comisionCentavos\x12#\n" +
+	"\rneto_centavos\x18\x03 \x01(\x03R\fnetoCentavos\x124\n" +
+	"\x16balance_transaction_id\x18\x04 \x01(\tR\x14balanceTransactionId2\xfa&\n" +
 	"\rCursosService\x12<\n" +
 	"\fPreviewCurso\x12\x15.cursos.CodigoRequest\x1a\x15.cursos.CursoResponse\x12@\n" +
 	"\x0fGetCursoPublico\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12F\n" +
@@ -5700,7 +6551,11 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x15AdminListAsignaciones\x12\x14.cursos.EmptyRequest\x1a .cursos.ListAsignacionesResponse\x12=\n" +
 	"\fAdminAsignar\x12\x16.cursos.AsignarRequest\x1a\x15.cursos.EmptyResponse\x12E\n" +
 	"\x0fAdminDesAsignar\x12\x1b.cursos.AsignacionIDRequest\x1a\x15.cursos.EmptyResponse\x12S\n" +
-	"\x16GetAdminDashboardStats\x12\x14.cursos.EmptyRequest\x1a#.cursos.AdminDashboardStatsResponse\x12@\n" +
+	"\x16GetAdminDashboardStats\x12\x14.cursos.EmptyRequest\x1a#.cursos.AdminDashboardStatsResponse\x12G\n" +
+	"\x10GetFinanzasAdmin\x12\x14.cursos.EmptyRequest\x1a\x1d.cursos.FinanzasAdminResponse\x12^\n" +
+	"\x1aAdminListLicenciasEmpresas\x12\x14.cursos.EmptyRequest\x1a*.cursos.AdminListLicenciasEmpresasResponse\x12g\n" +
+	"\x16ListOrdenesSinComision\x12%.cursos.ListOrdenesSinComisionRequest\x1a&.cursos.ListOrdenesSinComisionResponse\x12V\n" +
+	"\x16RegistrarComisionOrden\x12%.cursos.RegistrarComisionOrdenRequest\x1a\x15.cursos.EmptyResponse\x12@\n" +
 	"\vGetDatosDC3\x12\x17.cursos.DatosDC3Request\x1a\x18.cursos.DatosDC3Response\x12O\n" +
 	"\x16GuardarDatosTrabajador\x12\x1e.cursos.DatosTrabajadorRequest\x1a\x15.cursos.EmptyResponse\x12S\n" +
 	"\x16RegistrarConstanciaDC3\x12\".cursos.RegistrarConstanciaRequest\x1a\x15.cursos.EmptyResponse\x12J\n" +
@@ -5721,7 +6576,7 @@ func file_cursos_cursos_proto_rawDescGZIP() []byte {
 	return file_cursos_cursos_proto_rawDescData
 }
 
-var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 71)
+var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
 var file_cursos_cursos_proto_goTypes = []any{
 	(*EmptyRequest)(nil),                          // 0: cursos.EmptyRequest
 	(*UserRequest)(nil),                           // 1: cursos.UserRequest
@@ -5794,6 +6649,15 @@ var file_cursos_cursos_proto_goTypes = []any{
 	(*VerificarConstanciaResponse)(nil),           // 68: cursos.VerificarConstanciaResponse
 	(*ConstanciaDC3)(nil),                         // 69: cursos.ConstanciaDC3
 	(*ListConstanciasResponse)(nil),               // 70: cursos.ListConstanciasResponse
+	(*FinanzasAdminResponse)(nil),                 // 71: cursos.FinanzasAdminResponse
+	(*PuntoMensual)(nil),                          // 72: cursos.PuntoMensual
+	(*TransaccionFin)(nil),                        // 73: cursos.TransaccionFin
+	(*AdminLicenciaEmpresa)(nil),                  // 74: cursos.AdminLicenciaEmpresa
+	(*AdminListLicenciasEmpresasResponse)(nil),    // 75: cursos.AdminListLicenciasEmpresasResponse
+	(*ListOrdenesSinComisionRequest)(nil),         // 76: cursos.ListOrdenesSinComisionRequest
+	(*OrdenSinComision)(nil),                      // 77: cursos.OrdenSinComision
+	(*ListOrdenesSinComisionResponse)(nil),        // 78: cursos.ListOrdenesSinComisionResponse
+	(*RegistrarComisionOrdenRequest)(nil),         // 79: cursos.RegistrarComisionOrdenRequest
 }
 var file_cursos_cursos_proto_depIdxs = []int32{
 	10, // 0: cursos.ListCursosResponse.cursos:type_name -> cursos.CursoResponse
@@ -5813,127 +6677,139 @@ var file_cursos_cursos_proto_depIdxs = []int32{
 	60, // 14: cursos.DatosDC3Response.empresa:type_name -> cursos.DatosEmpresaDC3
 	61, // 15: cursos.DatosDC3Response.trabajador:type_name -> cursos.DatosTrabajadorDC3
 	69, // 16: cursos.ListConstanciasResponse.constancias:type_name -> cursos.ConstanciaDC3
-	3,  // 17: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
-	2,  // 18: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
-	0,  // 19: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
-	1,  // 20: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
-	2,  // 21: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
-	7,  // 22: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
-	8,  // 23: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
-	24, // 24: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
-	25, // 25: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
-	28, // 26: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
-	49, // 27: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
-	53, // 28: cursos.CursosService.AsignarAccesosLicencia:input_type -> cursos.AsignarAccesosLicenciaRequest
-	21, // 29: cursos.CursosService.ListInvitacionesLicencia:input_type -> cursos.LicenciaIDRequest
-	58, // 30: cursos.CursosService.NotificarCursoCompletado:input_type -> cursos.CursoCompletadoRequest
-	44, // 31: cursos.CursosService.RegistrarEventoStripe:input_type -> cursos.EventoStripeRequest
-	46, // 32: cursos.CursosService.ActualizarEstadoOrden:input_type -> cursos.ActualizarEstadoOrdenRequest
-	0,  // 33: cursos.CursosService.ListPlanes:input_type -> cursos.EmptyRequest
-	1,  // 34: cursos.CursosService.GetMiSuscripcion:input_type -> cursos.UserRequest
-	34, // 35: cursos.CursosService.CrearCheckoutSuscripcion:input_type -> cursos.CheckoutSuscripcionRequest
-	35, // 36: cursos.CursosService.SincronizarSuscripcion:input_type -> cursos.SincronizarSuscripcionRequest
-	36, // 37: cursos.CursosService.RegistrarFacturaSuscripcion:input_type -> cursos.FacturaSuscripcionRequest
-	1,  // 38: cursos.CursosService.TieneAccesoPorSuscripcion:input_type -> cursos.UserRequest
-	39, // 39: cursos.CursosService.AsignarAsientos:input_type -> cursos.AsignarAsientosRequest
-	40, // 40: cursos.CursosService.ListAsientos:input_type -> cursos.SuscripcionIDRequest
-	41, // 41: cursos.CursosService.RevocarAsiento:input_type -> cursos.RevocarAsientoRequest
-	29, // 42: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
-	48, // 43: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
-	27, // 44: cursos.CursosService.CreateCheckoutSessionCart:input_type -> cursos.CheckoutCartRequest
-	22, // 45: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
-	21, // 46: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
-	1,  // 47: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
-	1,  // 48: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
-	5,  // 49: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 50: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 51: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	2,  // 52: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
-	2,  // 53: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
-	1,  // 54: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
-	9,  // 55: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
-	19, // 56: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
-	20, // 57: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
-	21, // 58: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
-	0,  // 59: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
-	5,  // 60: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 61: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 62: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	2,  // 63: cursos.CursosService.AdminResetCodigo:input_type -> cursos.CursoIDRequest
-	0,  // 64: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
-	9,  // 65: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
-	4,  // 66: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
-	0,  // 67: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
-	64, // 68: cursos.CursosService.GetDatosDC3:input_type -> cursos.DatosDC3Request
-	62, // 69: cursos.CursosService.GuardarDatosTrabajador:input_type -> cursos.DatosTrabajadorRequest
-	66, // 70: cursos.CursosService.RegistrarConstanciaDC3:input_type -> cursos.RegistrarConstanciaRequest
-	1,  // 71: cursos.CursosService.ListMisConstancias:input_type -> cursos.UserRequest
-	67, // 72: cursos.CursosService.VerificarConstancia:input_type -> cursos.VerificarConstanciaRequest
-	1,  // 73: cursos.CursosService.GetEmpresaInstructor:input_type -> cursos.UserRequest
-	63, // 74: cursos.CursosService.GuardarEmpresaInstructor:input_type -> cursos.EmpresaInstructorRequest
-	10, // 75: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
-	10, // 76: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
-	11, // 77: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
-	11, // 78: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 79: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
-	16, // 80: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
-	10, // 81: cursos.CursosService.UnirseConCodigo:output_type -> cursos.CursoResponse
-	16, // 82: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
-	50, // 83: cursos.CursosService.WebhookEnroll:output_type -> cursos.EnrollResponse
-	16, // 84: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
-	51, // 85: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.ComprarB2BDirectResponse
-	55, // 86: cursos.CursosService.AsignarAccesosLicencia:output_type -> cursos.AsignarAccesosLicenciaResponse
-	57, // 87: cursos.CursosService.ListInvitacionesLicencia:output_type -> cursos.ListInvitacionesLicenciaResponse
-	59, // 88: cursos.CursosService.NotificarCursoCompletado:output_type -> cursos.CursoCompletadoResponse
-	45, // 89: cursos.CursosService.RegistrarEventoStripe:output_type -> cursos.EventoStripeResponse
-	16, // 90: cursos.CursosService.ActualizarEstadoOrden:output_type -> cursos.EmptyResponse
-	32, // 91: cursos.CursosService.ListPlanes:output_type -> cursos.ListPlanesResponse
-	33, // 92: cursos.CursosService.GetMiSuscripcion:output_type -> cursos.SuscripcionResponse
-	30, // 93: cursos.CursosService.CrearCheckoutSuscripcion:output_type -> cursos.CheckoutSessionResponse
-	16, // 94: cursos.CursosService.SincronizarSuscripcion:output_type -> cursos.EmptyResponse
-	16, // 95: cursos.CursosService.RegistrarFacturaSuscripcion:output_type -> cursos.EmptyResponse
-	37, // 96: cursos.CursosService.TieneAccesoPorSuscripcion:output_type -> cursos.AccesoSuscripcionResponse
-	43, // 97: cursos.CursosService.AsignarAsientos:output_type -> cursos.ListAsientosResponse
-	43, // 98: cursos.CursosService.ListAsientos:output_type -> cursos.ListAsientosResponse
-	16, // 99: cursos.CursosService.RevocarAsiento:output_type -> cursos.EmptyResponse
-	30, // 100: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
-	30, // 101: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
-	30, // 102: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
-	23, // 103: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
-	18, // 104: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
-	23, // 105: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
-	11, // 106: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 107: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 108: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 109: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 110: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
-	10, // 111: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
-	13, // 112: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
-	16, // 113: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
-	17, // 114: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
-	17, // 115: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
-	16, // 116: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
-	11, // 117: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 118: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 119: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 120: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 121: cursos.CursosService.AdminResetCodigo:output_type -> cursos.CursoResponse
-	15, // 122: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
-	16, // 123: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
-	16, // 124: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
-	47, // 125: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
-	65, // 126: cursos.CursosService.GetDatosDC3:output_type -> cursos.DatosDC3Response
-	16, // 127: cursos.CursosService.GuardarDatosTrabajador:output_type -> cursos.EmptyResponse
-	16, // 128: cursos.CursosService.RegistrarConstanciaDC3:output_type -> cursos.EmptyResponse
-	70, // 129: cursos.CursosService.ListMisConstancias:output_type -> cursos.ListConstanciasResponse
-	68, // 130: cursos.CursosService.VerificarConstancia:output_type -> cursos.VerificarConstanciaResponse
-	60, // 131: cursos.CursosService.GetEmpresaInstructor:output_type -> cursos.DatosEmpresaDC3
-	16, // 132: cursos.CursosService.GuardarEmpresaInstructor:output_type -> cursos.EmptyResponse
-	75, // [75:133] is the sub-list for method output_type
-	17, // [17:75] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	72, // 17: cursos.FinanzasAdminResponse.serie:type_name -> cursos.PuntoMensual
+	73, // 18: cursos.FinanzasAdminResponse.transacciones_recientes:type_name -> cursos.TransaccionFin
+	74, // 19: cursos.AdminListLicenciasEmpresasResponse.licencias:type_name -> cursos.AdminLicenciaEmpresa
+	77, // 20: cursos.ListOrdenesSinComisionResponse.ordenes:type_name -> cursos.OrdenSinComision
+	3,  // 21: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
+	2,  // 22: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
+	0,  // 23: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
+	1,  // 24: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
+	2,  // 25: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
+	7,  // 26: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
+	8,  // 27: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
+	24, // 28: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
+	25, // 29: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
+	28, // 30: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
+	49, // 31: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
+	53, // 32: cursos.CursosService.AsignarAccesosLicencia:input_type -> cursos.AsignarAccesosLicenciaRequest
+	21, // 33: cursos.CursosService.ListInvitacionesLicencia:input_type -> cursos.LicenciaIDRequest
+	58, // 34: cursos.CursosService.NotificarCursoCompletado:input_type -> cursos.CursoCompletadoRequest
+	44, // 35: cursos.CursosService.RegistrarEventoStripe:input_type -> cursos.EventoStripeRequest
+	46, // 36: cursos.CursosService.ActualizarEstadoOrden:input_type -> cursos.ActualizarEstadoOrdenRequest
+	0,  // 37: cursos.CursosService.ListPlanes:input_type -> cursos.EmptyRequest
+	1,  // 38: cursos.CursosService.GetMiSuscripcion:input_type -> cursos.UserRequest
+	34, // 39: cursos.CursosService.CrearCheckoutSuscripcion:input_type -> cursos.CheckoutSuscripcionRequest
+	35, // 40: cursos.CursosService.SincronizarSuscripcion:input_type -> cursos.SincronizarSuscripcionRequest
+	36, // 41: cursos.CursosService.RegistrarFacturaSuscripcion:input_type -> cursos.FacturaSuscripcionRequest
+	1,  // 42: cursos.CursosService.TieneAccesoPorSuscripcion:input_type -> cursos.UserRequest
+	39, // 43: cursos.CursosService.AsignarAsientos:input_type -> cursos.AsignarAsientosRequest
+	40, // 44: cursos.CursosService.ListAsientos:input_type -> cursos.SuscripcionIDRequest
+	41, // 45: cursos.CursosService.RevocarAsiento:input_type -> cursos.RevocarAsientoRequest
+	29, // 46: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
+	48, // 47: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
+	27, // 48: cursos.CursosService.CreateCheckoutSessionCart:input_type -> cursos.CheckoutCartRequest
+	22, // 49: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
+	21, // 50: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
+	1,  // 51: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
+	1,  // 52: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
+	5,  // 53: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 54: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 55: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	2,  // 56: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
+	2,  // 57: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
+	1,  // 58: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
+	9,  // 59: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
+	19, // 60: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
+	20, // 61: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
+	21, // 62: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
+	0,  // 63: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
+	5,  // 64: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 65: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 66: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	2,  // 67: cursos.CursosService.AdminResetCodigo:input_type -> cursos.CursoIDRequest
+	0,  // 68: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
+	9,  // 69: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
+	4,  // 70: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
+	0,  // 71: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
+	0,  // 72: cursos.CursosService.GetFinanzasAdmin:input_type -> cursos.EmptyRequest
+	0,  // 73: cursos.CursosService.AdminListLicenciasEmpresas:input_type -> cursos.EmptyRequest
+	76, // 74: cursos.CursosService.ListOrdenesSinComision:input_type -> cursos.ListOrdenesSinComisionRequest
+	79, // 75: cursos.CursosService.RegistrarComisionOrden:input_type -> cursos.RegistrarComisionOrdenRequest
+	64, // 76: cursos.CursosService.GetDatosDC3:input_type -> cursos.DatosDC3Request
+	62, // 77: cursos.CursosService.GuardarDatosTrabajador:input_type -> cursos.DatosTrabajadorRequest
+	66, // 78: cursos.CursosService.RegistrarConstanciaDC3:input_type -> cursos.RegistrarConstanciaRequest
+	1,  // 79: cursos.CursosService.ListMisConstancias:input_type -> cursos.UserRequest
+	67, // 80: cursos.CursosService.VerificarConstancia:input_type -> cursos.VerificarConstanciaRequest
+	1,  // 81: cursos.CursosService.GetEmpresaInstructor:input_type -> cursos.UserRequest
+	63, // 82: cursos.CursosService.GuardarEmpresaInstructor:input_type -> cursos.EmpresaInstructorRequest
+	10, // 83: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
+	10, // 84: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
+	11, // 85: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
+	11, // 86: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 87: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
+	16, // 88: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
+	10, // 89: cursos.CursosService.UnirseConCodigo:output_type -> cursos.CursoResponse
+	16, // 90: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
+	50, // 91: cursos.CursosService.WebhookEnroll:output_type -> cursos.EnrollResponse
+	16, // 92: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
+	51, // 93: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.ComprarB2BDirectResponse
+	55, // 94: cursos.CursosService.AsignarAccesosLicencia:output_type -> cursos.AsignarAccesosLicenciaResponse
+	57, // 95: cursos.CursosService.ListInvitacionesLicencia:output_type -> cursos.ListInvitacionesLicenciaResponse
+	59, // 96: cursos.CursosService.NotificarCursoCompletado:output_type -> cursos.CursoCompletadoResponse
+	45, // 97: cursos.CursosService.RegistrarEventoStripe:output_type -> cursos.EventoStripeResponse
+	16, // 98: cursos.CursosService.ActualizarEstadoOrden:output_type -> cursos.EmptyResponse
+	32, // 99: cursos.CursosService.ListPlanes:output_type -> cursos.ListPlanesResponse
+	33, // 100: cursos.CursosService.GetMiSuscripcion:output_type -> cursos.SuscripcionResponse
+	30, // 101: cursos.CursosService.CrearCheckoutSuscripcion:output_type -> cursos.CheckoutSessionResponse
+	16, // 102: cursos.CursosService.SincronizarSuscripcion:output_type -> cursos.EmptyResponse
+	16, // 103: cursos.CursosService.RegistrarFacturaSuscripcion:output_type -> cursos.EmptyResponse
+	37, // 104: cursos.CursosService.TieneAccesoPorSuscripcion:output_type -> cursos.AccesoSuscripcionResponse
+	43, // 105: cursos.CursosService.AsignarAsientos:output_type -> cursos.ListAsientosResponse
+	43, // 106: cursos.CursosService.ListAsientos:output_type -> cursos.ListAsientosResponse
+	16, // 107: cursos.CursosService.RevocarAsiento:output_type -> cursos.EmptyResponse
+	30, // 108: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
+	30, // 109: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
+	30, // 110: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
+	23, // 111: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
+	18, // 112: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
+	23, // 113: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
+	11, // 114: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 115: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 116: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 117: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 118: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
+	10, // 119: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
+	13, // 120: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
+	16, // 121: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
+	17, // 122: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
+	17, // 123: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
+	16, // 124: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
+	11, // 125: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 126: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 127: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 128: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 129: cursos.CursosService.AdminResetCodigo:output_type -> cursos.CursoResponse
+	15, // 130: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
+	16, // 131: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
+	16, // 132: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
+	47, // 133: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
+	71, // 134: cursos.CursosService.GetFinanzasAdmin:output_type -> cursos.FinanzasAdminResponse
+	75, // 135: cursos.CursosService.AdminListLicenciasEmpresas:output_type -> cursos.AdminListLicenciasEmpresasResponse
+	78, // 136: cursos.CursosService.ListOrdenesSinComision:output_type -> cursos.ListOrdenesSinComisionResponse
+	16, // 137: cursos.CursosService.RegistrarComisionOrden:output_type -> cursos.EmptyResponse
+	65, // 138: cursos.CursosService.GetDatosDC3:output_type -> cursos.DatosDC3Response
+	16, // 139: cursos.CursosService.GuardarDatosTrabajador:output_type -> cursos.EmptyResponse
+	16, // 140: cursos.CursosService.RegistrarConstanciaDC3:output_type -> cursos.EmptyResponse
+	70, // 141: cursos.CursosService.ListMisConstancias:output_type -> cursos.ListConstanciasResponse
+	68, // 142: cursos.CursosService.VerificarConstancia:output_type -> cursos.VerificarConstanciaResponse
+	60, // 143: cursos.CursosService.GetEmpresaInstructor:output_type -> cursos.DatosEmpresaDC3
+	16, // 144: cursos.CursosService.GuardarEmpresaInstructor:output_type -> cursos.EmptyResponse
+	83, // [83:145] is the sub-list for method output_type
+	21, // [21:83] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_cursos_cursos_proto_init() }
@@ -5947,7 +6823,7 @@ func file_cursos_cursos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cursos_cursos_proto_rawDesc), len(file_cursos_cursos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   71,
+			NumMessages:   80,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

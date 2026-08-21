@@ -94,6 +94,18 @@ service CursosService {
   // Obtiene estadísticas del dashboard de ventas y ganancias (solo admin)
   rpc GetAdminDashboardStats(EmptyRequest) returns (AdminDashboardStatsResponse);
 
+  // Panel financiero. Sale de `ordenes` y `suscripcion_facturas`, que es lo que
+  // se cobró de verdad, y no del precio de catálogo.
+  rpc GetFinanzasAdmin(EmptyRequest) returns (FinanzasAdminResponse);
+  // Licencias agrupadas por empresa compradora, para la pantalla de admin.
+  rpc AdminListLicenciasEmpresas(EmptyRequest) returns (AdminListLicenciasEmpresasResponse);
+
+  // Relleno del histórico de comisiones. El servicio devuelve qué cobros
+  // siguen sin comisión y el gateway, que es quien habla con Stripe, la
+  // consulta y la devuelve por RegistrarComisionOrden.
+  rpc ListOrdenesSinComision(ListOrdenesSinComisionRequest) returns (ListOrdenesSinComisionResponse);
+  rpc RegistrarComisionOrden(RegistrarComisionOrdenRequest) returns (EmptyResponse);
+
   // ── Constancias DC-3 ──────────────────────────────────────────────────────
   //
   // La constancia se arma con tres orígenes: los datos del trabajador (los
@@ -430,6 +442,13 @@ message FacturaSuscripcionRequest {
   string url_pdf                = 7;
   string periodo_inicio         = 8;
   string periodo_fin            = 9;
+
+  // Mismo criterio que en la orden: la comisión la dicta Stripe, no un
+  // porcentaje nuestro.
+  bool   comision_conocida      = 10;
+  int64  comision_centavos      = 11;
+  int64  neto_centavos          = 12;
+  string balance_transaction_id = 13;
 }
 
 message AccesoSuscripcionResponse {
@@ -493,6 +512,18 @@ message ActualizarEstadoOrdenRequest {
   string estado                = 2; // 'pagada' | 'cumplida' | 'fallida'
   string motivo_fallo          = 3;
   string stripe_payment_intent = 4;
+
+  // Lo que Stripe se quedó, tal como lo reporta el BalanceTransaction del
+  // cobro. No se calcula aquí: las tarifas cambian por método de pago (OXXO,
+  // tarjeta internacional, MSI) y llevan IVA.
+  //
+  // `comision_conocida` distingue "todavía no se ha consultado" de "se
+  // consultó y fue cero". Sin esa bandera, un cero se guardaría como si Stripe
+  // no hubiera cobrado nada e inflaría la ganancia neta.
+  bool   comision_conocida     = 5;
+  int64  comision_centavos     = 6;
+  int64  neto_centavos         = 7;
+  string balance_transaction_id = 8;
 }
 
 message AdminDashboardStatsResponse {
@@ -757,4 +788,104 @@ message ConstanciaDC3 {
 
 message ListConstanciasResponse {
   repeated ConstanciaDC3 constancias = 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Panel financiero (solo admin)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Importes SIEMPRE en centavos y en enteros.
+//
+// El resto del panel usaba `float` y arrastraba el error de coma flotante hasta
+// la pantalla de la directiva. Un centavo perdido por redondeo en cada orden se
+// nota al sumar un año de ventas.
+message FinanzasAdminResponse {
+  int64 bruto_centavos    = 1;
+  int64 comision_centavos = 2;
+  int64 neto_centavos     = 3;
+  string moneda           = 4;
+
+  int32 transacciones     = 5;
+
+  // Cobros ya liquidados a los que todavía no se les ha traído la comisión de
+  // Stripe. Mientras esto no sea cero, el neto de arriba es un piso, no la
+  // cifra final, y la pantalla tiene que decirlo.
+  int32 sin_comision      = 6;
+
+  repeated PuntoMensual   serie         = 7;
+  repeated TransaccionFin transacciones_recientes = 8;
+}
+
+message PuntoMensual {
+  string mes              = 1; // AAAA-MM
+  int64  bruto_centavos   = 2;
+  int64  comision_centavos = 3;
+  int64  neto_centavos    = 4;
+}
+
+message TransaccionFin {
+  string id               = 1;
+  string cliente          = 2;
+  string email            = 3;
+  string fecha            = 4; // RFC3339
+  int64  bruto_centavos   = 5;
+  int64  comision_centavos = 6;
+  int64  neto_centavos    = 7;
+  bool   comision_conocida = 8;
+  // 'curso' para una compra suelta, 'suscripcion' para un cobro recurrente.
+  string origen           = 9;
+  string concepto         = 10;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Empresas / Licencias (solo admin)
+// ─────────────────────────────────────────────────────────────────────────────
+
+message AdminLicenciaEmpresa {
+  string id                  = 1;
+  string nombre              = 2;
+  string capacitacion_id     = 3;
+  string capacitacion_titulo = 4;
+  string comprador_id        = 5;
+  string comprador_nombre    = 6;
+  string comprador_email     = 7;
+  int64  precio_centavos     = 8;
+  int32  capacidad_maxima    = 9;
+  int32  usadas              = 10;
+  string codigo_acceso       = 11;
+  string created_at          = 12;
+}
+
+message AdminListLicenciasEmpresasResponse {
+  repeated AdminLicenciaEmpresa licencias = 1;
+  int32 total_licencias = 2;
+  int32 total_asientos  = 3;
+  int32 asientos_usados = 4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Relleno del histórico de comisiones
+// ─────────────────────────────────────────────────────────────────────────────
+
+message ListOrdenesSinComisionRequest {
+  int32 limite = 1;
+}
+
+message OrdenSinComision {
+  string id                    = 1;
+  string stripe_payment_intent = 2;
+}
+
+message ListOrdenesSinComisionResponse {
+  repeated OrdenSinComision ordenes = 1;
+  // Cuántas quedan en total, para poder informar del avance.
+  int32 restantes = 2;
+}
+
+message RegistrarComisionOrdenRequest {
+  string orden_id              = 1;
+  int64  comision_centavos     = 2;
+  int64  neto_centavos         = 3;
+  string balance_transaction_id = 4;
 }

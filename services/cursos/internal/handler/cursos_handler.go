@@ -322,6 +322,39 @@ func (h *CursosHandler) GetAdminDashboardStats(ctx context.Context, req *cursosp
 	return stats, nil
 }
 
+// ── Panel financiero (solo admin) ───────────────────────────────────────────
+
+func (h *CursosHandler) GetFinanzasAdmin(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.FinanzasAdminResponse, error) {
+	fin, err := h.svc.GetFinanzasAdmin(ctx)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return fin, nil
+}
+
+func (h *CursosHandler) AdminListLicenciasEmpresas(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.AdminListLicenciasEmpresasResponse, error) {
+	list, err := h.svc.AdminListLicenciasEmpresas(ctx)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return list, nil
+}
+
+func (h *CursosHandler) ListOrdenesSinComision(ctx context.Context, req *cursospb.ListOrdenesSinComisionRequest) (*cursospb.ListOrdenesSinComisionResponse, error) {
+	list, err := h.svc.ListOrdenesSinComision(ctx, req.Limite)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return list, nil
+}
+
+func (h *CursosHandler) RegistrarComisionOrden(ctx context.Context, req *cursospb.RegistrarComisionOrdenRequest) (*cursospb.EmptyResponse, error) {
+	if err := h.svc.RegistrarComisionOrden(ctx, req); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
 func (h *CursosHandler) AdminListAsignaciones(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.ListAsignacionesResponse, error) {
 	list, err := h.svc.AdminListAsignaciones(ctx)
 	if err != nil {

@@ -40,6 +40,18 @@ const (
 // devolver una URL que va a morir mientras el usuario la tiene abierta.
 const ventanaSesionStripe = 23 * time.Hour
 
+// Comision es lo que Stripe se quedó de un cobro, según su BalanceTransaction.
+//
+// Se pasa como puntero para poder distinguir "no lo sabemos todavía" (nil) de
+// "lo sabemos y fue cero". Guardar un cero cuando en realidad no se ha
+// consultado haría que esos cobros parecieran libres de comisión e inflaría la
+// ganancia neta del panel.
+type Comision struct {
+	Centavos     int64
+	NetoCentavos int64
+	BalanceTxID  string
+}
+
 // ErrOrdenYaPagada indica que este carrito exacto ya se cobró.
 var ErrOrdenYaPagada = errors.New("esta compra ya fue pagada")
 
@@ -98,8 +110,10 @@ type OrdenesRepository interface {
 	CrearOAbrirOrden(ctx context.Context, userID string, totalCentavos int64, moneda string, items []OrdenItem) (orden *Orden, reutilizada bool, err error)
 	// GuardarSesionStripe asocia la sesión recién creada con la orden.
 	GuardarSesionStripe(ctx context.Context, ordenID, sessionID string) error
-	// ActualizarEstadoOrden aplica una transición de estado.
-	ActualizarEstadoOrden(ctx context.Context, sessionID, estado, motivoFallo, paymentIntent string) error
+	// ActualizarEstadoOrden aplica una transición de estado. `com` solo se
+	// usa al pasar a 'pagada' y puede ser nil cuando Stripe todavía no ha
+	// liquidado el cobro.
+	ActualizarEstadoOrden(ctx context.Context, sessionID, estado, motivoFallo, paymentIntent string, com *Comision) error
 	// RegistrarEventoStripe deduplica: devuelve false si el evento ya se procesó.
 	RegistrarEventoStripe(ctx context.Context, eventID, tipo string) (primeraVez bool, err error)
 }
@@ -226,7 +240,7 @@ func (r *postgresCursosRepository) GuardarSesionStripe(ctx context.Context, orde
 // El webhook y verify-checkout-session compiten y pueden llegar en cualquier
 // orden. Las guardas del WHERE evitan que una entrega tardía de 'pagada'
 // sobrescriba un 'cumplida' que ya se aplicó.
-func (r *postgresCursosRepository) ActualizarEstadoOrden(ctx context.Context, sessionID, estado, motivoFallo, paymentIntent string) error {
+func (r *postgresCursosRepository) ActualizarEstadoOrden(ctx context.Context, sessionID, estado, motivoFallo, paymentIntent string, com *Comision) error {
 	if sessionID == "" {
 		return errors.New("stripe_session_id vacío")
 	}
@@ -239,13 +253,29 @@ func (r *postgresCursosRepository) ActualizarEstadoOrden(ctx context.Context, se
 		motivo = motivoFallo
 	}
 
+	// nil cuando Stripe aún no ha liquidado el cobro. Los COALESCE de abajo
+	// dejan entonces las columnas como estaban —en NULL la primera vez— y el
+	// relleno del histórico las recoge más tarde.
+	var comCentavos, comNeto, comTx interface{}
+	if com != nil {
+		comCentavos, comNeto = com.Centavos, com.NetoCentavos
+		if com.BalanceTxID != "" {
+			comTx = com.BalanceTxID
+		}
+	}
+
 	switch estado {
 	case OrdenPagada:
 		_, err := r.db.ExecContext(ctx,
 			`UPDATE ordenes
 			    SET estado='pagada', pagada_at=COALESCE(pagada_at, NOW()),
-			        stripe_payment_intent=COALESCE($2, stripe_payment_intent), updated_at=NOW()
-			  WHERE stripe_session_id=$1 AND estado='pendiente'`, sessionID, pi)
+			        stripe_payment_intent=COALESCE($2, stripe_payment_intent),
+			        comision_centavos=COALESCE($3, comision_centavos),
+			        neto_centavos=COALESCE($4, neto_centavos),
+			        balance_transaction_id=COALESCE($5, balance_transaction_id),
+			        updated_at=NOW()
+			  WHERE stripe_session_id=$1 AND estado='pendiente'`,
+			sessionID, pi, comCentavos, comNeto, comTx)
 		return err
 
 	case OrdenCumplida:

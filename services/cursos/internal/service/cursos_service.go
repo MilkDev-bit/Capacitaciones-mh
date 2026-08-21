@@ -1013,6 +1013,45 @@ func (s *CursosService) RegistrarEventoStripe(ctx context.Context, req *cursospb
 
 // ActualizarEstadoOrden aplica la transición tras el resultado del cobro.
 func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb.ActualizarEstadoOrdenRequest) (*cursospb.EmptyResponse, error) {
-	err := s.repo.ActualizarEstadoOrden(ctx, req.StripeSessionId, req.Estado, req.MotivoFallo, req.StripePaymentIntent)
+	// Solo se pasa la comisión si el gateway pudo consultarla. La bandera es
+	// lo que separa "Stripe no cobró nada" de "todavía no lo sabemos"; sin
+	// ella, un cero se guardaría como comisión real e inflaría el neto.
+	var com *repository.Comision
+	if req.ComisionConocida {
+		com = &repository.Comision{
+			Centavos:     req.ComisionCentavos,
+			NetoCentavos: req.NetoCentavos,
+			BalanceTxID:  req.BalanceTransactionId,
+		}
+	}
+
+	err := s.repo.ActualizarEstadoOrden(ctx, req.StripeSessionId, req.Estado, req.MotivoFallo, req.StripePaymentIntent, com)
 	return &cursospb.EmptyResponse{}, err
+}
+
+// ── Panel financiero y relleno de comisiones ────────────────────────────────
+
+func (s *CursosService) GetFinanzasAdmin(ctx context.Context) (*cursospb.FinanzasAdminResponse, error) {
+	return s.repo.GetFinanzasAdmin(ctx)
+}
+
+func (s *CursosService) AdminListLicenciasEmpresas(ctx context.Context) (*cursospb.AdminListLicenciasEmpresasResponse, error) {
+	return s.repo.AdminListLicenciasEmpresas(ctx)
+}
+
+func (s *CursosService) ListOrdenesSinComision(ctx context.Context, limite int32) (*cursospb.ListOrdenesSinComisionResponse, error) {
+	// Un límite disparatado convertiría el relleno en una tormenta de
+	// peticiones a Stripe; uno de cero lo dejaría sin avanzar nunca.
+	if limite <= 0 || limite > 200 {
+		limite = 50
+	}
+	return s.repo.ListOrdenesSinComision(ctx, limite)
+}
+
+func (s *CursosService) RegistrarComisionOrden(ctx context.Context, req *cursospb.RegistrarComisionOrdenRequest) error {
+	return s.repo.RegistrarComisionOrden(ctx, req.OrdenId, repository.Comision{
+		Centavos:     req.ComisionCentavos,
+		NetoCentavos: req.NetoCentavos,
+		BalanceTxID:  req.BalanceTransactionId,
+	})
 }

@@ -340,6 +340,46 @@ func runMigrations(db *sqlx.DB) error {
 			updated_at TIMESTAMPTZ DEFAULT NOW(),
 			UNIQUE(leccion_id, user_id)
 		)`,
+
+		// ── Comisiones de Stripe ──────────────────────────────────────────
+		//
+		// Lo que Stripe se queda por cada cobro no se guardaba en ninguna
+		// parte. El panel enseñaba una "venta neta" calculada con 3.6% + 3 MXN,
+		// que es la tarifa de lista de tarjeta nacional y no lo que Stripe cobra
+		// de verdad: OXXO, tarjeta internacional y MSI tienen tarifas distintas,
+		// y falta el IVA. La cifra buena viene en el BalanceTransaction del
+		// cobro, que trae `fee` y `net` al centavo.
+		//
+		// NULL y 0 no son lo mismo: NULL es "aún no consultado a Stripe" y 0 es
+		// "consultado, y no hubo comisión". Tratarlos igual haría que el
+		// histórico sin rellenar pareciera libre de comisiones.
+		// Envuelto en un DO condicional y no un ALTER a secas: `ordenes` y
+		// `suscripcion_facturas` las crea migrations/002, que se aplica a mano.
+		// Un ALTER sobre una tabla que todavía no existe aborta las migraciones
+		// y deja el servicio sin arrancar; así, si no está, no se hace nada y
+		// las columnas las pondrá 003 junto con la tabla.
+		`DO $$
+		BEGIN
+			IF to_regclass('public.ordenes') IS NOT NULL THEN
+				ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS comision_centavos BIGINT;
+				ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS neto_centavos BIGINT;
+				ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS balance_transaction_id VARCHAR(255);
+
+				-- Índice parcial: en cuanto una orden tiene su comisión deja de
+				-- aparecer, así que se mantiene pequeño para siempre.
+				CREATE INDEX IF NOT EXISTS idx_ordenes_sin_comision
+				    ON ordenes (pagada_at)
+				    WHERE comision_centavos IS NULL
+				      AND estado IN ('pagada', 'cumplida')
+				      AND stripe_payment_intent IS NOT NULL;
+			END IF;
+
+			IF to_regclass('public.suscripcion_facturas') IS NOT NULL THEN
+				ALTER TABLE suscripcion_facturas ADD COLUMN IF NOT EXISTS comision_centavos BIGINT;
+				ALTER TABLE suscripcion_facturas ADD COLUMN IF NOT EXISTS neto_centavos BIGINT;
+				ALTER TABLE suscripcion_facturas ADD COLUMN IF NOT EXISTS balance_transaction_id VARCHAR(255);
+			END IF;
+		END $$`,
 	}
 	for i, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

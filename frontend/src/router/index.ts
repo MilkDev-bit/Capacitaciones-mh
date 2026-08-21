@@ -39,6 +39,10 @@ const router = createRouter({
         { path: 'capacitaciones', component: () => import('../views/admin/CapacitacionesView.vue') },
         { path: 'examenes', component: () => import('../views/admin/ExamenesView.vue') },
         { path: 'usuarios', component: () => import('../views/admin/UsuariosView.vue') },
+        // El menú lateral enlazaba a estas dos y ninguna estaba declarada, así
+        // que el panel salía en blanco.
+        { path: 'finanzas', component: () => import('../views/admin/FinanzasView.vue') },
+        { path: 'licencias', component: () => import('../views/admin/LicenciasView.vue') },
         { path: 'perfil/:id', component: () => import('../views/shared/PublicProfileView.vue') },
       ],
     },
