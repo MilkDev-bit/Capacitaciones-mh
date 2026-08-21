@@ -168,6 +168,27 @@ func warnIfAppURLLooksLikeAPI(appURL, port string) {
 			"app_url", appURL,
 			"efecto", "los botones de los correos (activar acceso, reset de contraseña) abrirán el API en lugar del sitio")
 	}
+
+	// El caso que de verdad ocurrió: nadie puso APP_URL en producción, el valor
+	// por defecto se quedó apuntando a la máquina de desarrollo y los correos
+	// de compra salieron con botones a localhost. Nadie lo notó hasta que un
+	// comprador real intentó abrir el suyo.
+	//
+	// Error y no aviso: en los logs de arranque un Warn se pierde entre el
+	// ruido, y esto rompe correos que ya se enviaron y no se pueden reenviar.
+	if esLocal(appURL) && os.Getenv("APP_URL") == "" {
+		slog.Error("APP_URL sin definir: los correos saldrán con enlaces a localhost",
+			"valor_usado", appURL,
+			"arreglo", "define APP_URL con la URL pública del frontend, ej. https://capacitaciones.tudominio.com")
+	}
+}
+
+// esLocal reconoce una URL de desarrollo.
+func esLocal(u string) bool {
+	u = strings.ToLower(u)
+	return strings.Contains(u, "localhost") ||
+		strings.Contains(u, "127.0.0.1") ||
+		strings.Contains(u, "0.0.0.0")
 }
 
 func requireEnv(key string) string {

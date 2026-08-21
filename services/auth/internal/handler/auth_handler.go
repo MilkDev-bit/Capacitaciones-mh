@@ -35,6 +35,10 @@ func (h *AuthHandler) Register(ctx context.Context, req *authpb.RegisterRequest)
 		Password:       req.Password,
 		Role:           req.Role,
 		RecaptchaToken: req.RecaptchaToken,
+		// Sin esta línea el alta rechazaba a TODO el mundo: el servicio exige
+		// la versión del aviso y aquí llegaba vacía, así que la casilla del
+		// formulario no servía de nada por muy marcada que estuviera.
+		AvisoVersion: req.AvisoVersion,
 	})
 	if err != nil {
 		return nil, mapError(err, "Register")

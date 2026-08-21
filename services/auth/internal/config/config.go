@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"strconv"
@@ -77,6 +78,16 @@ func Load() *Config {
 		AppName:  getEnvOr("APP_NAME", "Capacitaciones"),
 		LogLevel: getEnvOr("LOG_LEVEL", "info"),
 	}
+
+	// Mismo aviso que en el gateway: sin APP_URL los correos de verificación y
+	// de reset de contraseña salen con enlaces a localhost. Pasó en producción
+	// y no se detectó hasta que un usuario real intentó abrir el suyo.
+	if os.Getenv("APP_URL") == "" {
+		slog.Error("APP_URL sin definir: los correos saldrán con enlaces a localhost",
+			"valor_usado", C.AppURL,
+			"arreglo", "define APP_URL con la URL pública del frontend")
+	}
+
 	return &C
 }
 
