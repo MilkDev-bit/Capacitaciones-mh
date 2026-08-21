@@ -19,6 +19,9 @@
 -- Confundirlos haría que el histórico sin rellenar apareciera como si Stripe no
 -- hubiera cobrado nada, inflando la ganancia neta.
 
+-- ▶ EJECUTAR EN LA BASE **cursos**. Cada microservicio tiene su propio
+--   Postgres; `ordenes` y `suscripcion_facturas` viven en la de cursos.
+
 BEGIN;
 
 ALTER TABLE ordenes

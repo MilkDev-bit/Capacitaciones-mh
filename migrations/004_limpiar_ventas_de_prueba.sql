@@ -3,24 +3,39 @@
 --
 -- ⚠️  BORRA DATOS DE FORMA PERMANENTE. Léelo entero antes de ejecutar nada.
 --
--- Pensado para el momento previo a salir a producción: todas las compras que
--- hay en la base son pruebas y hay que dejar los contadores a cero.
+-- ┌────────────────────────────────────────────────────────────────────────┐
+-- │  ▶ EJECUTAR EN LA BASE **cursos**  (Railway → grupo Cursos → `cursos`) │
+-- │                                                                        │
+-- │  NO en `auth`, NO en `lecciones`, NO en la de ningún otro servicio.    │
+-- └────────────────────────────────────────────────────────────────────────┘
 --
--- Pega esto en:  Railway → servicio Postgres → pestaña Data → Query
+-- Cada microservicio tiene su propio Postgres. Todo lo relacionado con cobros
+-- —ordenes, orden_items, suscripciones, curso_licencias— vive en la base de
+-- **cursos**. La tabla `users` está en la de **auth** y aquí no se toca.
 --
--- Ejecuta los pasos EN ORDEN, uno a uno, y mira el resultado de cada uno.
--- El PASO 1 no borra nada: solo te enseña qué se va a llevar por delante.
+-- Pega esto en: Railway → base `cursos` → pestaña Data → Query.
+-- Ejecuta los pasos EN ORDEN. El PASO 0 y el 1 no borran nada.
 --
 -- ─────────────────────────────────────────────────────────────────────────────
 -- LO QUE **NO** TOCA, a propósito:
---   · usuarios, cursos, lecciones, exámenes, foros ni mensajes
+--   · usuarios (están en otra base)
+--   · cursos, lecciones, exámenes, foros ni mensajes
 --   · el progreso de los alumnos
 --   · las constancias DC-3 ya emitidas
---
--- Si además quieres dejar la plataforma como recién instalada (sin usuarios ni
--- cursos), eso es otra cosa y NO está aquí: es mucho más destructivo y conviene
--- decidirlo aparte.
 -- ============================================================================
+
+
+-- ╔══════════════════════════════════════════════════════════════════════════╗
+-- ║ PASO 0 — ¿Estoy en la base correcta?                                     ║
+-- ║                                                                          ║
+-- ║ `ordenes` y `capacitaciones` deben salir con nombre, y `users` en NULL.  ║
+-- ║ Si `users` NO es NULL, estás en la base de auth: DETENTE.                ║
+-- ╚══════════════════════════════════════════════════════════════════════════╝
+
+SELECT current_database()                     AS base,
+       to_regclass('public.ordenes')          AS tabla_ordenes,
+       to_regclass('public.capacitaciones')   AS tabla_capacitaciones,
+       to_regclass('public.users')            AS tabla_users_debe_ser_null;
 
 
 -- ╔══════════════════════════════════════════════════════════════════════════╗
@@ -28,30 +43,30 @@
 -- ║ Mira estos números y confirma que todo lo que sale es de prueba.         ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
-SELECT 'ordenes'               AS tabla, count(*) AS filas FROM ordenes
-UNION ALL SELECT 'orden_items',            count(*) FROM orden_items
-UNION ALL SELECT 'suscripcion_facturas',   count(*) FROM suscripcion_facturas
-UNION ALL SELECT 'suscripcion_asientos',   count(*) FROM suscripcion_asientos
-UNION ALL SELECT 'suscripciones',          count(*) FROM suscripciones
+SELECT 'ordenes'                  AS tabla, count(*) AS filas FROM ordenes
+UNION ALL SELECT 'orden_items',              count(*) FROM orden_items
+UNION ALL SELECT 'suscripcion_facturas',     count(*) FROM suscripcion_facturas
+UNION ALL SELECT 'suscripcion_asientos',     count(*) FROM suscripcion_asientos
+UNION ALL SELECT 'suscripciones',            count(*) FROM suscripciones
 UNION ALL SELECT 'stripe_eventos_procesados', count(*) FROM stripe_eventos_procesados
-UNION ALL SELECT 'licencias vendidas (curso_licencias con comprador)',
+UNION ALL SELECT 'licencias vendidas',
                  count(*) FROM curso_licencias WHERE comprador_id IS NOT NULL
-UNION ALL SELECT 'licencia_invitaciones',  count(*) FROM licencia_invitaciones
+UNION ALL SELECT 'licencia_invitaciones',    count(*) FROM licencia_invitaciones
 UNION ALL SELECT 'inscripciones por licencia',
                  count(*) FROM inscripciones WHERE licencia_id IS NOT NULL;
 
--- Detalle de lo cobrado, por si reconoces alguna compra que SÍ sea real.
-SELECT o.id, o.estado, o.total_centavos, o.moneda,
-       COALESCE(o.pagada_at, o.created_at) AS fecha, u.email
-  FROM ordenes o
-  LEFT JOIN users u ON u.id = o.user_id
+-- Detalle de lo cobrado, por si alguna compra SÍ fuera real. No hay correo:
+-- los usuarios están en otra base. El user_id sirve para cotejarlo en `auth`.
+SELECT id, estado, total_centavos, moneda, user_id,
+       COALESCE(pagada_at, created_at) AS fecha
+  FROM ordenes
  ORDER BY fecha DESC;
 
 
 -- ╔══════════════════════════════════════════════════════════════════════════╗
 -- ║ PASO 2 — Borrar el historial de cobros                                   ║
 -- ║                                                                          ║
--- ║ Este es el bloque que deja Finanzas y el Panel de Administración a cero. ║
+-- ║ Este bloque deja Finanzas y el Panel de Administración a cero.           ║
 -- ║ orden_items cae solo por ON DELETE CASCADE, pero se borra explícito para ║
 -- ║ que no dependa de que la restricción esté como creemos.                  ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
@@ -79,8 +94,8 @@ COMMIT;
 -- ║                                                                          ║
 -- ║ OJO: si alguien entró a un curso con el código de esas licencias, su     ║
 -- ║ inscripción quedaría apuntando a una licencia borrada. Por eso primero   ║
--- ║ se desligan las inscripciones (el alumno CONSERVA el acceso y su avance) ║
--- ║ y solo después se borra la licencia.                                     ║
+-- ║ se desligan las inscripciones (el alumno CONSERVA acceso y avance) y     ║
+-- ║ solo después se borra la licencia.                                       ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
 BEGIN;
@@ -102,20 +117,24 @@ COMMIT;
 -- ║ Ejecútalo SOLO si quieres que los alumnos de prueba pierdan el acceso.   ║
 -- ║ Borra su avance en esos cursos, y eso no se recupera.                    ║
 -- ║                                                                          ║
--- ║ Descomenta y sustituye los correos por los tuyos de prueba.              ║
+-- ║ Aquí NO se puede filtrar por correo: `users` está en la base de auth.    ║
+-- ║ Saca los UUID con esta consulta EN LA BASE `auth`:                       ║
+-- ║                                                                          ║
+-- ║   SELECT id, email FROM users WHERE email IN ('prueba@ejemplo.mx');      ║
+-- ║                                                                          ║
+-- ║ y pégalos abajo.                                                         ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
 -- BEGIN;
 -- DELETE FROM progreso_lecciones
---  WHERE user_id IN (SELECT id FROM users WHERE email IN ('prueba1@ejemplo.mx','prueba2@ejemplo.mx'));
+--  WHERE user_id IN ('00000000-0000-0000-0000-000000000000'::uuid);
 -- DELETE FROM inscripciones
---  WHERE user_id IN (SELECT id FROM users WHERE email IN ('prueba1@ejemplo.mx','prueba2@ejemplo.mx'));
+--  WHERE user_id IN ('00000000-0000-0000-0000-000000000000'::uuid);
 -- COMMIT;
 
 
 -- ╔══════════════════════════════════════════════════════════════════════════╗
 -- ║ PASO 5 — Comprobar que quedó a cero                                      ║
--- ║ Las tres primeras deben dar 0.                                           ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
 SELECT 'ordenes'             AS tabla, count(*) AS filas FROM ordenes

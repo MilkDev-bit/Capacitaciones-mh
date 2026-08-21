@@ -151,14 +151,14 @@ func (r *postgresCursosRepository) GetFinanzasAdmin(ctx context.Context) (*curso
 
 	// ── Movimientos recientes ────────────────────────────────────────────
 	//
-	// El nombre del cliente se resuelve contra `users`, que vive en la misma
-	// base aunque la sirva otro servicio. El LEFT JOIN es deliberado: una
-	// cuenta borrada no debe hacer desaparecer su compra del histórico
-	// financiero.
+	// SIN join contra `users`: cada servicio tiene su propia base y `users`
+	// vive en la de auth, no en la de cursos. Un JOIN aquí fallaría con
+	// "relation users does not exist". Se devuelve el user_id y el gateway
+	// resuelve el nombre por gRPC contra usuarios, igual que hace
+	// `enrichEntregasSlice` con las entregas.
 	type filaMov struct {
 		ID       string         `db:"id"`
-		Cliente  sql.NullString `db:"cliente"`
-		Email    sql.NullString `db:"email"`
+		UserID   string         `db:"user_id"`
 		Fecha    time.Time      `db:"fecha"`
 		Bruto    int64          `db:"bruto"`
 		Comision sql.NullInt64  `db:"comision"`
@@ -168,8 +168,7 @@ func (r *postgresCursosRepository) GetFinanzasAdmin(ctx context.Context) (*curso
 	var movs []filaMov
 	err = r.db.SelectContext(ctx, &movs, `
 		SELECT o.id::text                       AS id,
-		       u.name                           AS cliente,
-		       u.email                          AS email,
+		       o.user_id::text                  AS user_id,
 		       COALESCE(o.pagada_at, o.created_at) AS fecha,
 		       o.total_centavos                 AS bruto,
 		       o.comision_centavos              AS comision,
@@ -179,7 +178,6 @@ func (r *postgresCursosRepository) GetFinanzasAdmin(ctx context.Context) (*curso
 		          LEFT JOIN capacitaciones c ON c.id = oi.capacitacion_id
 		         WHERE oi.orden_id = o.id)      AS concepto
 		  FROM ordenes o
-		  LEFT JOIN users u ON u.id = o.user_id
 		 WHERE o.estado IN `+estadosCobrados+`
 		 ORDER BY COALESCE(o.pagada_at, o.created_at) DESC
 		 LIMIT $1`, maxTransaccionesRecientes)
@@ -193,8 +191,7 @@ func (r *postgresCursosRepository) GetFinanzasAdmin(ctx context.Context) (*curso
 		}
 		resp.TransaccionesRecientes = append(resp.TransaccionesRecientes, &cursospb.TransaccionFin{
 			Id:               m.ID,
-			Cliente:          textoOr(m.Cliente, "Cuenta eliminada"),
-			Email:            textoOr(m.Email, ""),
+			UserId:           m.UserID,
 			Fecha:            m.Fecha.Format(time.RFC3339),
 			BrutoCentavos:    m.Bruto,
 			ComisionCentavos: comision,
@@ -210,32 +207,30 @@ func (r *postgresCursosRepository) GetFinanzasAdmin(ctx context.Context) (*curso
 
 func (r *postgresCursosRepository) AdminListLicenciasEmpresas(ctx context.Context) (*cursospb.AdminListLicenciasEmpresasResponse, error) {
 	type fila struct {
-		ID              string         `db:"id"`
-		Nombre          string         `db:"nombre"`
-		CapacitacionID  string         `db:"capacitacion_id"`
-		CursoTitulo     sql.NullString `db:"capacitacion_titulo"`
-		CompradorID     sql.NullString `db:"comprador_id"`
-		CompradorNombre sql.NullString `db:"comprador_nombre"`
-		CompradorEmail  sql.NullString `db:"comprador_email"`
-		PrecioCentavos  int64          `db:"precio_centavos"`
-		Capacidad       int32          `db:"capacidad_maxima"`
-		Usadas          int32          `db:"usadas"`
-		Codigo          sql.NullString `db:"codigo_acceso"`
-		CreatedAt       time.Time      `db:"created_at"`
+		ID             string         `db:"id"`
+		Nombre         string         `db:"nombre"`
+		CapacitacionID string         `db:"capacitacion_id"`
+		CursoTitulo    sql.NullString `db:"capacitacion_titulo"`
+		CompradorID    sql.NullString `db:"comprador_id"`
+		PrecioCentavos int64          `db:"precio_centavos"`
+		Capacidad      int32          `db:"capacidad_maxima"`
+		Usadas         int32          `db:"usadas"`
+		Codigo         sql.NullString `db:"codigo_acceso"`
+		CreatedAt      time.Time      `db:"created_at"`
 	}
 
 	var filas []fila
 	// Solo licencias con comprador: son las vendidas a una empresa. Las que no
 	// lo tienen son plantillas que el instructor dejó creadas y todavía no ha
 	// vendido nadie, y en una pantalla de "Empresas" solo harían ruido.
+	// Sin join contra `users`: vive en la base de auth, no en la de cursos.
+	// El nombre del comprador lo resuelve el gateway por gRPC.
 	err := r.db.SelectContext(ctx, &filas, `
 		SELECT l.id::text                        AS id,
 		       l.nombre                          AS nombre,
 		       l.capacitacion_id::text           AS capacitacion_id,
 		       c.title                           AS capacitacion_titulo,
 		       l.comprador_id::text              AS comprador_id,
-		       u.name                            AS comprador_nombre,
-		       u.email                           AS comprador_email,
 		       COALESCE(l.precio_centavos, 0)    AS precio_centavos,
 		       l.capacidad_maxima                AS capacidad_maxima,
 		       l.usadas                          AS usadas,
@@ -243,7 +238,6 @@ func (r *postgresCursosRepository) AdminListLicenciasEmpresas(ctx context.Contex
 		       l.created_at                      AS created_at
 		  FROM curso_licencias l
 		  LEFT JOIN capacitaciones c ON c.id = l.capacitacion_id
-		  LEFT JOIN users u          ON u.id = l.comprador_id
 		 WHERE l.comprador_id IS NOT NULL
 		 ORDER BY l.created_at DESC`)
 	if err != nil {
@@ -258,8 +252,6 @@ func (r *postgresCursosRepository) AdminListLicenciasEmpresas(ctx context.Contex
 			CapacitacionId:     f.CapacitacionID,
 			CapacitacionTitulo: textoOr(f.CursoTitulo, "Curso eliminado"),
 			CompradorId:        textoOr(f.CompradorID, ""),
-			CompradorNombre:    textoOr(f.CompradorNombre, "Cuenta eliminada"),
-			CompradorEmail:     textoOr(f.CompradorEmail, ""),
 			PrecioCentavos:     f.PrecioCentavos,
 			CapacidadMaxima:    f.Capacidad,
 			Usadas:             f.Usadas,

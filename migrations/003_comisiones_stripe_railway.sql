@@ -1,7 +1,14 @@
 -- ============================================================================
 -- Comisiones de Stripe — versión para la consola de Railway
 --
--- Pega esto en:  Railway → servicio Postgres → pestaña Data → Query
+-- ┌────────────────────────────────────────────────────────────────────────┐
+-- │  ▶ EJECUTAR EN LA BASE **cursos**  (Railway → grupo Cursos → `cursos`) │
+-- └────────────────────────────────────────────────────────────────────────┘
+--
+-- Cada microservicio tiene su propio Postgres. `ordenes` y
+-- `suscripcion_facturas` viven en la base de cursos.
+--
+-- Pega esto en:  Railway → base `cursos` → pestaña Data → Query
 --
 -- Ejecuta los pasos EN ORDEN, uno a uno, y mira el resultado de cada uno antes
 -- de seguir. Todo es idempotente: repetirlo no rompe ni duplica nada.

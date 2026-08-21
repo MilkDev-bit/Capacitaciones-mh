@@ -826,8 +826,12 @@ message PuntoMensual {
 
 message TransaccionFin {
   string id               = 1;
+  // Nombre y correo NO salen de la base de cursos: `users` vive en la de auth.
+  // El servicio devuelve el user_id y el gateway resuelve los otros dos por
+  // gRPC contra usuarios.
   string cliente          = 2;
   string email            = 3;
+  string user_id          = 11;
   string fecha            = 4; // RFC3339
   int64  bruto_centavos   = 5;
   int64  comision_centavos = 6;

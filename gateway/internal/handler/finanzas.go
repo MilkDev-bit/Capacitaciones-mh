@@ -1,12 +1,57 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	cursospb "Prueba-Go/gen/cursos"
+	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
 )
+
+// resolverNombres traduce IDs de usuario a nombre y correo.
+//
+// Hace falta porque cada microservicio tiene su propia base: `users` vive en la
+// de auth y `ordenes` en la de cursos, así que un JOIN entre ambas es
+// imposible. El gateway es el único sitio que habla con los dos servicios.
+//
+// La caché evita pedir el mismo perfil dos veces cuando un cliente aparece en
+// varias filas. Un usuario que no se puede resolver —cuenta borrada, o el
+// servicio caído— no rompe la pantalla: se queda con un texto de respaldo.
+func (h *CursosHandler) resolverNombres(ctx context.Context, ids []string) map[string]*usuariospb.PerfilResponse {
+	cache := make(map[string]*usuariospb.PerfilResponse, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, visto := cache[id]; visto {
+			continue
+		}
+		u, err := h.c.Usuarios.GetPublicPerfil(ctx, &usuariospb.UserIDRequest{UserId: id})
+		if err != nil || u == nil {
+			cache[id] = nil
+			continue
+		}
+		cache[id] = u
+	}
+	return cache
+}
+
+// nombreOr saca el nombre de un perfil que puede no haberse podido resolver.
+func nombreOr(u *usuariospb.PerfilResponse, respaldo string) string {
+	if u != nil && u.Name != "" {
+		return u.Name
+	}
+	return respaldo
+}
+
+func correoDe(u *usuariospb.PerfilResponse) string {
+	if u == nil {
+		return ""
+	}
+	return u.Email
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Panel financiero (solo admin)
@@ -36,12 +81,19 @@ func (h *CursosHandler) GetFinanzasAdmin(ctx *gin.Context) {
 		})
 	}
 
+	ids := make([]string, 0, len(resp.TransaccionesRecientes))
+	for _, t := range resp.TransaccionesRecientes {
+		ids = append(ids, t.UserId)
+	}
+	perfiles := h.resolverNombres(ctx.Request.Context(), ids)
+
 	movs := make([]gin.H, 0, len(resp.TransaccionesRecientes))
 	for _, t := range resp.TransaccionesRecientes {
+		u := perfiles[t.UserId]
 		movs = append(movs, gin.H{
 			"id":                t.Id,
-			"cliente":           t.Cliente,
-			"email":             t.Email,
+			"cliente":           nombreOr(u, "Cuenta eliminada"),
+			"email":             correoDe(u),
 			"fecha":             t.Fecha,
 			"bruto_centavos":    t.BrutoCentavos,
 			"comision_centavos": t.ComisionCentavos,
@@ -78,16 +130,23 @@ func (h *CursosHandler) AdminListLicenciasEmpresas(ctx *gin.Context) {
 		return
 	}
 
+	ids := make([]string, 0, len(resp.Licencias))
+	for _, l := range resp.Licencias {
+		ids = append(ids, l.CompradorId)
+	}
+	perfiles := h.resolverNombres(ctx.Request.Context(), ids)
+
 	items := make([]gin.H, 0, len(resp.Licencias))
 	for _, l := range resp.Licencias {
+		u := perfiles[l.CompradorId]
 		items = append(items, gin.H{
 			"id":                  l.Id,
 			"nombre":              l.Nombre,
 			"capacitacion_id":     l.CapacitacionId,
 			"capacitacion_titulo": l.CapacitacionTitulo,
 			"comprador_id":        l.CompradorId,
-			"comprador_nombre":    l.CompradorNombre,
-			"comprador_email":     l.CompradorEmail,
+			"comprador_nombre":    nombreOr(u, "Cuenta eliminada"),
+			"comprador_email":     correoDe(u),
 			"precio_centavos":     l.PrecioCentavos,
 			"capacidad_maxima":    l.CapacidadMaxima,
 			"usadas":              l.Usadas,
