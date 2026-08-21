@@ -40,6 +40,17 @@ type UserRepository interface {
 	IncrementVerificationAttempts(ctx context.Context, userID string) error
 	// MarkEmailVerified marca la cuenta como verificada y limpia el código.
 	MarkEmailVerified(ctx context.Context, userID string) error
+
+	// ── OTP para cambiar la contraseña desde el perfil ────────────────────────
+	//
+	// Deliberadamente separado del token de reset: aquel se valida sin saber de
+	// quién es, porque su endpoint es público, y un código corto ahí sería
+	// adivinable contra cualquier cuenta. Este siempre va contra el id de la
+	// sesión.
+	StorePasswordOTP(ctx context.Context, userID, codeHash string, expira time.Time) error
+	GetPasswordOTP(ctx context.Context, userID string) (*model.PasswordOTP, error)
+	IncrementPasswordOTPAttempts(ctx context.Context, userID string) error
+	ClearPasswordOTP(ctx context.Context, userID string) error
 }
 
 // postgresUserRepository implementa UserRepository usando PostgreSQL + sqlx.
@@ -124,6 +135,45 @@ func (r *postgresUserRepository) ClearPasswordResetToken(ctx context.Context, us
 }
 
 // ── Verificación de correo ────────────────────────────────────────────────────
+
+func (r *postgresUserRepository) StorePasswordOTP(ctx context.Context, userID, codeHash string, expira time.Time) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users
+		    SET pwd_otp_hash     = $1,
+		        pwd_otp_expira   = $2,
+		        pwd_otp_intentos = 0
+		  WHERE id = $3`, codeHash, expira, userID)
+	return err
+}
+
+func (r *postgresUserRepository) GetPasswordOTP(ctx context.Context, userID string) (*model.PasswordOTP, error) {
+	v := &model.PasswordOTP{}
+	err := r.db.GetContext(ctx, v,
+		`SELECT id, pwd_otp_hash, pwd_otp_expira, pwd_otp_intentos
+		   FROM users WHERE id = $1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func (r *postgresUserRepository) IncrementPasswordOTPAttempts(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users SET pwd_otp_intentos = pwd_otp_intentos + 1 WHERE id = $1`, userID)
+	return err
+}
+
+// ClearPasswordOTP invalida el código.
+//
+// Se llama tras un cambio correcto Y tras agotar los intentos: dejar vivo un
+// código quemado permitiría seguir probando después de reenviar otro.
+func (r *postgresUserRepository) ClearPasswordOTP(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users
+		    SET pwd_otp_hash = NULL, pwd_otp_expira = NULL, pwd_otp_intentos = 0
+		  WHERE id = $1`, userID)
+	return err
+}
 
 func (r *postgresUserRepository) StoreEmailVerification(ctx context.Context, userID, codeHash string, expiry time.Time) error {
 	_, err := r.db.ExecContext(ctx,

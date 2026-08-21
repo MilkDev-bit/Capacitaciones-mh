@@ -28,6 +28,14 @@ service AuthService {
   // Verifica token de reset y actualiza la contraseña.
   rpc ResetPassword(ResetPasswordRequest) returns (EmptyResponse);
 
+  // ── Cambio de contraseña con sesión iniciada ───────────────────────────────
+  //
+  // Distinto de ForgotPassword/ResetPassword: aquí ya se sabe quién pide el
+  // cambio. El código de un solo uso prueba que además controla el buzón, de
+  // modo que una sesión robada no baste para tomar la cuenta.
+  rpc SolicitarCambioPassword(SolicitarCambioPasswordRequest) returns (EmptyResponse);
+  rpc CambiarPasswordConOTP(CambiarPasswordConOTPRequest) returns (EmptyResponse);
+
   // Invalida todas las sesiones de un usuario (solo admin).
   rpc RevokeUserSessions(RevokeRequest) returns (EmptyResponse);
 
@@ -72,6 +80,16 @@ message ForgotPasswordRequest {
 message ResetPasswordRequest {
   string reset_token   = 1;
   string new_password  = 2;
+}
+
+message SolicitarCambioPasswordRequest {
+  string user_id = 1;
+}
+
+message CambiarPasswordConOTPRequest {
+  string user_id       = 1;
+  string codigo        = 2;
+  string nueva_password = 3;
 }
 
 message RevokeRequest {

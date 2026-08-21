@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"Prueba-Go/gateway/internal/clients"
@@ -255,4 +256,55 @@ func (h *AuthHandler) handleGRPCError(ctx *gin.Context, err error) {
 		slog.Error("gRPC error", "code", st.Code(), "message", st.Message(), "path", ctx.FullPath())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error interno del servidor"})
 	}
+}
+
+// POST /api/perfil/password/codigo
+//
+// Envía un código de un solo uso al correo de quien tiene la sesión abierta.
+func (h *AuthHandler) SolicitarCambioPassword(ctx *gin.Context) {
+	if _, err := h.c.Auth.SolicitarCambioPassword(ctx.Request.Context(), &authpb.SolicitarCambioPasswordRequest{
+		UserId: ctx.GetString(middleware.CtxUserID),
+	}); err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	// No se devuelve el correo de destino, ni siquiera enmascarado: el frontend
+	// ya lo tiene del perfil, y repetirlo aquí lo pondría en una respuesta más
+	// de las que registrar o interceptar.
+	ctx.JSON(http.StatusOK, gin.H{"enviado": true})
+}
+
+// POST /api/perfil/password
+//
+// Cambia la contraseña. Exige el código enviado al correo: sin él, una sesión
+// robada bastaría para tomar la cuenta, y hasta ahora el perfil ni siquiera
+// comprobaba nada —de hecho descartaba el campo y decía que había guardado—.
+func (h *AuthHandler) CambiarPassword(ctx *gin.Context) {
+	var body struct {
+		Codigo   string `json:"codigo"`
+		Password string `json:"password"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "revisa los datos"})
+		return
+	}
+	if strings.TrimSpace(body.Codigo) == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ingresa el código que enviamos a tu correo"})
+		return
+	}
+
+	if _, err := h.c.Auth.CambiarPasswordConOTP(ctx.Request.Context(), &authpb.CambiarPasswordConOTPRequest{
+		UserId:        ctx.GetString(middleware.CtxUserID),
+		Codigo:        body.Codigo,
+		NuevaPassword: body.Password,
+	}); err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+
+	// La sesión actual también queda revocada: es lo que hace que el cambio
+	// sirva para expulsar a quien hubiera entrado con la contraseña anterior.
+	// Se limpia la cookie para que el frontend no siga creyendo que hay sesión.
+	h.clearAuthCookie(ctx)
+	ctx.JSON(http.StatusOK, gin.H{"cambiada": true})
 }

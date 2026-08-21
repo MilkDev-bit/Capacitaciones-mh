@@ -84,6 +84,21 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
+  /**
+   * Limpia la sesión local sin mensajes ni confirmación.
+   *
+   * Existe aparte de `logout` y de `handleSessionExpired` porque ninguna de las
+   * dos encaja tras cambiar la contraseña: `logout` pregunta "¿deseas cerrar
+   * sesión?" —ya está cerrada en el servidor— y `handleSessionExpired` dice que
+   * la sesión expiró, cuando en realidad la revocó el propio usuario a
+   * propósito. Quien llama decide qué contar y a dónde ir.
+   */
+  function cerrarSesionLocal() {
+    user.value = null
+    localStorage.removeItem('user')
+    useSuscripcionStore().limpiar()
+  }
+
   function handleSessionExpired() {
     const hadUser = !!user.value
     user.value = null
@@ -118,6 +133,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     handleSessionExpired,
+    cerrarSesionLocal,
     setUser,
     redirectToHome,
   }

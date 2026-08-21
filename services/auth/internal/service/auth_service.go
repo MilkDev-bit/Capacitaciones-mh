@@ -513,3 +513,102 @@ func hashCode(userID, code string) string {
 	sum := sha256.Sum256([]byte(userID + ":" + code))
 	return hex.EncodeToString(sum[:])
 }
+
+// ── Cambio de contraseña desde el perfil ─────────────────────────────────────
+
+// ttlPasswordOTP es lo que vive el código. Corto a propósito: es la ventana en
+// la que alguien con acceso al buzón podría usarlo.
+const ttlPasswordOTP = 10 * time.Minute
+
+// SolicitarCambioPassword emite un código de un solo uso al correo del usuario.
+//
+// Este flujo NO es el de "olvidé mi contraseña": aquí hay sesión iniciada y se
+// sabe quién pide el cambio. El código sirve para probar que quien está frente
+// a la pantalla controla además el buzón, de modo que una sesión robada —una
+// cookie filtrada, un equipo desatendido— no baste para tomar la cuenta.
+//
+// Antes de esto, el perfil aceptaba una contraseña nueva sin comprobar nada. En
+// realidad ni siquiera la guardaba: el gateway descartaba el campo, así que el
+// usuario veía "actualizado" y su contraseña seguía siendo la misma.
+func (s *AuthService) SolicitarCambioPassword(ctx context.Context, userID string) error {
+	u, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("find user: %w", err)
+	}
+
+	code, err := generateNumericCode(6)
+	if err != nil {
+		return fmt.Errorf("generar código: %w", err)
+	}
+	if err := s.users.StorePasswordOTP(ctx, u.ID, hashCode(u.ID, code), time.Now().Add(ttlPasswordOTP)); err != nil {
+		return fmt.Errorf("guardar código: %w", err)
+	}
+
+	msg := s.mail.PasswordResetCode(code)
+	msg.To = []string{u.Email}
+	s.mail.SendAsync(msg)
+	return nil
+}
+
+// CambiarPasswordConOTP valida el código y actualiza la contraseña.
+//
+// El código se comprueba SIEMPRE contra el userID de la sesión. Por eso puede
+// ser de seis dígitos sin ser adivinable en la práctica: probar combinaciones
+// solo ataca a esa cuenta, y a los cinco fallos el código se invalida.
+func (s *AuthService) CambiarPasswordConOTP(ctx context.Context, userID, code, nueva string) error {
+	if len(nueva) < 6 {
+		return errors.New("la contraseña debe tener al menos 6 caracteres")
+	}
+
+	v, err := s.users.GetPasswordOTP(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("get otp: %w", err)
+	}
+	if v.Hash == nil || v.Expira == nil {
+		return ErrCodeExpired
+	}
+	if v.Intentos >= maxVerificationAttempts {
+		return ErrTooManyAttempts
+	}
+	if time.Now().After(*v.Expira) {
+		return ErrCodeExpired
+	}
+
+	// Comparación en tiempo constante: evita distinguir códigos por latencia.
+	esperado := hashCode(userID, strings.TrimSpace(code))
+	if subtle.ConstantTimeCompare([]byte(esperado), []byte(*v.Hash)) != 1 {
+		if err := s.users.IncrementPasswordOTPAttempts(ctx, userID); err != nil {
+			slog.Error("CambiarPasswordConOTP: no se pudo incrementar intentos", "user_id", userID, "error", err)
+		}
+		// Al agotar los intentos se quema el código: sin esto, seguiría siendo
+		// válido y bastaría con esperar a pedir otro para reanudar las pruebas.
+		if v.Intentos+1 >= maxVerificationAttempts {
+			if err := s.users.ClearPasswordOTP(ctx, userID); err != nil {
+				slog.Error("CambiarPasswordConOTP: no se pudo invalidar el código", "user_id", userID, "error", err)
+			}
+		}
+		return ErrCodeInvalid
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(nueva), 12)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+	if err := s.users.UpdatePassword(ctx, userID, string(hash)); err != nil {
+		return fmt.Errorf("update password: %w", err)
+	}
+	if err := s.users.ClearPasswordOTP(ctx, userID); err != nil {
+		slog.Error("CambiarPasswordConOTP: no se pudo limpiar el código", "user_id", userID, "error", err)
+	}
+
+	// Se cierran TODAS las sesiones, incluida la que hizo el cambio.
+	//
+	// Es lo que convierte esto en una vía de recuperación: si alguien había
+	// entrado con la contraseña vieja, cambiarla lo expulsa. Dejar viva la
+	// sesión del atacante haría el cambio casi inútil.
+	if err := s.users.UpdateTokenVersion(ctx, userID); err != nil {
+		return fmt.Errorf("revocar sesiones: %w", err)
+	}
+	tvCache.Delete(userID)
+	return nil
+}

@@ -103,6 +103,20 @@ func (h *AuthHandler) ResetPassword(ctx context.Context, req *authpb.ResetPasswo
 	return &authpb.EmptyResponse{}, nil
 }
 
+func (h *AuthHandler) SolicitarCambioPassword(ctx context.Context, req *authpb.SolicitarCambioPasswordRequest) (*authpb.EmptyResponse, error) {
+	if err := h.svc.SolicitarCambioPassword(ctx, req.UserId); err != nil {
+		return nil, mapErr(err)
+	}
+	return &authpb.EmptyResponse{}, nil
+}
+
+func (h *AuthHandler) CambiarPasswordConOTP(ctx context.Context, req *authpb.CambiarPasswordConOTPRequest) (*authpb.EmptyResponse, error) {
+	if err := h.svc.CambiarPasswordConOTP(ctx, req.UserId, req.Codigo, req.NuevaPassword); err != nil {
+		return nil, mapErr(err)
+	}
+	return &authpb.EmptyResponse{}, nil
+}
+
 func (h *AuthHandler) RevokeUserSessions(ctx context.Context, req *authpb.RevokeRequest) (*authpb.EmptyResponse, error) {
 	if err := h.svc.RevokeUserSessions(ctx, req.UserId); err != nil {
 		slog.Error("RevokeUserSessions", "user_id", req.UserId, "error", err)

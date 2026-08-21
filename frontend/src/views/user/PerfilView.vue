@@ -2,10 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { getAvatarUrl } from '../../utils/avatars'
 
 const auth = useAuthStore()
+const router = useRouter()
 
 const perfil = ref<any>(null)
 const stats = ref<any>({})
@@ -14,7 +16,58 @@ const loadingSave = ref(false)
 
 const form = ref({ name: '', bio: '', phone: '', specialty: '' })
 const password = ref({ nueva: '', confirmar: '' })
-const showPass = ref(false)
+
+// ── Cambio de contraseña con código ─────────────────────────────────────────
+const codigoEnviado = ref(false)
+const codigoOtp = ref('')
+const enviandoCodigo = ref(false)
+const cambiandoPass = ref(false)
+
+const passwordValida = computed(() =>
+  password.value.nueva.length >= 6 && password.value.nueva === password.value.confirmar
+)
+
+/** Paso 1: pide el código al correo del usuario. */
+async function pedirCodigo() {
+  if (!passwordValida.value) return
+  enviandoCodigo.value = true
+  try {
+    await api.post('/perfil/password/codigo')
+    codigoEnviado.value = true
+    toast.success('Te enviamos un código a tu correo')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No pudimos enviar el código')
+  } finally {
+    enviandoCodigo.value = false
+  }
+}
+
+/**
+ * Paso 2: confirma el cambio.
+ *
+ * Al terminar se cierra la sesión y se va al login. No es un efecto secundario
+ * molesto: el servidor revoca TODAS las sesiones, así que seguir en la pantalla
+ * con un token muerto solo produciría errores 401 al siguiente clic.
+ */
+async function confirmarCambio() {
+  cambiandoPass.value = true
+  try {
+    await api.post('/perfil/password', {
+      codigo: codigoOtp.value.trim(),
+      password: password.value.nueva,
+    })
+    toast.success('Contraseña actualizada. Vuelve a iniciar sesión.')
+    password.value = { nueva: '', confirmar: '' }
+    codigoOtp.value = ''
+    codigoEnviado.value = false
+    auth.cerrarSesionLocal()
+    router.push('/login')
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No pudimos cambiar la contraseña')
+  } finally {
+    cambiandoPass.value = false
+  }
+}
 // El tab "Ser Instructor" se retiró junto con su endpoint: el ascenso de rol lo
 // gestiona un administrador desde el panel de usuarios, no el propio alumno.
 const activeTab = ref<'info' | 'security'>('info')
@@ -67,20 +120,9 @@ async function guardar() {
     toast.error('El nombre es requerido')
     return
   }
-  if (showPass.value || (activeTab.value === 'security' && (password.value.nueva || password.value.confirmar))) {
-    if (!password.value.nueva) {
-      toast.error('Ingresa la nueva contraseña')
-      return
-    }
-    if (password.value.nueva.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-    if (password.value.nueva !== password.value.confirmar) {
-      toast.error('Las contraseñas no coinciden')
-      return
-    }
-  }
+  // La contraseña ya no viaja aquí: tiene su propio flujo con código, en la
+  // pestaña de Seguridad. Validarla en este botón bloqueaba el guardado del
+  // perfil por unos campos que este endpoint nunca llegó a procesar.
 
   loadingSave.value = true
   try {
@@ -89,12 +131,10 @@ async function guardar() {
       bio: form.value.bio,
       phone: form.value.phone,
     }
-    if (showPass.value && password.value.nueva) payload.password = password.value.nueva
 
     await api.put('/perfil', payload)
     toast.success('Perfil actualizado correctamente')
     password.value = { nueva: '', confirmar: '' }
-    showPass.value = false
     await load()
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al guardar')
@@ -281,8 +321,13 @@ async function uploadCover(e: Event) {
           <div v-if="activeTab === 'security'" key="security" class="fp-card">
             <div class="fp-card-head">
               <h2>Cambiar contraseña</h2>
-              <p>Elige una contraseña segura de al menos 6 caracteres.</p>
+              <p>
+                Te enviaremos un código a <strong>{{ perfil?.email || 'tu correo' }}</strong>.
+                Sirve para que nadie pueda cambiar tu contraseña solo por tener
+                tu sesión abierta.
+              </p>
             </div>
+
             <div class="fp-form fp-form-narrow">
               <label class="fp-field fp-field-full">
                 <span>Nueva contraseña</span>
@@ -299,6 +344,43 @@ async function uploadCover(e: Event) {
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                 Las contraseñas coinciden
               </div>
+
+              <!-- Paso 1: pedir el código -->
+              <div v-if="!codigoEnviado" class="fp-field fp-field-full">
+                <button class="btn btn-primary" :disabled="!passwordValida || enviandoCodigo"
+                        @click="pedirCodigo">
+                  {{ enviandoCodigo ? 'Enviando…' : 'Enviarme el código' }}
+                </button>
+              </div>
+
+              <!-- Paso 2: confirmar con el código -->
+              <template v-else>
+                <label class="fp-field fp-field-full">
+                  <span>Código de verificación</span>
+                  <input v-model="codigoOtp" class="field-input fp-otp" inputmode="numeric"
+                         maxlength="6" placeholder="6 dígitos" autocomplete="one-time-code" />
+                  <small>Revisa tu correo. El código caduca en 10 minutos.</small>
+                </label>
+                <div class="fp-field fp-field-full fp-otp-acciones">
+                  <button class="btn btn-primary" :disabled="codigoOtp.trim().length !== 6 || cambiandoPass"
+                          @click="confirmarCambio">
+                    {{ cambiandoPass ? 'Cambiando…' : 'Cambiar contraseña' }}
+                  </button>
+                  <button class="btn btn-secondary" :disabled="enviandoCodigo" @click="pedirCodigo">
+                    Reenviar código
+                  </button>
+                </div>
+                <!--
+                  Se avisa antes, no después: al cambiar la contraseña se cierran
+                  TODAS las sesiones, incluida esta. Es lo que hace que el cambio
+                  sirva para expulsar a quien hubiera entrado con la anterior,
+                  pero descubrirlo de golpe se lee como un fallo.
+                -->
+                <p class="fp-otp-nota">
+                  Al confirmar cerraremos tu sesión en todos los dispositivos y
+                  tendrás que entrar de nuevo.
+                </p>
+              </template>
             </div>
           </div>
         </Transition>

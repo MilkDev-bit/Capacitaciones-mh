@@ -17,6 +17,15 @@ type User struct {
 
 // EmailVerification agrupa el estado del código de 6 dígitos de un usuario.
 // Se consulta aparte de User porque solo interesa durante el alta de cuenta.
+// PasswordOTP es el código de un solo uso para cambiar la contraseña desde el
+// perfil, con su expiración y los intentos ya gastados.
+type PasswordOTP struct {
+	UserID   string     `db:"id"`
+	Hash     *string    `db:"pwd_otp_hash"`
+	Expira   *time.Time `db:"pwd_otp_expira"`
+	Intentos int        `db:"pwd_otp_intentos"`
+}
+
 type EmailVerification struct {
 	UserID   string     `db:"id"`
 	Hash     *string    `db:"email_verification_hash"`

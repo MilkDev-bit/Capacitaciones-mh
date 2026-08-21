@@ -136,6 +136,23 @@ func runMigrations(db *sqlx.DB) error {
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT NOT NULL DEFAULT 1`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMPTZ`,
+
+		// Código de un solo uso para cambiar la contraseña DESDE EL PERFIL.
+		//
+		// Columnas propias, no las de reset_token, y no por pulcritud: aquel es
+		// un token de 32 bytes que viaja en un enlace y se valida sin saber de
+		// quién es, porque el endpoint es público. Meter aquí un código de 6
+		// dígitos lo dejaría expuesto a que alguien probara combinaciones contra
+		// /reset-password y acertara la de CUALQUIER usuario. Este se valida
+		// siempre contra el id de la sesión, así que probar solo ataca a uno.
+		//
+		// Se guarda el HASH, no el código: si la base se filtra, las filas no
+		// sirven para tomar cuentas.
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS pwd_otp_hash TEXT`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS pwd_otp_expira TIMESTAMPTZ`,
+		// Seis dígitos son un millón de combinaciones: sin límite de intentos se
+		// agotan en minutos con un script.
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS pwd_otp_intentos INT NOT NULL DEFAULT 0`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) DEFAULT ''`,

@@ -205,6 +205,15 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/capacitaciones/:id/dc3", d.DC3H.GuardarDatosYEmitir)
 			auth.GET("/mis-constancias", d.DC3H.ListMisConstancias)
 
+			// Cambio de contraseña desde el perfil.
+			//
+			// Dos pasos y con sesión: primero se pide el código al correo, luego
+			// se envía junto a la contraseña nueva. Hasta ahora el perfil admitía
+			// una contraseña sin comprobar nada —y el gateway la descartaba en
+			// silencio—, así que una sesión robada bastaba para tomar la cuenta.
+			auth.POST("/perfil/password/codigo", d.AuthH.SolicitarCambioPassword)
+			auth.POST("/perfil/password", d.AuthH.CambiarPassword)
+
 			// Presign
 			auth.GET("/presign", d.PresignH.PresignUpload)
 
