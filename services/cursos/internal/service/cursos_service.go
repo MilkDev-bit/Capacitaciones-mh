@@ -503,10 +503,9 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
-		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
-		// rechaza la sesión. Permite recalcular el impuesto si el comprador
-		// corrige su dirección durante el checkout.
-		params.CustomerUpdate = actualizacionDireccion()
+		// OBLIGATORIO junto a `customer`, no opcional: la sesión lleva
+		// `tax_id_collection` y Stripe rechaza la combinación sin esto.
+		params.CustomerUpdate = actualizacionDelCliente()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
@@ -629,10 +628,9 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
-		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
-		// rechaza la sesión. Permite recalcular el impuesto si el comprador
-		// corrige su dirección durante el checkout.
-		params.CustomerUpdate = actualizacionDireccion()
+		// OBLIGATORIO junto a `customer`, no opcional: la sesión lleva
+		// `tax_id_collection` y Stripe rechaza la combinación sin esto.
+		params.CustomerUpdate = actualizacionDelCliente()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
@@ -1017,10 +1015,9 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
-		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
-		// rechaza la sesión. Permite recalcular el impuesto si el comprador
-		// corrige su dirección durante el checkout.
-		params.CustomerUpdate = actualizacionDireccion()
+		// OBLIGATORIO junto a `customer`, no opcional: la sesión lleva
+		// `tax_id_collection` y Stripe rechaza la combinación sin esto.
+		params.CustomerUpdate = actualizacionDelCliente()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
