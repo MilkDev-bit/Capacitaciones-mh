@@ -166,6 +166,11 @@ func (s *CursosService) CrearCheckoutSuscripcion(ctx context.Context, req *curso
 	params.AddMetadata("user_id", req.UserId)
 	params.AddMetadata("plan_codigo", plan.Codigo)
 
+	// Impuestos también en los cobros recurrentes: si el IVA se aplica a la
+	// compra suelta y no a la suscripción, el mismo contenido tributaría
+	// distinto según cómo se pague. nil cuando Stripe Tax está apagado.
+	params.AutomaticTax = impuestoAutomatico()
+
 	// Clave derivada del usuario y el plan: un doble clic en "Suscribirme" no
 	// abre dos sesiones. Cambia con la hora para permitir reintentar más tarde
 	// si la primera sesión expiró.

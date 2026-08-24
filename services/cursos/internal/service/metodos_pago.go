@@ -7,6 +7,7 @@ package service
 // equivocarse en uno solo produce un checkout que Stripe rechaza al crearse.
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 
@@ -155,6 +156,22 @@ func metodosDePago(importeCentavos int64, tieneCliente bool) ([]*string, *stripe
 		}
 		hayOpciones = true
 	}
+
+	// Una línea por sesión con la decisión completa y su porqué.
+	//
+	// Existe porque cuando un método NO aparece en el checkout, desde fuera no
+	// hay forma de distinguir entre "la variable está apagada", "el importe
+	// quedó fuera de rango", "no se pudo resolver el cliente" y "Stripe no lo
+	// tiene activo en la cuenta". Los tres primeros se responden aquí; si este
+	// log dice que sí se ofreció y aun así no se pinta, el problema está en la
+	// cuenta de Stripe y no en nuestro código.
+	slog.Info("métodos de pago de la sesión",
+		"importe_centavos", importeCentavos,
+		"metodos", metodos,
+		"spei_habilitado", speiHabilitado(),
+		"spei_aplica_por_importe", speiAplica(importeCentavos),
+		"tiene_cliente", tieneCliente,
+		"oxxo_aplica", oxxoAplica(importeCentavos))
 
 	// nil y no una estructura vacía: mandar `payment_method_options: {}` no es
 	// lo mismo que no mandarlo, y conviene no cambiar lo que ya funcionaba en

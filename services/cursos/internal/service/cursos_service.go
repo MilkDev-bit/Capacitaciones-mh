@@ -503,9 +503,17 @@ func (s *CursosService) CreateCheckoutSession(ctx context.Context, req *cursospb
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
+		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
+		// rechaza la sesión. Permite recalcular el impuesto si el comprador
+		// corrige su dirección durante el checkout.
+		params.CustomerUpdate = actualizacionDireccion()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
+
+	// Cálculo automático de impuestos. nil cuando está apagado, para no alterar
+	// las sesiones respecto a como estaban.
+	params.AutomaticTax = impuestoAutomatico()
 
 	if stripe.Key == "" {
 		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
@@ -621,9 +629,17 @@ func (s *CursosService) CreateCheckoutSessionB2BDirect(ctx context.Context, req 
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
+		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
+		// rechaza la sesión. Permite recalcular el impuesto si el comprador
+		// corrige su dirección durante el checkout.
+		params.CustomerUpdate = actualizacionDireccion()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
+
+	// Cálculo automático de impuestos. nil cuando está apagado, para no alterar
+	// las sesiones respecto a como estaban.
+	params.AutomaticTax = impuestoAutomatico()
 
 	if stripe.Key == "" {
 		return nil, errors.New("STRIPE_SECRET_KEY no está configurada en el servidor (cursos-service)")
@@ -1001,9 +1017,17 @@ func (s *CursosService) CreateCheckoutSessionCart(ctx context.Context, req *curs
 	// dentro del propio Customer.
 	if clienteID != "" {
 		params.Customer = stripe.String(clienteID)
+		// customer_update SOLO es válido junto a `customer`; sin él, Stripe
+		// rechaza la sesión. Permite recalcular el impuesto si el comprador
+		// corrige su dirección durante el checkout.
+		params.CustomerUpdate = actualizacionDireccion()
 	} else if correoComprador != "" {
 		params.CustomerEmail = stripe.String(correoComprador)
 	}
+
+	// Cálculo automático de impuestos. nil cuando está apagado, para no alterar
+	// las sesiones respecto a como estaban.
+	params.AutomaticTax = impuestoAutomatico()
 
 	// La clave de idempotencia deriva de la orden y su intento, no de un UUID
 	// por petición: si esta llamada se reintenta (timeout de red, reintento del
