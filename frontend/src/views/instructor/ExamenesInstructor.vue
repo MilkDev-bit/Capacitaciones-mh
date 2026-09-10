@@ -647,6 +647,9 @@ async function eliminar(id: string) {
 .res-pregunta {
   border-radius: var(--r); padding: 14px 16px;
   border-left: 4px solid var(--border); background: var(--bg);
+  /* Mismo motivo que en .det-q-card: `.res-preguntas` también es flex en
+   * columna con scroll, y sin esto sus hijos se aplastarían igual. */
+  flex-shrink: 0;
 }
 .res-pregunta.correct  { border-left-color: #10b981; background: #f0fdf4; }
 .res-pregunta.wrong    { border-left-color: #ef4444; background: #fef2f2; }
@@ -729,6 +732,19 @@ async function eliminar(id: string) {
   border: 1.5px solid var(--border-light); overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: box-shadow .15s;
+
+  /* Sin esto las tarjetas se aplastan unas contra otras y el texto queda
+   * cortado por arriba y por abajo.
+   *
+   * `.det-body` es un contenedor flex en columna con `overflow-y: auto` y
+   * altura acotada. En flexbox los hijos tienen `flex-shrink: 1` por defecto,
+   * así que ante falta de sitio el navegador prefiere ENCOGERLOS antes que
+   * desbordar: nunca aparece la barra de scroll y, como la tarjeta lleva
+   * `overflow: hidden`, el contenido sobrante se recorta.
+   *
+   * Con `flex-shrink: 0` cada tarjeta conserva su altura natural, el
+   * contenedor desborda y entonces sí hace scroll, que es lo que se quería. */
+  flex-shrink: 0;
 }
 .det-q-card:hover { box-shadow: var(--shadow-md); }
 .det-q-card.q-correct { border-color: #bbf7d0; }
