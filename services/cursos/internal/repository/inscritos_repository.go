@@ -80,9 +80,13 @@ func (r *postgresCursosRepository) InstructorListInscritos(ctx context.Context, 
 		      FROM asignaciones
 		     WHERE capacitacion_id = $1
 		)
-		SELECT user_id::text                       AS user_id,
-		       MIN(entro_at)                       AS inscrito_at,
-		       MAX(licencia_id)::text              AS licencia_id
+		SELECT user_id::text          AS user_id,
+		       MIN(entro_at)          AS inscrito_at,
+		       -- MAX(licencia_id::text) y no MAX(licencia_id): Postgres NO tiene
+		       -- un agregado max() para uuid, y la consulta reventaba entera con
+		       -- "function max(uuid) does not exist". Sobre texto sí existe, y
+		       -- aquí solo se usa para saber si hubo licencia, no para ordenar.
+		       MAX(licencia_id::text) AS licencia_id
 		  FROM participantes
 		 GROUP BY user_id
 		 ORDER BY MIN(entro_at) ASC`, cursoID)
