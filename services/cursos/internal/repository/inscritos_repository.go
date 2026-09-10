@@ -56,13 +56,36 @@ func (r *postgresCursosRepository) InstructorListInscritos(ctx context.Context, 
 		LicenciaID sql.NullString `db:"licencia_id"`
 	}
 	var filas []fila
+
+	// DOS tablas, no una. Un participante puede llegar por dos caminos y solo
+	// mirar `inscripciones` deja fuera a media plataforma:
+	//
+	//   inscripciones → compró, entró por suscripción o usó un código de
+	//                   licencia. Tiene `licencia_id`.
+	//   asignaciones  → el instructor o el administrador lo dio de alta a mano
+	//                   desde "Estudiantes". Es el camino de las capacitaciones
+	//                   internas de empresa, donde nadie compra nada.
+	//
+	// `InstructorAsignar` escribe en ambas —llama a `Inscribirse`—, pero las
+	// altas antiguas y las de administrador pueden existir solo en una. El UNION
+	// las junta y deduplica quedándose con la fecha más antigua, que es cuando
+	// esa persona entró de verdad al curso.
 	err = r.db.SelectContext(ctx, &filas, `
-		SELECT user_id::text     AS user_id,
-		       inscrito_at       AS inscrito_at,
-		       licencia_id::text AS licencia_id
-		  FROM inscripciones
-		 WHERE capacitacion_id = $1
-		 ORDER BY inscrito_at ASC`, cursoID)
+		WITH participantes AS (
+		    SELECT user_id, inscrito_at AS entro_at, licencia_id
+		      FROM inscripciones
+		     WHERE capacitacion_id = $1
+		    UNION ALL
+		    SELECT user_id, assigned_at AS entro_at, NULL::uuid AS licencia_id
+		      FROM asignaciones
+		     WHERE capacitacion_id = $1
+		)
+		SELECT user_id::text                       AS user_id,
+		       MIN(entro_at)                       AS inscrito_at,
+		       MAX(licencia_id)::text              AS licencia_id
+		  FROM participantes
+		 GROUP BY user_id
+		 ORDER BY MIN(entro_at) ASC`, cursoID)
 	if err != nil {
 		return nil, err
 	}
