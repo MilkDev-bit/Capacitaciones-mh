@@ -5998,6 +5998,116 @@ func (x *RegistrarComisionOrdenRequest) GetBalanceTransactionId() string {
 	return ""
 }
 
+// Inscrito a una capacitación.
+//
+// Solo lleva identificadores: el nombre y el correo viven en la base de auth y
+// los resuelve el gateway por gRPC contra usuarios. El origen distingue a quien
+// compró de quien entró por licencia corporativa, que para el seguimiento no es
+// lo mismo.
+type InscritoInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	InscritoAt    string                 `protobuf:"bytes,2,opt,name=inscrito_at,json=inscritoAt,proto3" json:"inscrito_at,omitempty"`
+	LicenciaId    string                 `protobuf:"bytes,3,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InscritoInfo) Reset() {
+	*x = InscritoInfo{}
+	mi := &file_cursos_cursos_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InscritoInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InscritoInfo) ProtoMessage() {}
+
+func (x *InscritoInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InscritoInfo.ProtoReflect.Descriptor instead.
+func (*InscritoInfo) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *InscritoInfo) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *InscritoInfo) GetInscritoAt() string {
+	if x != nil {
+		return x.InscritoAt
+	}
+	return ""
+}
+
+func (x *InscritoInfo) GetLicenciaId() string {
+	if x != nil {
+		return x.LicenciaId
+	}
+	return ""
+}
+
+type ListInscritosResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Inscritos     []*InscritoInfo        `protobuf:"bytes,1,rep,name=inscritos,proto3" json:"inscritos,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInscritosResponse) Reset() {
+	*x = ListInscritosResponse{}
+	mi := &file_cursos_cursos_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInscritosResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInscritosResponse) ProtoMessage() {}
+
+func (x *ListInscritosResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cursos_cursos_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInscritosResponse.ProtoReflect.Descriptor instead.
+func (*ListInscritosResponse) Descriptor() ([]byte, []int) {
+	return file_cursos_cursos_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *ListInscritosResponse) GetInscritos() []*InscritoInfo {
+	if x != nil {
+		return x.Inscritos
+	}
+	return nil
+}
+
 var File_cursos_cursos_proto protoreflect.FileDescriptor
 
 const file_cursos_cursos_proto_rawDesc = "" +
@@ -6510,7 +6620,15 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\borden_id\x18\x01 \x01(\tR\aordenId\x12+\n" +
 	"\x11comision_centavos\x18\x02 \x01(\x03R\x10comisionCentavos\x12#\n" +
 	"\rneto_centavos\x18\x03 \x01(\x03R\fnetoCentavos\x124\n" +
-	"\x16balance_transaction_id\x18\x04 \x01(\tR\x14balanceTransactionId2\xfa&\n" +
+	"\x16balance_transaction_id\x18\x04 \x01(\tR\x14balanceTransactionId\"i\n" +
+	"\fInscritoInfo\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
+	"\vinscrito_at\x18\x02 \x01(\tR\n" +
+	"inscritoAt\x12\x1f\n" +
+	"\vlicencia_id\x18\x03 \x01(\tR\n" +
+	"licenciaId\"K\n" +
+	"\x15ListInscritosResponse\x122\n" +
+	"\tinscritos\x18\x01 \x03(\v2\x14.cursos.InscritoInfoR\tinscritos2\xcc'\n" +
 	"\rCursosService\x12<\n" +
 	"\fPreviewCurso\x12\x15.cursos.CodigoRequest\x1a\x15.cursos.CursoResponse\x12@\n" +
 	"\x0fGetCursoPublico\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12F\n" +
@@ -6550,7 +6668,8 @@ const file_cursos_cursos_proto_rawDesc = "" +
 	"\x1cInstructorDeleteCapacitacion\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.EmptyResponse\x12G\n" +
 	"\x16InstructorTogglePublic\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12F\n" +
 	"\x15InstructorResetCodigo\x12\x16.cursos.CursoIDRequest\x1a\x15.cursos.CursoResponse\x12Q\n" +
-	"\x19InstructorListEstudiantes\x12\x13.cursos.UserRequest\x1a\x1f.cursos.ListEstudiantesResponse\x12B\n" +
+	"\x19InstructorListEstudiantes\x12\x13.cursos.UserRequest\x1a\x1f.cursos.ListEstudiantesResponse\x12P\n" +
+	"\x17InstructorListInscritos\x12\x16.cursos.CursoIDRequest\x1a\x1d.cursos.ListInscritosResponse\x12B\n" +
 	"\x11InstructorAsignar\x12\x16.cursos.AsignarRequest\x1a\x15.cursos.EmptyResponse\x12K\n" +
 	"\x18InstructorCreateLicencia\x12\x1d.cursos.CreateLicenciaRequest\x1a\x10.cursos.Licencia\x12K\n" +
 	"\x18InstructorUpdateLicencia\x12\x1d.cursos.UpdateLicenciaRequest\x1a\x10.cursos.Licencia\x12L\n" +
@@ -6588,7 +6707,7 @@ func file_cursos_cursos_proto_rawDescGZIP() []byte {
 	return file_cursos_cursos_proto_rawDescData
 }
 
-var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
+var file_cursos_cursos_proto_msgTypes = make([]protoimpl.MessageInfo, 82)
 var file_cursos_cursos_proto_goTypes = []any{
 	(*EmptyRequest)(nil),                          // 0: cursos.EmptyRequest
 	(*UserRequest)(nil),                           // 1: cursos.UserRequest
@@ -6670,6 +6789,8 @@ var file_cursos_cursos_proto_goTypes = []any{
 	(*OrdenSinComision)(nil),                      // 77: cursos.OrdenSinComision
 	(*ListOrdenesSinComisionResponse)(nil),        // 78: cursos.ListOrdenesSinComisionResponse
 	(*RegistrarComisionOrdenRequest)(nil),         // 79: cursos.RegistrarComisionOrdenRequest
+	(*InscritoInfo)(nil),                          // 80: cursos.InscritoInfo
+	(*ListInscritosResponse)(nil),                 // 81: cursos.ListInscritosResponse
 }
 var file_cursos_cursos_proto_depIdxs = []int32{
 	10, // 0: cursos.ListCursosResponse.cursos:type_name -> cursos.CursoResponse
@@ -6693,135 +6814,138 @@ var file_cursos_cursos_proto_depIdxs = []int32{
 	73, // 18: cursos.FinanzasAdminResponse.transacciones_recientes:type_name -> cursos.TransaccionFin
 	74, // 19: cursos.AdminListLicenciasEmpresasResponse.licencias:type_name -> cursos.AdminLicenciaEmpresa
 	77, // 20: cursos.ListOrdenesSinComisionResponse.ordenes:type_name -> cursos.OrdenSinComision
-	3,  // 21: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
-	2,  // 22: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
-	0,  // 23: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
-	1,  // 24: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
-	2,  // 25: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
-	7,  // 26: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
-	8,  // 27: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
-	24, // 28: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
-	25, // 29: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
-	28, // 30: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
-	49, // 31: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
-	53, // 32: cursos.CursosService.AsignarAccesosLicencia:input_type -> cursos.AsignarAccesosLicenciaRequest
-	21, // 33: cursos.CursosService.ListInvitacionesLicencia:input_type -> cursos.LicenciaIDRequest
-	58, // 34: cursos.CursosService.NotificarCursoCompletado:input_type -> cursos.CursoCompletadoRequest
-	44, // 35: cursos.CursosService.RegistrarEventoStripe:input_type -> cursos.EventoStripeRequest
-	46, // 36: cursos.CursosService.ActualizarEstadoOrden:input_type -> cursos.ActualizarEstadoOrdenRequest
-	0,  // 37: cursos.CursosService.ListPlanes:input_type -> cursos.EmptyRequest
-	1,  // 38: cursos.CursosService.GetMiSuscripcion:input_type -> cursos.UserRequest
-	34, // 39: cursos.CursosService.CrearCheckoutSuscripcion:input_type -> cursos.CheckoutSuscripcionRequest
-	35, // 40: cursos.CursosService.SincronizarSuscripcion:input_type -> cursos.SincronizarSuscripcionRequest
-	36, // 41: cursos.CursosService.RegistrarFacturaSuscripcion:input_type -> cursos.FacturaSuscripcionRequest
-	1,  // 42: cursos.CursosService.TieneAccesoPorSuscripcion:input_type -> cursos.UserRequest
-	39, // 43: cursos.CursosService.AsignarAsientos:input_type -> cursos.AsignarAsientosRequest
-	40, // 44: cursos.CursosService.ListAsientos:input_type -> cursos.SuscripcionIDRequest
-	41, // 45: cursos.CursosService.RevocarAsiento:input_type -> cursos.RevocarAsientoRequest
-	29, // 46: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
-	48, // 47: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
-	27, // 48: cursos.CursosService.CreateCheckoutSessionCart:input_type -> cursos.CheckoutCartRequest
-	22, // 49: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
-	21, // 50: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
-	1,  // 51: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
-	1,  // 52: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
-	5,  // 53: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 54: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 55: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	2,  // 56: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
-	2,  // 57: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
-	1,  // 58: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
-	9,  // 59: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
-	19, // 60: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
-	20, // 61: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
-	21, // 62: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
-	0,  // 63: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
-	5,  // 64: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
-	6,  // 65: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
-	2,  // 66: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
-	2,  // 67: cursos.CursosService.AdminResetCodigo:input_type -> cursos.CursoIDRequest
-	0,  // 68: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
-	9,  // 69: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
-	4,  // 70: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
-	0,  // 71: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
-	0,  // 72: cursos.CursosService.GetFinanzasAdmin:input_type -> cursos.EmptyRequest
-	0,  // 73: cursos.CursosService.AdminListLicenciasEmpresas:input_type -> cursos.EmptyRequest
-	76, // 74: cursos.CursosService.ListOrdenesSinComision:input_type -> cursos.ListOrdenesSinComisionRequest
-	79, // 75: cursos.CursosService.RegistrarComisionOrden:input_type -> cursos.RegistrarComisionOrdenRequest
-	64, // 76: cursos.CursosService.GetDatosDC3:input_type -> cursos.DatosDC3Request
-	62, // 77: cursos.CursosService.GuardarDatosTrabajador:input_type -> cursos.DatosTrabajadorRequest
-	66, // 78: cursos.CursosService.RegistrarConstanciaDC3:input_type -> cursos.RegistrarConstanciaRequest
-	1,  // 79: cursos.CursosService.ListMisConstancias:input_type -> cursos.UserRequest
-	67, // 80: cursos.CursosService.VerificarConstancia:input_type -> cursos.VerificarConstanciaRequest
-	1,  // 81: cursos.CursosService.GetEmpresaInstructor:input_type -> cursos.UserRequest
-	63, // 82: cursos.CursosService.GuardarEmpresaInstructor:input_type -> cursos.EmpresaInstructorRequest
-	10, // 83: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
-	10, // 84: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
-	11, // 85: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
-	11, // 86: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 87: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
-	16, // 88: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
-	10, // 89: cursos.CursosService.UnirseConCodigo:output_type -> cursos.CursoResponse
-	16, // 90: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
-	50, // 91: cursos.CursosService.WebhookEnroll:output_type -> cursos.EnrollResponse
-	16, // 92: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
-	51, // 93: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.ComprarB2BDirectResponse
-	55, // 94: cursos.CursosService.AsignarAccesosLicencia:output_type -> cursos.AsignarAccesosLicenciaResponse
-	57, // 95: cursos.CursosService.ListInvitacionesLicencia:output_type -> cursos.ListInvitacionesLicenciaResponse
-	59, // 96: cursos.CursosService.NotificarCursoCompletado:output_type -> cursos.CursoCompletadoResponse
-	45, // 97: cursos.CursosService.RegistrarEventoStripe:output_type -> cursos.EventoStripeResponse
-	16, // 98: cursos.CursosService.ActualizarEstadoOrden:output_type -> cursos.EmptyResponse
-	32, // 99: cursos.CursosService.ListPlanes:output_type -> cursos.ListPlanesResponse
-	33, // 100: cursos.CursosService.GetMiSuscripcion:output_type -> cursos.SuscripcionResponse
-	30, // 101: cursos.CursosService.CrearCheckoutSuscripcion:output_type -> cursos.CheckoutSessionResponse
-	16, // 102: cursos.CursosService.SincronizarSuscripcion:output_type -> cursos.EmptyResponse
-	16, // 103: cursos.CursosService.RegistrarFacturaSuscripcion:output_type -> cursos.EmptyResponse
-	37, // 104: cursos.CursosService.TieneAccesoPorSuscripcion:output_type -> cursos.AccesoSuscripcionResponse
-	43, // 105: cursos.CursosService.AsignarAsientos:output_type -> cursos.ListAsientosResponse
-	43, // 106: cursos.CursosService.ListAsientos:output_type -> cursos.ListAsientosResponse
-	16, // 107: cursos.CursosService.RevocarAsiento:output_type -> cursos.EmptyResponse
-	30, // 108: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
-	30, // 109: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
-	30, // 110: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
-	23, // 111: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
-	18, // 112: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
-	23, // 113: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
-	11, // 114: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 115: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 116: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 117: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 118: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
-	10, // 119: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
-	13, // 120: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
-	16, // 121: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
-	17, // 122: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
-	17, // 123: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
-	16, // 124: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
-	11, // 125: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
-	10, // 126: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
-	10, // 127: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
-	16, // 128: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
-	10, // 129: cursos.CursosService.AdminResetCodigo:output_type -> cursos.CursoResponse
-	15, // 130: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
-	16, // 131: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
-	16, // 132: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
-	47, // 133: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
-	71, // 134: cursos.CursosService.GetFinanzasAdmin:output_type -> cursos.FinanzasAdminResponse
-	75, // 135: cursos.CursosService.AdminListLicenciasEmpresas:output_type -> cursos.AdminListLicenciasEmpresasResponse
-	78, // 136: cursos.CursosService.ListOrdenesSinComision:output_type -> cursos.ListOrdenesSinComisionResponse
-	16, // 137: cursos.CursosService.RegistrarComisionOrden:output_type -> cursos.EmptyResponse
-	65, // 138: cursos.CursosService.GetDatosDC3:output_type -> cursos.DatosDC3Response
-	16, // 139: cursos.CursosService.GuardarDatosTrabajador:output_type -> cursos.EmptyResponse
-	16, // 140: cursos.CursosService.RegistrarConstanciaDC3:output_type -> cursos.EmptyResponse
-	70, // 141: cursos.CursosService.ListMisConstancias:output_type -> cursos.ListConstanciasResponse
-	68, // 142: cursos.CursosService.VerificarConstancia:output_type -> cursos.VerificarConstanciaResponse
-	60, // 143: cursos.CursosService.GetEmpresaInstructor:output_type -> cursos.DatosEmpresaDC3
-	16, // 144: cursos.CursosService.GuardarEmpresaInstructor:output_type -> cursos.EmptyResponse
-	83, // [83:145] is the sub-list for method output_type
-	21, // [21:83] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	80, // 21: cursos.ListInscritosResponse.inscritos:type_name -> cursos.InscritoInfo
+	3,  // 22: cursos.CursosService.PreviewCurso:input_type -> cursos.CodigoRequest
+	2,  // 23: cursos.CursosService.GetCursoPublico:input_type -> cursos.CursoIDRequest
+	0,  // 24: cursos.CursosService.ListCursosPublicos:input_type -> cursos.EmptyRequest
+	1,  // 25: cursos.CursosService.ListMisCapacitaciones:input_type -> cursos.UserRequest
+	2,  // 26: cursos.CursosService.GetCurso:input_type -> cursos.CursoIDRequest
+	7,  // 27: cursos.CursosService.Inscribirse:input_type -> cursos.InscribirseRequest
+	8,  // 28: cursos.CursosService.UnirseConCodigo:input_type -> cursos.UnirseRequest
+	24, // 29: cursos.CursosService.UnirseConLicencia:input_type -> cursos.UnirseConLicenciaRequest
+	25, // 30: cursos.CursosService.WebhookEnroll:input_type -> cursos.WebhookEnrollRequest
+	28, // 31: cursos.CursosService.WebhookComprarLicencia:input_type -> cursos.WebhookComprarLicenciaRequest
+	49, // 32: cursos.CursosService.WebhookComprarB2BDirect:input_type -> cursos.WebhookComprarB2BDirectRequest
+	53, // 33: cursos.CursosService.AsignarAccesosLicencia:input_type -> cursos.AsignarAccesosLicenciaRequest
+	21, // 34: cursos.CursosService.ListInvitacionesLicencia:input_type -> cursos.LicenciaIDRequest
+	58, // 35: cursos.CursosService.NotificarCursoCompletado:input_type -> cursos.CursoCompletadoRequest
+	44, // 36: cursos.CursosService.RegistrarEventoStripe:input_type -> cursos.EventoStripeRequest
+	46, // 37: cursos.CursosService.ActualizarEstadoOrden:input_type -> cursos.ActualizarEstadoOrdenRequest
+	0,  // 38: cursos.CursosService.ListPlanes:input_type -> cursos.EmptyRequest
+	1,  // 39: cursos.CursosService.GetMiSuscripcion:input_type -> cursos.UserRequest
+	34, // 40: cursos.CursosService.CrearCheckoutSuscripcion:input_type -> cursos.CheckoutSuscripcionRequest
+	35, // 41: cursos.CursosService.SincronizarSuscripcion:input_type -> cursos.SincronizarSuscripcionRequest
+	36, // 42: cursos.CursosService.RegistrarFacturaSuscripcion:input_type -> cursos.FacturaSuscripcionRequest
+	1,  // 43: cursos.CursosService.TieneAccesoPorSuscripcion:input_type -> cursos.UserRequest
+	39, // 44: cursos.CursosService.AsignarAsientos:input_type -> cursos.AsignarAsientosRequest
+	40, // 45: cursos.CursosService.ListAsientos:input_type -> cursos.SuscripcionIDRequest
+	41, // 46: cursos.CursosService.RevocarAsiento:input_type -> cursos.RevocarAsientoRequest
+	29, // 47: cursos.CursosService.CreateCheckoutSession:input_type -> cursos.CheckoutSessionRequest
+	48, // 48: cursos.CursosService.CreateCheckoutSessionB2BDirect:input_type -> cursos.CreateCheckoutSessionB2BDirectRequest
+	27, // 49: cursos.CursosService.CreateCheckoutSessionCart:input_type -> cursos.CheckoutCartRequest
+	22, // 50: cursos.CursosService.ListLicencias:input_type -> cursos.ListLicenciasRequest
+	21, // 51: cursos.CursosService.GetLicenciaPublica:input_type -> cursos.LicenciaIDRequest
+	1,  // 52: cursos.CursosService.ListLicenciasCompradas:input_type -> cursos.UserRequest
+	1,  // 53: cursos.CursosService.InstructorListCapacitaciones:input_type -> cursos.UserRequest
+	5,  // 54: cursos.CursosService.InstructorCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 55: cursos.CursosService.InstructorUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 56: cursos.CursosService.InstructorDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	2,  // 57: cursos.CursosService.InstructorTogglePublic:input_type -> cursos.CursoIDRequest
+	2,  // 58: cursos.CursosService.InstructorResetCodigo:input_type -> cursos.CursoIDRequest
+	1,  // 59: cursos.CursosService.InstructorListEstudiantes:input_type -> cursos.UserRequest
+	2,  // 60: cursos.CursosService.InstructorListInscritos:input_type -> cursos.CursoIDRequest
+	9,  // 61: cursos.CursosService.InstructorAsignar:input_type -> cursos.AsignarRequest
+	19, // 62: cursos.CursosService.InstructorCreateLicencia:input_type -> cursos.CreateLicenciaRequest
+	20, // 63: cursos.CursosService.InstructorUpdateLicencia:input_type -> cursos.UpdateLicenciaRequest
+	21, // 64: cursos.CursosService.InstructorDeleteLicencia:input_type -> cursos.LicenciaIDRequest
+	0,  // 65: cursos.CursosService.AdminListCapacitaciones:input_type -> cursos.EmptyRequest
+	5,  // 66: cursos.CursosService.AdminCreateCapacitacion:input_type -> cursos.CreateCursoRequest
+	6,  // 67: cursos.CursosService.AdminUpdateCapacitacion:input_type -> cursos.UpdateCursoRequest
+	2,  // 68: cursos.CursosService.AdminDeleteCapacitacion:input_type -> cursos.CursoIDRequest
+	2,  // 69: cursos.CursosService.AdminResetCodigo:input_type -> cursos.CursoIDRequest
+	0,  // 70: cursos.CursosService.AdminListAsignaciones:input_type -> cursos.EmptyRequest
+	9,  // 71: cursos.CursosService.AdminAsignar:input_type -> cursos.AsignarRequest
+	4,  // 72: cursos.CursosService.AdminDesAsignar:input_type -> cursos.AsignacionIDRequest
+	0,  // 73: cursos.CursosService.GetAdminDashboardStats:input_type -> cursos.EmptyRequest
+	0,  // 74: cursos.CursosService.GetFinanzasAdmin:input_type -> cursos.EmptyRequest
+	0,  // 75: cursos.CursosService.AdminListLicenciasEmpresas:input_type -> cursos.EmptyRequest
+	76, // 76: cursos.CursosService.ListOrdenesSinComision:input_type -> cursos.ListOrdenesSinComisionRequest
+	79, // 77: cursos.CursosService.RegistrarComisionOrden:input_type -> cursos.RegistrarComisionOrdenRequest
+	64, // 78: cursos.CursosService.GetDatosDC3:input_type -> cursos.DatosDC3Request
+	62, // 79: cursos.CursosService.GuardarDatosTrabajador:input_type -> cursos.DatosTrabajadorRequest
+	66, // 80: cursos.CursosService.RegistrarConstanciaDC3:input_type -> cursos.RegistrarConstanciaRequest
+	1,  // 81: cursos.CursosService.ListMisConstancias:input_type -> cursos.UserRequest
+	67, // 82: cursos.CursosService.VerificarConstancia:input_type -> cursos.VerificarConstanciaRequest
+	1,  // 83: cursos.CursosService.GetEmpresaInstructor:input_type -> cursos.UserRequest
+	63, // 84: cursos.CursosService.GuardarEmpresaInstructor:input_type -> cursos.EmpresaInstructorRequest
+	10, // 85: cursos.CursosService.PreviewCurso:output_type -> cursos.CursoResponse
+	10, // 86: cursos.CursosService.GetCursoPublico:output_type -> cursos.CursoResponse
+	11, // 87: cursos.CursosService.ListCursosPublicos:output_type -> cursos.ListCursosResponse
+	11, // 88: cursos.CursosService.ListMisCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 89: cursos.CursosService.GetCurso:output_type -> cursos.CursoResponse
+	16, // 90: cursos.CursosService.Inscribirse:output_type -> cursos.EmptyResponse
+	10, // 91: cursos.CursosService.UnirseConCodigo:output_type -> cursos.CursoResponse
+	16, // 92: cursos.CursosService.UnirseConLicencia:output_type -> cursos.EmptyResponse
+	50, // 93: cursos.CursosService.WebhookEnroll:output_type -> cursos.EnrollResponse
+	16, // 94: cursos.CursosService.WebhookComprarLicencia:output_type -> cursos.EmptyResponse
+	51, // 95: cursos.CursosService.WebhookComprarB2BDirect:output_type -> cursos.ComprarB2BDirectResponse
+	55, // 96: cursos.CursosService.AsignarAccesosLicencia:output_type -> cursos.AsignarAccesosLicenciaResponse
+	57, // 97: cursos.CursosService.ListInvitacionesLicencia:output_type -> cursos.ListInvitacionesLicenciaResponse
+	59, // 98: cursos.CursosService.NotificarCursoCompletado:output_type -> cursos.CursoCompletadoResponse
+	45, // 99: cursos.CursosService.RegistrarEventoStripe:output_type -> cursos.EventoStripeResponse
+	16, // 100: cursos.CursosService.ActualizarEstadoOrden:output_type -> cursos.EmptyResponse
+	32, // 101: cursos.CursosService.ListPlanes:output_type -> cursos.ListPlanesResponse
+	33, // 102: cursos.CursosService.GetMiSuscripcion:output_type -> cursos.SuscripcionResponse
+	30, // 103: cursos.CursosService.CrearCheckoutSuscripcion:output_type -> cursos.CheckoutSessionResponse
+	16, // 104: cursos.CursosService.SincronizarSuscripcion:output_type -> cursos.EmptyResponse
+	16, // 105: cursos.CursosService.RegistrarFacturaSuscripcion:output_type -> cursos.EmptyResponse
+	37, // 106: cursos.CursosService.TieneAccesoPorSuscripcion:output_type -> cursos.AccesoSuscripcionResponse
+	43, // 107: cursos.CursosService.AsignarAsientos:output_type -> cursos.ListAsientosResponse
+	43, // 108: cursos.CursosService.ListAsientos:output_type -> cursos.ListAsientosResponse
+	16, // 109: cursos.CursosService.RevocarAsiento:output_type -> cursos.EmptyResponse
+	30, // 110: cursos.CursosService.CreateCheckoutSession:output_type -> cursos.CheckoutSessionResponse
+	30, // 111: cursos.CursosService.CreateCheckoutSessionB2BDirect:output_type -> cursos.CheckoutSessionResponse
+	30, // 112: cursos.CursosService.CreateCheckoutSessionCart:output_type -> cursos.CheckoutSessionResponse
+	23, // 113: cursos.CursosService.ListLicencias:output_type -> cursos.ListLicenciasResponse
+	18, // 114: cursos.CursosService.GetLicenciaPublica:output_type -> cursos.LicenciaPublicaResponse
+	23, // 115: cursos.CursosService.ListLicenciasCompradas:output_type -> cursos.ListLicenciasResponse
+	11, // 116: cursos.CursosService.InstructorListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 117: cursos.CursosService.InstructorCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 118: cursos.CursosService.InstructorUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 119: cursos.CursosService.InstructorDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 120: cursos.CursosService.InstructorTogglePublic:output_type -> cursos.CursoResponse
+	10, // 121: cursos.CursosService.InstructorResetCodigo:output_type -> cursos.CursoResponse
+	13, // 122: cursos.CursosService.InstructorListEstudiantes:output_type -> cursos.ListEstudiantesResponse
+	81, // 123: cursos.CursosService.InstructorListInscritos:output_type -> cursos.ListInscritosResponse
+	16, // 124: cursos.CursosService.InstructorAsignar:output_type -> cursos.EmptyResponse
+	17, // 125: cursos.CursosService.InstructorCreateLicencia:output_type -> cursos.Licencia
+	17, // 126: cursos.CursosService.InstructorUpdateLicencia:output_type -> cursos.Licencia
+	16, // 127: cursos.CursosService.InstructorDeleteLicencia:output_type -> cursos.EmptyResponse
+	11, // 128: cursos.CursosService.AdminListCapacitaciones:output_type -> cursos.ListCursosResponse
+	10, // 129: cursos.CursosService.AdminCreateCapacitacion:output_type -> cursos.CursoResponse
+	10, // 130: cursos.CursosService.AdminUpdateCapacitacion:output_type -> cursos.CursoResponse
+	16, // 131: cursos.CursosService.AdminDeleteCapacitacion:output_type -> cursos.EmptyResponse
+	10, // 132: cursos.CursosService.AdminResetCodigo:output_type -> cursos.CursoResponse
+	15, // 133: cursos.CursosService.AdminListAsignaciones:output_type -> cursos.ListAsignacionesResponse
+	16, // 134: cursos.CursosService.AdminAsignar:output_type -> cursos.EmptyResponse
+	16, // 135: cursos.CursosService.AdminDesAsignar:output_type -> cursos.EmptyResponse
+	47, // 136: cursos.CursosService.GetAdminDashboardStats:output_type -> cursos.AdminDashboardStatsResponse
+	71, // 137: cursos.CursosService.GetFinanzasAdmin:output_type -> cursos.FinanzasAdminResponse
+	75, // 138: cursos.CursosService.AdminListLicenciasEmpresas:output_type -> cursos.AdminListLicenciasEmpresasResponse
+	78, // 139: cursos.CursosService.ListOrdenesSinComision:output_type -> cursos.ListOrdenesSinComisionResponse
+	16, // 140: cursos.CursosService.RegistrarComisionOrden:output_type -> cursos.EmptyResponse
+	65, // 141: cursos.CursosService.GetDatosDC3:output_type -> cursos.DatosDC3Response
+	16, // 142: cursos.CursosService.GuardarDatosTrabajador:output_type -> cursos.EmptyResponse
+	16, // 143: cursos.CursosService.RegistrarConstanciaDC3:output_type -> cursos.EmptyResponse
+	70, // 144: cursos.CursosService.ListMisConstancias:output_type -> cursos.ListConstanciasResponse
+	68, // 145: cursos.CursosService.VerificarConstancia:output_type -> cursos.VerificarConstanciaResponse
+	60, // 146: cursos.CursosService.GetEmpresaInstructor:output_type -> cursos.DatosEmpresaDC3
+	16, // 147: cursos.CursosService.GuardarEmpresaInstructor:output_type -> cursos.EmptyResponse
+	85, // [85:148] is the sub-list for method output_type
+	22, // [22:85] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_cursos_cursos_proto_init() }
@@ -6835,7 +6959,7 @@ func file_cursos_cursos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cursos_cursos_proto_rawDesc), len(file_cursos_cursos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   80,
+			NumMessages:   82,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

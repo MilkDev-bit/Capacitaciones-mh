@@ -31,6 +31,12 @@ service LeccionesService {
   // ── Lecciones ─────────────────────────────────────────────────────────────
   // Compatibilidad: devuelve lista plana (útil para progreso rápido).
   rpc GetLeccionesConProgreso(CursoUserRequest) returns (ListLeccionesResponse);
+  // Avance resumido de VARIOS alumnos en un curso, en una sola consulta.
+  //
+  // Existe para la lista de seguimiento del instructor. Llamar a
+  // GetLeccionesConProgreso una vez por alumno funcionaría, pero son N viajes
+  // de red y N consultas para pintar una tabla; con treinta inscritos se nota.
+  rpc ResumenAvanceCurso(ResumenAvanceRequest) returns (ResumenAvanceResponse);
   rpc MarcarLeccionCompleta(MarcarRequest)      returns (MarcarLeccionResponse);
   rpc GuardarProgresoVideo(GuardarProgresoVideoRequest) returns (EmptyResponse);
 
@@ -427,3 +433,33 @@ message ListEntregasResponse {
 }
 
 message EmptyResponse {}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resumen de avance para el seguimiento del instructor
+// ─────────────────────────────────────────────────────────────────────────────
+
+message ResumenAvanceRequest {
+  string curso_id = 1;
+  // Vacío devuelve el avance de todos los que tengan progreso registrado. Con
+  // la lista puesta se garantiza una fila por alumno, incluidos los que aún no
+  // han abierto ninguna lección.
+  repeated string user_ids = 2;
+}
+
+message AvanceAlumno {
+  string user_id     = 1;
+  int32  completadas = 2;
+  int32  total       = 3;
+  // Última lección completada, para saber si alguien se quedó atascado hace
+  // semanas o si simplemente va despacio.
+  string ultima_actividad = 4;
+  int32  puntos           = 5;
+}
+
+message ResumenAvanceResponse {
+  repeated AvanceAlumno avances = 1;
+  // Total de lecciones del curso. Viaja aparte porque es el mismo para todos y
+  // permite pintar la barra aunque un alumno no tenga ninguna fila de avance.
+  int32 total_lecciones = 2;
+}

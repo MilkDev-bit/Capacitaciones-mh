@@ -83,6 +83,11 @@ func (s *LeccionesService) ReorderSubmodulos(ctx context.Context, moduloID strin
 
 // ── Lecciones ─────────────────────────────────────────────────────────────────
 
+// ResumenAvanceCurso devuelve el avance de varios alumnos en un curso.
+func (s *LeccionesService) ResumenAvanceCurso(ctx context.Context, cursoID string, userIDs []string) (*leccionespb.ResumenAvanceResponse, error) {
+	return s.repo.ResumenAvanceCurso(ctx, cursoID, userIDs)
+}
+
 func (s *LeccionesService) GetLeccionesConProgreso(ctx context.Context, cursoID, userID string) ([]*leccionespb.LeccionResponse, error) {
 	lecs, err := s.repo.ListByCursoConProgreso(ctx, cursoID, userID)
 	if err != nil {

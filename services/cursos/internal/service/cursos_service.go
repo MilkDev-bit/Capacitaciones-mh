@@ -1079,6 +1079,11 @@ func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb
 	return &cursospb.EmptyResponse{}, err
 }
 
+// InstructorListInscritos lista los alumnos de un curso del instructor.
+func (s *CursosService) InstructorListInscritos(ctx context.Context, cursoID, instructorID string) (*cursospb.ListInscritosResponse, error) {
+	return s.repo.InstructorListInscritos(ctx, cursoID, instructorID)
+}
+
 // ── Panel financiero y relleno de comisiones ────────────────────────────────
 
 func (s *CursosService) GetFinanzasAdmin(ctx context.Context) (*cursospb.FinanzasAdminResponse, error) {

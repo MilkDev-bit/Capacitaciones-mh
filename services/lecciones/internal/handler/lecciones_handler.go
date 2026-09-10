@@ -106,6 +106,14 @@ func (h *LeccionesHandler) InstructorReorderSubmodulos(ctx context.Context, req 
 
 // ── Lecciones ─────────────────────────────────────────────────────────────────
 
+func (h *LeccionesHandler) ResumenAvanceCurso(ctx context.Context, req *leccionespb.ResumenAvanceRequest) (*leccionespb.ResumenAvanceResponse, error) {
+	res, err := h.svc.ResumenAvanceCurso(ctx, req.CursoId, req.UserIds)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return res, nil
+}
+
 func (h *LeccionesHandler) GetLeccionesConProgreso(ctx context.Context, req *leccionespb.CursoUserRequest) (*leccionespb.ListLeccionesResponse, error) {
 	list, err := h.svc.GetLeccionesConProgreso(ctx, req.CursoId, req.UserId)
 	if err != nil {

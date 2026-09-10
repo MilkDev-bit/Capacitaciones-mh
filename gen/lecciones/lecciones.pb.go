@@ -3284,6 +3284,193 @@ func (*EmptyResponse) Descriptor() ([]byte, []int) {
 	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{44}
 }
 
+type ResumenAvanceRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	CursoId string                 `protobuf:"bytes,1,opt,name=curso_id,json=cursoId,proto3" json:"curso_id,omitempty"`
+	// Vacío devuelve el avance de todos los que tengan progreso registrado. Con
+	// la lista puesta se garantiza una fila por alumno, incluidos los que aún no
+	// han abierto ninguna lección.
+	UserIds       []string `protobuf:"bytes,2,rep,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResumenAvanceRequest) Reset() {
+	*x = ResumenAvanceRequest{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResumenAvanceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResumenAvanceRequest) ProtoMessage() {}
+
+func (x *ResumenAvanceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResumenAvanceRequest.ProtoReflect.Descriptor instead.
+func (*ResumenAvanceRequest) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ResumenAvanceRequest) GetCursoId() string {
+	if x != nil {
+		return x.CursoId
+	}
+	return ""
+}
+
+func (x *ResumenAvanceRequest) GetUserIds() []string {
+	if x != nil {
+		return x.UserIds
+	}
+	return nil
+}
+
+type AvanceAlumno struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	UserId      string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Completadas int32                  `protobuf:"varint,2,opt,name=completadas,proto3" json:"completadas,omitempty"`
+	Total       int32                  `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
+	// Última lección completada, para saber si alguien se quedó atascado hace
+	// semanas o si simplemente va despacio.
+	UltimaActividad string `protobuf:"bytes,4,opt,name=ultima_actividad,json=ultimaActividad,proto3" json:"ultima_actividad,omitempty"`
+	Puntos          int32  `protobuf:"varint,5,opt,name=puntos,proto3" json:"puntos,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AvanceAlumno) Reset() {
+	*x = AvanceAlumno{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AvanceAlumno) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AvanceAlumno) ProtoMessage() {}
+
+func (x *AvanceAlumno) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AvanceAlumno.ProtoReflect.Descriptor instead.
+func (*AvanceAlumno) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *AvanceAlumno) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *AvanceAlumno) GetCompletadas() int32 {
+	if x != nil {
+		return x.Completadas
+	}
+	return 0
+}
+
+func (x *AvanceAlumno) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *AvanceAlumno) GetUltimaActividad() string {
+	if x != nil {
+		return x.UltimaActividad
+	}
+	return ""
+}
+
+func (x *AvanceAlumno) GetPuntos() int32 {
+	if x != nil {
+		return x.Puntos
+	}
+	return 0
+}
+
+type ResumenAvanceResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Avances []*AvanceAlumno        `protobuf:"bytes,1,rep,name=avances,proto3" json:"avances,omitempty"`
+	// Total de lecciones del curso. Viaja aparte porque es el mismo para todos y
+	// permite pintar la barra aunque un alumno no tenga ninguna fila de avance.
+	TotalLecciones int32 `protobuf:"varint,2,opt,name=total_lecciones,json=totalLecciones,proto3" json:"total_lecciones,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ResumenAvanceResponse) Reset() {
+	*x = ResumenAvanceResponse{}
+	mi := &file_lecciones_lecciones_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResumenAvanceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResumenAvanceResponse) ProtoMessage() {}
+
+func (x *ResumenAvanceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lecciones_lecciones_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResumenAvanceResponse.ProtoReflect.Descriptor instead.
+func (*ResumenAvanceResponse) Descriptor() ([]byte, []int) {
+	return file_lecciones_lecciones_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ResumenAvanceResponse) GetAvances() []*AvanceAlumno {
+	if x != nil {
+		return x.Avances
+	}
+	return nil
+}
+
+func (x *ResumenAvanceResponse) GetTotalLecciones() int32 {
+	if x != nil {
+		return x.TotalLecciones
+	}
+	return 0
+}
+
 var File_lecciones_lecciones_proto protoreflect.FileDescriptor
 
 const file_lecciones_lecciones_proto_rawDesc = "" +
@@ -3567,7 +3754,19 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"updated_at\x18\x0e \x01(\tR\tupdatedAt\"N\n" +
 	"\x14ListEntregasResponse\x126\n" +
 	"\bentregas\x18\x01 \x03(\v2\x1a.lecciones.EntregaResponseR\bentregas\"\x0f\n" +
-	"\rEmptyResponse*\xb4\x02\n" +
+	"\rEmptyResponse\"L\n" +
+	"\x14ResumenAvanceRequest\x12\x19\n" +
+	"\bcurso_id\x18\x01 \x01(\tR\acursoId\x12\x19\n" +
+	"\buser_ids\x18\x02 \x03(\tR\auserIds\"\xa2\x01\n" +
+	"\fAvanceAlumno\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12 \n" +
+	"\vcompletadas\x18\x02 \x01(\x05R\vcompletadas\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x05R\x05total\x12)\n" +
+	"\x10ultima_actividad\x18\x04 \x01(\tR\x0fultimaActividad\x12\x16\n" +
+	"\x06puntos\x18\x05 \x01(\x05R\x06puntos\"s\n" +
+	"\x15ResumenAvanceResponse\x121\n" +
+	"\aavances\x18\x01 \x03(\v2\x17.lecciones.AvanceAlumnoR\aavances\x12'\n" +
+	"\x0ftotal_lecciones\x18\x02 \x01(\x05R\x0etotalLecciones*\xb4\x02\n" +
 	"\n" +
 	"LessonType\x12\x1b\n" +
 	"\x17LESSON_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -3581,7 +3780,7 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x1aLESSON_TYPE_GAME_FILLBLANK\x10\b\x12\x1a\n" +
 	"\x16LESSON_TYPE_GAME_ORDER\x10\t\x12\x18\n" +
 	"\x14LESSON_TYPE_ACTIVITY\x10\n" +
-	"2\x9f\x14\n" +
+	"2\xf8\x14\n" +
 	"\x10LeccionesService\x12I\n" +
 	"\fGetCursoTree\x12\x1b.lecciones.CursoUserRequest\x1a\x1c.lecciones.CursoTreeResponse\x12O\n" +
 	"\x16InstructorGetCursoTree\x12\x17.lecciones.CursoRequest\x1a\x1c.lecciones.CursoTreeResponse\x12S\n" +
@@ -3593,7 +3792,8 @@ const file_lecciones_lecciones_proto_rawDesc = "" +
 	"\x19InstructorUpdateSubmodulo\x12!.lecciones.UpdateSubmoduloRequest\x1a\x1c.lecciones.SubmoduloResponse\x12T\n" +
 	"\x19InstructorDeleteSubmodulo\x12\x1d.lecciones.SubmoduloIDRequest\x1a\x18.lecciones.EmptyResponse\x12\\\n" +
 	"\x1bInstructorReorderSubmodulos\x12#.lecciones.ReorderSubmodulosRequest\x1a\x18.lecciones.EmptyResponse\x12X\n" +
-	"\x17GetLeccionesConProgreso\x12\x1b.lecciones.CursoUserRequest\x1a .lecciones.ListLeccionesResponse\x12S\n" +
+	"\x17GetLeccionesConProgreso\x12\x1b.lecciones.CursoUserRequest\x1a .lecciones.ListLeccionesResponse\x12W\n" +
+	"\x12ResumenAvanceCurso\x12\x1f.lecciones.ResumenAvanceRequest\x1a .lecciones.ResumenAvanceResponse\x12S\n" +
 	"\x15MarcarLeccionCompleta\x12\x18.lecciones.MarcarRequest\x1a .lecciones.MarcarLeccionResponse\x12X\n" +
 	"\x14GuardarProgresoVideo\x12&.lecciones.GuardarProgresoVideoRequest\x1a\x18.lecciones.EmptyResponse\x12T\n" +
 	"\x17InstructorListLecciones\x12\x17.lecciones.CursoRequest\x1a .lecciones.ListLeccionesResponse\x12V\n" +
@@ -3626,7 +3826,7 @@ func file_lecciones_lecciones_proto_rawDescGZIP() []byte {
 }
 
 var file_lecciones_lecciones_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_lecciones_lecciones_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_lecciones_lecciones_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_lecciones_lecciones_proto_goTypes = []any{
 	(LessonType)(0),                       // 0: lecciones.LessonType
 	(*UserRequest)(nil),                   // 1: lecciones.UserRequest
@@ -3674,6 +3874,9 @@ var file_lecciones_lecciones_proto_goTypes = []any{
 	(*EntregaResponse)(nil),               // 43: lecciones.EntregaResponse
 	(*ListEntregasResponse)(nil),          // 44: lecciones.ListEntregasResponse
 	(*EmptyResponse)(nil),                 // 45: lecciones.EmptyResponse
+	(*ResumenAvanceRequest)(nil),          // 46: lecciones.ResumenAvanceRequest
+	(*AvanceAlumno)(nil),                  // 47: lecciones.AvanceAlumno
+	(*ResumenAvanceResponse)(nil),         // 48: lecciones.ResumenAvanceResponse
 }
 var file_lecciones_lecciones_proto_depIdxs = []int32{
 	0,  // 0: lecciones.CreateLeccionRequest.lesson_type:type_name -> lecciones.LessonType
@@ -3694,69 +3897,72 @@ var file_lecciones_lecciones_proto_depIdxs = []int32{
 	39, // 15: lecciones.LeaderboardResponse.my_entry:type_name -> lecciones.LeaderboardEntry
 	41, // 16: lecciones.UserPointsResponse.badges:type_name -> lecciones.Badge
 	43, // 17: lecciones.ListEntregasResponse.entregas:type_name -> lecciones.EntregaResponse
-	3,  // 18: lecciones.LeccionesService.GetCursoTree:input_type -> lecciones.CursoUserRequest
-	2,  // 19: lecciones.LeccionesService.InstructorGetCursoTree:input_type -> lecciones.CursoRequest
-	10, // 20: lecciones.LeccionesService.InstructorCreateModulo:input_type -> lecciones.CreateModuloRequest
-	11, // 21: lecciones.LeccionesService.InstructorUpdateModulo:input_type -> lecciones.UpdateModuloRequest
-	6,  // 22: lecciones.LeccionesService.InstructorDeleteModulo:input_type -> lecciones.ModuloIDRequest
-	12, // 23: lecciones.LeccionesService.InstructorReorderModulos:input_type -> lecciones.ReorderModulosRequest
-	13, // 24: lecciones.LeccionesService.InstructorCreateSubmodulo:input_type -> lecciones.CreateSubmoduloRequest
-	14, // 25: lecciones.LeccionesService.InstructorUpdateSubmodulo:input_type -> lecciones.UpdateSubmoduloRequest
-	7,  // 26: lecciones.LeccionesService.InstructorDeleteSubmodulo:input_type -> lecciones.SubmoduloIDRequest
-	15, // 27: lecciones.LeccionesService.InstructorReorderSubmodulos:input_type -> lecciones.ReorderSubmodulosRequest
-	3,  // 28: lecciones.LeccionesService.GetLeccionesConProgreso:input_type -> lecciones.CursoUserRequest
-	8,  // 29: lecciones.LeccionesService.MarcarLeccionCompleta:input_type -> lecciones.MarcarRequest
-	9,  // 30: lecciones.LeccionesService.GuardarProgresoVideo:input_type -> lecciones.GuardarProgresoVideoRequest
-	2,  // 31: lecciones.LeccionesService.InstructorListLecciones:input_type -> lecciones.CursoRequest
-	16, // 32: lecciones.LeccionesService.InstructorCreateLeccion:input_type -> lecciones.CreateLeccionRequest
-	17, // 33: lecciones.LeccionesService.InstructorUpdateLeccion:input_type -> lecciones.UpdateLeccionRequest
-	4,  // 34: lecciones.LeccionesService.InstructorDeleteLeccion:input_type -> lecciones.LeccionRequest
-	18, // 35: lecciones.LeccionesService.InstructorReorderLecciones:input_type -> lecciones.ReorderRequest
-	3,  // 36: lecciones.LeccionesService.GetPreguntasIntermedias:input_type -> lecciones.CursoUserRequest
-	20, // 37: lecciones.LeccionesService.SubmitPreguntasIntermedias:input_type -> lecciones.SubmitIntermediasRequest
-	2,  // 38: lecciones.LeccionesService.InstructorListPreguntasIntermedias:input_type -> lecciones.CursoRequest
-	19, // 39: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:input_type -> lecciones.CreateIntermediaRequest
-	5,  // 40: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:input_type -> lecciones.IntermediaIDRequest
-	23, // 41: lecciones.LeccionesService.SubmitGameScore:input_type -> lecciones.SubmitGameScoreRequest
-	24, // 42: lecciones.LeccionesService.GetCursoLeaderboard:input_type -> lecciones.LeaderboardRequest
-	1,  // 43: lecciones.LeccionesService.GetUserPoints:input_type -> lecciones.UserRequest
-	25, // 44: lecciones.LeccionesService.SubmitEntregaActividad:input_type -> lecciones.SubmitEntregaRequest
-	26, // 45: lecciones.LeccionesService.GetEntregaActividadUsuario:input_type -> lecciones.GetEntregaRequest
-	27, // 46: lecciones.LeccionesService.InstructorListEntregas:input_type -> lecciones.InstructorListEntregasRequest
-	28, // 47: lecciones.LeccionesService.GetCursoTree:output_type -> lecciones.CursoTreeResponse
-	28, // 48: lecciones.LeccionesService.InstructorGetCursoTree:output_type -> lecciones.CursoTreeResponse
-	29, // 49: lecciones.LeccionesService.InstructorCreateModulo:output_type -> lecciones.ModuloResponse
-	29, // 50: lecciones.LeccionesService.InstructorUpdateModulo:output_type -> lecciones.ModuloResponse
-	45, // 51: lecciones.LeccionesService.InstructorDeleteModulo:output_type -> lecciones.EmptyResponse
-	45, // 52: lecciones.LeccionesService.InstructorReorderModulos:output_type -> lecciones.EmptyResponse
-	30, // 53: lecciones.LeccionesService.InstructorCreateSubmodulo:output_type -> lecciones.SubmoduloResponse
-	30, // 54: lecciones.LeccionesService.InstructorUpdateSubmodulo:output_type -> lecciones.SubmoduloResponse
-	45, // 55: lecciones.LeccionesService.InstructorDeleteSubmodulo:output_type -> lecciones.EmptyResponse
-	45, // 56: lecciones.LeccionesService.InstructorReorderSubmodulos:output_type -> lecciones.EmptyResponse
-	32, // 57: lecciones.LeccionesService.GetLeccionesConProgreso:output_type -> lecciones.ListLeccionesResponse
-	33, // 58: lecciones.LeccionesService.MarcarLeccionCompleta:output_type -> lecciones.MarcarLeccionResponse
-	45, // 59: lecciones.LeccionesService.GuardarProgresoVideo:output_type -> lecciones.EmptyResponse
-	32, // 60: lecciones.LeccionesService.InstructorListLecciones:output_type -> lecciones.ListLeccionesResponse
-	31, // 61: lecciones.LeccionesService.InstructorCreateLeccion:output_type -> lecciones.LeccionResponse
-	31, // 62: lecciones.LeccionesService.InstructorUpdateLeccion:output_type -> lecciones.LeccionResponse
-	45, // 63: lecciones.LeccionesService.InstructorDeleteLeccion:output_type -> lecciones.EmptyResponse
-	45, // 64: lecciones.LeccionesService.InstructorReorderLecciones:output_type -> lecciones.EmptyResponse
-	36, // 65: lecciones.LeccionesService.GetPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
-	37, // 66: lecciones.LeccionesService.SubmitPreguntasIntermedias:output_type -> lecciones.SubmitIntermediasResponse
-	36, // 67: lecciones.LeccionesService.InstructorListPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
-	34, // 68: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:output_type -> lecciones.IntermediaResponse
-	45, // 69: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:output_type -> lecciones.EmptyResponse
-	38, // 70: lecciones.LeccionesService.SubmitGameScore:output_type -> lecciones.SubmitGameScoreResponse
-	40, // 71: lecciones.LeccionesService.GetCursoLeaderboard:output_type -> lecciones.LeaderboardResponse
-	42, // 72: lecciones.LeccionesService.GetUserPoints:output_type -> lecciones.UserPointsResponse
-	43, // 73: lecciones.LeccionesService.SubmitEntregaActividad:output_type -> lecciones.EntregaResponse
-	43, // 74: lecciones.LeccionesService.GetEntregaActividadUsuario:output_type -> lecciones.EntregaResponse
-	44, // 75: lecciones.LeccionesService.InstructorListEntregas:output_type -> lecciones.ListEntregasResponse
-	47, // [47:76] is the sub-list for method output_type
-	18, // [18:47] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	47, // 18: lecciones.ResumenAvanceResponse.avances:type_name -> lecciones.AvanceAlumno
+	3,  // 19: lecciones.LeccionesService.GetCursoTree:input_type -> lecciones.CursoUserRequest
+	2,  // 20: lecciones.LeccionesService.InstructorGetCursoTree:input_type -> lecciones.CursoRequest
+	10, // 21: lecciones.LeccionesService.InstructorCreateModulo:input_type -> lecciones.CreateModuloRequest
+	11, // 22: lecciones.LeccionesService.InstructorUpdateModulo:input_type -> lecciones.UpdateModuloRequest
+	6,  // 23: lecciones.LeccionesService.InstructorDeleteModulo:input_type -> lecciones.ModuloIDRequest
+	12, // 24: lecciones.LeccionesService.InstructorReorderModulos:input_type -> lecciones.ReorderModulosRequest
+	13, // 25: lecciones.LeccionesService.InstructorCreateSubmodulo:input_type -> lecciones.CreateSubmoduloRequest
+	14, // 26: lecciones.LeccionesService.InstructorUpdateSubmodulo:input_type -> lecciones.UpdateSubmoduloRequest
+	7,  // 27: lecciones.LeccionesService.InstructorDeleteSubmodulo:input_type -> lecciones.SubmoduloIDRequest
+	15, // 28: lecciones.LeccionesService.InstructorReorderSubmodulos:input_type -> lecciones.ReorderSubmodulosRequest
+	3,  // 29: lecciones.LeccionesService.GetLeccionesConProgreso:input_type -> lecciones.CursoUserRequest
+	46, // 30: lecciones.LeccionesService.ResumenAvanceCurso:input_type -> lecciones.ResumenAvanceRequest
+	8,  // 31: lecciones.LeccionesService.MarcarLeccionCompleta:input_type -> lecciones.MarcarRequest
+	9,  // 32: lecciones.LeccionesService.GuardarProgresoVideo:input_type -> lecciones.GuardarProgresoVideoRequest
+	2,  // 33: lecciones.LeccionesService.InstructorListLecciones:input_type -> lecciones.CursoRequest
+	16, // 34: lecciones.LeccionesService.InstructorCreateLeccion:input_type -> lecciones.CreateLeccionRequest
+	17, // 35: lecciones.LeccionesService.InstructorUpdateLeccion:input_type -> lecciones.UpdateLeccionRequest
+	4,  // 36: lecciones.LeccionesService.InstructorDeleteLeccion:input_type -> lecciones.LeccionRequest
+	18, // 37: lecciones.LeccionesService.InstructorReorderLecciones:input_type -> lecciones.ReorderRequest
+	3,  // 38: lecciones.LeccionesService.GetPreguntasIntermedias:input_type -> lecciones.CursoUserRequest
+	20, // 39: lecciones.LeccionesService.SubmitPreguntasIntermedias:input_type -> lecciones.SubmitIntermediasRequest
+	2,  // 40: lecciones.LeccionesService.InstructorListPreguntasIntermedias:input_type -> lecciones.CursoRequest
+	19, // 41: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:input_type -> lecciones.CreateIntermediaRequest
+	5,  // 42: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:input_type -> lecciones.IntermediaIDRequest
+	23, // 43: lecciones.LeccionesService.SubmitGameScore:input_type -> lecciones.SubmitGameScoreRequest
+	24, // 44: lecciones.LeccionesService.GetCursoLeaderboard:input_type -> lecciones.LeaderboardRequest
+	1,  // 45: lecciones.LeccionesService.GetUserPoints:input_type -> lecciones.UserRequest
+	25, // 46: lecciones.LeccionesService.SubmitEntregaActividad:input_type -> lecciones.SubmitEntregaRequest
+	26, // 47: lecciones.LeccionesService.GetEntregaActividadUsuario:input_type -> lecciones.GetEntregaRequest
+	27, // 48: lecciones.LeccionesService.InstructorListEntregas:input_type -> lecciones.InstructorListEntregasRequest
+	28, // 49: lecciones.LeccionesService.GetCursoTree:output_type -> lecciones.CursoTreeResponse
+	28, // 50: lecciones.LeccionesService.InstructorGetCursoTree:output_type -> lecciones.CursoTreeResponse
+	29, // 51: lecciones.LeccionesService.InstructorCreateModulo:output_type -> lecciones.ModuloResponse
+	29, // 52: lecciones.LeccionesService.InstructorUpdateModulo:output_type -> lecciones.ModuloResponse
+	45, // 53: lecciones.LeccionesService.InstructorDeleteModulo:output_type -> lecciones.EmptyResponse
+	45, // 54: lecciones.LeccionesService.InstructorReorderModulos:output_type -> lecciones.EmptyResponse
+	30, // 55: lecciones.LeccionesService.InstructorCreateSubmodulo:output_type -> lecciones.SubmoduloResponse
+	30, // 56: lecciones.LeccionesService.InstructorUpdateSubmodulo:output_type -> lecciones.SubmoduloResponse
+	45, // 57: lecciones.LeccionesService.InstructorDeleteSubmodulo:output_type -> lecciones.EmptyResponse
+	45, // 58: lecciones.LeccionesService.InstructorReorderSubmodulos:output_type -> lecciones.EmptyResponse
+	32, // 59: lecciones.LeccionesService.GetLeccionesConProgreso:output_type -> lecciones.ListLeccionesResponse
+	48, // 60: lecciones.LeccionesService.ResumenAvanceCurso:output_type -> lecciones.ResumenAvanceResponse
+	33, // 61: lecciones.LeccionesService.MarcarLeccionCompleta:output_type -> lecciones.MarcarLeccionResponse
+	45, // 62: lecciones.LeccionesService.GuardarProgresoVideo:output_type -> lecciones.EmptyResponse
+	32, // 63: lecciones.LeccionesService.InstructorListLecciones:output_type -> lecciones.ListLeccionesResponse
+	31, // 64: lecciones.LeccionesService.InstructorCreateLeccion:output_type -> lecciones.LeccionResponse
+	31, // 65: lecciones.LeccionesService.InstructorUpdateLeccion:output_type -> lecciones.LeccionResponse
+	45, // 66: lecciones.LeccionesService.InstructorDeleteLeccion:output_type -> lecciones.EmptyResponse
+	45, // 67: lecciones.LeccionesService.InstructorReorderLecciones:output_type -> lecciones.EmptyResponse
+	36, // 68: lecciones.LeccionesService.GetPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
+	37, // 69: lecciones.LeccionesService.SubmitPreguntasIntermedias:output_type -> lecciones.SubmitIntermediasResponse
+	36, // 70: lecciones.LeccionesService.InstructorListPreguntasIntermedias:output_type -> lecciones.ListIntermediasResponse
+	34, // 71: lecciones.LeccionesService.InstructorCreatePreguntaIntermedia:output_type -> lecciones.IntermediaResponse
+	45, // 72: lecciones.LeccionesService.InstructorDeletePreguntaIntermedia:output_type -> lecciones.EmptyResponse
+	38, // 73: lecciones.LeccionesService.SubmitGameScore:output_type -> lecciones.SubmitGameScoreResponse
+	40, // 74: lecciones.LeccionesService.GetCursoLeaderboard:output_type -> lecciones.LeaderboardResponse
+	42, // 75: lecciones.LeccionesService.GetUserPoints:output_type -> lecciones.UserPointsResponse
+	43, // 76: lecciones.LeccionesService.SubmitEntregaActividad:output_type -> lecciones.EntregaResponse
+	43, // 77: lecciones.LeccionesService.GetEntregaActividadUsuario:output_type -> lecciones.EntregaResponse
+	44, // 78: lecciones.LeccionesService.InstructorListEntregas:output_type -> lecciones.ListEntregasResponse
+	49, // [49:79] is the sub-list for method output_type
+	19, // [19:49] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_lecciones_lecciones_proto_init() }
@@ -3770,7 +3976,7 @@ func file_lecciones_lecciones_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lecciones_lecciones_proto_rawDesc), len(file_lecciones_lecciones_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   45,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

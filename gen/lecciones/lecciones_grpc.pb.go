@@ -30,6 +30,7 @@ const (
 	LeccionesService_InstructorDeleteSubmodulo_FullMethodName          = "/lecciones.LeccionesService/InstructorDeleteSubmodulo"
 	LeccionesService_InstructorReorderSubmodulos_FullMethodName        = "/lecciones.LeccionesService/InstructorReorderSubmodulos"
 	LeccionesService_GetLeccionesConProgreso_FullMethodName            = "/lecciones.LeccionesService/GetLeccionesConProgreso"
+	LeccionesService_ResumenAvanceCurso_FullMethodName                 = "/lecciones.LeccionesService/ResumenAvanceCurso"
 	LeccionesService_MarcarLeccionCompleta_FullMethodName              = "/lecciones.LeccionesService/MarcarLeccionCompleta"
 	LeccionesService_GuardarProgresoVideo_FullMethodName               = "/lecciones.LeccionesService/GuardarProgresoVideo"
 	LeccionesService_InstructorListLecciones_FullMethodName            = "/lecciones.LeccionesService/InstructorListLecciones"
@@ -77,6 +78,12 @@ type LeccionesServiceClient interface {
 	// ── Lecciones ─────────────────────────────────────────────────────────────
 	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(ctx context.Context, in *CursoUserRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
+	// Avance resumido de VARIOS alumnos en un curso, en una sola consulta.
+	//
+	// Existe para la lista de seguimiento del instructor. Llamar a
+	// GetLeccionesConProgreso una vez por alumno funcionaría, pero son N viajes
+	// de red y N consultas para pintar una tabla; con treinta inscritos se nota.
+	ResumenAvanceCurso(ctx context.Context, in *ResumenAvanceRequest, opts ...grpc.CallOption) (*ResumenAvanceResponse, error)
 	MarcarLeccionCompleta(ctx context.Context, in *MarcarRequest, opts ...grpc.CallOption) (*MarcarLeccionResponse, error)
 	GuardarProgresoVideo(ctx context.Context, in *GuardarProgresoVideoRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	InstructorListLecciones(ctx context.Context, in *CursoRequest, opts ...grpc.CallOption) (*ListLeccionesResponse, error)
@@ -215,6 +222,16 @@ func (c *leccionesServiceClient) GetLeccionesConProgreso(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListLeccionesResponse)
 	err := c.cc.Invoke(ctx, LeccionesService_GetLeccionesConProgreso_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *leccionesServiceClient) ResumenAvanceCurso(ctx context.Context, in *ResumenAvanceRequest, opts ...grpc.CallOption) (*ResumenAvanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResumenAvanceResponse)
+	err := c.cc.Invoke(ctx, LeccionesService_ResumenAvanceCurso_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -428,6 +445,12 @@ type LeccionesServiceServer interface {
 	// ── Lecciones ─────────────────────────────────────────────────────────────
 	// Compatibilidad: devuelve lista plana (útil para progreso rápido).
 	GetLeccionesConProgreso(context.Context, *CursoUserRequest) (*ListLeccionesResponse, error)
+	// Avance resumido de VARIOS alumnos en un curso, en una sola consulta.
+	//
+	// Existe para la lista de seguimiento del instructor. Llamar a
+	// GetLeccionesConProgreso una vez por alumno funcionaría, pero son N viajes
+	// de red y N consultas para pintar una tabla; con treinta inscritos se nota.
+	ResumenAvanceCurso(context.Context, *ResumenAvanceRequest) (*ResumenAvanceResponse, error)
 	MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error)
 	GuardarProgresoVideo(context.Context, *GuardarProgresoVideoRequest) (*EmptyResponse, error)
 	InstructorListLecciones(context.Context, *CursoRequest) (*ListLeccionesResponse, error)
@@ -494,6 +517,9 @@ func (UnimplementedLeccionesServiceServer) InstructorReorderSubmodulos(context.C
 }
 func (UnimplementedLeccionesServiceServer) GetLeccionesConProgreso(context.Context, *CursoUserRequest) (*ListLeccionesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLeccionesConProgreso not implemented")
+}
+func (UnimplementedLeccionesServiceServer) ResumenAvanceCurso(context.Context, *ResumenAvanceRequest) (*ResumenAvanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResumenAvanceCurso not implemented")
 }
 func (UnimplementedLeccionesServiceServer) MarcarLeccionCompleta(context.Context, *MarcarRequest) (*MarcarLeccionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarcarLeccionCompleta not implemented")
@@ -764,6 +790,24 @@ func _LeccionesService_GetLeccionesConProgreso_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LeccionesServiceServer).GetLeccionesConProgreso(ctx, req.(*CursoUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LeccionesService_ResumenAvanceCurso_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResumenAvanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeccionesServiceServer).ResumenAvanceCurso(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LeccionesService_ResumenAvanceCurso_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeccionesServiceServer).ResumenAvanceCurso(ctx, req.(*ResumenAvanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1142,6 +1186,10 @@ var LeccionesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLeccionesConProgreso",
 			Handler:    _LeccionesService_GetLeccionesConProgreso_Handler,
+		},
+		{
+			MethodName: "ResumenAvanceCurso",
+			Handler:    _LeccionesService_ResumenAvanceCurso_Handler,
 		},
 		{
 			MethodName: "MarcarLeccionCompleta",

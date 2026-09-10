@@ -225,6 +225,9 @@ func (e *EntregaActividad) ToProto() *leccionespb.EntregaResponse {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type LeccionesRepository interface {
+	// Resumen de avance por curso, para el seguimiento del instructor.
+	AvanceRepository
+
 	// ── Módulos ───────────────────────────────────────────────────────────────
 	ListModulos(ctx context.Context, cursoID string) ([]*Modulo, error)
 	FindModuloByID(ctx context.Context, moduloID string) (*Modulo, error)

@@ -57,6 +57,7 @@ const (
 	CursosService_InstructorTogglePublic_FullMethodName         = "/cursos.CursosService/InstructorTogglePublic"
 	CursosService_InstructorResetCodigo_FullMethodName          = "/cursos.CursosService/InstructorResetCodigo"
 	CursosService_InstructorListEstudiantes_FullMethodName      = "/cursos.CursosService/InstructorListEstudiantes"
+	CursosService_InstructorListInscritos_FullMethodName        = "/cursos.CursosService/InstructorListInscritos"
 	CursosService_InstructorAsignar_FullMethodName              = "/cursos.CursosService/InstructorAsignar"
 	CursosService_InstructorCreateLicencia_FullMethodName       = "/cursos.CursosService/InstructorCreateLicencia"
 	CursosService_InstructorUpdateLicencia_FullMethodName       = "/cursos.CursosService/InstructorUpdateLicencia"
@@ -152,6 +153,13 @@ type CursosServiceClient interface {
 	InstructorTogglePublic(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	InstructorResetCodigo(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	InstructorListEstudiantes(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListEstudiantesResponse, error)
+	// Inscritos a UNA capacitación, para el seguimiento por curso.
+	//
+	// Distinto de InstructorListEstudiantes, que devuelve los alumnos de todos
+	// los cursos del instructor sin decir a cuál pertenece cada uno. Aquí se
+	// incluye a quien se inscribió y todavía no ha empezado: es justo a quien hay
+	// que dar seguimiento.
+	InstructorListInscritos(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*ListInscritosResponse, error)
 	InstructorAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	InstructorCreateLicencia(ctx context.Context, in *CreateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error)
 	InstructorUpdateLicencia(ctx context.Context, in *UpdateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error)
@@ -586,6 +594,16 @@ func (c *cursosServiceClient) InstructorListEstudiantes(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *cursosServiceClient) InstructorListInscritos(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*ListInscritosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListInscritosResponse)
+	err := c.cc.Invoke(ctx, CursosService_InstructorListInscritos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) InstructorAsignar(ctx context.Context, in *AsignarRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmptyResponse)
@@ -895,6 +913,13 @@ type CursosServiceServer interface {
 	InstructorTogglePublic(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	InstructorResetCodigo(context.Context, *CursoIDRequest) (*CursoResponse, error)
 	InstructorListEstudiantes(context.Context, *UserRequest) (*ListEstudiantesResponse, error)
+	// Inscritos a UNA capacitación, para el seguimiento por curso.
+	//
+	// Distinto de InstructorListEstudiantes, que devuelve los alumnos de todos
+	// los cursos del instructor sin decir a cuál pertenece cada uno. Aquí se
+	// incluye a quien se inscribió y todavía no ha empezado: es justo a quien hay
+	// que dar seguimiento.
+	InstructorListInscritos(context.Context, *CursoIDRequest) (*ListInscritosResponse, error)
 	InstructorAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error)
 	InstructorCreateLicencia(context.Context, *CreateLicenciaRequest) (*Licencia, error)
 	InstructorUpdateLicencia(context.Context, *UpdateLicenciaRequest) (*Licencia, error)
@@ -1062,6 +1087,9 @@ func (UnimplementedCursosServiceServer) InstructorResetCodigo(context.Context, *
 }
 func (UnimplementedCursosServiceServer) InstructorListEstudiantes(context.Context, *UserRequest) (*ListEstudiantesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListEstudiantes not implemented")
+}
+func (UnimplementedCursosServiceServer) InstructorListInscritos(context.Context, *CursoIDRequest) (*ListInscritosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorListInscritos not implemented")
 }
 func (UnimplementedCursosServiceServer) InstructorAsignar(context.Context, *AsignarRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorAsignar not implemented")
@@ -1840,6 +1868,24 @@ func _CursosService_InstructorListEstudiantes_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_InstructorListInscritos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).InstructorListInscritos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_InstructorListInscritos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).InstructorListInscritos(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_InstructorAsignar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AsignarRequest)
 	if err := dec(in); err != nil {
@@ -2430,6 +2476,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstructorListEstudiantes",
 			Handler:    _CursosService_InstructorListEstudiantes_Handler,
+		},
+		{
+			MethodName: "InstructorListInscritos",
+			Handler:    _CursosService_InstructorListInscritos_Handler,
 		},
 		{
 			MethodName: "InstructorAsignar",

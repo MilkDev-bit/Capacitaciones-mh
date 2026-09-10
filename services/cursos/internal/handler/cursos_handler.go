@@ -322,6 +322,14 @@ func (h *CursosHandler) GetAdminDashboardStats(ctx context.Context, req *cursosp
 	return stats, nil
 }
 
+func (h *CursosHandler) InstructorListInscritos(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.ListInscritosResponse, error) {
+	list, err := h.svc.InstructorListInscritos(ctx, req.CursoId, req.UserId)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return list, nil
+}
+
 // ── Panel financiero (solo admin) ───────────────────────────────────────────
 
 func (h *CursosHandler) GetFinanzasAdmin(ctx context.Context, _ *cursospb.EmptyRequest) (*cursospb.FinanzasAdminResponse, error) {

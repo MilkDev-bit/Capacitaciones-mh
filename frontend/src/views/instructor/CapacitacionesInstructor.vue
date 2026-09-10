@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import SeguimientoAlumnos from '../../components/SeguimientoAlumnos.vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
 import CourseWizardModal from '../../components/CourseWizardModal.vue'
@@ -14,24 +15,16 @@ const showWizard = ref(false)
 const selectedCourse = ref<any>(null)
 const showDrawer = ref(false)
 
-const showAvanceModal = ref(false)
-const selectedAvanceCourse = ref<any>(null)
-const avanceLeaderboard = ref<any[]>([])
-const loadingAvance = ref(false)
+const cursoSeguimiento = ref<any>(null)
 
-async function abrirAvanceInstructor(course: any) {
-  selectedAvanceCourse.value = course
-  showAvanceModal.value = true
-  loadingAvance.value = true
-  try {
-    const res = await api.get(`/capacitaciones/${course.id}/leaderboard`, { params: { top: 100 } })
-    avanceLeaderboard.value = res.data?.entries || []
-  } catch {
-    avanceLeaderboard.value = []
-  } finally {
-    loadingAvance.value = false
-  }
+function abrirAvanceInstructor(course: any) {
+  // Antes esto cargaba la tabla de puntos del juego y la pintaba en un modal
+  // propio. El seguimiento real —avance por lección, exámenes, si terminó el
+  // curso— vive ahora en SeguimientoAlumnos, que además abre un segundo modal
+  // por alumno.
+  cursoSeguimiento.value = course
 }
+
 
 async function fetchCourses() {
   loading.value = true
@@ -209,50 +202,11 @@ function copyCode(code: string) {
     <CourseEditorDrawer :show="showDrawer" :course="selectedCourse" @close="showDrawer = false"
       @updated="fetchCourses()" />
 
-    <!-- Modal Avance y Puntuaciones para Instructor -->
-    <Transition name="fade">
-      <div v-if="showAvanceModal" class="modal-backdrop" @click="showAvanceModal = false">
-        <div class="avance-modal-card" @click.stop>
-          <div class="avance-modal-head">
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div class="glass-icon-box glass-icon-blue">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div>
-                <h3>Avance y Puntuaciones de Usuarios</h3>
-                <p>{{ selectedAvanceCourse?.title }}</p>
-              </div>
-            </div>
-            <button class="close-btn" @click="showAvanceModal = false">✕</button>
-          </div>
-          <div class="avance-modal-body">
-            <div v-if="loadingAvance" style="padding: 30px; text-align: center; color: var(--text-muted);">
-              Cargando puntuaciones de usuarios...
-            </div>
-            <div v-else-if="avanceLeaderboard.length === 0"
-              style="padding: 30px; text-align: center; color: var(--text-muted); background: var(--surface-soft); border-radius: 12px;">
-              No hay registros de juegos o puntuaciones en este curso por el momento.
-            </div>
-            <div v-else class="lb-instructor-list">
-              <div v-for="(entry, idx) in avanceLeaderboard" :key="entry.user_id || idx" class="lb-inst-row">
-                <div class="lb-inst-rank">{{ entry.rank || idx + 1 }}</div>
-                <div class="lb-inst-user">
-                  <div class="lb-inst-avatar">{{ (entry.user_name || 'U').charAt(0).toUpperCase() }}</div>
-                  <span class="lb-inst-name">{{ entry.user_name || 'Estudiante' }}</span>
-                </div>
-                <div class="lb-inst-points">{{ entry.points || 0 }} pts</div>
-              </div>
-            </div>
-          </div>
-          <div class="avance-modal-foot">
-            <button class="btn btn-secondary" @click="showAvanceModal = false">Cerrar</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <SeguimientoAlumnos
+      :curso-id="cursoSeguimiento?.id ?? null"
+      :curso-titulo="cursoSeguimiento?.title"
+      @cerrar="cursoSeguimiento = null"
+    />
   </div>
 </template>
 
@@ -554,112 +508,6 @@ function copyCode(code: string) {
   margin-bottom: 16px;
 }
 
-/* ── Modal Avance y Puntuaciones Instructor ── */
-.avance-modal-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  width: 90%;
-  max-width: 660px;
-  max-height: 85dvh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-xl);
-  overflow: hidden;
-}
-
-.avance-modal-head {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-light);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.avance-modal-head h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-dark);
-}
-
-.avance-modal-head p {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.avance-modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.lb-instructor-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.lb-inst-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-}
-
-.lb-inst-rank {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #334155;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  margin-right: 12px;
-}
-
-.lb-inst-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-}
-
-.lb-inst-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--brand);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.lb-inst-name {
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.lb-inst-points {
-  font-weight: 700;
-  color: var(--brand);
-}
-
-.avance-modal-foot {
-  padding: 14px 24px;
-  border-top: 1px solid var(--border-light);
-  display: flex;
-  justify-content: flex-end;
-}
 
 /* ── Glassmorphic Icons & Badges ── */
 .glass-icon-box {

@@ -209,6 +209,8 @@ type CursosRepository interface {
 	FinanzasRepository
 	// Clientes de Stripe reutilizables (necesarios para SPEI).
 	ClientesStripeRepository
+	// Inscritos por curso, para el seguimiento del instructor.
+	InscritosRepository
 
 	List(ctx context.Context) ([]*Curso, error)
 	ListPublicos(ctx context.Context) ([]*Curso, error)

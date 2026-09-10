@@ -75,6 +75,13 @@ service CursosService {
   rpc InstructorTogglePublic(CursoIDRequest) returns (CursoResponse);
   rpc InstructorResetCodigo(CursoIDRequest) returns (CursoResponse);
   rpc InstructorListEstudiantes(UserRequest) returns (ListEstudiantesResponse);
+  // Inscritos a UNA capacitación, para el seguimiento por curso.
+  //
+  // Distinto de InstructorListEstudiantes, que devuelve los alumnos de todos
+  // los cursos del instructor sin decir a cuál pertenece cada uno. Aquí se
+  // incluye a quien se inscribió y todavía no ha empezado: es justo a quien hay
+  // que dar seguimiento.
+  rpc InstructorListInscritos(CursoIDRequest) returns (ListInscritosResponse);
   rpc InstructorAsignar(AsignarRequest) returns (EmptyResponse);
   
   rpc InstructorCreateLicencia(CreateLicenciaRequest) returns (Licencia);
@@ -892,4 +899,25 @@ message RegistrarComisionOrdenRequest {
   int64  comision_centavos     = 2;
   int64  neto_centavos         = 3;
   string balance_transaction_id = 4;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seguimiento por curso
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Inscrito a una capacitación.
+//
+// Solo lleva identificadores: el nombre y el correo viven en la base de auth y
+// los resuelve el gateway por gRPC contra usuarios. El origen distingue a quien
+// compró de quien entró por licencia corporativa, que para el seguimiento no es
+// lo mismo.
+message InscritoInfo {
+  string user_id     = 1;
+  string inscrito_at = 2;
+  string licencia_id = 3;
+}
+
+message ListInscritosResponse {
+  repeated InscritoInfo inscritos = 1;
 }
