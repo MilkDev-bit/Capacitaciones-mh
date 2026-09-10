@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -1080,8 +1081,22 @@ func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb
 }
 
 // InstructorListInscritos lista los alumnos de un curso del instructor.
+//
+// Traduce los errores del repositorio a los de dominio: `mapErr` del handler
+// gRPC solo reconoce estos, y sin la traducción un curso ajeno devolvería un
+// 500 en vez del 403 que corresponde.
 func (s *CursosService) InstructorListInscritos(ctx context.Context, cursoID, instructorID string) (*cursospb.ListInscritosResponse, error) {
-	return s.repo.InstructorListInscritos(ctx, cursoID, instructorID)
+	res, err := s.repo.InstructorListInscritos(ctx, cursoID, instructorID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		if errors.Is(err, repository.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
+	}
+	return res, nil
 }
 
 // ── Panel financiero y relleno de comisiones ────────────────────────────────

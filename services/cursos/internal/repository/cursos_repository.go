@@ -837,6 +837,14 @@ func (r *postgresCursosRepository) RegistrarAvisoDC3(ctx context.Context, licenc
 // errForbidden es un error de dominio para acceso denegado.
 var errForbidden = &forbiddenError{}
 
+// ErrForbidden expone el anterior para que el paquete `service` pueda
+// distinguirlo con errors.Is.
+//
+// Sin esto habría que comparar `err.Error() == "forbidden"`, que se rompe en
+// silencio el día que alguien reescriba el mensaje y convierte un 403 en un 500
+// sin que falle ningún test.
+var ErrForbidden error = errForbidden
+
 type forbiddenError struct{}
 
 func (e *forbiddenError) Error() string { return "forbidden" }

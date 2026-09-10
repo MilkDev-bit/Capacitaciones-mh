@@ -109,7 +109,7 @@ func (h *LeccionesHandler) InstructorReorderSubmodulos(ctx context.Context, req 
 func (h *LeccionesHandler) ResumenAvanceCurso(ctx context.Context, req *leccionespb.ResumenAvanceRequest) (*leccionespb.ResumenAvanceResponse, error) {
 	res, err := h.svc.ResumenAvanceCurso(ctx, req.CursoId, req.UserIds)
 	if err != nil {
-		return nil, mapErr(err)
+		return nil, toGRPC(err)
 	}
 	return res, nil
 }

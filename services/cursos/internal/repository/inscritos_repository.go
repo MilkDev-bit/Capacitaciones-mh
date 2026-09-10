@@ -37,14 +37,17 @@ func (r *postgresCursosRepository) InstructorListInscritos(ctx context.Context, 
 	var dueno sql.NullString
 	err := r.db.GetContext(ctx, &dueno,
 		`SELECT instructor_id::text FROM capacitaciones WHERE id = $1 AND deleted_at IS NULL`, cursoID)
+	// sql.ErrNoRows y errForbidden, no los errores del paquete `service`: aquí
+	// estamos en `repository` y aquellos viven una capa más arriba. Es la misma
+	// convención que sigue el resto de este paquete; el servicio los traduce.
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
+		return nil, sql.ErrNoRows
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !dueno.Valid || dueno.String != instructorID {
-		return nil, ErrForbidden
+		return nil, errForbidden
 	}
 
 	type fila struct {
