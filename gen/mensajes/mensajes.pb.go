@@ -410,8 +410,12 @@ type MensajeResponse struct {
 	AttachmentUrl  string                 `protobuf:"bytes,9,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
 	AttachmentType string                 `protobuf:"bytes,10,opt,name=attachment_type,json=attachmentType,proto3" json:"attachment_type,omitempty"`
 	IsGroup        bool                   `protobuf:"varint,11,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// eliminado = borrado para todos. El mensaje viaja con contenido y adjunto
+	// VACÍOS: la fila sigue en la base por si hay una queja, pero el texto ya no
+	// sale del servidor. El cliente pinta "Se eliminó este mensaje".
+	Eliminado     bool `protobuf:"varint,12,opt,name=eliminado,proto3" json:"eliminado,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MensajeResponse) Reset() {
@@ -521,6 +525,13 @@ func (x *MensajeResponse) GetIsGroup() bool {
 	return false
 }
 
+func (x *MensajeResponse) GetEliminado() bool {
+	if x != nil {
+		return x.Eliminado
+	}
+	return false
+}
+
 type GetMensajesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mensajes      []*MensajeResponse     `protobuf:"bytes,1,rep,name=mensajes,proto3" json:"mensajes,omitempty"`
@@ -574,13 +585,17 @@ func (x *GetMensajesResponse) GetHasMore() bool {
 }
 
 type ConversacionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PeerId        string                 `protobuf:"bytes,1,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
-	PeerName      string                 `protobuf:"bytes,2,opt,name=peer_name,json=peerName,proto3" json:"peer_name,omitempty"`
-	LastMessage   string                 `protobuf:"bytes,3,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
-	LastTime      string                 `protobuf:"bytes,4,opt,name=last_time,json=lastTime,proto3" json:"last_time,omitempty"`
-	UnreadCount   int32                  `protobuf:"varint,5,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
-	IsGroup       bool                   `protobuf:"varint,6,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PeerId      string                 `protobuf:"bytes,1,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	PeerName    string                 `protobuf:"bytes,2,opt,name=peer_name,json=peerName,proto3" json:"peer_name,omitempty"`
+	LastMessage string                 `protobuf:"bytes,3,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
+	LastTime    string                 `protobuf:"bytes,4,opt,name=last_time,json=lastTime,proto3" json:"last_time,omitempty"`
+	UnreadCount int32                  `protobuf:"varint,5,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
+	IsGroup     bool                   `protobuf:"varint,6,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
+	// El último mensaje fue borrado para todos: last_message viaja vacío y la
+	// lista pinta "Se eliminó este mensaje" en vez de una vista previa en blanco,
+	// que se confundiría con un adjunto sin texto.
+	LastEliminado bool `protobuf:"varint,7,opt,name=last_eliminado,json=lastEliminado,proto3" json:"last_eliminado,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,6 +668,13 @@ func (x *ConversacionResponse) GetUnreadCount() int32 {
 func (x *ConversacionResponse) GetIsGroup() bool {
 	if x != nil {
 		return x.IsGroup
+	}
+	return false
+}
+
+func (x *ConversacionResponse) GetLastEliminado() bool {
+	if x != nil {
+		return x.LastEliminado
 	}
 	return false
 }
@@ -1109,6 +1131,194 @@ func (x *CreateGroupForLicenciaRequest) GetAdminId() string {
 	return ""
 }
 
+type EliminarMensajeRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	MsgId  string                 `protobuf:"bytes,1,opt,name=msg_id,json=msgId,proto3" json:"msg_id,omitempty"`
+	UserId string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// para_todos solo lo puede pedir el autor, y solo dentro de la ventana de
+	// tiempo. Si es false, el mensaje se oculta únicamente para quien lo pide.
+	ParaTodos     bool `protobuf:"varint,3,opt,name=para_todos,json=paraTodos,proto3" json:"para_todos,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EliminarMensajeRequest) Reset() {
+	*x = EliminarMensajeRequest{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EliminarMensajeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EliminarMensajeRequest) ProtoMessage() {}
+
+func (x *EliminarMensajeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EliminarMensajeRequest.ProtoReflect.Descriptor instead.
+func (*EliminarMensajeRequest) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *EliminarMensajeRequest) GetMsgId() string {
+	if x != nil {
+		return x.MsgId
+	}
+	return ""
+}
+
+func (x *EliminarMensajeRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *EliminarMensajeRequest) GetParaTodos() bool {
+	if x != nil {
+		return x.ParaTodos
+	}
+	return false
+}
+
+// EliminarMensajeResponse devuelve a quién hay que avisar por WebSocket.
+//
+// Lo devuelve el servicio y no lo busca el gateway porque el servicio ya tuvo
+// la fila en la mano para autorizar el borrado. Que el gateway la rebuscara
+// después significaría recorrer conversaciones enteras para un dato que
+// acababa de estar disponible.
+type EliminarMensajeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EmisorId      string                 `protobuf:"bytes,1,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
+	ReceptorId    string                 `protobuf:"bytes,2,opt,name=receptor_id,json=receptorId,proto3" json:"receptor_id,omitempty"`
+	IsGroup       bool                   `protobuf:"varint,3,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EliminarMensajeResponse) Reset() {
+	*x = EliminarMensajeResponse{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EliminarMensajeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EliminarMensajeResponse) ProtoMessage() {}
+
+func (x *EliminarMensajeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EliminarMensajeResponse.ProtoReflect.Descriptor instead.
+func (*EliminarMensajeResponse) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *EliminarMensajeResponse) GetEmisorId() string {
+	if x != nil {
+		return x.EmisorId
+	}
+	return ""
+}
+
+func (x *EliminarMensajeResponse) GetReceptorId() string {
+	if x != nil {
+		return x.ReceptorId
+	}
+	return ""
+}
+
+func (x *EliminarMensajeResponse) GetIsGroup() bool {
+	if x != nil {
+		return x.IsGroup
+	}
+	return false
+}
+
+type EliminarConversacionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	PeerId        string                 `protobuf:"bytes,2,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	IsGroup       bool                   `protobuf:"varint,3,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EliminarConversacionRequest) Reset() {
+	*x = EliminarConversacionRequest{}
+	mi := &file_mensajes_mensajes_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EliminarConversacionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EliminarConversacionRequest) ProtoMessage() {}
+
+func (x *EliminarConversacionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mensajes_mensajes_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EliminarConversacionRequest.ProtoReflect.Descriptor instead.
+func (*EliminarConversacionRequest) Descriptor() ([]byte, []int) {
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *EliminarConversacionRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *EliminarConversacionRequest) GetPeerId() string {
+	if x != nil {
+		return x.PeerId
+	}
+	return ""
+}
+
+func (x *EliminarConversacionRequest) GetIsGroup() bool {
+	if x != nil {
+		return x.IsGroup
+	}
+	return false
+}
+
 type EnrollInLicenciaGroupRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	LicenciaId    string                 `protobuf:"bytes,1,opt,name=licencia_id,json=licenciaId,proto3" json:"licencia_id,omitempty"`
@@ -1120,7 +1330,7 @@ type EnrollInLicenciaGroupRequest struct {
 
 func (x *EnrollInLicenciaGroupRequest) Reset() {
 	*x = EnrollInLicenciaGroupRequest{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	mi := &file_mensajes_mensajes_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1132,7 +1342,7 @@ func (x *EnrollInLicenciaGroupRequest) String() string {
 func (*EnrollInLicenciaGroupRequest) ProtoMessage() {}
 
 func (x *EnrollInLicenciaGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[18]
+	mi := &file_mensajes_mensajes_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1145,7 +1355,7 @@ func (x *EnrollInLicenciaGroupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollInLicenciaGroupRequest.ProtoReflect.Descriptor instead.
 func (*EnrollInLicenciaGroupRequest) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{18}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *EnrollInLicenciaGroupRequest) GetLicenciaId() string {
@@ -1177,7 +1387,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_mensajes_mensajes_proto_msgTypes[19]
+	mi := &file_mensajes_mensajes_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1189,7 +1399,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_mensajes_mensajes_proto_msgTypes[19]
+	mi := &file_mensajes_mensajes_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,7 +1412,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{19}
+	return file_mensajes_mensajes_proto_rawDescGZIP(), []int{22}
 }
 
 var File_mensajes_mensajes_proto protoreflect.FileDescriptor
@@ -1237,7 +1447,7 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\x13MarcarLeidosRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\apeer_id\x18\x02 \x01(\tR\x06peerId\x12\x19\n" +
-	"\bis_group\x18\x03 \x01(\bR\aisGroup\"\xe3\x02\n" +
+	"\bis_group\x18\x03 \x01(\bR\aisGroup\"\x81\x03\n" +
 	"\x0fMensajeResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\temisor_id\x18\x02 \x01(\tR\bemisorId\x12\x1f\n" +
@@ -1253,17 +1463,19 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\x0eattachment_url\x18\t \x01(\tR\rattachmentUrl\x12'\n" +
 	"\x0fattachment_type\x18\n" +
 	" \x01(\tR\x0eattachmentType\x12\x19\n" +
-	"\bis_group\x18\v \x01(\bR\aisGroup\"g\n" +
+	"\bis_group\x18\v \x01(\bR\aisGroup\x12\x1c\n" +
+	"\teliminado\x18\f \x01(\bR\teliminado\"g\n" +
 	"\x13GetMensajesResponse\x125\n" +
 	"\bmensajes\x18\x01 \x03(\v2\x19.mensajes.MensajeResponseR\bmensajes\x12\x19\n" +
-	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"\xca\x01\n" +
+	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"\xf1\x01\n" +
 	"\x14ConversacionResponse\x12\x17\n" +
 	"\apeer_id\x18\x01 \x01(\tR\x06peerId\x12\x1b\n" +
 	"\tpeer_name\x18\x02 \x01(\tR\bpeerName\x12!\n" +
 	"\flast_message\x18\x03 \x01(\tR\vlastMessage\x12\x1b\n" +
 	"\tlast_time\x18\x04 \x01(\tR\blastTime\x12!\n" +
 	"\funread_count\x18\x05 \x01(\x05R\vunreadCount\x12\x19\n" +
-	"\bis_group\x18\x06 \x01(\bR\aisGroup\"d\n" +
+	"\bis_group\x18\x06 \x01(\bR\aisGroup\x12%\n" +
+	"\x0elast_eliminado\x18\a \x01(\bR\rlastEliminado\"d\n" +
 	"\x1aListConversacionesResponse\x12F\n" +
 	"\x0econversaciones\x18\x01 \x03(\v2\x1e.mensajes.ConversacionResponseR\x0econversaciones\"(\n" +
 	"\x10NoLeidosResponse\x12\x14\n" +
@@ -1289,13 +1501,27 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\vlicencia_id\x18\x01 \x01(\tR\n" +
 	"licenciaId\x12\x16\n" +
 	"\x06nombre\x18\x02 \x01(\tR\x06nombre\x12\x19\n" +
-	"\badmin_id\x18\x03 \x01(\tR\aadminId\"u\n" +
+	"\badmin_id\x18\x03 \x01(\tR\aadminId\"g\n" +
+	"\x16EliminarMensajeRequest\x12\x15\n" +
+	"\x06msg_id\x18\x01 \x01(\tR\x05msgId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"para_todos\x18\x03 \x01(\bR\tparaTodos\"r\n" +
+	"\x17EliminarMensajeResponse\x12\x1b\n" +
+	"\temisor_id\x18\x01 \x01(\tR\bemisorId\x12\x1f\n" +
+	"\vreceptor_id\x18\x02 \x01(\tR\n" +
+	"receptorId\x12\x19\n" +
+	"\bis_group\x18\x03 \x01(\bR\aisGroup\"j\n" +
+	"\x1bEliminarConversacionRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\apeer_id\x18\x02 \x01(\tR\x06peerId\x12\x19\n" +
+	"\bis_group\x18\x03 \x01(\bR\aisGroup\"u\n" +
 	"\x1cEnrollInLicenciaGroupRequest\x12\x1f\n" +
 	"\vlicencia_id\x18\x01 \x01(\tR\n" +
 	"licenciaId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1b\n" +
 	"\tuser_name\x18\x03 \x01(\tR\buserName\"\a\n" +
-	"\x05Empty2\xf3\x06\n" +
+	"\x05Empty2\x9b\b\n" +
 	"\x0fMensajesService\x12F\n" +
 	"\vSendMensaje\x12\x1c.mensajes.SendMensajeRequest\x1a\x19.mensajes.MensajeResponse\x12J\n" +
 	"\vGetMensajes\x12\x1c.mensajes.GetMensajesRequest\x1a\x1d.mensajes.GetMensajesResponse\x12_\n" +
@@ -1305,7 +1531,9 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\fMarcarLeidos\x12\x1d.mensajes.MarcarLeidosRequest\x1a\x0f.mensajes.Empty\x12J\n" +
 	"\vCreateGroup\x12\x1c.mensajes.CreateGroupRequest\x1a\x1d.mensajes.CreateGroupResponse\x12D\n" +
 	"\x0fAddGroupMembers\x12 .mensajes.AddGroupMembersRequest\x1a\x0f.mensajes.Empty\x12V\n" +
-	"\x0fGetGroupMembers\x12 .mensajes.GetGroupMembersRequest\x1a!.mensajes.GetGroupMembersResponse\x12`\n" +
+	"\x0fGetGroupMembers\x12 .mensajes.GetGroupMembersRequest\x1a!.mensajes.GetGroupMembersResponse\x12V\n" +
+	"\x0fEliminarMensaje\x12 .mensajes.EliminarMensajeRequest\x1a!.mensajes.EliminarMensajeResponse\x12N\n" +
+	"\x14EliminarConversacion\x12%.mensajes.EliminarConversacionRequest\x1a\x0f.mensajes.Empty\x12`\n" +
 	"\x16CreateGroupForLicencia\x12'.mensajes.CreateGroupForLicenciaRequest\x1a\x1d.mensajes.CreateGroupResponse\x12P\n" +
 	"\x15EnrollInLicenciaGroup\x12&.mensajes.EnrollInLicenciaGroupRequest\x1a\x0f.mensajes.EmptyB#Z!Prueba-Go/gen/mensajes;mensajespbb\x06proto3"
 
@@ -1321,7 +1549,7 @@ func file_mensajes_mensajes_proto_rawDescGZIP() []byte {
 	return file_mensajes_mensajes_proto_rawDescData
 }
 
-var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_mensajes_mensajes_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_mensajes_mensajes_proto_goTypes = []any{
 	(*SendMensajeRequest)(nil),            // 0: mensajes.SendMensajeRequest
 	(*GetMensajesRequest)(nil),            // 1: mensajes.GetMensajesRequest
@@ -1341,8 +1569,11 @@ var file_mensajes_mensajes_proto_goTypes = []any{
 	(*GetGroupMembersRequest)(nil),        // 15: mensajes.GetGroupMembersRequest
 	(*GetGroupMembersResponse)(nil),       // 16: mensajes.GetGroupMembersResponse
 	(*CreateGroupForLicenciaRequest)(nil), // 17: mensajes.CreateGroupForLicenciaRequest
-	(*EnrollInLicenciaGroupRequest)(nil),  // 18: mensajes.EnrollInLicenciaGroupRequest
-	(*Empty)(nil),                         // 19: mensajes.Empty
+	(*EliminarMensajeRequest)(nil),        // 18: mensajes.EliminarMensajeRequest
+	(*EliminarMensajeResponse)(nil),       // 19: mensajes.EliminarMensajeResponse
+	(*EliminarConversacionRequest)(nil),   // 20: mensajes.EliminarConversacionRequest
+	(*EnrollInLicenciaGroupRequest)(nil),  // 21: mensajes.EnrollInLicenciaGroupRequest
+	(*Empty)(nil),                         // 22: mensajes.Empty
 }
 var file_mensajes_mensajes_proto_depIdxs = []int32{
 	6,  // 0: mensajes.GetMensajesResponse.mensajes:type_name -> mensajes.MensajeResponse
@@ -1356,21 +1587,25 @@ var file_mensajes_mensajes_proto_depIdxs = []int32{
 	12, // 8: mensajes.MensajesService.CreateGroup:input_type -> mensajes.CreateGroupRequest
 	14, // 9: mensajes.MensajesService.AddGroupMembers:input_type -> mensajes.AddGroupMembersRequest
 	15, // 10: mensajes.MensajesService.GetGroupMembers:input_type -> mensajes.GetGroupMembersRequest
-	17, // 11: mensajes.MensajesService.CreateGroupForLicencia:input_type -> mensajes.CreateGroupForLicenciaRequest
-	18, // 12: mensajes.MensajesService.EnrollInLicenciaGroup:input_type -> mensajes.EnrollInLicenciaGroupRequest
-	6,  // 13: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
-	7,  // 14: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
-	9,  // 15: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
-	10, // 16: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
-	11, // 17: mensajes.MensajesService.MarcarLeido:output_type -> mensajes.MarcarLeidoResponse
-	19, // 18: mensajes.MensajesService.MarcarLeidos:output_type -> mensajes.Empty
-	13, // 19: mensajes.MensajesService.CreateGroup:output_type -> mensajes.CreateGroupResponse
-	19, // 20: mensajes.MensajesService.AddGroupMembers:output_type -> mensajes.Empty
-	16, // 21: mensajes.MensajesService.GetGroupMembers:output_type -> mensajes.GetGroupMembersResponse
-	13, // 22: mensajes.MensajesService.CreateGroupForLicencia:output_type -> mensajes.CreateGroupResponse
-	19, // 23: mensajes.MensajesService.EnrollInLicenciaGroup:output_type -> mensajes.Empty
-	13, // [13:24] is the sub-list for method output_type
-	2,  // [2:13] is the sub-list for method input_type
+	18, // 11: mensajes.MensajesService.EliminarMensaje:input_type -> mensajes.EliminarMensajeRequest
+	20, // 12: mensajes.MensajesService.EliminarConversacion:input_type -> mensajes.EliminarConversacionRequest
+	17, // 13: mensajes.MensajesService.CreateGroupForLicencia:input_type -> mensajes.CreateGroupForLicenciaRequest
+	21, // 14: mensajes.MensajesService.EnrollInLicenciaGroup:input_type -> mensajes.EnrollInLicenciaGroupRequest
+	6,  // 15: mensajes.MensajesService.SendMensaje:output_type -> mensajes.MensajeResponse
+	7,  // 16: mensajes.MensajesService.GetMensajes:output_type -> mensajes.GetMensajesResponse
+	9,  // 17: mensajes.MensajesService.ListConversaciones:output_type -> mensajes.ListConversacionesResponse
+	10, // 18: mensajes.MensajesService.NoLeidos:output_type -> mensajes.NoLeidosResponse
+	11, // 19: mensajes.MensajesService.MarcarLeido:output_type -> mensajes.MarcarLeidoResponse
+	22, // 20: mensajes.MensajesService.MarcarLeidos:output_type -> mensajes.Empty
+	13, // 21: mensajes.MensajesService.CreateGroup:output_type -> mensajes.CreateGroupResponse
+	22, // 22: mensajes.MensajesService.AddGroupMembers:output_type -> mensajes.Empty
+	16, // 23: mensajes.MensajesService.GetGroupMembers:output_type -> mensajes.GetGroupMembersResponse
+	19, // 24: mensajes.MensajesService.EliminarMensaje:output_type -> mensajes.EliminarMensajeResponse
+	22, // 25: mensajes.MensajesService.EliminarConversacion:output_type -> mensajes.Empty
+	13, // 26: mensajes.MensajesService.CreateGroupForLicencia:output_type -> mensajes.CreateGroupResponse
+	22, // 27: mensajes.MensajesService.EnrollInLicenciaGroup:output_type -> mensajes.Empty
+	15, // [15:28] is the sub-list for method output_type
+	2,  // [2:15] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
 	2,  // [2:2] is the sub-list for extension extendee
 	0,  // [0:2] is the sub-list for field type_name
@@ -1387,7 +1622,7 @@ func file_mensajes_mensajes_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mensajes_mensajes_proto_rawDesc), len(file_mensajes_mensajes_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

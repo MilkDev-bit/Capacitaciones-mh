@@ -237,6 +237,13 @@ func New(d Deps) *gin.Engine {
 			auth.POST("/mensajes/grupos", d.MensajesH.CreateGroup)
 			auth.POST("/mensajes/grupos/:grupo_id/members", d.MensajesH.AddGroupMembers)
 			auth.GET("/mensajes/grupos/:grupo_id/members", d.MensajesH.GetGroupMembers)
+			// Ambas rutas de borrado llevan prefijo estático ("mensaje",
+			// "conversacion") en vez de colgar de /:peer_id. Un mensaje y una
+			// conversación se borran con el mismo verbo pero con un
+			// identificador de naturaleza distinta, y dejarlos los dos en
+			// DELETE /mensajes/:algo obligaría a adivinar cuál es cuál.
+			auth.DELETE("/mensajes/mensaje/:msg_id", d.MensajesH.EliminarMensaje)
+			auth.DELETE("/mensajes/conversacion/:peer_id", d.MensajesH.EliminarConversacion)
 			auth.GET("/mensajes/:peer_id", d.MensajesH.GetMensajes)
 			auth.POST("/mensajes/:peer_id", d.MensajesH.SendMensaje)
 

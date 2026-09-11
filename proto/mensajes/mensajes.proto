@@ -14,6 +14,9 @@ service MensajesService {
   rpc CreateGroup          (CreateGroupRequest)        returns (CreateGroupResponse);
   rpc AddGroupMembers      (AddGroupMembersRequest)    returns (Empty);
   rpc GetGroupMembers      (GetGroupMembersRequest)    returns (GetGroupMembersResponse);
+  // Borrado al estilo WhatsApp: "para mí" oculta, "para todos" deja lápida.
+  rpc EliminarMensaje      (EliminarMensajeRequest)     returns (EliminarMensajeResponse);
+  rpc EliminarConversacion (EliminarConversacionRequest) returns (Empty);
   // Licencia / cohorte group management (called by cursos-service)
   rpc CreateGroupForLicencia (CreateGroupForLicenciaRequest) returns (CreateGroupResponse);
   rpc EnrollInLicenciaGroup  (EnrollInLicenciaGroupRequest)  returns (Empty);
@@ -69,6 +72,10 @@ message MensajeResponse {
   string attachment_url  = 9;
   string attachment_type = 10;
   bool   is_group        = 11;
+  // eliminado = borrado para todos. El mensaje viaja con contenido y adjunto
+  // VACÍOS: la fila sigue en la base por si hay una queja, pero el texto ya no
+  // sale del servidor. El cliente pinta "Se eliminó este mensaje".
+  bool   eliminado       = 12;
 }
 
 message GetMensajesResponse {
@@ -83,6 +90,10 @@ message ConversacionResponse {
   string last_time    = 4;
   int32  unread_count = 5;
   bool   is_group     = 6;
+  // El último mensaje fue borrado para todos: last_message viaja vacío y la
+  // lista pinta "Se eliminó este mensaje" en vez de una vista previa en blanco,
+  // que se confundiría con un adjunto sin texto.
+  bool   last_eliminado = 7;
 }
 
 message ListConversacionesResponse {
@@ -126,6 +137,32 @@ message CreateGroupForLicenciaRequest {
   string licencia_id = 1;
   string nombre      = 2;
   string admin_id    = 3;
+}
+
+message EliminarMensajeRequest {
+  string msg_id     = 1;
+  string user_id    = 2;
+  // para_todos solo lo puede pedir el autor, y solo dentro de la ventana de
+  // tiempo. Si es false, el mensaje se oculta únicamente para quien lo pide.
+  bool   para_todos = 3;
+}
+
+// EliminarMensajeResponse devuelve a quién hay que avisar por WebSocket.
+//
+// Lo devuelve el servicio y no lo busca el gateway porque el servicio ya tuvo
+// la fila en la mano para autorizar el borrado. Que el gateway la rebuscara
+// después significaría recorrer conversaciones enteras para un dato que
+// acababa de estar disponible.
+message EliminarMensajeResponse {
+  string emisor_id   = 1;
+  string receptor_id = 2;
+  bool   is_group    = 3;
+}
+
+message EliminarConversacionRequest {
+  string user_id  = 1;
+  string peer_id  = 2;
+  bool   is_group = 3;
 }
 
 message EnrollInLicenciaGroupRequest {

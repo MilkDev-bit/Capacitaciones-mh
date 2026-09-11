@@ -40,11 +40,4 @@ describe('listaDe', () => {
     expect(listaDe(0, 'entregas')).toEqual([])
     expect(listaDe('', 'entregas')).toEqual([])
   })
-
-  // Deja constancia de por qué el idioma anterior fallaba, para que no vuelva.
-  it('un objeto vacío es truthy: por eso no basta con ||', () => {
-    expect(Boolean({})).toBe(true)
-    const alaAntigua = (undefined as any) || {} || []
-    expect(Array.isArray(alaAntigua)).toBe(false)
-  })
 })

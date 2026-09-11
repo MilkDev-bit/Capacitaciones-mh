@@ -28,6 +28,8 @@ const (
 	MensajesService_CreateGroup_FullMethodName            = "/mensajes.MensajesService/CreateGroup"
 	MensajesService_AddGroupMembers_FullMethodName        = "/mensajes.MensajesService/AddGroupMembers"
 	MensajesService_GetGroupMembers_FullMethodName        = "/mensajes.MensajesService/GetGroupMembers"
+	MensajesService_EliminarMensaje_FullMethodName        = "/mensajes.MensajesService/EliminarMensaje"
+	MensajesService_EliminarConversacion_FullMethodName   = "/mensajes.MensajesService/EliminarConversacion"
 	MensajesService_CreateGroupForLicencia_FullMethodName = "/mensajes.MensajesService/CreateGroupForLicencia"
 	MensajesService_EnrollInLicenciaGroup_FullMethodName  = "/mensajes.MensajesService/EnrollInLicenciaGroup"
 )
@@ -45,6 +47,9 @@ type MensajesServiceClient interface {
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
 	AddGroupMembers(ctx context.Context, in *AddGroupMembersRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetGroupMembers(ctx context.Context, in *GetGroupMembersRequest, opts ...grpc.CallOption) (*GetGroupMembersResponse, error)
+	// Borrado al estilo WhatsApp: "para mí" oculta, "para todos" deja lápida.
+	EliminarMensaje(ctx context.Context, in *EliminarMensajeRequest, opts ...grpc.CallOption) (*EliminarMensajeResponse, error)
+	EliminarConversacion(ctx context.Context, in *EliminarConversacionRequest, opts ...grpc.CallOption) (*Empty, error)
 	// Licencia / cohorte group management (called by cursos-service)
 	CreateGroupForLicencia(ctx context.Context, in *CreateGroupForLicenciaRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
 	EnrollInLicenciaGroup(ctx context.Context, in *EnrollInLicenciaGroupRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -148,6 +153,26 @@ func (c *mensajesServiceClient) GetGroupMembers(ctx context.Context, in *GetGrou
 	return out, nil
 }
 
+func (c *mensajesServiceClient) EliminarMensaje(ctx context.Context, in *EliminarMensajeRequest, opts ...grpc.CallOption) (*EliminarMensajeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EliminarMensajeResponse)
+	err := c.cc.Invoke(ctx, MensajesService_EliminarMensaje_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mensajesServiceClient) EliminarConversacion(ctx context.Context, in *EliminarConversacionRequest, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, MensajesService_EliminarConversacion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mensajesServiceClient) CreateGroupForLicencia(ctx context.Context, in *CreateGroupForLicenciaRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateGroupResponse)
@@ -181,6 +206,9 @@ type MensajesServiceServer interface {
 	CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
 	AddGroupMembers(context.Context, *AddGroupMembersRequest) (*Empty, error)
 	GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error)
+	// Borrado al estilo WhatsApp: "para mí" oculta, "para todos" deja lápida.
+	EliminarMensaje(context.Context, *EliminarMensajeRequest) (*EliminarMensajeResponse, error)
+	EliminarConversacion(context.Context, *EliminarConversacionRequest) (*Empty, error)
 	// Licencia / cohorte group management (called by cursos-service)
 	CreateGroupForLicencia(context.Context, *CreateGroupForLicenciaRequest) (*CreateGroupResponse, error)
 	EnrollInLicenciaGroup(context.Context, *EnrollInLicenciaGroupRequest) (*Empty, error)
@@ -220,6 +248,12 @@ func (UnimplementedMensajesServiceServer) AddGroupMembers(context.Context, *AddG
 }
 func (UnimplementedMensajesServiceServer) GetGroupMembers(context.Context, *GetGroupMembersRequest) (*GetGroupMembersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupMembers not implemented")
+}
+func (UnimplementedMensajesServiceServer) EliminarMensaje(context.Context, *EliminarMensajeRequest) (*EliminarMensajeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EliminarMensaje not implemented")
+}
+func (UnimplementedMensajesServiceServer) EliminarConversacion(context.Context, *EliminarConversacionRequest) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method EliminarConversacion not implemented")
 }
 func (UnimplementedMensajesServiceServer) CreateGroupForLicencia(context.Context, *CreateGroupForLicenciaRequest) (*CreateGroupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateGroupForLicencia not implemented")
@@ -410,6 +444,42 @@ func _MensajesService_GetGroupMembers_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MensajesService_EliminarMensaje_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EliminarMensajeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).EliminarMensaje(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_EliminarMensaje_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).EliminarMensaje(ctx, req.(*EliminarMensajeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MensajesService_EliminarConversacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EliminarConversacionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MensajesServiceServer).EliminarConversacion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MensajesService_EliminarConversacion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MensajesServiceServer).EliminarConversacion(ctx, req.(*EliminarConversacionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MensajesService_CreateGroupForLicencia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateGroupForLicenciaRequest)
 	if err := dec(in); err != nil {
@@ -488,6 +558,14 @@ var MensajesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupMembers",
 			Handler:    _MensajesService_GetGroupMembers_Handler,
+		},
+		{
+			MethodName: "EliminarMensaje",
+			Handler:    _MensajesService_EliminarMensaje_Handler,
+		},
+		{
+			MethodName: "EliminarConversacion",
+			Handler:    _MensajesService_EliminarConversacion_Handler,
 		},
 		{
 			MethodName: "CreateGroupForLicencia",

@@ -30,6 +30,10 @@ type Event struct {
 	PeerID   string       `json:"peer_id,omitempty"`
 	PeerName string       `json:"peer_name,omitempty"`
 	Count    int32        `json:"count,omitempty"`
+	// MsgID identifica el mensaje en los eventos que no llevan Msg entero,
+	// como el borrado: ahí el contenido ya no debe salir del servidor y lo
+	// único que el cliente necesita es qué burbuja convertir en lápida.
+	MsgID string `json:"msg_id,omitempty"`
 }
 
 // Client representa una conexión WebSocket activa.

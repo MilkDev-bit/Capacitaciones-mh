@@ -148,7 +148,7 @@ describe('SeguimientoAlumnos', () => {
     const w = montar()
     await flushPromises()
 
-    await w.findAll('.sa-fila')[0].trigger('click')
+    await w.findAll('.sa-fila')[0]!.trigger('click')
     await flushPromises()
 
     const texto = w.text()

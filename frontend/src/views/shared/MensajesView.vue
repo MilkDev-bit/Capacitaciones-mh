@@ -10,6 +10,7 @@ import LlamadaTimbrando from '../../components/LlamadaTimbrando.vue'
 import SearchUserModal from '../../components/SearchUserModal.vue'
 import CreateGroupModal from '../../components/CreateGroupModal.vue'
 import { useLlamadas } from '../../composables/useLlamadas'
+import { puedeBorrarParaTodos } from '../../utils/borrado'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -20,6 +21,7 @@ interface Conversacion {
   unread_count: number
   avatar_url?: string
   is_group?: boolean
+  last_eliminado?: boolean
 }
 
 interface Mensaje {
@@ -34,6 +36,8 @@ interface Mensaje {
   attachment_url?: string
   attachment_type?: string
   is_group?: boolean
+  /** Borrado para todos: el servidor ya no manda el texto, solo la lápida. */
+  eliminado?: boolean
   _status?: 'sending' | 'sent' | 'error'
   _tempId?: string
 }
@@ -223,7 +227,7 @@ function disconnectWs() {
   ws = null
 }
 
-function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string; call?: unknown }) {
+function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string; msg_id?: string; call?: unknown }) {
   // La señalización de llamada se atiende primero y consume el evento: son
   // los únicos tipos que empiezan por "call_".
   if (ev.type.startsWith('call_')) {
@@ -244,6 +248,22 @@ function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer
     }
     case 'message_read': {
       msgs.value.forEach(m => { if (m.emisor_id === auth.user?.id) m.leido = true })
+      break
+    }
+    case 'message_deleted': {
+      // Solo llega el id: el contenido de un mensaje borrado ya no sale del
+      // servidor, y aquí tampoco hace falta para pintar la lápida.
+      if (!ev.msg_id) break
+      const m = msgs.value.find(x => x.id === ev.msg_id)
+      if (m) {
+        m.eliminado = true
+        m.contenido = ''
+        m.attachment_url = undefined
+      }
+      // La vista previa de la lista también deja de ser válida. Se marca en
+      // lugar de recargar la lista entera por un solo mensaje.
+      const conv = convs.value.find(c => c.peer_id === ev.peer_id)
+      if (conv) { conv.last_message = ''; conv.last_eliminado = true }
       break
     }
     case 'typing': {
@@ -283,6 +303,8 @@ function refreshConvEntry(msg: Mensaje) {
     conv.last_message = preview
     conv.last_time    = msg.created_at
     conv.unread_count += unread
+    // El nuevo mensaje sustituye a la lápida en la vista previa.
+    conv.last_eliminado = false
     convs.value = [conv, ...convs.value.filter(c => c.peer_id !== peerId)]
   } else {
     const newConv: Conversacion = {
@@ -500,6 +522,99 @@ function autoResizeTextarea() {
   sendTyping()
 }
 
+// ─── Borrado ───────────────────────────────────────────────────────────────
+//
+// Dos operaciones, como en WhatsApp:
+//   "Eliminar para mí"    → lo oculta de esta cuenta. El otro lo conserva.
+//   "Eliminar para todos" → lo quita también al otro y deja la lápida.
+//
+// Quién puede hacer qué lo decide el servidor; lo de aquí abajo solo evita
+// ofrecer un botón que iba a fallar.
+
+/** Menú flotante. Uno solo para los dos casos: nunca hay dos abiertos. */
+const menu = ref<{
+  tipo: 'mensaje' | 'conversacion'
+  id: string
+  x: number
+  y: number
+  paraTodos: boolean
+  esGrupo: boolean
+} | null>(null)
+
+/** Conversación pendiente de confirmar. Borrarla se lleva todo el historial. */
+const convPorBorrar = ref<Conversacion | null>(null)
+
+function abrirMenuMensaje(msg: Mensaje, ev: MouseEvent) {
+  // Un mensaje que todavía no llegó al servidor no tiene id que borrar.
+  if (msg._tempId && msg._status !== 'sent') return
+  if (msg.eliminado) return
+  menu.value = {
+    tipo: 'mensaje',
+    id: msg.id,
+    x: ev.clientX,
+    y: ev.clientY,
+    paraTodos: puedeBorrarParaTodos(msg, auth.user?.id),
+    esGrupo: !!msg.is_group,
+  }
+}
+
+function abrirMenuConversacion(conv: Conversacion, ev: MouseEvent) {
+  menu.value = {
+    tipo: 'conversacion',
+    id: conv.peer_id,
+    x: ev.clientX,
+    y: ev.clientY,
+    paraTodos: false,
+    esGrupo: !!conv.is_group,
+  }
+}
+
+function cerrarMenu() { menu.value = null }
+
+async function eliminarMensaje(msgId: string, paraTodos: boolean) {
+  cerrarMenu()
+  try {
+    await api.delete(`/mensajes/mensaje/${msgId}`, { params: { todos: paraTodos } })
+    if (paraTodos) {
+      // Se queda la burbuja con la lápida, igual que en WhatsApp: que el hueco
+      // desaparezca sin más hace dudar de si se borró o si nunca se envió.
+      const m = msgs.value.find(x => x.id === msgId)
+      if (m) { m.eliminado = true; m.contenido = ''; m.attachment_url = undefined }
+    } else {
+      msgs.value = msgs.value.filter(x => x.id !== msgId)
+    }
+  } catch (e) {
+    mostrarError(e, 'No se pudo eliminar el mensaje')
+  }
+}
+
+async function eliminarConversacion() {
+  const conv = convPorBorrar.value
+  if (!conv) return
+  convPorBorrar.value = null
+  try {
+    await api.delete(`/mensajes/conversacion/${conv.peer_id}`, {
+      params: { is_group: !!conv.is_group },
+    })
+    convs.value = convs.value.filter(c => c.peer_id !== conv.peer_id)
+    // Si era la conversación abierta hay que salir de ella: dejarla en pantalla
+    // mostraría un hilo que ya no existe y que al recargar daría vacío.
+    if (activePeerId.value === conv.peer_id) {
+      msgs.value = []
+      router.replace(`${auth.isInstructor ? '/instructor' : '/usuario'}/mensajes`)
+    }
+  } catch (e) {
+    mostrarError(e, 'No se pudo eliminar la conversación')
+  }
+}
+
+/** Saca el motivo real del servidor cuando lo hay; si no, el texto de reserva. */
+function mostrarError(e: unknown, respaldo: string) {
+  const detalle = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+  errorMsg.value = detalle || respaldo
+  setTimeout(() => { errorMsg.value = '' }, 4000)
+}
+
 function openConversacion(conv: Conversacion) {
   peerName.value = conv.peer_name
   const base = auth.isInstructor ? '/instructor' : '/usuario'
@@ -569,15 +684,25 @@ watch(activePeerId, async (peerId) => {
 }, { immediate: true })
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────
+// Escape cierra lo que esté abierto, de dentro hacia fuera. Va en `window` y no
+// en el overlay porque el foco puede estar en cualquier parte cuando se pulsa.
+function onEscape(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  if (convPorBorrar.value) { convPorBorrar.value = null; return }
+  if (menu.value) cerrarMenu()
+}
+
 onMounted(async () => {
   await loadConversaciones()
   connectWs()
+  window.addEventListener('keydown', onEscape)
 })
 
 onUnmounted(() => {
   disconnectWs()
   sentinelObserver?.disconnect()
   if (typingHideTimer) clearTimeout(typingHideTimer)
+  window.removeEventListener('keydown', onEscape)
   llamada.limpiar()
 })
 </script>
@@ -629,10 +754,21 @@ onUnmounted(() => {
               <span class="conv-time">{{ formatTime(conv.last_time) }}</span>
             </div>
             <div class="conv-row">
-              <span class="conv-preview">{{ conv.last_message }}</span>
+              <span v-if="conv.last_eliminado" class="conv-preview conv-preview-borrado">Se eliminó este mensaje</span>
+              <span v-else class="conv-preview">{{ conv.last_message }}</span>
               <span v-if="conv.unread_count > 0" class="conv-badge">{{ conv.unread_count }}</span>
             </div>
           </div>
+          <button
+            class="conv-menu-btn"
+            type="button"
+            :aria-label="`Opciones de la conversación con ${conv.peer_name}`"
+            @click.stop="abrirMenuConversacion(conv, $event)"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" />
+            </svg>
+          </button>
         </li>
       </ul>
     </aside>
@@ -717,10 +853,27 @@ onUnmounted(() => {
                 </div>
                 <div v-else-if="msg.emisor_id !== auth.user?.id" class="msg-avatar-placeholder"></div>
 
-                <div class="bubble">
+                <div class="bubble" :class="{ 'bubble-borrado': msg.eliminado }">
                   <div v-if="convs.find(c => c.peer_id === activePeerId)?.is_group && msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="group-sender-name">
                     {{ msg.emisor_name }}
                   </div>
+
+                  <!--
+                    Mensaje borrado para todos. Se deja la burbuja con la lápida
+                    en lugar de quitarla: el hueco sin explicación hace dudar de
+                    si el mensaje se borró o nunca llegó a enviarse.
+                    El v-if envuelve al resto porque el servidor ya no manda ni
+                    contenido ni adjunto, pero el resto del bloque no tiene por
+                    qué enterarse de eso.
+                  -->
+                  <div v-if="msg.eliminado" class="msg-borrado">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" /><path d="M4.9 4.9l14.2 14.2" />
+                    </svg>
+                    <span>Se eliminó este mensaje</span>
+                  </div>
+
+                  <template v-else>
                   <!-- Adjunto: imagen -->
                   <div v-if="msg.attachment_url && msg.attachment_type?.startsWith('image/')" class="attachment attachment-image">
                     <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer">
@@ -767,7 +920,25 @@ onUnmounted(() => {
                       <div class="md-render md-chat" v-html="renderMarkdown(msg.contenido, 'chat')" />
                     </template>
                   </div>
-                  
+                  </template>
+
+                  <!--
+                    Disparador del menú de borrado. Solo aparece al pasar el
+                    ratón por encima —o siempre en táctil, que no tiene hover—,
+                    para no ensuciar el hilo con un icono por burbuja.
+                  -->
+                  <button
+                    v-if="!msg.eliminado && (!msg._tempId || msg._status === 'sent')"
+                    class="bubble-menu-btn"
+                    type="button"
+                    aria-label="Opciones del mensaje"
+                    @click.stop="abrirMenuMensaje(msg, $event)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+
                   <span class="bubble-meta">
                     <span class="bubble-time">{{ formatTime(msg.created_at) }}</span>
                     <span v-if="msg.emisor_id === auth.user?.id" class="status-icon">
@@ -891,6 +1062,74 @@ onUnmounted(() => {
 
     <!-- Aviso breve del resultado de la llamada (rechazada, sin respuesta…) -->
     <div v-if="llamada.aviso.value" class="call-toast" role="status">{{ llamada.aviso.value }}</div>
+
+    <!--
+      Menú de borrado. Uno solo para mensajes y conversaciones, posicionado
+      donde se pulsó: dos menús separados darían dos formas de cerrar, dos
+      capturas de Escape y dos maneras de quedarse abiertos a la vez.
+    -->
+    <div v-if="menu" class="menu-overlay" @click="cerrarMenu" @contextmenu.prevent="cerrarMenu">
+      <div
+        class="menu-flotante"
+        role="menu"
+        :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
+        @click.stop
+      >
+        <template v-if="menu.tipo === 'mensaje'">
+          <button class="menu-opcion" role="menuitem" @click="eliminarMensaje(menu.id, false)">
+            Eliminar para mí
+          </button>
+          <button
+            v-if="menu.paraTodos"
+            class="menu-opcion peligro"
+            role="menuitem"
+            @click="eliminarMensaje(menu.id, true)"
+          >
+            Eliminar para todos
+          </button>
+          <!--
+            Explica por qué falta la segunda opción. Sin esto, quien intenta
+            retirar un mensaje viejo solo ve que "ya no está el botón" y no
+            tiene forma de saber que existe un plazo.
+          -->
+          <p v-else class="menu-nota">
+            Solo puedes eliminarlo para todos durante la primera hora, y si lo escribiste tú.
+          </p>
+        </template>
+
+        <template v-else>
+          <button
+            class="menu-opcion peligro"
+            role="menuitem"
+            @click="convPorBorrar = convs.find(c => c.peer_id === menu!.id) ?? null; cerrarMenu()"
+          >
+            Eliminar conversación
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!--
+      Confirmación solo para la conversación. Un mensaje suelto se recupera
+      volviendo a escribirlo; el historial entero, no.
+    -->
+    <div v-if="convPorBorrar" class="confirm-overlay" @click.self="convPorBorrar = null">
+      <div class="confirm-caja" role="alertdialog" aria-labelledby="confirm-titulo">
+        <h3 id="confirm-titulo">¿Eliminar la conversación?</h3>
+        <p>
+          Se quitará de tu lista junto con los mensajes anteriores.
+          <strong>{{ convPorBorrar.peer_name }}</strong> conservará su copia,
+          y si vuelve a escribirte la conversación reaparecerá con los mensajes nuevos.
+        </p>
+        <p v-if="convPorBorrar.is_group" class="confirm-nota">
+          No sales del grupo: seguirás recibiendo lo que se escriba en él.
+        </p>
+        <div class="confirm-botones">
+          <button type="button" class="btn-secundario" @click="convPorBorrar = null">Cancelar</button>
+          <button type="button" class="btn-peligro" @click="eliminarConversacion">Eliminar</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal de Buscar Usuarios -->
     <SearchUserModal
@@ -1058,6 +1297,96 @@ onUnmounted(() => {
 .bubble-time { font-size: .68rem; color: rgba(255,255,255,.65); }
 .status-icon { font-size: .7rem; }
 .status-icon .read { color: #fed7aa; }
+
+/* ── Borrado ────────────────────────────────────────────────────────────── */
+
+/* Mensaje eliminado para todos: se deja la burbuja, vaciada. */
+.msg-borrado {
+  display: flex; align-items: center; gap: .35rem;
+  font-style: italic; opacity: .7; font-size: .85rem;
+}
+.msg-borrado svg { flex-shrink: 0; }
+.bubble.bubble-borrado { opacity: .85; }
+.conv-preview-borrado { font-style: italic; opacity: .75; }
+
+/*
+ * Disparadores del menú. Ocultos hasta que el puntero entra en la fila o la
+ * burbuja; en táctil no hay hover, así que la consulta de abajo los deja fijos.
+ */
+.bubble-menu-btn,
+.conv-menu-btn {
+  background: none; border: none; padding: 2px; cursor: pointer;
+  color: inherit; opacity: 0; transition: opacity .15s;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; flex-shrink: 0;
+}
+.bubble-menu-btn {
+  position: absolute; top: 4px; right: 6px;
+}
+.bubble:hover .bubble-menu-btn,
+.bubble-menu-btn:focus-visible { opacity: .75; }
+.conv-item:hover .conv-menu-btn,
+.conv-menu-btn:focus-visible { opacity: .7; }
+.conv-menu-btn { color: var(--text-muted); width: 26px; height: 26px; }
+.conv-menu-btn:hover { background: var(--surface-hover); opacity: 1; }
+
+@media (hover: none) {
+  /* Sin ratón no hay forma de descubrir un botón que solo aparece al pasar. */
+  .bubble-menu-btn, .conv-menu-btn { opacity: .55; }
+}
+
+.menu-overlay { position: fixed; inset: 0; z-index: 60; }
+.menu-flotante {
+  position: fixed; min-width: 190px; max-width: 260px;
+  background: var(--surface, #fff); color: var(--text);
+  border: 1px solid var(--border); border-radius: .6rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  padding: .3rem; overflow: hidden;
+  /*
+   * Anclado a la esquina superior izquierda del clic y desplazado hacia dentro.
+   * translate(-100%) en X evita que se salga por el borde derecho, que es donde
+   * viven los dos disparadores.
+   */
+  transform: translate(-100%, .35rem);
+}
+.menu-opcion {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer;
+  padding: .55rem .7rem; border-radius: .4rem;
+  font-size: .88rem; color: var(--text);
+}
+.menu-opcion:hover { background: var(--surface-hover); }
+.menu-opcion.peligro { color: #ef4444; }
+.menu-nota {
+  margin: .15rem .25rem .1rem; padding: .35rem .45rem;
+  font-size: .74rem; line-height: 1.35; color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.confirm-caja {
+  background: var(--surface, #fff); color: var(--text);
+  border-radius: .8rem; padding: 1.3rem;
+  max-width: 420px; width: 100%;
+  box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+.confirm-caja h3 { margin: 0 0 .6rem; font-size: 1.05rem; }
+.confirm-caja p { margin: 0 0 .5rem; font-size: .88rem; line-height: 1.5; color: var(--text-muted); }
+.confirm-nota { font-size: .8rem !important; opacity: .85; }
+.confirm-botones { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+.btn-secundario, .btn-peligro {
+  border-radius: .45rem; padding: .5rem .95rem;
+  font-size: .87rem; font-weight: 600; cursor: pointer;
+}
+.btn-secundario { background: none; border: 1px solid var(--border); color: var(--text); }
+.btn-secundario:hover { background: var(--surface-hover); }
+.btn-peligro { background: #ef4444; border: 1px solid #ef4444; color: #fff; }
+.btn-peligro:hover { background: #dc2626; }
 
 .bubble-wrap.mine .bubble {
   background: #f97316; color: #fff;

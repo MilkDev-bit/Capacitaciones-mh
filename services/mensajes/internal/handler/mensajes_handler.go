@@ -82,6 +82,20 @@ return nil, status.Error(codes.InvalidArgument, "grupo_id es requerido")
 return h.svc.GetGroupMembers(ctx, req)
 }
 
+func (h *MensajesHandler) EliminarMensaje(ctx context.Context, req *mensajespb.EliminarMensajeRequest) (*mensajespb.EliminarMensajeResponse, error) {
+	if req.MsgId == "" || req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "msg_id y user_id son requeridos")
+	}
+	return h.svc.EliminarMensaje(ctx, req)
+}
+
+func (h *MensajesHandler) EliminarConversacion(ctx context.Context, req *mensajespb.EliminarConversacionRequest) (*mensajespb.Empty, error) {
+	if req.UserId == "" || req.PeerId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id y peer_id son requeridos")
+	}
+	return h.svc.EliminarConversacion(ctx, req)
+}
+
 func (h *MensajesHandler) CreateGroupForLicencia(ctx context.Context, req *mensajespb.CreateGroupForLicenciaRequest) (*mensajespb.CreateGroupResponse, error) {
 	if req.LicenciaId == "" || req.Nombre == "" {
 		return nil, status.Error(codes.InvalidArgument, "licencia_id y nombre son requeridos")

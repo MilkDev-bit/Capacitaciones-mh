@@ -61,6 +61,14 @@ func (h *MensajesHandler) ListConversaciones(c *gin.Context) {
 		LastTime    time.Time `json:"last_time"`
 		UnreadCount int32     `json:"unread_count"`
 		AvatarURL   string    `json:"avatar_url"`
+		// is_group NO viajaba, y el frontend lo usa en todas partes: para el
+		// icono, para el nombre del remitente y sobre todo para pedir los
+		// mensajes con ?is_group=true. Sin él, al recargar la página un grupo
+		// se consultaba como si fuera un chat directo y salía vacío.
+		IsGroup bool `json:"is_group"`
+		// El último mensaje fue borrado para todos: la lista pinta la lápida
+		// en lugar de una vista previa vacía.
+		LastEliminado bool `json:"last_eliminado"`
 	}
 
 	// Fetch avatars concurrently to minimize latency
@@ -93,12 +101,14 @@ func (h *MensajesHandler) ListConversaciones(c *gin.Context) {
 	for _, cv := range resp.Conversaciones {
 		t, _ := time.Parse("2006-01-02T15:04:05Z", cv.LastTime)
 		convs = append(convs, conversacionDTO{
-			PeerID:      cv.PeerId,
-			PeerName:    cv.PeerName,
-			LastMessage: cv.LastMessage,
-			LastTime:    t,
-			UnreadCount: cv.UnreadCount,
-			AvatarURL:   avatars[cv.PeerId],
+			PeerID:        cv.PeerId,
+			PeerName:      cv.PeerName,
+			LastMessage:   cv.LastMessage,
+			LastTime:      t,
+			UnreadCount:   cv.UnreadCount,
+			AvatarURL:     avatars[cv.PeerId],
+			IsGroup:       cv.IsGroup,
+			LastEliminado: cv.LastEliminado,
 		})
 	}
 	c.JSON(http.StatusOK, convs)
@@ -151,6 +161,7 @@ func (h *MensajesHandler) GetMensajes(c *gin.Context) {
 		AttachmentUrl  string    `json:"attachment_url,omitempty"`
 		AttachmentType string    `json:"attachment_type,omitempty"`
 		IsGroup        bool      `json:"is_group"`
+		Eliminado      bool      `json:"eliminado"`
 	}
 
 	msgs := make([]mensajeDTO, 0, len(resp.Mensajes))
@@ -168,6 +179,7 @@ func (h *MensajesHandler) GetMensajes(c *gin.Context) {
 			AttachmentUrl:  m.AttachmentUrl,
 			AttachmentType: m.AttachmentType,
 			IsGroup:        m.IsGroup,
+			Eliminado:      m.Eliminado,
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"mensajes": msgs, "has_more": resp.HasMore})

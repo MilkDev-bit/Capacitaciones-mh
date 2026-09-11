@@ -94,6 +94,44 @@ func runMigrations(db *sqlx.DB) error {
 			joined_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			PRIMARY KEY (grupo_id, usuario_id)
 		)`,
+
+		// ── Borrado de mensajes y conversaciones ─────────────────────────
+		//
+		// Nada se borra de verdad. Una plataforma de capacitación laboral
+		// tiene que poder responder a una queja de acoso o a un instructor
+		// que niega haber escrito algo, y un DELETE deja la investigación
+		// sin nada que consultar. Lo que se guarda es QUIÉN dejó de verlo.
+		//
+		// "Para todos": se marca la fila. El texto se queda en la base pero
+		// el servidor ya no lo manda al cliente.
+		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS eliminado_at  TIMESTAMPTZ DEFAULT NULL`,
+		`ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS eliminado_por UUID        DEFAULT NULL`,
+
+		// "Para mí": una fila por mensaje y persona que lo ocultó. El otro
+		// conserva su copia intacta.
+		`CREATE TABLE IF NOT EXISTS mensajes_ocultos (
+			mensaje_id UUID        NOT NULL,
+			usuario_id UUID        NOT NULL,
+			oculto_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (mensaje_id, usuario_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_mensajes_ocultos_usuario
+			ON mensajes_ocultos(usuario_id)`,
+
+		// Conversación oculta: no se guarda "está borrada" sino DESDE CUÁNDO.
+		//
+		// Así se comporta igual que WhatsApp sin tener que tocar un solo
+		// mensaje: el historial anterior desaparece de tu lista, y en cuanto
+		// la otra persona escribe, el chat vuelve con lo nuevo y nada de lo
+		// viejo. Marcarla con un booleano obligaría a decidir al recibir cada
+		// mensaje si hay que "desborrarla", y a borrar filas de mensajes.
+		`CREATE TABLE IF NOT EXISTS conversaciones_ocultas (
+			usuario_id   UUID        NOT NULL,
+			peer_id      UUID        NOT NULL,
+			is_group     BOOLEAN     NOT NULL DEFAULT FALSE,
+			oculta_desde TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (usuario_id, peer_id)
+		)`,
 	}
 	for _, q := range migrations {
 		if _, err := db.Exec(q); err != nil {
