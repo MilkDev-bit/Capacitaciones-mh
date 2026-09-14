@@ -4,7 +4,10 @@ import api from '../api'
 import { toast } from '../utils/toast'
 import { useScrollLock } from '../composables/useScrollLock'
 
-defineProps<{
+// El resultado se guarda porque `useScrollLock` de abajo necesita la prop como
+// referencia. Sin asignarlo, `props` no existe en tiempo de ejecución y el
+// modal reventaba con "props is not defined" al abrirse.
+const props = defineProps<{
   show: boolean
 }>()
 
