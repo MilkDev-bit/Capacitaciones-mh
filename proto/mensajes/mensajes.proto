@@ -22,6 +22,17 @@ service MensajesService {
   rpc EnrollInLicenciaGroup  (EnrollInLicenciaGroupRequest)  returns (Empty);
 }
 
+// emisor_rol acompaña a emisor_id en las peticiones que evalúan "¿puedo
+// escribirle a esta persona?".
+//
+// Admin e instructor pueden escribir a cualquiera; el resto, solo a quien
+// comparte capacitación. Ese rol lo pone el gateway a partir del token ya
+// verificado, igual que pone `emisor_id`: un usuario no puede falsear ninguno
+// de los dos, porque no habla con este servicio directamente.
+//
+// La alternativa era que mensajes-service consultara el rol en cada envío, y
+// eso es una llamada gRPC más en la ruta caliente para un dato que quien llama
+// ya tiene en la mano.
 message SendMensajeRequest {
   string emisor_id       = 1;
   string emisor_name     = 2;
@@ -31,6 +42,7 @@ message SendMensajeRequest {
   string attachment_url  = 6;
   string attachment_type = 7;
   bool   is_group        = 8;
+  string emisor_rol      = 9;
 }
 
 message GetMensajesRequest {
@@ -113,6 +125,7 @@ message CreateGroupRequest {
   string nombre   = 1;
   string admin_id = 2;
   repeated string members = 3;
+  string admin_rol = 4;
 }
 
 message CreateGroupResponse {
@@ -123,6 +136,10 @@ message CreateGroupResponse {
 message AddGroupMembersRequest {
   string grupo_id = 1;
   repeated string user_ids = 2;
+  // Rol de quien hace la llamada, no del admin del grupo: los candidatos se
+  // contrastan contra el admin, pero la exención de admin/instructor la
+  // concede quien ejecuta la acción.
+  string solicitante_rol = 3;
 }
 
 message GetGroupMembersRequest {

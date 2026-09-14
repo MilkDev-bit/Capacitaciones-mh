@@ -1080,6 +1080,17 @@ func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb
 	return &cursospb.EmptyResponse{}, err
 }
 
+// CompanerosDeCurso lista a quién comparte capacitación con el usuario.
+//
+// No comprueba permisos porque no hay nada que proteger: un usuario siempre
+// puede preguntar por sus propios compañeros, y el user_id lo fija el gateway
+// desde el token, no el cliente.
+func (s *CursosService) CompanerosDeCurso(
+	ctx context.Context, userID string, candidatos []string, limite int32,
+) ([]string, error) {
+	return s.repo.CompanerosDeCurso(ctx, userID, candidatos, limite)
+}
+
 // InstructorListInscritos lista los alumnos de un curso del instructor.
 //
 // Traduce los errores del repositorio a los de dominio: `mapErr` del handler

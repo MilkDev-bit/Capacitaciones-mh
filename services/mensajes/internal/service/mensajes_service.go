@@ -28,12 +28,30 @@ func NewMensajesService(repo repository.MensajesRepository, contactos repository
 // endpoint en un oráculo para enumerar cuentas de la plataforma.
 const errNoContactable = "solo puedes escribir a personas de tus capacitaciones"
 
+// puedeContactarATodos exime a quien da soporte o coordina fuera de su grupo.
+//
+// El rol llega del gateway, que lo saca del token ya verificado, igual que el
+// emisor_id. La comprobación está aquí y no repartida por cada llamada para que
+// haya un solo sitio donde se decide quién queda exento.
+func puedeContactarATodos(rol string) bool {
+	return rol == "admin" || rol == "instructor"
+}
+
 // verificarContacto aplica la regla de visibilidad a un destinatario directo.
 // Las conversaciones creadas antes de esta restricción conservan su historial:
 // la regla solo se evalúa al enviar un mensaje nuevo.
-func (s *MensajesService) verificarContacto(ctx context.Context, emisorID, receptorID string) error {
-	if s.contactos == nil {
+func (s *MensajesService) verificarContacto(ctx context.Context, emisorID, receptorID, rol string) error {
+	if puedeContactarATodos(rol) {
 		return nil
+	}
+	// Sin repositorio de contactos NO se deja pasar.
+	//
+	// Antes esta rama devolvía nil, y eso convertía cualquier fallo de
+	// cableado en "todo el mundo puede escribir a todo el mundo". Una regla de
+	// autorización tiene que fallar cerrando.
+	if s.contactos == nil {
+		slog.Error("verificarContacto sin repositorio de contactos")
+		return status.Error(codes.Internal, "no se pudo validar el destinatario")
 	}
 	ok, err := s.contactos.PuedeContactar(ctx, emisorID, receptorID)
 	if err != nil {
@@ -67,7 +85,7 @@ contenido := strings.TrimSpace(req.Contenido)
 		if err := s.verificarMiembroGrupo(ctx, req.EmisorId, req.ReceptorId); err != nil {
 			return nil, err
 		}
-	} else if err := s.verificarContacto(ctx, req.EmisorId, req.ReceptorId); err != nil {
+	} else if err := s.verificarContacto(ctx, req.EmisorId, req.ReceptorId, req.EmisorRol); err != nil {
 		return nil, err
 	}
 
@@ -140,9 +158,14 @@ return &mensajespb.Empty{}, nil
 }
 
 // verificarMiembroGrupo exige que el emisor pertenezca al grupo al que escribe.
+//
+// Sin exención por rol: pertenecer a un grupo es un hecho, no un privilegio, y
+// un admin que escribe en un grupo del que no es miembro aparecería ante los
+// demás como uno más de la conversación.
 func (s *MensajesService) verificarMiembroGrupo(ctx context.Context, userID, grupoID string) error {
 	if s.contactos == nil {
-		return nil
+		slog.Error("verificarMiembroGrupo sin repositorio de contactos")
+		return status.Error(codes.Internal, "no se pudo validar el grupo")
 	}
 	ok, err := s.contactos.EsMiembroDeGrupo(ctx, userID, grupoID)
 	if err != nil {
@@ -159,9 +182,18 @@ func (s *MensajesService) verificarMiembroGrupo(ctx context.Context, userID, gru
 // comparten curso con el titular. Devuelve error si alguno queda fuera, en
 // lugar de descartarlo en silencio: un grupo creado con menos gente de la que
 // el usuario seleccionó es peor que un error explícito.
-func (s *MensajesService) miembrosPermitidos(ctx context.Context, titularID string, candidatos []string) ([]string, error) {
-	if s.contactos == nil || len(candidatos) == 0 {
+func (s *MensajesService) miembrosPermitidos(ctx context.Context, titularID, rol string, candidatos []string) ([]string, error) {
+	if len(candidatos) == 0 {
 		return candidatos, nil
+	}
+	if puedeContactarATodos(rol) {
+		return candidatos, nil
+	}
+	// Igual que en verificarContacto: sin repositorio no se aprueba a nadie.
+	// Devolver los candidatos tal cual dejaría crear un grupo con cualquiera.
+	if s.contactos == nil {
+		slog.Error("miembrosPermitidos sin repositorio de contactos")
+		return nil, status.Error(codes.Internal, "no se pudieron validar los miembros")
 	}
 
 	// Se deduplica y se excluye al titular, que se añade siempre aparte.
@@ -197,7 +229,7 @@ func (s *MensajesService) CreateGroup(ctx context.Context, req *mensajespb.Creat
 
 	// Se valida ANTES de crear el grupo: si un miembro no es válido no debe
 	// quedar un grupo huérfano de un solo integrante en la base de datos.
-	miembros, err := s.miembrosPermitidos(ctx, req.AdminId, req.Members)
+	miembros, err := s.miembrosPermitidos(ctx, req.AdminId, req.AdminRol, req.Members)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +255,7 @@ func (s *MensajesService) AddGroupMembers(ctx context.Context, req *mensajespb.A
 		return nil, err
 	}
 
-	miembros, err := s.miembrosPermitidos(ctx, adminID, req.UserIds)
+	miembros, err := s.miembrosPermitidos(ctx, adminID, req.SolicitanteRol, req.UserIds)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +271,8 @@ func (s *MensajesService) AddGroupMembers(ctx context.Context, req *mensajespb.A
 
 func (s *MensajesService) contactosAdmin(ctx context.Context, grupoID string) (string, error) {
 	if s.contactos == nil {
-		return "", nil
+		slog.Error("contactosAdmin sin repositorio de contactos")
+		return "", status.Error(codes.Internal, "no se pudo leer el grupo")
 	}
 	adminID, err := s.contactos.AdminDeGrupo(ctx, grupoID)
 	if err != nil {

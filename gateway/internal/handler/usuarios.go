@@ -10,6 +10,7 @@ import (
 	authpb "Prueba-Go/gen/auth"
 	cursospb "Prueba-Go/gen/cursos"
 	examenespb "Prueba-Go/gen/examenes"
+	leccionespb "Prueba-Go/gen/lecciones"
 	usuariospb "Prueba-Go/gen/usuarios"
 
 	"github.com/gin-gonic/gin"
@@ -56,10 +57,31 @@ func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
 	// Cursos inscritos y lecciones completadas
 	if cursosResp, errC := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
 		stats["cursos_inscritos"] = int32(len(cursosResp.Cursos))
+
+		// El avance NO se lee de los cursos que acaban de llegar.
+		//
+		// cursos-service devuelve esas dos columnas como `0 as total_lecciones,
+		// 0 as lecciones_completadas` literales: las lecciones y su progreso
+		// viven en la base de lecciones, no en la suya. Sumarlas daba cero
+		// siempre, y el perfil mostraba "0%" a todo el mundo aunque hubiera
+		// terminado el curso. El handler de /api/mis-capacitaciones sí
+		// enriquece; este, que llama al gRPC directo, se lo saltaba.
 		var comp, total int32
 		for _, c := range cursosResp.Cursos {
-			comp += c.LeccionesCompletadas
-			total += c.TotalLecciones
+			res, errA := h.c.Lecciones.ResumenAvanceCurso(ctx.Request.Context(), &leccionespb.ResumenAvanceRequest{
+				CursoId: c.Id,
+				UserIds: []string{userID},
+			})
+			if errA != nil || res == nil {
+				continue
+			}
+			// TotalLecciones viene aunque el alumno no tenga ni una fila de
+			// progreso; sin él, un curso recién empezado contaría 0 de 0, que
+			// se lee como completado.
+			total += res.TotalLecciones
+			if len(res.Avances) > 0 {
+				comp += res.Avances[0].Completadas
+			}
 		}
 		stats["lecciones_completadas"] = comp
 		stats["total_lecciones"] = total
@@ -167,16 +189,53 @@ func (h *UsuariosHandler) RevokeUserSessions(ctx *gin.Context) {
 }
 
 // GET /api/usuarios/search
+//
+// Se compone de dos llamadas porque el dato está repartido: quién comparte
+// capacitación conmigo lo sabe cursos-service, dueño de `inscripciones`,
+// `asignaciones` y `capacitaciones`; los nombres y correos los tiene
+// usuarios-service. Antes usuarios-service consultaba las tres tablas por su
+// cuenta y en producción, con una base por servicio, respondía 500.
 func (h *UsuariosHandler) SearchUsers(ctx *gin.Context) {
 	q := ctx.Query("q")
 	if q == "" {
 		ctx.JSON(http.StatusOK, []interface{}{})
 		return
 	}
+	userID := ctx.GetString(middleware.CtxUserID)
+	rol := ctx.GetString(middleware.CtxUserRole)
+
+	// Admin e instructor buscan sin restricción, así que se ahorran la llamada
+	// a cursos. usuarios-service vuelve a comprobar el rol contra la base: el
+	// del token sirve para decidir si hace falta la lista, no para autorizar.
+	var soloIDs []string
+	if rol != "admin" && rol != "instructor" {
+		companeros, err := h.c.Cursos.CompanerosDeCurso(ctx.Request.Context(), &cursospb.CompanerosRequest{
+			UserId: userID,
+			// Un curso masivo puede tener miles de compañeros y el buscador
+			// muestra diez. Se pide un techo amplio para que el filtro por
+			// nombre siga teniendo de dónde elegir, no uno igual al de salida.
+			Limite: 500,
+		})
+		if err != nil {
+			// Se corta aquí en vez de seguir sin lista. Continuar dejaría
+			// soloIDs vacío y, si algún día alguien invierte ese significado en
+			// usuarios-service, la caída de cursos-service se convertiría en
+			// una fuga del directorio completo.
+			grpcToHTTP(ctx, err)
+			return
+		}
+		if len(companeros.UserIds) == 0 {
+			ctx.JSON(http.StatusOK, []interface{}{})
+			return
+		}
+		soloIDs = companeros.UserIds
+	}
+
 	resp, err := h.c.Usuarios.SearchUsers(ctx.Request.Context(), &usuariospb.SearchUsersRequest{
 		Query:       q,
 		Limit:       10,
-		RequesterId: ctx.GetString(middleware.CtxUserID),
+		RequesterId: userID,
+		SoloIds:     soloIDs,
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

@@ -214,6 +214,11 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-capacitaciones}?sslmode=disable
       GRPC_PORT:    "50057"
       LOG_LEVEL:    ${LOG_LEVEL:-info}
+      # Necesario para resolver "quién comparte capacitación con quién", que es
+      # la regla que decide a quién puedes escribir. Sin esta variable el
+      # servicio no arranca, a propósito: arrancar sin poder evaluarla dejaría
+      # a cualquiera escribir a cualquiera.
+      CURSOS_ADDR:  cursos-service:50053
     expose:
       - "50057"
 

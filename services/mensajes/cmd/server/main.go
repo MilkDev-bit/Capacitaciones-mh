@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 
+	cursospb "Prueba-Go/gen/cursos"
 	mensajespb "Prueba-Go/gen/mensajes"
 	"Prueba-Go/services/mensajes/internal/handler"
 	"Prueba-Go/services/mensajes/internal/repository"
@@ -15,6 +16,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -32,9 +34,31 @@ func main() {
 	}
 
 	repo := repository.NewMensajesRepository(db)
-	// contactos resuelve "quién puede escribirle a quién" consultando las
-	// tablas de inscripción del servicio de cursos (misma base de datos).
-	contactos := repository.NewContactosRepository(db)
+
+	// contactos resuelve "quién puede escribirle a quién".
+	//
+	// La parte de "comparte capacitación conmigo" se le pregunta a
+	// cursos-service por gRPC, porque `inscripciones`, `asignaciones` y
+	// `capacitaciones` son suyas y no están en esta base. Antes se consultaban
+	// aquí directamente: funcionaba con el docker-compose de desarrollo, que da
+	// el mismo DATABASE_URL a todos, y en producción hacía fallar el envío de
+	// todo mensaje directo.
+	//
+	// La conexión es OBLIGATORIA y no opcional como en otros servicios. Sin
+	// ella la regla de contacto no se puede evaluar, y un servicio que arranca
+	// sin poder evaluarla deja a cualquiera escribir a cualquiera. Es preferible
+	// no arrancar.
+	conn, err := grpc.NewClient(
+		getEnvOr("CURSOS_ADDR", "cursos-service:50053"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		slog.Error("no se pudo crear el cliente de cursos-service", "error", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	contactos := repository.NewContactosRepository(db, cursospb.NewCursosServiceClient(conn))
 	svc := service.NewMensajesService(repo, contactos)
 	h := handler.NewMensajesHandler(svc)
 

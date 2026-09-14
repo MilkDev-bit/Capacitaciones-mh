@@ -21,6 +21,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// emisor_rol acompaña a emisor_id en las peticiones que evalúan "¿puedo
+// escribirle a esta persona?".
+//
+// Admin e instructor pueden escribir a cualquiera; el resto, solo a quien
+// comparte capacitación. Ese rol lo pone el gateway a partir del token ya
+// verificado, igual que pone `emisor_id`: un usuario no puede falsear ninguno
+// de los dos, porque no habla con este servicio directamente.
+//
+// La alternativa era que mensajes-service consultara el rol en cada envío, y
+// eso es una llamada gRPC más en la ruta caliente para un dato que quien llama
+// ya tiene en la mano.
 type SendMensajeRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	EmisorId       string                 `protobuf:"bytes,1,opt,name=emisor_id,json=emisorId,proto3" json:"emisor_id,omitempty"`
@@ -31,6 +42,7 @@ type SendMensajeRequest struct {
 	AttachmentUrl  string                 `protobuf:"bytes,6,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
 	AttachmentType string                 `protobuf:"bytes,7,opt,name=attachment_type,json=attachmentType,proto3" json:"attachment_type,omitempty"`
 	IsGroup        bool                   `protobuf:"varint,8,opt,name=is_group,json=isGroup,proto3" json:"is_group,omitempty"`
+	EmisorRol      string                 `protobuf:"bytes,9,opt,name=emisor_rol,json=emisorRol,proto3" json:"emisor_rol,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -119,6 +131,13 @@ func (x *SendMensajeRequest) GetIsGroup() bool {
 		return x.IsGroup
 	}
 	return false
+}
+
+func (x *SendMensajeRequest) GetEmisorRol() string {
+	if x != nil {
+		return x.EmisorRol
+	}
+	return ""
 }
 
 type GetMensajesRequest struct {
@@ -824,6 +843,7 @@ type CreateGroupRequest struct {
 	Nombre        string                 `protobuf:"bytes,1,opt,name=nombre,proto3" json:"nombre,omitempty"`
 	AdminId       string                 `protobuf:"bytes,2,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
 	Members       []string               `protobuf:"bytes,3,rep,name=members,proto3" json:"members,omitempty"`
+	AdminRol      string                 `protobuf:"bytes,4,opt,name=admin_rol,json=adminRol,proto3" json:"admin_rol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -879,6 +899,13 @@ func (x *CreateGroupRequest) GetMembers() []string {
 	return nil
 }
 
+func (x *CreateGroupRequest) GetAdminRol() string {
+	if x != nil {
+		return x.AdminRol
+	}
+	return ""
+}
+
 type CreateGroupResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GrupoId       string                 `protobuf:"bytes,1,opt,name=grupo_id,json=grupoId,proto3" json:"grupo_id,omitempty"`
@@ -932,11 +959,15 @@ func (x *CreateGroupResponse) GetNombre() string {
 }
 
 type AddGroupMembersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	GrupoId       string                 `protobuf:"bytes,1,opt,name=grupo_id,json=grupoId,proto3" json:"grupo_id,omitempty"`
-	UserIds       []string               `protobuf:"bytes,2,rep,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	GrupoId string                 `protobuf:"bytes,1,opt,name=grupo_id,json=grupoId,proto3" json:"grupo_id,omitempty"`
+	UserIds []string               `protobuf:"bytes,2,rep,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
+	// Rol de quien hace la llamada, no del admin del grupo: los candidatos se
+	// contrastan contra el admin, pero la exención de admin/instructor la
+	// concede quien ejecuta la acción.
+	SolicitanteRol string `protobuf:"bytes,3,opt,name=solicitante_rol,json=solicitanteRol,proto3" json:"solicitante_rol,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *AddGroupMembersRequest) Reset() {
@@ -981,6 +1012,13 @@ func (x *AddGroupMembersRequest) GetUserIds() []string {
 		return x.UserIds
 	}
 	return nil
+}
+
+func (x *AddGroupMembersRequest) GetSolicitanteRol() string {
+	if x != nil {
+		return x.SolicitanteRol
+	}
+	return ""
 }
 
 type GetGroupMembersRequest struct {
@@ -1419,7 +1457,7 @@ var File_mensajes_mensajes_proto protoreflect.FileDescriptor
 
 const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\n" +
-	"\x17mensajes/mensajes.proto\x12\bmensajes\"\xa1\x02\n" +
+	"\x17mensajes/mensajes.proto\x12\bmensajes\"\xc0\x02\n" +
 	"\x12SendMensajeRequest\x12\x1b\n" +
 	"\temisor_id\x18\x01 \x01(\tR\bemisorId\x12\x1f\n" +
 	"\vemisor_name\x18\x02 \x01(\tR\n" +
@@ -1430,7 +1468,9 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\tcontenido\x18\x05 \x01(\tR\tcontenido\x12%\n" +
 	"\x0eattachment_url\x18\x06 \x01(\tR\rattachmentUrl\x12'\n" +
 	"\x0fattachment_type\x18\a \x01(\tR\x0eattachmentType\x12\x19\n" +
-	"\bis_group\x18\b \x01(\bR\aisGroup\"\x94\x01\n" +
+	"\bis_group\x18\b \x01(\bR\aisGroup\x12\x1d\n" +
+	"\n" +
+	"emisor_rol\x18\t \x01(\tR\temisorRol\"\x94\x01\n" +
 	"\x12GetMensajesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\apeer_id\x18\x02 \x01(\tR\x06peerId\x12\x14\n" +
@@ -1482,17 +1522,19 @@ const file_mensajes_mensajes_proto_rawDesc = "" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"B\n" +
 	"\x13MarcarLeidoResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1b\n" +
-	"\temisor_id\x18\x02 \x01(\tR\bemisorId\"a\n" +
+	"\temisor_id\x18\x02 \x01(\tR\bemisorId\"~\n" +
 	"\x12CreateGroupRequest\x12\x16\n" +
 	"\x06nombre\x18\x01 \x01(\tR\x06nombre\x12\x19\n" +
 	"\badmin_id\x18\x02 \x01(\tR\aadminId\x12\x18\n" +
-	"\amembers\x18\x03 \x03(\tR\amembers\"H\n" +
+	"\amembers\x18\x03 \x03(\tR\amembers\x12\x1b\n" +
+	"\tadmin_rol\x18\x04 \x01(\tR\badminRol\"H\n" +
 	"\x13CreateGroupResponse\x12\x19\n" +
 	"\bgrupo_id\x18\x01 \x01(\tR\agrupoId\x12\x16\n" +
-	"\x06nombre\x18\x02 \x01(\tR\x06nombre\"N\n" +
+	"\x06nombre\x18\x02 \x01(\tR\x06nombre\"w\n" +
 	"\x16AddGroupMembersRequest\x12\x19\n" +
 	"\bgrupo_id\x18\x01 \x01(\tR\agrupoId\x12\x19\n" +
-	"\buser_ids\x18\x02 \x03(\tR\auserIds\"3\n" +
+	"\buser_ids\x18\x02 \x03(\tR\auserIds\x12'\n" +
+	"\x0fsolicitante_rol\x18\x03 \x01(\tR\x0esolicitanteRol\"3\n" +
 	"\x16GetGroupMembersRequest\x12\x19\n" +
 	"\bgrupo_id\x18\x01 \x01(\tR\agrupoId\"4\n" +
 	"\x17GetGroupMembersResponse\x12\x19\n" +

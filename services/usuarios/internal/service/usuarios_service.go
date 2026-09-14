@@ -98,8 +98,8 @@ func (s *UsuariosService) DeleteUser(ctx context.Context, userID string) error {
 	return s.repo.Delete(ctx, userID)
 }
 
-func (s *UsuariosService) Search(ctx context.Context, query string, limit int, requesterID string) ([]*usuariospb.UserSummary, error) {
-	users, err := s.repo.Search(ctx, query, limit, requesterID)
+func (s *UsuariosService) Search(ctx context.Context, query string, limit int, requesterID string, soloIDs []string) ([]*usuariospb.UserSummary, error) {
+	users, err := s.repo.Search(ctx, query, limit, requesterID, soloIDs)
 	if err != nil {
 		return nil, err
 	}

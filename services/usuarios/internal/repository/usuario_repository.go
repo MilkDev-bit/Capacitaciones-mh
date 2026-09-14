@@ -63,7 +63,9 @@ type UsuarioRepository interface {
 	UpdateField(ctx context.Context, userID, field, value string) error
 	List(ctx context.Context, role string) ([]*Usuario, error)
 	Delete(ctx context.Context, userID string) error
-	Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error)
+	// soloIDs acota la búsqueda a usuarios ya autorizados por cursos-service.
+	// Para quien no es admin ni instructor, vacío = no ve a nadie.
+	Search(ctx context.Context, query string, limit int, requesterID string, soloIDs []string) ([]*Usuario, error)
 	ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error)
 	MarkNotificacionesRead(ctx context.Context, userID string, ids []string) error
 	CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (id string, creada bool, err error)
@@ -86,18 +88,19 @@ func (r *postgresUsuarioRepository) FindByID(ctx context.Context, id string) (*U
 	if err != nil {
 		return nil, err
 	}
-	_ = r.db.GetContext(ctx, &u.CursosInscritos, `SELECT COUNT(DISTINCT capacitacion_id) FROM inscripciones WHERE user_id=$1`, id)
-	_ = r.db.GetContext(ctx, &u.LeccionesCompletadas, `SELECT COUNT(*) FROM progreso_lecciones WHERE user_id=$1`, id)
-	_ = r.db.GetContext(ctx, &u.TotalLecciones, `
-		SELECT COUNT(*) FROM lecciones l
-		JOIN inscripciones i ON l.capacitacion_id = i.capacitacion_id
-		WHERE i.user_id=$1 AND l.deleted_at IS NULL`, id)
-	_ = r.db.GetContext(ctx, &u.CursosCreados, `SELECT COUNT(*) FROM capacitaciones WHERE instructor_id=$1 AND deleted_at IS NULL`, id)
-	_ = r.db.GetContext(ctx, &u.EstudiantesTotal, `
-		SELECT COUNT(DISTINCT i.user_id) FROM inscripciones i
-		JOIN capacitaciones c ON i.capacitacion_id = c.id
-		WHERE c.instructor_id=$1 AND c.deleted_at IS NULL`, id)
-	_ = r.db.GetContext(ctx, &u.ExamenesCreados, `SELECT COUNT(*) FROM examenes WHERE instructor_id=$1`, id)
+	// Aquí había seis consultas más: cursos inscritos, lecciones completadas,
+	// cursos creados, estudiantes, exámenes. Contaban sobre `inscripciones`,
+	// `progreso_lecciones`, `lecciones`, `capacitaciones` y `examenes`, que son
+	// de otros tres servicios y no existen en esta base.
+	//
+	// Se ejecutaban con `_ =`, así que no rompían nada: fallaban en silencio y
+	// dejaban los contadores en cero. Seis consultas fallidas por cada carga de
+	// perfil, y el gateway sobrescribía el resultado de todas preguntando a
+	// cursos, lecciones y exámenes, que es donde están los datos. Se quitan
+	// porque no aportaban un número correcto en ningún caso.
+	//
+	// Los contadores del struct siguen existiendo: los rellena el gateway al
+	// componer /api/perfil.
 	return u, nil
 }
 
@@ -136,72 +139,71 @@ func (r *postgresUsuarioRepository) Delete(ctx context.Context, userID string) e
 	return err
 }
 
-func (r *postgresUsuarioRepository) Search(ctx context.Context, query string, limit int, requesterID string) ([]*Usuario, error) {
+// Search busca usuarios por nombre o correo.
+//
+// Esta consulta SOLO toca `users`, que es de este servicio. Antes cruzaba
+// `inscripciones`, `asignaciones` y `capacitaciones` para quedarse con los
+// compañeros de curso del solicitante, y esas tres tablas son de
+// cursos-service. En desarrollo pasaba desapercibido porque docker-compose da
+// el mismo DATABASE_URL a los siete contenedores; en producción, donde cada
+// servicio tiene su base, la búsqueda devolvía 500 a todo alumno que escribiera
+// una letra.
+//
+// Ahora quién es visible lo calcula cursos-service y llega en soloIDs.
+func (r *postgresUsuarioRepository) Search(
+	ctx context.Context, query string, limit int, requesterID string, soloIDs []string,
+) ([]*Usuario, error) {
 	if limit <= 0 {
 		limit = 10
 	}
-	// Fetch requester role if requesterID is present
-	var role string
-	if requesterID != "" {
-		_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
+
+	// Sin solicitante identificado no se devuelve nada. Este caso ya cayó una
+	// vez en la rama sin filtro y expuso el directorio completo de la
+	// plataforma; la puerta se queda cerrada por defecto.
+	if requesterID == "" {
+		return nil, nil
 	}
+
+	var role string
+	_ = r.db.GetContext(ctx, &role, `SELECT role FROM users WHERE id = $1`, requesterID)
 
 	const columnas = `u.id, u.name, u.email, u.role, COALESCE(u.bio,'') bio,
 	                  COALESCE(u.avatar_url,'') avatar_url, COALESCE(u.cover_url,'') cover_url,
 	                  COALESCE(u.phone,'') phone, COALESCE(u.specialty,'') specialty, u.created_at`
 
-	// Admin e instructor buscan sin límite: necesitan dar soporte y coordinar
-	// fuera de su propio grupo.
-	if role == "admin" || role == "instructor" {
-		q := `SELECT ` + columnas + `
-		        FROM users u
-		       WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
-		         AND u.id <> $3
-		       ORDER BY u.name ASC LIMIT $2`
-		var users []*Usuario
-		return users, r.db.SelectContext(ctx, &users, q, "%"+query+"%", limit, requesterID)
+	q := `SELECT ` + columnas + `
+	        FROM users u
+	       WHERE (u.name ILIKE ? OR u.email ILIKE ?)
+	         AND u.id <> ?`
+	args := []any{"%" + query + "%", "%" + query + "%", requesterID}
+
+	// Admin e instructor buscan sin restricción: dan soporte y coordinan fuera
+	// de su propio grupo.
+	if role != "admin" && role != "instructor" {
+		// Para el resto, soloIDs vacío significa "no ve a nadie", no "los ve a
+		// todos". Si el gateway se olvidara de calcularlo, o cursos-service
+		// respondiera con error, la búsqueda sale vacía en vez de abrir el
+		// directorio entero.
+		if len(soloIDs) == 0 {
+			return nil, nil
+		}
+		q += ` AND u.id IN (?)`
+		args = append(args, soloIDs)
 	}
 
-	// Sin solicitante identificado no se devuelve nada. Antes este caso —y el
-	// de un `role` vacío por fallo de la consulta anterior— caía en la rama
-	// sin filtro y exponía el directorio completo de la plataforma.
-	if requesterID == "" {
-		return nil, nil
-	}
+	q += ` ORDER BY u.name ASC LIMIT ?`
+	args = append(args, limit)
 
-	// Alumno: solo compañeros de sus capacitaciones. La pertenencia a un curso
-	// incluye inscripción, asignación por RR.HH. e impartición, de modo que el
-	// instructor del curso aparece en los resultados de sus propios alumnos.
-	//
-	// Nota: esta consulta es solo la capa de descubrimiento. La autorización
-	// real de cada mensaje vive en mensajes-service, porque un filtro de
-	// búsqueda no impide llamar al endpoint de envío con un ID adivinado.
-	q := `
-		WITH mis_cursos AS (
-		    SELECT capacitacion_id AS id FROM inscripciones  WHERE user_id = $3
-		    UNION
-		    SELECT capacitacion_id      FROM asignaciones   WHERE user_id = $3 AND capacitacion_id IS NOT NULL
-		    UNION
-		    SELECT id                   FROM capacitaciones WHERE instructor_id = $3 AND deleted_at IS NULL
-		),
-		companeros AS (
-		    SELECT i.user_id FROM inscripciones  i JOIN mis_cursos m ON m.id = i.capacitacion_id
-		    UNION
-		    SELECT a.user_id FROM asignaciones   a JOIN mis_cursos m ON m.id = a.capacitacion_id
-		    UNION
-		    SELECT c.instructor_id FROM capacitaciones c
-		      JOIN mis_cursos m ON m.id = c.id
-		     WHERE c.instructor_id IS NOT NULL AND c.deleted_at IS NULL
-		)
-		SELECT ` + columnas + `
-		  FROM users u
-		 WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
-		   AND u.id <> $3
-		   AND u.id IN (SELECT user_id FROM companeros)
-		 ORDER BY u.name ASC LIMIT $2`
+	// sqlx.In expande el IN y aplana los argumentos; Rebind traduce los `?` a
+	// los $1, $2… de Postgres. Se llaman en las dos ramas: en la de admin no
+	// hay IN que expandir, pero la consulta sigue escrita con `?`.
+	consulta, argsIn, err := sqlx.In(q, args...)
+	if err != nil {
+		return nil, err
+	}
 
 	var users []*Usuario
-	return users, r.db.SelectContext(ctx, &users, q, "%"+query+"%", limit, requesterID)
+	return users, r.db.SelectContext(ctx, &users, r.db.Rebind(consulta), argsIn...)
 }
 
 func (r *postgresUsuarioRepository) ListNotificaciones(ctx context.Context, userID string) ([]*usuariospb.Notificacion, error) {

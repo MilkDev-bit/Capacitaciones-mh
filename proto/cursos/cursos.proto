@@ -67,6 +67,16 @@ service CursosService {
   rpc GetLicenciaPublica(LicenciaIDRequest) returns (LicenciaPublicaResponse);
   rpc ListLicenciasCompradas(UserRequest) returns (ListLicenciasResponse);
 
+  // CompanerosDeCurso responde "¿quién comparte capacitación con este usuario?".
+  //
+  // Vive aquí porque `inscripciones`, `asignaciones` y `capacitaciones` son de
+  // este servicio y de ninguno más. Hasta ahora usuarios-service y
+  // mensajes-service consultaban esas tablas por su cuenta: funcionaba en
+  // desarrollo, donde docker-compose da el mismo DATABASE_URL a los siete
+  // contenedores, y fallaba en producción, donde cada servicio tiene su propia
+  // base y esas tablas sencillamente no están.
+  rpc CompanerosDeCurso(CompanerosRequest) returns (CompanerosResponse);
+
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListCapacitaciones(UserRequest) returns (ListCursosResponse);
   rpc InstructorCreateCapacitacion(CreateCursoRequest) returns (CursoResponse);
@@ -138,6 +148,21 @@ service CursosService {
 // ── Requests ─────────────────────────────────────────────────────────────────
 
 message EmptyRequest  {}
+message CompanerosRequest {
+  string user_id = 1;
+  // candidatos vacío = "dime todos mis compañeros" (descubrir, para la
+  // búsqueda). Con candidatos = "de estos, ¿cuáles puedo contactar?" (filtrar,
+  // para autorizar un envío). Un solo RPC para los dos usos porque la consulta
+  // es la misma y separarlos duplicaría la regla de pertenencia.
+  repeated string candidatos = 2;
+  // limite protege el caso "descubrir": sin él, un alumno de un curso masivo
+  // devolvería miles de identificadores para alimentar un buscador que muestra
+  // diez. 0 = sin límite, que es lo que necesita el caso "filtrar".
+  int32 limite = 3;
+}
+
+message CompanerosResponse { repeated string user_ids = 1; }
+
 message UserRequest   { string user_id = 1; }
 message CursoIDRequest {
   string curso_id = 1;

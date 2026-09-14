@@ -322,6 +322,17 @@ func (h *CursosHandler) GetAdminDashboardStats(ctx context.Context, req *cursosp
 	return stats, nil
 }
 
+func (h *CursosHandler) CompanerosDeCurso(ctx context.Context, req *cursospb.CompanerosRequest) (*cursospb.CompanerosResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id es requerido")
+	}
+	ids, err := h.svc.CompanerosDeCurso(ctx, req.UserId, req.Candidatos, req.Limite)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.CompanerosResponse{UserIds: ids}, nil
+}
+
 func (h *CursosHandler) InstructorListInscritos(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.ListInscritosResponse, error) {
 	list, err := h.svc.InstructorListInscritos(ctx, req.CursoId, req.UserId)
 	if err != nil {

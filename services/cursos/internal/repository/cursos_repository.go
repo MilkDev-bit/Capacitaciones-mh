@@ -211,6 +211,9 @@ type CursosRepository interface {
 	ClientesStripeRepository
 	// Inscritos por curso, para el seguimiento del instructor.
 	InscritosRepository
+	// Quién comparte capacitación con quién. Lo consumen usuarios-service
+	// (buscador) y mensajes-service (a quién puedes escribir) por gRPC.
+	CompanerosRepository
 
 	List(ctx context.Context) ([]*Curso, error)
 	ListPublicos(ctx context.Context) ([]*Curso, error)

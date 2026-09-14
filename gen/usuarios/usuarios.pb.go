@@ -358,10 +358,19 @@ func (x *ListUsersRequest) GetLimit() int32 {
 }
 
 type SearchUsersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	RequesterId   string                 `protobuf:"bytes,3,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Query       string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Limit       int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	RequesterId string                 `protobuf:"bytes,3,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	// solo_ids acota la búsqueda a un conjunto de usuarios que el llamante ya
+	// decidió que son visibles. Lo calcula cursos-service, dueño de las tablas de
+	// inscripción, y lo transporta el gateway.
+	//
+	// Para quien no es admin ni instructor, venir vacío significa "no ve a
+	// nadie", NO "los ve a todos". El valor por defecto de un campo repeated es
+	// la lista vacía, así que la omisión accidental tiene que fallar cerrando,
+	// no abriendo el directorio entero de la plataforma.
+	SoloIds       []string `protobuf:"bytes,4,rep,name=solo_ids,json=soloIds,proto3" json:"solo_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -415,6 +424,13 @@ func (x *SearchUsersRequest) GetRequesterId() string {
 		return x.RequesterId
 	}
 	return ""
+}
+
+func (x *SearchUsersRequest) GetSoloIds() []string {
+	if x != nil {
+		return x.SoloIds
+	}
+	return nil
 }
 
 type MarkNotificacionesReadRequest struct {
@@ -1373,11 +1389,12 @@ const file_usuarios_usuarios_proto_rawDesc = "" +
 	"\x10ListUsersRequest\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\x05R\x05limit\"c\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\"~\n" +
 	"\x12SearchUsersRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12!\n" +
-	"\frequester_id\x18\x03 \x01(\tR\vrequesterId\"J\n" +
+	"\frequester_id\x18\x03 \x01(\tR\vrequesterId\x12\x19\n" +
+	"\bsolo_ids\x18\x04 \x03(\tR\asoloIds\"J\n" +
 	"\x1dMarkNotificacionesReadRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x10\n" +
 	"\x03ids\x18\x02 \x03(\tR\x03ids\"\xc0\x01\n" +

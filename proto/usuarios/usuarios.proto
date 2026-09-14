@@ -94,6 +94,15 @@ message SearchUsersRequest {
   string query        = 1;
   int32  limit        = 2;
   string requester_id = 3;
+  // solo_ids acota la búsqueda a un conjunto de usuarios que el llamante ya
+  // decidió que son visibles. Lo calcula cursos-service, dueño de las tablas de
+  // inscripción, y lo transporta el gateway.
+  //
+  // Para quien no es admin ni instructor, venir vacío significa "no ve a
+  // nadie", NO "los ve a todos". El valor por defecto de un campo repeated es
+  // la lista vacía, así que la omisión accidental tiene que fallar cerrando,
+  // no abriendo el directorio entero de la plataforma.
+  repeated string solo_ids = 4;
 }
 
 message MarkNotificacionesReadRequest {

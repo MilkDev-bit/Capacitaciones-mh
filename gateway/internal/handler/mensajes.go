@@ -212,6 +212,10 @@ func (h *MensajesHandler) SendMensaje(c *gin.Context) {
 		AttachmentUrl:  body.AttachmentUrl,
 		AttachmentType: body.AttachmentType,
 		IsGroup:        body.IsGroup,
+		// El rol sale del token ya verificado, igual que EmisorId. Es lo que
+		// permite a admin e instructor escribir fuera de sus capacitaciones sin
+		// que mensajes-service tenga que consultar la base de auth.
+		EmisorRol: c.GetString(mw.CtxUserRole),
 	})
 	if err != nil {
 		// grpcToHTTP y no un 400 fijo: el servicio ahora devuelve
@@ -352,9 +356,10 @@ func (h *MensajesHandler) CreateGroup(c *gin.Context) {
 	}
 
 	resp, err := h.client.CreateGroup(c.Request.Context(), &mensajespb.CreateGroupRequest{
-		Nombre:  body.Nombre,
-		AdminId: userID,
-		Members: finalMembers,
+		Nombre:   body.Nombre,
+		AdminId:  userID,
+		Members:  finalMembers,
+		AdminRol: c.GetString(mw.CtxUserRole),
 	})
 	if err != nil {
 		grpcToHTTP(c, err)
@@ -379,8 +384,9 @@ func (h *MensajesHandler) AddGroupMembers(c *gin.Context) {
 	}
 
 	_, err := h.client.AddGroupMembers(c.Request.Context(), &mensajespb.AddGroupMembersRequest{
-		GrupoId: grupoID,
-		UserIds: body.Members,
+		GrupoId:        grupoID,
+		UserIds:        body.Members,
+		SolicitanteRol: c.GetString(mw.CtxUserRole),
 	})
 	if err != nil {
 		grpcToHTTP(c, err)

@@ -97,7 +97,7 @@ func (h *UsuariosHandler) SearchUsers(ctx context.Context, req *usuariospb.Searc
 	if limit <= 0 {
 		limit = 10
 	}
-	resp, err := h.svc.Search(ctx, req.Query, limit, req.RequesterId)
+	resp, err := h.svc.Search(ctx, req.Query, limit, req.RequesterId, req.SoloIds)
 	if err != nil {
 		slog.Error("SearchUsers", "error", err)
 		return nil, status.Error(codes.Internal, "error buscando usuarios")

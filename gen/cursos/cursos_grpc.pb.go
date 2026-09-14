@@ -50,6 +50,7 @@ const (
 	CursosService_ListLicencias_FullMethodName                  = "/cursos.CursosService/ListLicencias"
 	CursosService_GetLicenciaPublica_FullMethodName             = "/cursos.CursosService/GetLicenciaPublica"
 	CursosService_ListLicenciasCompradas_FullMethodName         = "/cursos.CursosService/ListLicenciasCompradas"
+	CursosService_CompanerosDeCurso_FullMethodName              = "/cursos.CursosService/CompanerosDeCurso"
 	CursosService_InstructorListCapacitaciones_FullMethodName   = "/cursos.CursosService/InstructorListCapacitaciones"
 	CursosService_InstructorCreateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorCreateCapacitacion"
 	CursosService_InstructorUpdateCapacitacion_FullMethodName   = "/cursos.CursosService/InstructorUpdateCapacitacion"
@@ -145,6 +146,15 @@ type CursosServiceClient interface {
 	ListLicencias(ctx context.Context, in *ListLicenciasRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListLicenciasResponse, error)
+	// CompanerosDeCurso responde "¿quién comparte capacitación con este usuario?".
+	//
+	// Vive aquí porque `inscripciones`, `asignaciones` y `capacitaciones` son de
+	// este servicio y de ninguno más. Hasta ahora usuarios-service y
+	// mensajes-service consultaban esas tablas por su cuenta: funcionaba en
+	// desarrollo, donde docker-compose da el mismo DATABASE_URL a los siete
+	// contenedores, y fallaba en producción, donde cada servicio tiene su propia
+	// base y esas tablas sencillamente no están.
+	CompanerosDeCurso(ctx context.Context, in *CompanerosRequest, opts ...grpc.CallOption) (*CompanerosResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -518,6 +528,16 @@ func (c *cursosServiceClient) ListLicenciasCompradas(ctx context.Context, in *Us
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListLicenciasResponse)
 	err := c.cc.Invoke(ctx, CursosService_ListLicenciasCompradas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) CompanerosDeCurso(ctx context.Context, in *CompanerosRequest, opts ...grpc.CallOption) (*CompanerosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompanerosResponse)
+	err := c.cc.Invoke(ctx, CursosService_CompanerosDeCurso_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -905,6 +925,15 @@ type CursosServiceServer interface {
 	ListLicencias(context.Context, *ListLicenciasRequest) (*ListLicenciasResponse, error)
 	GetLicenciaPublica(context.Context, *LicenciaIDRequest) (*LicenciaPublicaResponse, error)
 	ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error)
+	// CompanerosDeCurso responde "¿quién comparte capacitación con este usuario?".
+	//
+	// Vive aquí porque `inscripciones`, `asignaciones` y `capacitaciones` son de
+	// este servicio y de ninguno más. Hasta ahora usuarios-service y
+	// mensajes-service consultaban esas tablas por su cuenta: funcionaba en
+	// desarrollo, donde docker-compose da el mismo DATABASE_URL a los siete
+	// contenedores, y fallaba en producción, donde cada servicio tiene su propia
+	// base y esas tablas sencillamente no están.
+	CompanerosDeCurso(context.Context, *CompanerosRequest) (*CompanerosResponse, error)
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error)
 	InstructorCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
@@ -1066,6 +1095,9 @@ func (UnimplementedCursosServiceServer) GetLicenciaPublica(context.Context, *Lic
 }
 func (UnimplementedCursosServiceServer) ListLicenciasCompradas(context.Context, *UserRequest) (*ListLicenciasResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLicenciasCompradas not implemented")
+}
+func (UnimplementedCursosServiceServer) CompanerosDeCurso(context.Context, *CompanerosRequest) (*CompanerosResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompanerosDeCurso not implemented")
 }
 func (UnimplementedCursosServiceServer) InstructorListCapacitaciones(context.Context, *UserRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorListCapacitaciones not implemented")
@@ -1738,6 +1770,24 @@ func _CursosService_ListLicenciasCompradas_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CursosServiceServer).ListLicenciasCompradas(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_CompanerosDeCurso_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompanerosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).CompanerosDeCurso(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_CompanerosDeCurso_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).CompanerosDeCurso(ctx, req.(*CompanerosRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2448,6 +2498,10 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLicenciasCompradas",
 			Handler:    _CursosService_ListLicenciasCompradas_Handler,
+		},
+		{
+			MethodName: "CompanerosDeCurso",
+			Handler:    _CursosService_CompanerosDeCurso_Handler,
 		},
 		{
 			MethodName: "InstructorListCapacitaciones",

@@ -4,50 +4,33 @@ import (
 	"context"
 	"fmt"
 
+	cursospb "Prueba-Go/gen/cursos"
+
 	"github.com/jmoiron/sqlx"
 )
 
 // Este archivo concentra la regla de visibilidad entre usuarios:
 // "solo puedes escribir a quien comparte curso contigo".
 //
-// Por qué vive aquí y no en el gateway: la regla es una restricción de
-// dominio, no de transporte. Si se validara solo en el gateway o en el
+// Por qué vive en este servicio y no en el gateway: la regla es una restricción
+// de dominio, no de transporte. Si se validara solo en el gateway o en el
 // frontend, cualquiera podría hacer POST /api/mensajes/<uuid-arbitrario> y
-// saltársela — el filtro de búsqueda de usuarios que ya existía era
-// exactamente eso, cosmético. Al validarla en el servicio, ninguna ruta de
-// entrada puede evitarla.
+// saltársela — el filtro de búsqueda de usuarios que ya existía era exactamente
+// eso, cosmético. Al validarla en el servicio, ninguna ruta de entrada puede
+// evitarla.
 //
-// El servicio de mensajes comparte base de datos con el de cursos (todos los
-// contenedores reciben el mismo DATABASE_URL), igual que el servicio de
-// usuarios ya consulta `inscripciones` para el perfil público. Se sigue esa
-// convención en lugar de introducir una llamada gRPC extra en la ruta caliente
-// de cada mensaje enviado.
-
-// cursosDelSolicitante lista los cursos del usuario pasado como bindvar `?`.
-// cursosDelDestinatario hace lo mismo correlacionando con `t.id` de la query
-// externa, por lo que no consume bindvars.
+// Qué se consulta y dónde:
 //
-// Un usuario pertenece a un curso si:
+//	quién comparte curso conmigo → cursos-service, por gRPC
+//	quién pertenece a un grupo   → esta base de datos
 //
-//   - está inscrito           → inscripciones
-//   - fue asignado por RR.HH. → asignaciones
-//   - lo imparte              → capacitaciones.instructor_id
-//
-// Incluir al instructor es lo que permite que un alumno pueda escribirle sin
-// necesidad de una excepción aparte: comparte curso con él por definición.
-const cursosDelSolicitante = `
-	           SELECT capacitacion_id FROM inscripciones  WHERE user_id = ?
-	           UNION
-	           SELECT capacitacion_id FROM asignaciones   WHERE user_id = ? AND capacitacion_id IS NOT NULL
-	           UNION
-	           SELECT id              FROM capacitaciones WHERE instructor_id = ? AND deleted_at IS NULL`
-
-const cursosDelDestinatario = `
-	           SELECT capacitacion_id FROM inscripciones  WHERE user_id = t.id
-	           UNION
-	           SELECT capacitacion_id FROM asignaciones   WHERE user_id = t.id AND capacitacion_id IS NOT NULL
-	           UNION
-	           SELECT id              FROM capacitaciones WHERE instructor_id = t.id AND deleted_at IS NULL`
+// Antes lo primero también salía de aquí, leyendo `inscripciones`,
+// `asignaciones` y `capacitaciones` con SQL directo. Esas tablas son de
+// cursos-service. En desarrollo colaba porque docker-compose da el mismo
+// DATABASE_URL a los siete contenedores; en producción cada servicio tiene su
+// propia base, la consulta fallaba con "relation does not exist" y el error se
+// traducía a "no se pudo validar el destinatario": ningún mensaje directo podía
+// enviarse, y tampoco se podían crear grupos.
 
 // ContactosRepository resuelve a quién puede contactar un usuario.
 type ContactosRepository interface {
@@ -63,10 +46,13 @@ type ContactosRepository interface {
 	AdminDeGrupo(ctx context.Context, grupoID string) (string, error)
 }
 
-type postgresContactosRepository struct{ db *sqlx.DB }
+type postgresContactosRepository struct {
+	db     *sqlx.DB
+	cursos cursospb.CursosServiceClient
+}
 
-func NewContactosRepository(db *sqlx.DB) ContactosRepository {
-	return &postgresContactosRepository{db: db}
+func NewContactosRepository(db *sqlx.DB, cursos cursospb.CursosServiceClient) ContactosRepository {
+	return &postgresContactosRepository{db: db, cursos: cursos}
 }
 
 func (r *postgresContactosRepository) FiltrarContactables(ctx context.Context, requesterID string, targetIDs []string) ([]string, error) {
@@ -74,37 +60,29 @@ func (r *postgresContactosRepository) FiltrarContactables(ctx context.Context, r
 		return nil, nil
 	}
 
-	// Se usa sqlx.In en lugar de un array de Postgres porque el operador
-	// `= ANY($1::uuid[])` obliga a pasar por pq.Array/pgtype, y este módulo
-	// se conecta con pgx stdlib: el IN expandido funciona igual con cualquier
-	// driver y evita acoplar el repositorio al que esté configurado.
+	// Se mandan los candidatos para que cursos-service devuelva solo el
+	// subconjunto permitido, en vez de traerse la lista entera y cruzarla aquí.
+	// En un curso masivo la diferencia es entre unos pocos identificadores y
+	// varios miles por cada mensaje enviado.
 	//
-	// Orden de los bindvars `?`: IN, t.id <>, subconsulta de rol, y los tres
-	// del bloque cursosDelSolicitante.
-	q := `
-		SELECT t.id
-		  FROM users t
-		 WHERE t.id IN (?)
-		   AND t.id <> ?
-		   AND (
-		         (SELECT role FROM users WHERE id = ?) IN ('admin', 'instructor')
-		      OR EXISTS (
-		           SELECT 1
-		             FROM (` + cursosDelSolicitante + `
-		             ) yo
-		             JOIN (` + cursosDelDestinatario + `
-		             ) otro ON yo.capacitacion_id = otro.capacitacion_id
-		         )
-		       )`
-
-	query, args, err := sqlx.In(q, targetIDs, requesterID, requesterID, requesterID, requesterID, requesterID)
+	// Sin límite: el conjunto ya viene acotado por los candidatos, y recortarlo
+	// descartaría en silencio a destinatarios legítimos.
+	resp, err := r.cursos.CompanerosDeCurso(ctx, &cursospb.CompanerosRequest{
+		UserId:     requesterID,
+		Candidatos: targetIDs,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("contactos: construir consulta: %w", err)
+		return nil, fmt.Errorf("contactos: consultar compañeros: %w", err)
 	}
 
-	var permitidos []string
-	if err := r.db.SelectContext(ctx, &permitidos, r.db.Rebind(query), args...); err != nil {
-		return nil, fmt.Errorf("contactos: consultar permitidos: %w", err)
+	// El propio solicitante nunca sale: cursos-service ya lo excluye, pero la
+	// promesa es de esta interfaz y se cumple aquí también por si esa consulta
+	// cambia.
+	permitidos := make([]string, 0, len(resp.UserIds))
+	for _, id := range resp.UserIds {
+		if id != requesterID {
+			permitidos = append(permitidos, id)
+		}
 	}
 	return permitidos, nil
 }
@@ -116,6 +94,9 @@ func (r *postgresContactosRepository) PuedeContactar(ctx context.Context, reques
 	}
 	return len(permitidos) == 1, nil
 }
+
+// Las dos de abajo se quedan en SQL: `grupos` y `grupo_miembros` son tablas de
+// este servicio, en esta misma base.
 
 func (r *postgresContactosRepository) EsMiembroDeGrupo(ctx context.Context, userID, grupoID string) (bool, error) {
 	var existe bool
