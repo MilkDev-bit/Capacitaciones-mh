@@ -24,6 +24,8 @@ import (
 
 	"Prueba-Go/gateway/internal/clients"
 	usuariospb "Prueba-Go/gen/usuarios"
+
+	"google.golang.org/grpc/status"
 )
 
 // Tipos de notificación. Deben coincidir con `tiposNotificacion` del
@@ -91,8 +93,24 @@ func enviarAviso(c *clients.Clients, a aviso) {
 		DedupeVentanaSeg: int32(a.Ventana.Seconds()),
 	})
 	if err != nil {
+		// El código gRPC va aparte del error porque es lo que dice DÓNDE mirar,
+		// y usuarios-service devuelve a propósito un mensaje genérico para no
+		// filtrar detalles de la base:
+		//
+		//   InvalidArgument → el aviso viene mal construido desde aquí; el tipo
+		//                     o el destinatario no pasan la validación.
+		//   Internal        → falló la escritura. El motivo está en el log de
+		//                     usuarios-service, bajo "CreateNotificacion".
+		//   Unavailable     → usuarios-service no responde.
+		//   DeadlineExceeded→ tardó más que contextoCorto().
+		//
+		// Sin esto, las cuatro causas se ven idénticas y cada diagnóstico obliga
+		// a ir a buscar el log del otro servicio sin saber siquiera si está ahí.
 		slog.Warn("notificar: no se pudo crear la notificación",
-			"tipo", a.Tipo, "user_id", a.UserID, "error", err)
+			"tipo", a.Tipo,
+			"user_id", a.UserID,
+			"codigo", status.Code(err).String(),
+			"error", err)
 	}
 }
 
