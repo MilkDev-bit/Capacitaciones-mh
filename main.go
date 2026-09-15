@@ -1,3 +1,27 @@
+// RETIRADO — este binario no se despliega en ninguna parte.
+//
+// Es el monolito anterior a la división en microservicios. Sigue compilando
+// porque `.` está en go.work, y eso es lo único que lo mantiene vivo.
+//
+// Lo que SÍ corre en producción:
+//
+//	gateway/cmd/server      → railway.toml apunta a gateway/Dockerfile
+//	services/*/cmd/server   → cada uno con su Dockerfile y su base de datos
+//
+// Importa: `internal/` (config, db, handlers, middleware, models, repository,
+// service, storage, cache) pertenece a ESTE binario retirado, no al Gateway ni
+// a los servicios. El Gateway tiene su propio `gateway/internal/`.
+//
+// La confusión ya costó una revisión de arquitectura: se señaló el caché en
+// memoria de `internal/cache/cache.go` como riesgo de escalado horizontal, y
+// ese caché no se ejecuta en ningún despliegue. El caché que sí vive es el de
+// tokens en `gateway/internal/middleware/auth.go`.
+//
+// `pkg/` es otra cosa y sí está en uso: dc3, mailer y money los comparten los
+// servicios y el Gateway.
+//
+// Se conserva como referencia. Borrarlo —él, `internal/` y el Dockerfile de la
+// raíz— no rompe nada y quita ~5.400 líneas que CI compila en cada push.
 package main
 
 import (

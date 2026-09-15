@@ -265,10 +265,34 @@ func (h *DC3Handler) GuardarDatosYEmitir(ctx *gin.Context) {
 		return
 	}
 
+	// Este camino también hace cola. Sin esto el límite sería decorativo: basta
+	// con que una cohorte entera capture sus datos a la vez —que es justo lo que
+	// pasa cuando RR.HH. los sienta a todos en una sala— para saltárselo.
+	//
+	// El presupuesto de tiempo cuelga de la petición: si el alumno cierra la
+	// pestaña, se cancela y el turno queda libre para el siguiente.
+	ctxEmision, cancelar := contextoEmisionDe(ctx.Request.Context())
+	defer cancelar()
+
+	liberar, err := esperarTurno(ctxEmision)
+	if err != nil {
+		slog.Warn("DC-3: no se consiguió turno de emisión",
+			"user_id", userID, "curso_id", cursoID, "error", err)
+		// 503 y no 500: no está roto, está ocupado. El mensaje dice qué hacer, y
+		// los datos ya quedaron guardados arriba, así que reintentar no pierde
+		// nada de lo que el alumno escribió.
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{
+			"guardado": true,
+			"error":    "Guardamos tus datos. Se están generando otras constancias en este momento; vuelve a intentarlo en un minuto.",
+		})
+		return
+	}
+	defer liberar()
+
 	// reemitir=true: el alumno acaba de enviar sus datos, así que si ya había
 	// constancia hay que rehacerla con lo recién capturado. Devolverle la
 	// anterior sería ignorar en silencio la corrección que acaba de hacer.
-	url, err := h.emitir(ctx.Request.Context(), userID, cursoID,
+	url, err := h.emitir(ctxEmision, userID, cursoID,
 		ctx.GetString(middleware.CtxUserName), true)
 	var incompleta *ErrIncompleta
 	if errors.As(err, &incompleta) {
@@ -342,13 +366,32 @@ func (h *DC3Handler) ListMisConstancias(ctx *gin.Context) {
 // Un fallo aquí NUNCA debe impedir que se marque la lección como completada.
 func (h *DC3Handler) EmitirEnSegundoPlano(userID, cursoID, nombre string) {
 	go func() {
-		ctx, cancel := contextoCorto()
+		// contextoEmision y NO contextoCorto: aquella son 10 segundos pensados
+		// para un gRPC barato, y aquí la cadena incluye levantar Chromium. Ver
+		// dc3_emision.go.
+		ctx, cancel := contextoEmision()
 		defer cancel()
+
+		// Se hace cola antes de trabajar. Una cohorte que termina a la vez
+		// dispara una goroutine por alumno, y sin esto cada una pediría su
+		// propio Chromium hasta tumbar el contenedor de Gotenberg, llevándose
+		// por delante también las que habrían salido bien.
+		liberar, err := esperarTurno(ctx)
+		if err != nil {
+			slog.Error("DC-3: se agotó el tiempo esperando turno de emisión",
+				"user_id", userID, "curso_id", cursoID, "error", err)
+			return
+		}
+		defer liberar()
 
 		// reemitir=false: la emisión automática se dispara al completar el curso
 		// y puede repetirse —reintentos del webhook, el alumno rehaciendo una
 		// lección—. Regenerar en cada disparo subiría un documento nuevo a R2
 		// cada vez, con folio distinto, invalidando el que ya tenga en la mano.
+		//
+		// Va DESPUÉS de la cola a propósito: la comprobación de "ya existe" está
+		// dentro de emitir(), así que una constancia ya emitida sale rápido y
+		// devuelve el turno enseguida.
 		url, err := h.emitir(ctx, userID, cursoID, nombre, false)
 		switch {
 		case errors.Is(err, ErrConstanciaIncompleta):

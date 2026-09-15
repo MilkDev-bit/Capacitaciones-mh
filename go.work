@@ -3,6 +3,9 @@ go 1.26.2
 // El go.work une todos los módulos del workspace para desarrollo local.
 // En producción, cada servicio se compila y despliega de forma independiente.
 use (
+	// El monolito retirado. Ver la cabecera de main.go: no se despliega, pero
+	// se deja en el workspace para que CI siga compilándolo y avise si alguien
+	// lo toca creyendo que está vivo.
 	.
 	./gen
 	./pkg/dc3
