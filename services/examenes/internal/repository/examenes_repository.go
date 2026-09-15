@@ -46,6 +46,9 @@ type ResultadoRow struct {
 
 // ExamenesRepository contrato.
 type ExamenesRepository interface {
+	// Edición conservando las respuestas ya registradas.
+	EditarRepository
+
 	List(ctx context.Context) ([]*Examen, error)
 	ListByInstructor(ctx context.Context, instructorID string) ([]*Examen, error)
 	ListByUser(ctx context.Context, userID string) ([]*Examen, error)

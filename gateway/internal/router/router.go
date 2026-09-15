@@ -307,6 +307,11 @@ func New(d Deps) *gin.Engine {
 
 				inst.GET("/examenes", d.ExamenesH.InstructorListExamenes)
 				inst.POST("/examenes", d.ExamenesH.InstructorCreateExamen)
+				// El GET trae el examen con las respuestas correctas y con
+				// cuánta gente contestó cada pregunta; es la vista de edición,
+				// no la del alumno.
+				inst.GET("/examenes/:id", d.ExamenesH.InstructorGetExamen)
+				inst.PUT("/examenes/:id", d.ExamenesH.InstructorUpdateExamen)
 				inst.DELETE("/examenes/:id", d.ExamenesH.InstructorDeleteExamen)
 				inst.GET("/examenes/:id/resultados", d.ExamenesH.InstructorGetResultados)
 				inst.GET("/examenes/:id/resultados/:user_id", d.ExamenesH.InstructorGetRespuestasUsuario)

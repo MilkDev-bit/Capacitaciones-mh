@@ -298,6 +298,83 @@ func (h *ExamenesHandler) InstructorCreateExamen(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
+// GET /api/instructor/examenes/:id
+//
+// El examen tal como lo necesita el formulario de edición: con `es_correcta` y
+// con el número de respuestas ya registradas en cada pregunta.
+func (h *ExamenesHandler) InstructorGetExamen(ctx *gin.Context) {
+	resp, err := h.c.Examenes.InstructorGetExamen(ctx.Request.Context(), &examenespb.ExamenUserRequest{
+		ExamenId: ctx.Param("id"),
+		// El servicio comprueba con esto que el examen sea suyo. El middleware
+		// solo valida el ROL, así que sin esta comprobación bastaría cambiar el
+		// id de la URL para abrir el de otro instructor.
+		UserId: ctx.GetString(middleware.CtxUserID),
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// PUT /api/instructor/examenes/:id
+//
+// Los `id` de pregunta y de opción son opcionales y significan algo concreto:
+// si vienen, esa fila ya existe y se actualiza en su sitio; si faltan, es
+// nueva. Lo que no llega en la lista se borra. Así, editar la redacción de una
+// pregunta no destruye las respuestas de quien ya presentó el examen.
+func (h *ExamenesHandler) InstructorUpdateExamen(ctx *gin.Context) {
+	var body struct {
+		Title          string `json:"title"    binding:"required"`
+		Description    string `json:"description"`
+		CapacitacionID string `json:"capacitacion_id"`
+		Preguntas      []struct {
+			ID       string  `json:"id"`
+			Texto    string  `json:"texto"`
+			Tipo     string  `json:"tipo"`
+			Valor    float64 `json:"valor"`
+			Orden    int32   `json:"orden"`
+			Opciones []struct {
+				ID         string `json:"id"`
+				Texto      string `json:"texto"`
+				EsCorrecta bool   `json:"es_correcta"`
+			} `json:"opciones"`
+		} `json:"preguntas"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	preguntas := make([]*examenespb.PreguntaInput, 0, len(body.Preguntas))
+	for _, p := range body.Preguntas {
+		opciones := make([]*examenespb.OpcionInput, 0, len(p.Opciones))
+		for _, o := range p.Opciones {
+			opciones = append(opciones, &examenespb.OpcionInput{
+				Id: o.ID, Texto: o.Texto, EsCorrecta: o.EsCorrecta,
+			})
+		}
+		preguntas = append(preguntas, &examenespb.PreguntaInput{
+			Id: p.ID, Texto: p.Texto, Tipo: p.Tipo,
+			Valor: p.Valor, Orden: p.Orden, Opciones: opciones,
+		})
+	}
+
+	resp, err := h.c.Examenes.InstructorUpdateExamen(ctx.Request.Context(), &examenespb.UpdateExamenRequest{
+		ExamenId:       ctx.Param("id"),
+		UserId:         ctx.GetString(middleware.CtxUserID),
+		Title:          body.Title,
+		Description:    body.Description,
+		CapacitacionId: body.CapacitacionID,
+		Preguntas:      preguntas,
+	})
+	if err != nil {
+		grpcToHTTP(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 // GET /api/admin/examenes

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	examenespb "Prueba-Go/gen/examenes"
 	"Prueba-Go/services/examenes/internal/repository"
@@ -99,6 +100,49 @@ func (s *ExamenesService) InstructorListExamenes(ctx context.Context, instructor
 
 func (s *ExamenesService) InstructorCreate(ctx context.Context, req *examenespb.CreateExamenRequest) (*examenespb.ExamenResponse, error) {
 	e, err := s.repo.Create(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return s.buildExamenResponse(ctx, e, true)
+}
+
+// InstructorGetExamen trae el examen para editarlo.
+//
+// Distinto de GetExamen, que es el del alumno: aquí `es_correcta` sí viaja
+// —sin ella no se puede editar la respuesta correcta— y cada pregunta lleva
+// cuántas personas ya la respondieron, que es lo que permite avisar antes de
+// borrar algo con historial.
+func (s *ExamenesService) InstructorGetExamen(ctx context.Context, examenID, instructorID string) (*examenespb.ExamenResponse, error) {
+	e, err := s.repo.FindByID(ctx, examenID)
+	if err != nil {
+		return nil, err
+	}
+	// instructorID vacío = admin, que puede abrir cualquiera.
+	if instructorID != "" && (e.InstructorID == nil || *e.InstructorID != instructorID) {
+		// sql.ErrNoRows y no un "no puedes": el handler lo traduce a NotFound, y
+		// así probar identificadores en la URL no revela qué exámenes existen.
+		return nil, sql.ErrNoRows
+	}
+
+	resp, err := s.buildExamenResponse(ctx, e, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// El conteo se pide UNA vez para todo el examen y se reparte, en lugar de
+	// una consulta por pregunta.
+	conteo, err := s.repo.RespuestasPorPregunta(ctx, examenID)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range resp.Preguntas {
+		p.Respuestas = conteo[p.Id]
+	}
+	return resp, nil
+}
+
+func (s *ExamenesService) InstructorUpdate(ctx context.Context, req *examenespb.UpdateExamenRequest) (*examenespb.ExamenResponse, error) {
+	e, err := s.repo.Update(ctx, req)
 	if err != nil {
 		return nil, err
 	}

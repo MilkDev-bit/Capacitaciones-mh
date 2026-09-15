@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	examenespb "Prueba-Go/gen/examenes"
+	"Prueba-Go/services/examenes/internal/repository"
 	"Prueba-Go/services/examenes/internal/service"
 
 	"google.golang.org/grpc/codes"
@@ -60,6 +61,28 @@ func (h *ExamenesHandler) InstructorListExamenes(ctx context.Context, req *exame
 
 func (h *ExamenesHandler) InstructorCreateExamen(ctx context.Context, req *examenespb.CreateExamenRequest) (*examenespb.ExamenResponse, error) {
 	e, err := h.svc.InstructorCreate(ctx, req)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return e, nil
+}
+
+func (h *ExamenesHandler) InstructorGetExamen(ctx context.Context, req *examenespb.ExamenUserRequest) (*examenespb.ExamenResponse, error) {
+	if req.ExamenId == "" {
+		return nil, status.Error(codes.InvalidArgument, "examen_id es requerido")
+	}
+	e, err := h.svc.InstructorGetExamen(ctx, req.ExamenId, req.UserId)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+	return e, nil
+}
+
+func (h *ExamenesHandler) InstructorUpdateExamen(ctx context.Context, req *examenespb.UpdateExamenRequest) (*examenespb.ExamenResponse, error) {
+	if req.ExamenId == "" {
+		return nil, status.Error(codes.InvalidArgument, "examen_id es requerido")
+	}
+	e, err := h.svc.InstructorUpdate(ctx, req)
 	if err != nil {
 		return nil, toGRPC(err)
 	}
@@ -120,6 +143,11 @@ func toGRPC(err error) error {
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return status.Error(codes.NotFound, "recurso no encontrado")
+	}
+	// Editar un examen ajeno. Va antes del genérico para que el gateway responda
+	// 403 y no un 500 sobre el que no se puede hacer nada.
+	if errors.Is(err, repository.ErrNoEsTuyo) {
+		return status.Error(codes.PermissionDenied, "este examen no es tuyo")
 	}
 	if strings.Contains(err.Error(), "invalid input syntax for type uuid") || strings.Contains(err.Error(), "SQLSTATE 22P02") {
 		return status.Error(codes.InvalidArgument, "ID de recurso inválido")

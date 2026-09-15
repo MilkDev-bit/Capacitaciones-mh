@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import api from '../../api'
 import { toast } from '../../utils/toast'
+import { preguntasQuitadas, avisoDeBorrado } from '../../utils/examen'
 
 const examenes = ref<any[]>([])
 const capacitaciones = ref<any[]>([])
@@ -75,18 +76,96 @@ function scoreColor(pct: number) {
   return '#ef4444'
 }
 
+/**
+ * Examen que se está editando. `null` = se está creando uno nuevo.
+ *
+ * Es lo único que distingue los dos modos: el formulario, la validación y el
+ * guardado son los mismos, porque crear es editar algo que todavía no existe.
+ */
+const editandoId = ref<string | null>(null)
+
+/**
+ * Foto de las preguntas tal como se cargaron, con cuánta gente respondió cada
+ * una.
+ *
+ * Hace falta aparte del formulario porque el formulario cambia mientras se
+ * edita: para saber qué preguntas QUITÓ el instructor hay que comparar contra
+ * lo que había al abrir, no contra lo que queda.
+ */
+const originalPreguntas = ref<Array<{ id: string; texto: string; respuestas: number }>>([])
+
 const form = ref({
   title: '',
   description: '',
   capacitacion_id: null as string | null,
   preguntas: [] as Array<{
+    // `id` vacío = fila nueva. Con id, el backend la actualiza en su sitio en
+    // lugar de borrarla y recrearla, que se llevaría por delante las respuestas
+    // de quien ya presentó el examen.
+    id?: string
     texto: string
     tipo: string
     valor: number
     orden: number
-    opciones: Array<{ texto: string; es_correcta: boolean }>
+    respuestas?: number
+    opciones: Array<{ id?: string; texto: string; es_correcta: boolean }>
   }>
 })
+
+function formVacio() {
+  originalPreguntas.value = []
+  return { title: '', description: '', capacitacion_id: null as string | null, preguntas: [] }
+}
+
+function nuevoExamen() {
+  editandoId.value = null
+  form.value = formVacio()
+  showForm.value = true
+}
+
+function cancelarForm() {
+  showForm.value = false
+  editandoId.value = null
+  form.value = formVacio()
+}
+
+/**
+ * Carga un examen en el formulario.
+ *
+ * Los `id` de pregunta y opción se conservan a propósito: son los que permiten
+ * al backend distinguir "esta pregunta ya existía" de "esta es nueva".
+ */
+async function editar(ex: any) {
+  try {
+    const { data } = await api.get(`/instructor/examenes/${ex.id}`)
+    editandoId.value = ex.id
+    form.value = {
+      title: data.title ?? '',
+      description: data.description ?? '',
+      capacitacion_id: data.capacitacion_id || null,
+      preguntas: (data.preguntas ?? []).map((p: any) => ({
+        id: p.id,
+        texto: p.texto ?? '',
+        tipo: p.tipo || 'multiple_choice',
+        valor: Number(p.valor ?? 1),
+        orden: Number(p.orden ?? 0),
+        respuestas: Number(p.respuestas ?? 0),
+        opciones: (p.opciones ?? []).map((o: any) => ({
+          id: o.id, texto: o.texto ?? '', es_correcta: !!o.es_correcta,
+        })),
+      })),
+    }
+    originalPreguntas.value = (data.preguntas ?? []).map((p: any) => ({
+      id: p.id, texto: p.texto ?? '', respuestas: Number(p.respuestas ?? 0),
+    }))
+    showForm.value = true
+    await nextTick()
+    document.querySelector('.ex-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'No se pudo abrir el examen')
+  }
+}
+
 
 function addPregunta() {
   form.value.preguntas.push({
@@ -100,6 +179,9 @@ function removePregunta(i: number) { form.value.preguntas.splice(i, 1) }
 function onTipoChange(pi: number) {
   const p = form.value.preguntas[pi]
   if (!p) return
+  // Cambiar de tipo reemplaza las opciones, y las nuevas van SIN id: son otras.
+  // Conservar los ids viejos aquí dejaría respuestas apuntando a una opción que
+  // ahora dice otra cosa.
   if (p.tipo === 'true_false') {
     p.opciones = [{ texto: 'Verdadero', es_correcta: false }, { texto: 'Falso', es_correcta: false }]
   } else if (p.tipo === 'open_text') {
@@ -152,12 +234,24 @@ async function guardar() {
       toast.error('Todas las opciones deben tener texto'); return
     }
   }
+  // Aviso antes de guardar una edición que borra historial.
+  //
+  // El backend conserva las respuestas de las preguntas que siguen ahí, pero no
+  // puede conservar las de una pregunta que el instructor quitó. Que esa pérdida
+  // ocurra en silencio es lo que no puede pasar en una plataforma que emite
+  // constancias DC-3.
+  if (editandoId.value) {
+    const quitadas = preguntasQuitadas(originalPreguntas.value, form.value.preguntas)
+    if (quitadas.length > 0 && !await toast.confirm(avisoDeBorrado(quitadas))) return
+  }
+
   loading.value = true
   try {
     const payload: any = {
       title: form.value.title,
       description: form.value.description,
       preguntas: form.value.preguntas.map(p => ({
+        id: p.id,
         texto: p.texto,
         tipo: p.tipo,
         valor: p.valor,
@@ -166,10 +260,15 @@ async function guardar() {
       }))
     }
     if (form.value.capacitacion_id) payload.capacitacion_id = form.value.capacitacion_id
-    await api.post('/instructor/examenes', payload)
-    toast.success('Examen creado exitosamente')
-    showForm.value = false
-    form.value = { title: '', description: '', capacitacion_id: null, preguntas: [] }
+
+    if (editandoId.value) {
+      await api.put(`/instructor/examenes/${editandoId.value}`, payload)
+      toast.success('Examen actualizado')
+    } else {
+      await api.post('/instructor/examenes', payload)
+      toast.success('Examen creado exitosamente')
+    }
+    cancelarForm()
     await load()
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Error al guardar')
@@ -194,7 +293,7 @@ async function eliminar(id: string) {
         <p class="ph-sub">Crea y administra tus evaluaciones</p>
       </div>
       <div class="ph-actions">
-        <button @click="showForm = !showForm" class="btn btn-primary" :aria-expanded="showForm">
+        <button @click="showForm ? cancelarForm() : nuevoExamen()" class="btn btn-primary" :aria-expanded="showForm">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
             <path v-if="!showForm" d="M12 5v14M5 12h14" stroke-linecap="round"/>
             <path v-else d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>
@@ -207,7 +306,7 @@ async function eliminar(id: string) {
     <div class="ex-body">
       <Transition name="slide-down">
         <div v-if="showForm" class="form-card ex-form-card">
-          <h2 class="form-card-title">Crear nuevo examen</h2>
+          <h2 class="form-card-title">{{ editandoId ? 'Editar examen' : 'Crear nuevo examen' }}</h2>
           <div class="form-grid">
             <div class="field full">
               <label class="field-label" for="ex-title">Título del examen <span class="field-req">*</span></label>
@@ -245,6 +344,19 @@ async function eliminar(id: string) {
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
                 </button>
               </div>
+
+              <!--
+                Aviso por pregunta con historial. Va pegado a la pregunta y no
+                en una nota general del formulario porque lo que importa es
+                saber CUÁL tiene respuestas antes de tocarla o quitarla.
+              -->
+              <p v-if="(p.respuestas ?? 0) > 0" class="ex-pregunta-aviso">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4m0 4h.01"/>
+                </svg>
+                {{ p.respuestas }} {{ p.respuestas === 1 ? 'persona ya respondió' : 'personas ya respondieron' }} esta pregunta.
+                Si la quitas, se borran sus respuestas.
+              </p>
 
               <textarea v-model="p.texto" :placeholder="`Texto de la pregunta ${pi + 1}...`" rows="2" class="field-input ex-pregunta-texto" :aria-label="`Pregunta ${pi + 1}`" />
 
@@ -313,9 +425,9 @@ async function eliminar(id: string) {
           <div class="form-actions" style="margin-top:20px">
             <button @click="guardar" :disabled="loading" class="btn btn-primary" :aria-busy="loading">
               <svg v-if="!loading" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round"/></svg>
-              {{ loading ? 'Guardando...' : 'Guardar examen' }}
+              {{ loading ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Guardar examen' }}
             </button>
-            <button @click="showForm = false" class="btn btn-secondary" type="button">Cancelar</button>
+            <button @click="cancelarForm" class="btn btn-secondary" type="button">Cancelar</button>
           </div>
         </div>
       </Transition>
@@ -340,6 +452,9 @@ async function eliminar(id: string) {
             <button @click.stop="verResultados(ex)" class="btn btn-secondary btn-sm" title="Ver respuestas de estudiantes">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
               Resultados
+            </button>
+            <button @click.stop="editar(ex)" class="icon-btn" :aria-label="`Editar examen ${ex.title}`" title="Editar">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button @click="eliminar(ex.id)" class="icon-btn danger" :aria-label="`Eliminar examen ${ex.title}`">
               <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -596,6 +711,31 @@ async function eliminar(id: string) {
 }
 
 .ex-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/*
+ * Aviso de pregunta con respuestas. Tono de advertencia, no de error: quitarla
+ * está permitido, pero tiene una consecuencia que no se puede deshacer.
+ */
+.ex-pregunta-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #92400e;
+  background: rgba(245, 158, 11, .10);
+  border: 1px solid rgba(245, 158, 11, .30);
+}
+.ex-pregunta-aviso svg { flex-shrink: 0; margin-top: 2px; }
+
+/*
+ * En oscuro el marrón del texto queda ilegible sobre el fondo del formulario.
+ * La clase es `dark-theme`, que es la que pone useTheme.ts en <html>.
+ */
+:global(html.dark-theme) .ex-pregunta-aviso { color: #fbbf24; }
 
 .res-overlay {
   position: fixed; inset: 0 0 0 var(--sidebar-w); background: rgba(15,23,42,.45);

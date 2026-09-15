@@ -24,6 +24,8 @@ const (
 	ExamenesService_SubmitExamen_FullMethodName                   = "/examenes.ExamenesService/SubmitExamen"
 	ExamenesService_InstructorListExamenes_FullMethodName         = "/examenes.ExamenesService/InstructorListExamenes"
 	ExamenesService_InstructorCreateExamen_FullMethodName         = "/examenes.ExamenesService/InstructorCreateExamen"
+	ExamenesService_InstructorGetExamen_FullMethodName            = "/examenes.ExamenesService/InstructorGetExamen"
+	ExamenesService_InstructorUpdateExamen_FullMethodName         = "/examenes.ExamenesService/InstructorUpdateExamen"
 	ExamenesService_InstructorDeleteExamen_FullMethodName         = "/examenes.ExamenesService/InstructorDeleteExamen"
 	ExamenesService_InstructorGetResultados_FullMethodName        = "/examenes.ExamenesService/InstructorGetResultados"
 	ExamenesService_InstructorGetRespuestasUsuario_FullMethodName = "/examenes.ExamenesService/InstructorGetRespuestasUsuario"
@@ -47,6 +49,10 @@ type ExamenesServiceClient interface {
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListExamenes(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*ListExamenesResponse, error)
 	InstructorCreateExamen(ctx context.Context, in *CreateExamenRequest, opts ...grpc.CallOption) (*ExamenResponse, error)
+	// Trae el examen completo para editarlo, con `es_correcta` visible. GetExamen
+	// no sirve: oculta las respuestas correctas porque es el que usa el alumno.
+	InstructorGetExamen(ctx context.Context, in *ExamenUserRequest, opts ...grpc.CallOption) (*ExamenResponse, error)
+	InstructorUpdateExamen(ctx context.Context, in *UpdateExamenRequest, opts ...grpc.CallOption) (*ExamenResponse, error)
 	InstructorDeleteExamen(ctx context.Context, in *ExamenRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	InstructorGetResultados(ctx context.Context, in *ExamenRequest, opts ...grpc.CallOption) (*ListResultadosResponse, error)
 	InstructorGetRespuestasUsuario(ctx context.Context, in *RespuestasUsuarioRequest, opts ...grpc.CallOption) (*RespuestasResponse, error)
@@ -108,6 +114,26 @@ func (c *examenesServiceClient) InstructorCreateExamen(ctx context.Context, in *
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExamenResponse)
 	err := c.cc.Invoke(ctx, ExamenesService_InstructorCreateExamen_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examenesServiceClient) InstructorGetExamen(ctx context.Context, in *ExamenUserRequest, opts ...grpc.CallOption) (*ExamenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamenResponse)
+	err := c.cc.Invoke(ctx, ExamenesService_InstructorGetExamen_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *examenesServiceClient) InstructorUpdateExamen(ctx context.Context, in *UpdateExamenRequest, opts ...grpc.CallOption) (*ExamenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamenResponse)
+	err := c.cc.Invoke(ctx, ExamenesService_InstructorUpdateExamen_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +215,10 @@ type ExamenesServiceServer interface {
 	// ── Instructor ────────────────────────────────────────────────────────────
 	InstructorListExamenes(context.Context, *UserRequest) (*ListExamenesResponse, error)
 	InstructorCreateExamen(context.Context, *CreateExamenRequest) (*ExamenResponse, error)
+	// Trae el examen completo para editarlo, con `es_correcta` visible. GetExamen
+	// no sirve: oculta las respuestas correctas porque es el que usa el alumno.
+	InstructorGetExamen(context.Context, *ExamenUserRequest) (*ExamenResponse, error)
+	InstructorUpdateExamen(context.Context, *UpdateExamenRequest) (*ExamenResponse, error)
 	InstructorDeleteExamen(context.Context, *ExamenRequest) (*EmptyResponse, error)
 	InstructorGetResultados(context.Context, *ExamenRequest) (*ListResultadosResponse, error)
 	InstructorGetRespuestasUsuario(context.Context, *RespuestasUsuarioRequest) (*RespuestasResponse, error)
@@ -220,6 +250,12 @@ func (UnimplementedExamenesServiceServer) InstructorListExamenes(context.Context
 }
 func (UnimplementedExamenesServiceServer) InstructorCreateExamen(context.Context, *CreateExamenRequest) (*ExamenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorCreateExamen not implemented")
+}
+func (UnimplementedExamenesServiceServer) InstructorGetExamen(context.Context, *ExamenUserRequest) (*ExamenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorGetExamen not implemented")
+}
+func (UnimplementedExamenesServiceServer) InstructorUpdateExamen(context.Context, *UpdateExamenRequest) (*ExamenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstructorUpdateExamen not implemented")
 }
 func (UnimplementedExamenesServiceServer) InstructorDeleteExamen(context.Context, *ExamenRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorDeleteExamen not implemented")
@@ -346,6 +382,42 @@ func _ExamenesService_InstructorCreateExamen_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExamenesServiceServer).InstructorCreateExamen(ctx, req.(*CreateExamenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExamenesService_InstructorGetExamen_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExamenUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamenesServiceServer).InstructorGetExamen(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamenesService_InstructorGetExamen_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamenesServiceServer).InstructorGetExamen(ctx, req.(*ExamenUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExamenesService_InstructorUpdateExamen_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateExamenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamenesServiceServer).InstructorUpdateExamen(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamenesService_InstructorUpdateExamen_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamenesServiceServer).InstructorUpdateExamen(ctx, req.(*UpdateExamenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -484,6 +556,14 @@ var ExamenesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstructorCreateExamen",
 			Handler:    _ExamenesService_InstructorCreateExamen_Handler,
+		},
+		{
+			MethodName: "InstructorGetExamen",
+			Handler:    _ExamenesService_InstructorGetExamen_Handler,
+		},
+		{
+			MethodName: "InstructorUpdateExamen",
+			Handler:    _ExamenesService_InstructorUpdateExamen_Handler,
 		},
 		{
 			MethodName: "InstructorDeleteExamen",

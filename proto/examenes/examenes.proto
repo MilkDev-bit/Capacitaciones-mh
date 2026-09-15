@@ -16,6 +16,10 @@ service ExamenesService {
   // ── Instructor ────────────────────────────────────────────────────────────
   rpc InstructorListExamenes(UserRequest) returns (ListExamenesResponse);
   rpc InstructorCreateExamen(CreateExamenRequest) returns (ExamenResponse);
+  // Trae el examen completo para editarlo, con `es_correcta` visible. GetExamen
+  // no sirve: oculta las respuestas correctas porque es el que usa el alumno.
+  rpc InstructorGetExamen(ExamenUserRequest) returns (ExamenResponse);
+  rpc InstructorUpdateExamen(UpdateExamenRequest) returns (ExamenResponse);
   rpc InstructorDeleteExamen(ExamenRequest) returns (EmptyResponse);
   rpc InstructorGetResultados(ExamenRequest) returns (ListResultadosResponse);
   rpc InstructorGetRespuestasUsuario(RespuestasUsuarioRequest) returns (RespuestasResponse);
@@ -45,17 +49,45 @@ message CreateExamenRequest {
   repeated PreguntaInput preguntas = 5;
 }
 
+// UpdateExamenRequest reemplaza el contenido de un examen conservando lo que no
+// cambia.
+//
+// Las preguntas que llegan CON id se actualizan en su sitio; las que llegan sin
+// id son nuevas; las que existían y no vienen en la lista se borran. Esto
+// importa por el esquema:
+//
+//     respuestas_examen.pregunta_id REFERENCES preguntas(id) ON DELETE CASCADE
+//
+// Borrar y reinsertar todas las preguntas en cada guardado —que es lo más fácil
+// de programar— se llevaría por delante las respuestas de todo el que ya
+// presentó el examen. En una plataforma que emite constancias DC-3, eso es
+// destruir la evidencia de que alguien aprobó.
+message UpdateExamenRequest {
+  string          examen_id       = 1;
+  string          user_id         = 2; // instructor; se comprueba la propiedad
+  string          title           = 3;
+  string          description     = 4;
+  string          capacitacion_id = 5;
+  repeated PreguntaInput preguntas = 6;
+}
+
 message PreguntaInput {
   string texto  = 1;
   string tipo   = 2; // "opcion_multiple" | "verdadero_falso" | "abierta"
   double valor  = 3;
   int32  orden  = 4;
   repeated OpcionInput opciones = 5;
+  // Vacío al crear. Al editar, identifica una pregunta que ya existe para
+  // actualizarla en lugar de sustituirla, y así no perder sus respuestas.
+  string id     = 6;
 }
 
 message OpcionInput {
   string texto       = 1;
   bool   es_correcta = 2;
+  // Igual que en la pregunta: conservar el id evita que una respuesta ya
+  // registrada apunte a una opción que dejó de existir.
+  string id          = 3;
 }
 
 message SubmitRequest {
@@ -94,6 +126,10 @@ message Pregunta {
   double          valor    = 4;
   int32           orden    = 5;
   repeated Opcion opciones = 6;
+  // Cuántas personas ya respondieron esta pregunta. Solo se rellena al pedir el
+  // examen para editarlo: es lo que permite avisar antes de guardar de que
+  // quitarla borrará ese historial.
+  int32           respuestas = 7;
 }
 
 message Opcion {
