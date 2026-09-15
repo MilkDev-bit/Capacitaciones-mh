@@ -1940,14 +1940,13 @@ function tramitarDC3() {
           <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button v-if="examenFinal" @click="showConfetti = false; abrirExamenEnCurso()" class="btn btn-primary"
               style="display: inline-flex; align-items: center; gap: 8px;">
-              🎓 Responder Examen Final
+              Responder Examen Final
             </button>
             <!-- Se cierra el aviso antes de abrir el modal: si no, el modal
                  aparece encima del confeti y al cerrarlo el alumno vuelve a la
                  pantalla de felicitación como si no hubiera hecho nada. -->
             <button v-if="curso?.dc3_enabled === true" class="btn btn-primary"
-              style="display: inline-flex; align-items: center; gap: 8px;"
-              @click="showConfetti = false; tramitarDC3()">
+              style="display: inline-flex; align-items: center; gap: 8px;" @click="showConfetti = false; tramitarDC3()">
               Tramitar Constancia DC-3
             </button>
             <button class="btn btn-secondary" @click="showConfetti = false">Cerrar</button>
@@ -2382,7 +2381,8 @@ function tramitarDC3() {
 .ver-skeleton {
   display: flex;
   gap: 0;
-  height: 100vh; height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
