@@ -19,6 +19,17 @@ import (
 )
 
 func main() {
+	// Log estructurado en JSON, igual que el gateway y auth.
+	//
+	// Railway indexa los logs JSON por campo: con texto plano no se puede
+	// filtrar por user_id ni por error, y diagnosticar obliga a leer a ojo.
+	// LOG_LEVEL=debug baja el umbral.
+	nivel := slog.LevelInfo
+	if getEnvOr("LOG_LEVEL", "") == "debug" {
+		nivel = slog.LevelDebug
+	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: nivel})))
+
 	db, err := sqlx.Connect("pgx", requireEnv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("DB", "error", err)

@@ -587,10 +587,21 @@ func (r *postgresCursosRepository) CreateLicenciaB2BDirect(ctx context.Context, 
 		}
 	}
 	err := r.db.QueryRowContext(ctx,
+		// Los tres usos de $7 llevan el MISMO cast, incluido el `IS NOT NULL`.
+		//
+		// Es la misma trampa que dejó la campana de notificaciones vacía desde
+		// que se escribió: en un `INSERT ... SELECT`, cada aparición de un
+		// parámetro sin cast se deduce por su contexto, y dos deducciones
+		// distintas hacen fallar el Parse entero con
+		//
+		//	ERROR: inconsistent types deduced for parameter $7 (SQLSTATE 42P08)
+		//
+		// Aquí `CAST($7 AS VARCHAR)` fijaba varchar en dos sitios y el `$7 IS
+		// NOT NULL` pelado lo dejaba resolverse como text en el tercero.
 		`INSERT INTO curso_licencias(capacitacion_id, nombre, precio, capacidad_maxima, codigo_acceso, comprador_id, stripe_product_id)
-		 SELECT $1,$2,$3,$4,$5,$6, CAST($7 AS VARCHAR)
+		 SELECT $1,$2,$3,$4,$5,$6, $7::varchar
 		 WHERE NOT EXISTS (
-		    SELECT 1 FROM curso_licencias WHERE stripe_product_id = CAST($7 AS VARCHAR) AND $7 IS NOT NULL
+		    SELECT 1 FROM curso_licencias WHERE stripe_product_id = $7::varchar AND $7::varchar IS NOT NULL
 		 )
 		 RETURNING id`,
 		req.CursoId, nombre, precioTotal, req.Cantidad, codigo, req.UserId, stripeSessionID,

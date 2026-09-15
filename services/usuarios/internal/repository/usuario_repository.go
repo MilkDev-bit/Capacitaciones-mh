@@ -263,19 +263,41 @@ func (r *postgresUsuarioRepository) MarkNotificacionesRead(ctx context.Context, 
 //
 // Cuando la fila se suprime por duplicada no hay RETURNING, así que sql.ErrNoRows
 // es el caso normal y no un error: se traduce a creada=false.
+//
+// TODOS los parámetros llevan cast explícito, y no es cosmética: sin ellos esta
+// consulta no llegaba ni a ejecutarse.
+//
+//	ERROR: inconsistent types deduced for parameter $2 (SQLSTATE 42P08)
+//
+// Cada parámetro aparece dos veces —en la lista del INSERT y en la subconsulta
+// de deduplicación— y Postgres dedujo un tipo distinto en cada sitio. En un
+// `INSERT ... SELECT`, a diferencia de un `INSERT ... VALUES`, el SELECT se
+// analiza por su cuenta: los tipos de las columnas destino NO se propagan a los
+// parámetros, así que `$2` sin cast queda como `text`. Abajo, `tipo = $2` lo
+// resuelve como `character varying`, que es el tipo de la columna. Dos
+// deducciones para el mismo parámetro y el Parse falla entero.
+//
+// Falla en Parse, no al ejecutar, así que NINGUNA notificación se creaba nunca:
+// ni de mensaje, ni de compra, ni de inscripción, ni de constancia. La campana
+// llevaba vacía desde que se escribió esta consulta.
 func (r *postgresUsuarioRepository) CreateNotificacion(ctx context.Context, req *usuariospb.CreateNotificacionRequest) (string, bool, error) {
+	// Se castea a `text` y no a `varchar` porque el tipo tiene que ser el mismo
+	// en los dos usos: al insertar, Postgres aplica el cast de asignación a
+	// varchar(50)/varchar(200); al comparar, promociona la columna a text. Con
+	// `::varchar` también funcionaría, pero `text` deja una sola lectura
+	// posible y no depende del largo declarado de cada columna.
 	const query = `
 		INSERT INTO notificaciones (user_id, tipo, titulo, mensaje, enlace)
-		SELECT $1::uuid, $2, $3, $4, NULLIF($5, '')
-		WHERE $6 <= 0 OR NOT EXISTS (
+		SELECT $1::uuid, $2::text, $3::text, $4::text, NULLIF($5::text, '')
+		WHERE $6::int <= 0 OR NOT EXISTS (
 			SELECT 1 FROM notificaciones
 			 WHERE user_id = $1::uuid
-			   AND tipo    = $2
-			   AND titulo  = $3
-			   AND mensaje = $4
-			   AND COALESCE(enlace, '') = $5
+			   AND tipo    = $2::text
+			   AND titulo  = $3::text
+			   AND mensaje = $4::text
+			   AND COALESCE(enlace, '') = $5::text
 			   AND leida = false
-			   AND created_at > NOW() - make_interval(secs => $6::double precision)
+			   AND created_at > NOW() - make_interval(secs => $6::int::double precision)
 		)
 		RETURNING id`
 
