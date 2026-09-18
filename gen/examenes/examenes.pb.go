@@ -699,6 +699,8 @@ type ExamenResponse struct {
 	CapacitacionId string                 `protobuf:"bytes,5,opt,name=capacitacion_id,json=capacitacionId,proto3" json:"capacitacion_id,omitempty"`
 	CreatedAt      string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	Preguntas      []*Pregunta            `protobuf:"bytes,7,rep,name=preguntas,proto3" json:"preguntas,omitempty"`
+	YaRespondido   bool                   `protobuf:"varint,8,opt,name=ya_respondido,json=yaRespondido,proto3" json:"ya_respondido,omitempty"`
+	Porcentaje     float64                `protobuf:"fixed64,9,opt,name=porcentaje,proto3" json:"porcentaje,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -780,6 +782,20 @@ func (x *ExamenResponse) GetPreguntas() []*Pregunta {
 		return x.Preguntas
 	}
 	return nil
+}
+
+func (x *ExamenResponse) GetYaRespondido() bool {
+	if x != nil {
+		return x.YaRespondido
+	}
+	return false
+}
+
+func (x *ExamenResponse) GetPorcentaje() float64 {
+	if x != nil {
+		return x.Porcentaje
+	}
+	return 0
 }
 
 type Pregunta struct {
@@ -1400,7 +1416,7 @@ const file_examenes_examenes_proto_rawDesc = "" +
 	"\x0frespuesta_texto\x18\x03 \x01(\tR\x0erespuestaTexto\"P\n" +
 	"\x18RespuestasUsuarioRequest\x12\x1b\n" +
 	"\texamen_id\x18\x01 \x01(\tR\bexamenId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xf7\x01\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xbc\x02\n" +
 	"\x0eExamenResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -1409,7 +1425,11 @@ const file_examenes_examenes_proto_rawDesc = "" +
 	"\x0fcapacitacion_id\x18\x05 \x01(\tR\x0ecapacitacionId\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x120\n" +
-	"\tpreguntas\x18\a \x03(\v2\x12.examenes.PreguntaR\tpreguntas\"\xbe\x01\n" +
+	"\tpreguntas\x18\a \x03(\v2\x12.examenes.PreguntaR\tpreguntas\x12#\n" +
+	"\rya_respondido\x18\b \x01(\bR\fyaRespondido\x12\x1e\n" +
+	"\n" +
+	"porcentaje\x18\t \x01(\x01R\n" +
+	"porcentaje\"\xbe\x01\n" +
 	"\bPregunta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05texto\x18\x02 \x01(\tR\x05texto\x12\x12\n" +

@@ -21,6 +21,8 @@ func (s *ExamenesService) buildExamenResponse(ctx context.Context, e *repository
 	r := &examenespb.ExamenResponse{
 		Id: e.ID, Title: e.Title, Description: e.Description,
 		CreatedAt: e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		YaRespondido: e.YaRespondido,
+		Porcentaje: e.Porcentaje,
 	}
 	if e.InstructorID != nil {
 		r.InstructorId = *e.InstructorID
@@ -69,7 +71,7 @@ func (s *ExamenesService) ListMisExamenes(ctx context.Context, userID string) ([
 }
 
 func (s *ExamenesService) GetExamen(ctx context.Context, examenID, userID string, showCorrect bool) (*examenespb.ExamenResponse, error) {
-	e, err := s.repo.FindByID(ctx, examenID)
+	e, err := s.repo.FindByIDWithUser(ctx, examenID, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,8 @@ type Examen struct {
 	InstructorID   *string   `db:"instructor_id"`
 	CapacitacionID *string   `db:"capacitacion_id"`
 	CreatedAt      time.Time `db:"created_at"`
+	YaRespondido   bool      `db:"ya_respondido"`
+	Porcentaje     float64   `db:"porcentaje"`
 }
 
 type Pregunta struct {
@@ -53,6 +55,7 @@ type ExamenesRepository interface {
 	ListByInstructor(ctx context.Context, instructorID string) ([]*Examen, error)
 	ListByUser(ctx context.Context, userID string) ([]*Examen, error)
 	FindByID(ctx context.Context, examenID string) (*Examen, error)
+	FindByIDWithUser(ctx context.Context, examenID, userID string) (*Examen, error)
 	GetPreguntas(ctx context.Context, examenID string) ([]*Pregunta, error)
 	GetOpciones(ctx context.Context, preguntaID string) ([]*Opcion, error)
 	Create(ctx context.Context, req *examenespb.CreateExamenRequest) (*Examen, error)
@@ -96,18 +99,52 @@ func (r *postgresExamenesRepository) ListByInstructor(ctx context.Context, instr
 func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID string) ([]*Examen, error) {
 	var e []*Examen
 	return e, r.db.SelectContext(ctx, &e,
-		`SELECT DISTINCT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
-		        ex.capacitacion_id, ex.created_at
+		`SELECT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
+		        ex.capacitacion_id, ex.created_at,
+		        EXISTS(
+		           SELECT 1 FROM respuestas_examen r WHERE r.examen_id=ex.id AND r.user_id=$1
+		        ) AS ya_respondido,
+		        COALESCE((
+		           SELECT CASE WHEN SUM(COALESCE(p2.valor,1))>0
+		                       THEN SUM(CASE WHEN o2.es_correcta THEN COALESCE(p2.valor,1) ELSE 0 END)/SUM(COALESCE(p2.valor,1))*100
+		                       ELSE 0 END
+		           FROM respuestas_examen r2
+		           INNER JOIN preguntas p2 ON p2.id=r2.pregunta_id
+		           LEFT  JOIN opciones  o2 ON o2.id=r2.opcion_id
+		           WHERE r2.examen_id=ex.id AND r2.user_id=$1
+		        ),0) AS porcentaje
 		   FROM examenes ex
+		   LEFT JOIN asignaciones_examen a ON a.examen_id=ex.id AND a.user_id=$1
 		  WHERE ex.deleted_at IS NULL
-		  ORDER BY ex.created_at DESC`)
+		    AND (a.user_id=$1 OR ex.capacitacion_id IS NOT NULL OR true)
+		  ORDER BY ex.created_at DESC`, userID)
 }
 
 func (r *postgresExamenesRepository) FindByID(ctx context.Context, examenID string) (*Examen, error) {
 	e := &Examen{}
 	return e, r.db.GetContext(ctx, e,
 		`SELECT id, title, COALESCE(description,'') description, instructor_id,
-		        capacitacion_id, created_at FROM examenes WHERE id=$1 AND deleted_at IS NULL`, examenID)
+		        capacitacion_id, created_at, false AS ya_respondido, 0 AS porcentaje FROM examenes WHERE id=$1 AND deleted_at IS NULL`, examenID)
+}
+
+func (r *postgresExamenesRepository) FindByIDWithUser(ctx context.Context, examenID, userID string) (*Examen, error) {
+	e := &Examen{}
+	return e, r.db.GetContext(ctx, e,
+		`SELECT ex.id, ex.title, COALESCE(ex.description,'') description, ex.instructor_id,
+		        ex.capacitacion_id, ex.created_at,
+		        EXISTS(
+		           SELECT 1 FROM respuestas_examen r WHERE r.examen_id=ex.id AND r.user_id=$2
+		        ) AS ya_respondido,
+		        COALESCE((
+		           SELECT CASE WHEN SUM(COALESCE(p2.valor,1))>0
+		                       THEN SUM(CASE WHEN o2.es_correcta THEN COALESCE(p2.valor,1) ELSE 0 END)/SUM(COALESCE(p2.valor,1))*100
+		                       ELSE 0 END
+		           FROM respuestas_examen r2
+		           INNER JOIN preguntas p2 ON p2.id=r2.pregunta_id
+		           LEFT  JOIN opciones  o2 ON o2.id=r2.opcion_id
+		           WHERE r2.examen_id=ex.id AND r2.user_id=$2
+		        ),0) AS porcentaje
+		 FROM examenes ex WHERE ex.id=$1 AND ex.deleted_at IS NULL`, examenID, userID)
 }
 
 func (r *postgresExamenesRepository) GetPreguntas(ctx context.Context, examenID string) ([]*Pregunta, error) {

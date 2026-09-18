@@ -117,6 +117,8 @@ message ExamenResponse {
   string            capacitacion_id = 5;
   string            created_at      = 6;
   repeated Pregunta preguntas       = 7;
+  bool              ya_respondido   = 8;
+  double            porcentaje      = 9;
 }
 
 message Pregunta {
