@@ -2088,11 +2088,17 @@ function tramitarDC3() {
 
           <div class="ver-examen-modal-body">
             <div v-if="examenResultado" class="ver-examen-res-box">
-              <div class="ver-examen-score-badge">
-                {{ examenResultado.porcentaje }}%
+              <div class="ver-examen-score-badge" :class="examenResultado.porcentaje >= 80 ? 'score-pass' : 'score-fail'">
+                {{ examenResultado.porcentaje.toFixed(0) }}%
               </div>
               <h4>{{ examenResultado._previo ? 'Ya respondiste este examen' : '¡Has completado el examen!' }}</h4>
-              <p>{{ examenResultado._previo ? 'Tu calificación anterior fue de' : 'Obtuviste' }} {{ examenResultado.correctas }} de {{ examenResultado.total }} {{ examenResultado._previo ? 'respuestas correctas.' : 'responses correctas.' }}</p>
+              
+              <p v-if="examenResultado._previo" class="ver-examen-res-text">
+                Tu calificación anterior fue del <strong :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{ examenResultado.porcentaje.toFixed(0) }}%</strong>.
+              </p>
+              <p v-else class="ver-examen-res-text">
+                Obtuviste <strong :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{ examenResultado.porcentaje.toFixed(0) }}%</strong> de aciertos ({{ examenResultado.correctas }} de {{ examenResultado.total }} correctas).
+              </p>
               <div style="margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn btn-secondary" @click="showExamenModal = false">Cerrar</button>
                 <button class="btn btn-primary" @click="volverAResponderExamen">Volver a responder</button>
@@ -4866,15 +4872,27 @@ html.dark-theme .lb-points {
   display: inline-block;
   font-size: 2.5rem;
   font-weight: 800;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  border: 2px solid #10b981;
   border-radius: 50%;
   width: 100px;
   height: 100px;
   line-height: 96px;
   margin-bottom: 16px;
+  transition: all 0.3s ease;
 }
+.ver-examen-score-badge.score-pass {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+.ver-examen-score-badge.score-fail {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+.ver-examen-res-text strong.text-pass { color: #10b981; }
+.ver-examen-res-text strong.text-fail { color: #f59e0b; }
 
 /* ── Glassmorphic Icons & Badges ── */
 .glass-icon-box {
