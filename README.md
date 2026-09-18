@@ -175,8 +175,6 @@ esos comentarios explican el terreno minado.
 └── scripts/
 ```
 
-![Uploading image.png…]()
-
 Un detalle sobre `pkg/money`: **los importes se manejan en centavos, como
 enteros**, de extremo a extremo. La división entre 100 ocurre una sola vez, al
 formatear para la pantalla. Sumar pesos en coma flotante pierde centavos, y eso se
