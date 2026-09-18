@@ -58,7 +58,7 @@ funcionalidad nueva.
 
 ### Stack
 
-| Capa | Tecnología |<img width="1418" height="853" alt="image" src="https://github.com/user-attachments/assets/b9d50a82-15a8-425f-b9ce-49e559704803" />
+| Capa | Tecnología |
 
 |---|---|
 | Backend | Go 1.26 · gRPC · Protocol Buffers ([buf](https://buf.build)) |
@@ -174,6 +174,7 @@ esos comentarios explican el terreno minado.
 ├── gotenberg/        imagen del conversor a PDF, con las fuentes de la DC-3
 └── scripts/
 ```
+<img width="1418" height="853" alt="image" src="https://github.com/user-attachments/assets/b9d50a82-15a8-425f-b9ce-49e559704803" />
 
 Un detalle sobre `pkg/money`: **los importes se manejan en centavos, como
 enteros**, de extremo a extremo. La división entre 100 ocurre una sola vez, al
