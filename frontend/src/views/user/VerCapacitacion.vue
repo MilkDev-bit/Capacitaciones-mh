@@ -515,10 +515,21 @@ async function abrirExamenEnCurso() {
   showConfetti.value = false
   if (!examenFinal.value) await cargarExamenFinal()
   if (!examenFinal.value) return
-  if (examenFinal.value.ya_respondido && Number(examenFinal.value.porcentaje || 0) >= 80) {
-    toast.info(`Ya respondiste este examen con una calificación aprobatoria (${Number(examenFinal.value.porcentaje).toFixed(0)}%). No es necesario repetirlo.`)
+
+  // Si ya fue respondido, mostrar el resultado previo con opción de reintentar
+  if (examenFinal.value.ya_respondido) {
+    showExamenModal.value = true
+    examenData.value = null
+    examenRespuestas.value = {}
+    examenResultado.value = {
+      porcentaje: Number(examenFinal.value.porcentaje || 0),
+      correctas: examenFinal.value.puntaje ?? '—',
+      total: examenFinal.value.puntaje_max ?? '—',
+      _previo: true, // marca para distinguir del resultado recién enviado
+    }
     return
   }
+
   showExamenModal.value = true
   examenResultado.value = null
   examenRespuestas.value = {}
@@ -554,6 +565,18 @@ async function enviarExamenEnCurso() {
     toast.error(msg)
   } finally {
     examenSubmitting.value = false
+  }
+}
+
+/** Limpia el resultado previo y carga las preguntas para volver a responder. */
+async function volverAResponderExamen() {
+  examenResultado.value = null
+  examenRespuestas.value = {}
+  try {
+    const res = await api.get(`/examenes/${examenFinal.value.id}`)
+    examenData.value = res.data
+  } catch {
+    toast.error('Error al cargar el examen final')
   }
 }
 
@@ -1903,14 +1926,14 @@ function tramitarDC3() {
 
     <!-- Examen Final Disponible -->
     <Transition name="slide-up">
-      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner">
-        <span class="ver-examen-final-icon">🎓</span>
+      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner" :class="{ 'ver-examen-final-banner--done': examenFinal.ya_respondido }">
+        <span class="ver-examen-final-icon">{{ examenFinal.ya_respondido ? '✅' : '🎓' }}</span>
         <div class="ver-examen-final-body">
-          <strong>Examen final disponible</strong>
-          <p>{{ examenFinal.title }}</p>
+          <strong>{{ examenFinal.ya_respondido ? 'Examen final completado' : 'Examen final disponible' }}</strong>
+          <p>{{ examenFinal.ya_respondido ? examenFinal.title + ' — ' + Number(examenFinal.porcentaje || 0).toFixed(0) + '%' : examenFinal.title }}</p>
         </div>
-        <button @click="abrirExamenEnCurso" class="btn btn-primary ver-examen-final-btn">
-          Responder examen
+        <button @click="abrirExamenEnCurso" class="btn ver-examen-final-btn" :class="examenFinal.ya_respondido ? 'btn-secondary' : 'btn-primary'">
+          {{ examenFinal.ya_respondido ? 'Ver resultado' : 'Responder examen' }}
         </button>
       </div>
     </Transition>
@@ -2068,10 +2091,12 @@ function tramitarDC3() {
               <div class="ver-examen-score-badge">
                 {{ examenResultado.porcentaje }}%
               </div>
-              <h4>¡Has completado el examen!</h4>
-              <p>Obtuviste {{ examenResultado.correctas }} de {{ examenResultado.total }} responses correctas.</p>
-              <button class="btn btn-primary" style="margin-top: 16px;"
-                @click="showExamenModal = false">Continuar</button>
+              <h4>{{ examenResultado._previo ? 'Ya respondiste este examen' : '¡Has completado el examen!' }}</h4>
+              <p>{{ examenResultado._previo ? 'Tu calificación anterior fue de' : 'Obtuviste' }} {{ examenResultado.correctas }} de {{ examenResultado.total }} {{ examenResultado._previo ? 'respuestas correctas.' : 'responses correctas.' }}</p>
+              <div style="margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-secondary" @click="showExamenModal = false">Cerrar</button>
+                <button class="btn btn-primary" @click="volverAResponderExamen">Volver a responder</button>
+              </div>
             </div>
 
             <div v-else-if="!examenData" style="padding: 40px; text-align: center; color: var(--muted);">
@@ -4324,6 +4349,17 @@ html.dark-theme .ver-int-pregunta {
   z-index: 500;
   max-width: 480px;
   width: calc(100% - 40px);
+}
+
+.ver-examen-final-banner--done {
+  background: var(--surface-soft);
+  color: var(--dark);
+  border: 1px solid var(--border);
+}
+
+.ver-examen-final-banner--done .ver-examen-final-body p {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .ver-examen-final-icon {
