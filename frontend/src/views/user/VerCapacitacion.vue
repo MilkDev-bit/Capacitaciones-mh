@@ -1482,7 +1482,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1611,7 +1611,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                          }}</router-link>
+                        }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
@@ -1926,13 +1926,16 @@ function tramitarDC3() {
 
     <!-- Examen Final Disponible -->
     <Transition name="slide-up">
-      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner" :class="{ 'ver-examen-final-banner--done': examenFinal.ya_respondido }">
-        <span class="ver-examen-final-icon">{{ examenFinal.ya_respondido ? '✅' : '🎓' }}</span>
+      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner"
+        :class="{ 'ver-examen-final-banner--done': examenFinal.ya_respondido }">
+        <span class="ver-examen-final-icon">{{ examenFinal.ya_respondido ? '' : '🎓' }}</span>
         <div class="ver-examen-final-body">
           <strong>{{ examenFinal.ya_respondido ? 'Examen final completado' : 'Examen final disponible' }}</strong>
-          <p>{{ examenFinal.ya_respondido ? examenFinal.title + ' — ' + Number(examenFinal.porcentaje || 0).toFixed(0) + '%' : examenFinal.title }}</p>
+          <p>{{ examenFinal.ya_respondido ? examenFinal.title + ' — ' + Number(examenFinal.porcentaje || 0).toFixed(0) +
+            '%' : examenFinal.title }}</p>
         </div>
-        <button @click="abrirExamenEnCurso" class="btn ver-examen-final-btn" :class="examenFinal.ya_respondido ? 'btn-secondary' : 'btn-primary'">
+        <button @click="abrirExamenEnCurso" class="btn ver-examen-final-btn"
+          :class="examenFinal.ya_respondido ? 'btn-secondary' : 'btn-primary'">
           {{ examenFinal.ya_respondido ? 'Ver resultado' : 'Responder examen' }}
         </button>
       </div>
@@ -2088,16 +2091,21 @@ function tramitarDC3() {
 
           <div class="ver-examen-modal-body">
             <div v-if="examenResultado" class="ver-examen-res-box">
-              <div class="ver-examen-score-badge" :class="examenResultado.porcentaje >= 80 ? 'score-pass' : 'score-fail'">
+              <div class="ver-examen-score-badge"
+                :class="examenResultado.porcentaje >= 80 ? 'score-pass' : 'score-fail'">
                 {{ examenResultado.porcentaje.toFixed(0) }}%
               </div>
               <h4>{{ examenResultado._previo ? 'Ya respondiste este examen' : '¡Has completado el examen!' }}</h4>
-              
+
               <p v-if="examenResultado._previo" class="ver-examen-res-text">
-                Tu calificación anterior fue del <strong :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{ examenResultado.porcentaje.toFixed(0) }}%</strong>.
+                Tu calificación anterior fue del <strong
+                  :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{
+                    examenResultado.porcentaje.toFixed(0) }}%</strong>.
               </p>
               <p v-else class="ver-examen-res-text">
-                Obtuviste <strong :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{ examenResultado.porcentaje.toFixed(0) }}%</strong> de aciertos ({{ examenResultado.correctas }} de {{ examenResultado.total }} correctas).
+                Obtuviste <strong :class="examenResultado.porcentaje >= 80 ? 'text-pass' : 'text-fail'">{{
+                  examenResultado.porcentaje.toFixed(0) }}%</strong> de aciertos ({{ examenResultado.correctas }} de {{
+                examenResultado.total }} correctas).
               </p>
               <div style="margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn btn-secondary" @click="showExamenModal = false">Cerrar</button>
@@ -4879,20 +4887,28 @@ html.dark-theme .lb-points {
   margin-bottom: 16px;
   transition: all 0.3s ease;
 }
+
 .ver-examen-score-badge.score-pass {
   color: #10b981;
   background: rgba(16, 185, 129, 0.1);
   border: 2px solid #10b981;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
+
 .ver-examen-score-badge.score-fail {
   color: #f59e0b;
   background: rgba(245, 158, 11, 0.1);
   border: 2px solid #f59e0b;
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
 }
-.ver-examen-res-text strong.text-pass { color: #10b981; }
-.ver-examen-res-text strong.text-fail { color: #f59e0b; }
+
+.ver-examen-res-text strong.text-pass {
+  color: #10b981;
+}
+
+.ver-examen-res-text strong.text-fail {
+  color: #f59e0b;
+}
 
 /* ── Glassmorphic Icons & Badges ── */
 .glass-icon-box {
