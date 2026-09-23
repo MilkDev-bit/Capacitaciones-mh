@@ -46,13 +46,24 @@ func NewLlamadasHandler(c *clients.Clients, cfg *config.Config, h *hub.Hub, g *h
 //	room     → sala concreta; es lo que impide reutilizar un token en otra sala
 //	context  → datos del usuario que Jitsi muestra en la conferencia
 type jitsiClaims struct {
-	Room    string       `json:"room"`
-	Context jitsiContext `json:"context"`
-	jwt.RegisteredClaims
+	Room      string           `json:"room"`
+	Context   jitsiContext     `json:"context"`
+	Issuer    string           `json:"iss,omitempty"`
+	Audience  string           `json:"aud,omitempty"` // JaaS expects a strict string, not an array
+	Subject   string           `json:"sub,omitempty"`
+	IssuedAt  *jwt.NumericDate `json:"iat,omitempty"`
+	NotBefore *jwt.NumericDate `json:"nbf,omitempty"`
+	ExpiresAt *jwt.NumericDate `json:"exp,omitempty"`
 }
 
 type jitsiContext struct {
-	User jitsiUser `json:"user"`
+	User     jitsiUser      `json:"user"`
+	Features *jitsiFeatures `json:"features,omitempty"`
+}
+
+type jitsiFeatures struct {
+	Livestreaming bool `json:"livestreaming"`
+	Recording     bool `json:"recording"`
 }
 
 type jitsiUser struct {
@@ -101,37 +112,39 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 
 	// Por defecto, asumimos claims de servidor local
 	issuer := h.cfg.JitsiAppID
-	audience := jwt.ClaimStrings{h.cfg.JitsiAppID}
+	audience := h.cfg.JitsiAppID
 	subject := h.cfg.JitsiSubject()
 
 	isJaaS := h.cfg.JitsiPrivateKey != "" && h.cfg.JitsiKid != ""
+	
+	var features *jitsiFeatures
 	if isJaaS {
 		issuer = "chat"
-		audience = jwt.ClaimStrings{"jitsi"}
+		audience = "jitsi"
 		subject = h.cfg.JitsiAppID // Para JaaS el subject es el App ID (vpaas...)
+		// 8x8 JaaS exige estrictamente el objeto 'features' en el contexto
+		features = &jitsiFeatures{
+			Livestreaming: false,
+			Recording:     false,
+		}
 	}
 
 	claims := jitsiClaims{
 		Room: body.Sala,
-		Context: jitsiContext{User: jitsiUser{
-			ID:   userID,
-			Name: userName,
-			// Todos entran como moderadores: en una llamada entre dos
-			// compañeros no hay jerarquía que imponer, y marcar a uno solo
-			// haría que la sala muriera si es el primero en colgar.
-			Moderator: "true",
-		}},
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    issuer,
-			Audience:  audience,
-			Subject:   subject,
-			IssuedAt:  jwt.NewNumericDate(ahora),
-			NotBefore: jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
-			// Vida corta: el token solo tiene que durar lo que tarda el
-			// cliente en conectarse. Una vez dentro, la sesión la mantiene
-			// Jitsi, no el JWT.
-			ExpiresAt: jwt.NewNumericDate(ahora.Add(4 * time.Hour)),
+		Context: jitsiContext{
+			User: jitsiUser{
+				ID:   userID,
+				Name: userName,
+				Moderator: "true",
+			},
+			Features: features,
 		},
+		Issuer:    issuer,
+		Audience:  audience,
+		Subject:   subject,
+		IssuedAt:  jwt.NewNumericDate(ahora),
+		NotBefore: jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
+		ExpiresAt: jwt.NewNumericDate(ahora.Add(4 * time.Hour)),
 	}
 
 	var firmado string
