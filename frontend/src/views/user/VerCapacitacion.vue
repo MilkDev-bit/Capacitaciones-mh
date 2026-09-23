@@ -503,9 +503,7 @@ async function cargarExamenFinal() {
     const exams: any[] = res.data || []
     examenFinal.value = exams.find(
       (e: any) => String(e.capacitacion_id) === String(cursoId) || String(e.capacitacionId) === String(cursoId)
-    ) || exams.find(
-      (e: any) => !e.ya_respondido || Number(e.porcentaje || 0) < 70
-    ) || (exams.length > 0 ? exams[0] : null)
+    ) || null
   } catch {
     examenFinal.value = null
   }
