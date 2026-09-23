@@ -1057,7 +1057,7 @@ function tramitarDC3() {
           <div style="margin-top: 10px;">
             <button class="btn btn-secondary btn-sm"
               style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
-              @click="abrirPanelAvance">
+              @click="abrirPanelAvance">aa
               {{ esCursoDePago ? 'Mi Avance' : 'Mi Avance y Puntuaciones' }}
             </button>
           </div>
@@ -1477,7 +1477,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1606,7 +1606,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                          }}</router-link>
+                        }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
@@ -2072,24 +2072,55 @@ function tramitarDC3() {
     </Transition>
 
     <!-- Modal Examen Final integrado en el Curso -->
+    <!-- Modal Examen Final integrado en el Curso -->
     <Transition name="fade">
       <div v-if="showExamenModal && examenFinal" class="foro-card-backdrop" style="z-index: 25000;"
         @click.self="showExamenModal = false">
         <div class="ver-examen-modal" @click.stop>
           <div class="ver-examen-modal-head">
-            <div>
-              <span class="ver-examen-badge">EXAMEN FINAL DEL CURSO</span>
-              <h3>{{ examenFinal.title }}</h3>
+            <div class="ver-examen-head-left">
+              <span class="ver-examen-head-icon">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                </svg>
+              </span>
+              <div>
+                <span class="ver-examen-badge">Examen final del curso</span>
+                <h3>{{ examenFinal.title }}</h3>
+              </div>
             </div>
-            <button class="ver-examen-close-btn" @click="showExamenModal = false" title="Cerrar">✕</button>
+            <button class="ver-examen-close-btn" @click="showExamenModal = false" title="Cerrar">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <div class="ver-examen-modal-body">
             <div v-if="examenResultado" class="ver-examen-res-box">
-              <div class="ver-examen-score-badge"
-                :class="examenResultado.porcentaje >= 80 ? 'score-pass' : 'score-fail'">
-                {{ examenResultado.porcentaje.toFixed(0) }}%
+              <div class="ver-examen-score-ring"
+                :style="`--pct:${examenResultado.porcentaje}; --ring-color:${examenResultado.porcentaje >= 80 ? '#10b981' : '#f59e0b'}`">
+                <div class="ver-examen-score-ring-inner">
+                  <strong>{{ examenResultado.porcentaje.toFixed(0) }}%</strong>
+                </div>
               </div>
+
+              <span class="ver-examen-status-pill"
+                :class="examenResultado.porcentaje >= 80 ? 'pill-pass' : 'pill-fail'">
+                <svg v-if="examenResultado.porcentaje >= 80" width="13" height="13" fill="none" stroke="currentColor"
+                  stroke-width="3" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                <svg v-else width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5m0 3h.01" stroke-linecap="round" />
+                </svg>
+                {{ examenResultado.porcentaje >= 80 ? 'Aprobado' : 'No aprobado' }}
+              </span>
+
               <h4>{{ examenResultado._previo ? 'Ya respondiste este examen' : '¡Has completado el examen!' }}</h4>
 
               <p v-if="examenResultado._previo" class="ver-examen-res-text">
@@ -2102,13 +2133,21 @@ function tramitarDC3() {
                   examenResultado.porcentaje.toFixed(0) }}%</strong> de aciertos ({{ examenResultado.correctas }} de {{
                     examenResultado.total }} correctas).
               </p>
-              <div style="margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+
+              <div class="ver-examen-res-actions">
                 <button class="btn btn-secondary" @click="showExamenModal = false">Cerrar</button>
-                <button class="btn btn-primary" @click="volverAResponderExamen">Volver a responder</button>
+                <button class="btn btn-primary" @click="volverAResponderExamen">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Volver a responder
+                </button>
               </div>
             </div>
 
-            <div v-else-if="!examenData" style="padding: 40px; text-align: center; color: var(--muted);">
+            <div v-else-if="!examenData" class="ver-examen-loading">
+              <span class="btn-spinner" style="border-color:var(--brand-light);border-top-color:var(--brand)"></span>
               Cargando examen final...
             </div>
 
@@ -2120,7 +2159,8 @@ function tramitarDC3() {
                   <div class="preg-content">
                     <h5>{{ preg.texto }}</h5>
                     <div v-if="preg.tipo !== 'open_text'" class="preg-opciones">
-                      <label v-for="opc in preg.opciones" :key="opc.id" class="preg-opc-label">
+                      <label v-for="opc in preg.opciones" :key="opc.id" class="preg-opc-label"
+                        :class="{ 'preg-opc-selected': examenRespuestas[preg.id] === opc.id }">
                         <input type="radio" :name="`preg-${preg.id}`" :value="opc.id"
                           v-model="examenRespuestas[preg.id]" />
                         <span>{{ opc.texto }}</span>
@@ -2137,6 +2177,7 @@ function tramitarDC3() {
           <div v-if="!examenResultado" class="ver-examen-modal-foot">
             <button class="btn btn-secondary" @click="showExamenModal = false">Cancelar</button>
             <button class="btn btn-primary" :disabled="examenSubmitting" @click="enviarExamenEnCurso">
+              <span v-if="examenSubmitting" class="btn-spinner" style="width:14px;height:14px;border-width:2px"></span>
               {{ examenSubmitting ? 'Enviando...' : 'Enviar exámen final' }}
             </button>
           </div>
@@ -4704,39 +4745,63 @@ html.dark-theme .lb-points {
 .ver-examen-modal {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 22px;
   width: 90%;
   max-width: 720px;
   max-height: 88dvh;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
   color: var(--text);
   overflow: hidden;
 }
 
 .ver-examen-modal-head {
-  padding: 20px 24px;
+  padding: 22px 24px;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--surface);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), transparent);
+}
+
+.ver-examen-head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ver-examen-head-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(249, 115, 22, 0.08));
+  color: var(--brand);
+  border: 1px solid rgba(249, 115, 22, 0.25);
 }
 
 .ver-examen-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   color: var(--brand);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   display: block;
 }
 
 .ver-examen-modal-head h3 {
-  margin: 4px 0 0;
-  font-size: 1.3rem;
-  font-weight: 700;
+  margin: 3px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
   color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ver-examen-close-btn {
@@ -4745,11 +4810,12 @@ html.dark-theme .lb-points {
   cursor: pointer;
   color: var(--muted);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   font-size: 1rem;
   transition: all 0.2s;
 }
@@ -4760,10 +4826,20 @@ html.dark-theme .lb-points {
 }
 
 .ver-examen-modal-body {
-  padding: 24px;
+  padding: 28px 24px;
   overflow-y: auto;
   flex: 1;
   background: var(--surface);
+}
+
+.ver-examen-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .ver-examen-desc {
@@ -4845,6 +4921,11 @@ html.dark-theme .lb-points {
   background: rgba(249, 115, 22, 0.08);
 }
 
+.preg-opc-selected {
+  border-color: var(--brand) !important;
+  background: rgba(249, 115, 22, 0.1) !important;
+}
+
 .ver-examen-modal-foot {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
@@ -4854,16 +4935,18 @@ html.dark-theme .lb-points {
   background: var(--surface);
 }
 
+/* Resultado */
 .ver-examen-res-box {
   text-align: center;
-  padding: 30px;
+  padding: 10px 10px 4px;
   color: var(--text);
 }
 
 .ver-examen-res-box h4 {
   color: var(--dark);
-  font-size: 1.3rem;
-  margin-bottom: 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 6px;
 }
 
 .ver-examen-res-box p {
@@ -4871,30 +4954,74 @@ html.dark-theme .lb-points {
   font-size: 0.95rem;
 }
 
-.ver-examen-score-badge {
-  display: inline-block;
-  font-size: 2.5rem;
-  font-weight: 800;
+.ver-examen-score-ring {
+  --pct: 0;
+  --ring-color: #10b981;
+  width: 148px;
+  height: 148px;
   border-radius: 50%;
-  width: 100px;
-  height: 100px;
-  line-height: 96px;
-  margin-bottom: 16px;
-  transition: all 0.3s ease;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(var(--ring-color) calc(var(--pct) * 1%), var(--border-light) 0);
+  position: relative;
+  animation: ringIn 0.6s cubic-bezier(.16, 1, .3, 1);
 }
 
-.ver-examen-score-badge.score-pass {
+.ver-examen-score-ring::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-light);
+}
+
+.ver-examen-score-ring-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.ver-examen-score-ring-inner strong {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--dark);
+}
+
+@keyframes ringIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ver-examen-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.pill-pass {
+  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  border: 2px solid #10b981;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.ver-examen-score-badge.score-fail {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-  border: 2px solid #f59e0b;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+.pill-fail {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .ver-examen-res-text strong.text-pass {
@@ -4902,7 +5029,21 @@ html.dark-theme .lb-points {
 }
 
 .ver-examen-res-text strong.text-fail {
-  color: #f59e0b;
+  color: #d97706;
+}
+
+.ver-examen-res-actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ver-examen-res-actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ── Glassmorphic Icons & Badges ── */
