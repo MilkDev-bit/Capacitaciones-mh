@@ -165,7 +165,6 @@ function courseProgress(curso: any) {
       </template>
     </section>
 
-    <!-- En progreso -->
     <section class="dash-section">
       <div class="dash-section-head">
         <h2>Continuar aprendiendo</h2>
@@ -216,7 +215,6 @@ function courseProgress(curso: any) {
       </template>
     </section>
 
-    <!-- Tabla de Líderes por Curso -->
     <section v-if="capacitaciones.length" class="dash-section">
       <div class="dash-section-head">
         <h2>Salón de la Fama (Top 5)</h2>
