@@ -89,10 +89,8 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 		return
 	}
 
-	if h.cfg.JitsiAppSecret == "" {
-		// Sin secreto no hay JWT posible. Se responde explícito en vez de
-		// firmar con cadena vacía, que produciría un token que Prosody
-		// rechaza con un error indescifrable en el navegador.
+	if h.cfg.JitsiAppSecret == "" && h.cfg.JitsiPrivateKey == "" {
+		// Sin secreto ni llave privada no hay JWT posible.
 		ctx.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "las videollamadas no están configuradas en el servidor",
 		})
@@ -100,6 +98,19 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 	}
 
 	ahora := time.Now()
+
+	// Por defecto, asumimos claims de servidor local
+	issuer := h.cfg.JitsiAppID
+	audience := jwt.ClaimStrings{h.cfg.JitsiAppID}
+	subject := h.cfg.JitsiSubject()
+
+	isJaaS := h.cfg.JitsiPrivateKey != "" && h.cfg.JitsiKid != ""
+	if isJaaS {
+		issuer = "chat"
+		audience = jwt.ClaimStrings{"jitsi"}
+		subject = h.cfg.JitsiAppID // Para JaaS el subject es el App ID (vpaas...)
+	}
+
 	claims := jitsiClaims{
 		Room: body.Sala,
 		Context: jitsiContext{User: jitsiUser{
@@ -111,9 +122,9 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 			Moderator: "true",
 		}},
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    h.cfg.JitsiAppID,
-			Audience:  jwt.ClaimStrings{h.cfg.JitsiAppID},
-			Subject:   h.cfg.JitsiSubject(),
+			Issuer:    issuer,
+			Audience:  audience,
+			Subject:   subject,
 			IssuedAt:  jwt.NewNumericDate(ahora),
 			NotBefore: jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
 			// Vida corta: el token solo tiene que durar lo que tarda el
@@ -123,17 +134,41 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 		},
 	}
 
-	firmado, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString([]byte(h.cfg.JitsiAppSecret))
+	var firmado string
+	var err error
+
+	if isJaaS {
+		// Firmar usando RS256 con llave privada para 8x8 JaaS
+		key, parseErr := jwt.ParseRSAPrivateKeyFromPEM([]byte(h.cfg.JitsiPrivateKey))
+		if parseErr != nil {
+			slog.Error("llamadas: parsear llave privada JaaS", "error", parseErr)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error de configuración de servidor de video"})
+			return
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		token.Header["kid"] = h.cfg.JitsiKid
+		firmado, err = token.SignedString(key)
+	} else {
+		// Firmar usando HS256 para servidor local
+		firmado, err = jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
+			SignedString([]byte(h.cfg.JitsiAppSecret))
+	}
+
 	if err != nil {
 		slog.Error("llamadas: firmar token de Jitsi", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo preparar la llamada"})
 		return
 	}
 
+	// Si es JaaS, el dominio devuelto debería ser la URL especial con el App ID.
+	dominioRetorno := h.cfg.JitsiDomain
+	if isJaaS && (dominioRetorno == "localhost:8443" || dominioRetorno == "") {
+		dominioRetorno = "8x8.vc/" + h.cfg.JitsiAppID
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"token":   firmado,
-		"dominio": h.cfg.JitsiDomain,
+		"dominio": dominioRetorno,
 		"sala":    body.Sala,
 	})
 }

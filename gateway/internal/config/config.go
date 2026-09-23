@@ -54,9 +54,11 @@ type Config struct {
 	// Jitsi — videollamadas. El servidor se autohospeda con autenticación por
 	// JWT: sin token firmado con JitsiAppSecret, Prosody rechaza la entrada a
 	// la sala aunque se conozca su nombre.
-	JitsiDomain    string // dominio público del servidor Jitsi
-	JitsiAppID     string // JWT_APP_ID de Prosody (claim iss/aud)
-	JitsiAppSecret string // JWT_APP_SECRET — nunca se codifica en el binario
+	JitsiDomain     string // dominio público del servidor Jitsi
+	JitsiAppID      string // JWT_APP_ID de Prosody o 8x8 JaaS App ID
+	JitsiAppSecret  string // JWT_APP_SECRET para HS256 (Self-hosted)
+	JitsiKid        string // Key ID (kid) para 8x8 JaaS
+	JitsiPrivateKey string // Llave privada RSA (PEM) para 8x8 JaaS
 
 	// Entorno
 	GinMode            string
@@ -103,17 +105,19 @@ func Load() *Config {
 		AppURL:  normalizeOrigin(getEnvOr("APP_URL", "http://localhost:5173")),
 		AppName: getEnvOr("APP_NAME", "Capacitaciones MH"),
 
-		JitsiDomain:    strings.TrimSpace(getEnvOr("JITSI_DOMAIN", "localhost:8443")),
-		JitsiAppID:     getEnvOr("JITSI_APP_ID", "capacitaciones"),
-		JitsiAppSecret: os.Getenv("JITSI_APP_SECRET"),
+		JitsiDomain:     strings.TrimSpace(getEnvOr("JITSI_DOMAIN", "localhost:8443")),
+		JitsiAppID:      getEnvOr("JITSI_APP_ID", "capacitaciones"),
+		JitsiAppSecret:  os.Getenv("JITSI_APP_SECRET"),
+		JitsiKid:        os.Getenv("JITSI_KID"),
+		JitsiPrivateKey: os.Getenv("JITSI_PRIVATE_KEY"),
 
 		GinMode:            os.Getenv("GIN_MODE"),
 		RailwayEnvironment: os.Getenv("RAILWAY_ENVIRONMENT"),
 		LogLevel:           getEnvOr("LOG_LEVEL", "info"),
 	}
 	warnIfAppURLLooksLikeAPI(C.AppURL, C.Port)
-	if C.JitsiAppSecret == "" {
-		slog.Warn("JITSI_APP_SECRET vacía — las videollamadas quedarán deshabilitadas")
+	if C.JitsiAppSecret == "" && C.JitsiPrivateKey == "" {
+		slog.Warn("JITSI_APP_SECRET y JITSI_PRIVATE_KEY están vacías — las videollamadas quedarán deshabilitadas")
 	}
 	// Se avisa al arrancar y no la primera vez que alguien termina un curso.
 	//

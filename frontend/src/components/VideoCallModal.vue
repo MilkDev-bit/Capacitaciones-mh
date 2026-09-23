@@ -51,9 +51,9 @@ onMounted(() => {
 function initJitsi() {
   if (!jitsiContainer.value) return
 
-  const options: any = {
+  const options = {
     roomName: props.roomName,
-    ...(props.domain !== 'meet.jit.si' && props.jwt ? { jwt: props.jwt } : {}),
+    jwt: props.jwt,
     width: '100%',
     height: '100%',
     parentNode: jitsiContainer.value,
