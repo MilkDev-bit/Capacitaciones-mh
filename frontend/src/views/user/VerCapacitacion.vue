@@ -1055,7 +1055,7 @@ function tramitarDC3() {
           <div style="margin-top: 10px;">
             <button class="btn btn-secondary btn-sm"
               style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
-              @click="abrirPanelAvance">aa
+              @click="abrirPanelAvance">
               {{ esCursoDePago ? 'Mi Avance' : 'Mi Avance y Puntuaciones' }}
             </button>
           </div>
@@ -1475,7 +1475,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1604,7 +1604,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                        }}</router-link>
+                          }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
