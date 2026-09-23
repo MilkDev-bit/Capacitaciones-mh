@@ -1054,7 +1054,7 @@ onUnmounted(() => {
     <VideoCallModal
       v-if="llamada.estado.value === 'en_llamada' && llamada.credenciales.value"
       :roomName="llamada.credenciales.value.sala"
-      :domain="llamada.credenciales.value.dominio"
+      domain="meet.jit.si"
       :jwt="llamada.credenciales.value.token"
       :userName="auth.user?.name ?? 'Usuario'"
       @close="llamada.colgar"
