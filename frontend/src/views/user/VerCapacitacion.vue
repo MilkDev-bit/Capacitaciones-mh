@@ -103,6 +103,17 @@ const examenData = ref<any>(null)
 const examenRespuestas = ref<Record<string, string>>({})
 const examenSubmitting = ref(false)
 const examenResultado = ref<any>(null)
+const examenBannerCerrado = ref(false)
+
+
+function bannerCerradoKey(): string {
+  return `examen_banner_cerrado_${cursoId}_${examenFinal.value?.id ?? ''}`
+}
+
+function cerrarExamenBanner() {
+  examenBannerCerrado.value = true
+  localStorage.setItem(bannerCerradoKey(), '1')
+}
 
 // Panel de Avance y Puntuaciones en el curso
 const showAvancePanel = ref(false)
@@ -496,7 +507,6 @@ async function submitIntermedias() {
   }
 }
 
-// ── Examen final ─────────────────────────────────────────────────────────────
 async function cargarExamenFinal() {
   try {
     const res = await api.get('/mis-examenes')
@@ -504,8 +514,12 @@ async function cargarExamenFinal() {
     examenFinal.value = exams.find(
       (e: any) => String(e.capacitacion_id) === String(cursoId) || String(e.capacitacionId) === String(cursoId)
     ) || null
+    examenBannerCerrado.value = examenFinal.value
+      ? localStorage.getItem(bannerCerradoKey()) === '1'
+      : false
   } catch {
     examenFinal.value = null
+    examenBannerCerrado.value = false
   }
 }
 
@@ -1475,7 +1489,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1604,7 +1618,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                          }}</router-link>
+                        }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">
@@ -1919,7 +1933,7 @@ function tramitarDC3() {
 
     <!-- Examen Final Disponible -->
     <Transition name="slide-up">
-      <div v-if="progreso === 100 && examenFinal" class="ver-examen-final-banner"
+      <div v-if="progreso === 100 && examenFinal && !examenBannerCerrado" class="ver-examen-final-banner"
         :class="{ 'ver-examen-final-banner--done': examenFinal.ya_respondido }">
         <span class="ver-examen-final-icon">{{ examenFinal.ya_respondido ? '' : '🎓' }}</span>
         <div class="ver-examen-final-body">
@@ -1930,6 +1944,12 @@ function tramitarDC3() {
         <button @click="abrirExamenEnCurso" class="btn ver-examen-final-btn"
           :class="examenFinal.ya_respondido ? 'btn-secondary' : 'btn-primary'">
           {{ examenFinal.ya_respondido ? 'Ver resultado' : 'Responder examen' }}
+        </button>
+        <button class="ver-examen-final-close" @click="cerrarExamenBanner" title="Cerrar aviso"
+          aria-label="Cerrar aviso">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
         </button>
       </div>
     </Transition>
@@ -4380,7 +4400,6 @@ html.dark-theme .ver-int-pregunta {
   padding: 12px 28px;
 }
 
-/* Examen final banner */
 .ver-examen-final-banner {
   position: fixed;
   bottom: 24px;
@@ -4391,12 +4410,42 @@ html.dark-theme .ver-int-pregunta {
   gap: 14px;
   background: var(--dark);
   color: #fff;
-  padding: 14px 20px 14px 18px;
+  padding: 14px 16px 14px 18px;
   border-radius: var(--r-xl);
   box-shadow: 0 8px 32px rgba(0, 0, 0, .35);
   z-index: 500;
   max-width: 480px;
   width: calc(100% - 40px);
+}
+
+.ver-examen-final-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ver-examen-final-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.ver-examen-final-banner--done .ver-examen-final-close {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.ver-examen-final-banner--done .ver-examen-final-close:hover {
+  background: var(--border);
+  color: var(--dark);
 }
 
 .ver-examen-final-banner--done {
