@@ -1439,11 +1439,6 @@ function tramitarDC3() {
                 <div class="ver-notes-head">
                   <h3 class="ver-section-title">
                     <span class="gm-icon gm-icon-notes">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
-                        <path d="M17.5 2.5a2.121 2.121 0 013 3L12 14l-4 1 1-4 7.5-7.5z" />
-                      </svg>
                     </span>
                     Mis Notas
                   </h3>
@@ -1521,12 +1516,6 @@ function tramitarDC3() {
                 <!-- Foro header -->
                 <div class="ver-foro-head">
                   <h3 class="ver-section-title">
-                    <span class="gm-icon gm-icon-forum">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                      </svg>
-                    </span>
                     Foro de la lección
                   </h3>
                   <p class="ver-foro-sub">Participa, pregunta y comparte con la comunidad</p>
