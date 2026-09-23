@@ -38,42 +38,6 @@ func NewLlamadasHandler(c *clients.Clients, cfg *config.Config, h *hub.Hub, g *h
 	return &LlamadasHandler{c: c, cfg: cfg, hub: h, call: g}
 }
 
-// jitsiClaims son los claims que espera el módulo `token_verification` de
-// Prosody. La estructura no es negociable: viene definida por Jitsi.
-//
-//	aud/iss  → identifican la aplicación (JITSI_APP_ID)
-//	sub      → dominio del servidor Jitsi
-//	room     → sala concreta; es lo que impide reutilizar un token en otra sala
-//	context  → datos del usuario que Jitsi muestra en la conferencia
-type jitsiClaims struct {
-	Room      string           `json:"room"`
-	Context   jitsiContext     `json:"context"`
-	Issuer    string           `json:"iss,omitempty"`
-	Audience  string           `json:"aud,omitempty"` // JaaS expects a strict string, not an array
-	Subject   string           `json:"sub,omitempty"`
-	IssuedAt  *jwt.NumericDate `json:"iat,omitempty"`
-	NotBefore *jwt.NumericDate `json:"nbf,omitempty"`
-	ExpiresAt *jwt.NumericDate `json:"exp,omitempty"`
-}
-
-type jitsiContext struct {
-	User     jitsiUser      `json:"user"`
-	Features *jitsiFeatures `json:"features,omitempty"`
-}
-
-type jitsiFeatures struct {
-	Livestreaming bool `json:"livestreaming"`
-	Recording     bool `json:"recording"`
-}
-
-type jitsiUser struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email,omitempty"`
-	Avatar    string `json:"avatar,omitempty"`
-	Moderator string `json:"moderator"`
-}
-
 // POST /api/llamadas/token
 //
 // Devuelve el token y la configuración que el frontend necesita para abrir
@@ -110,41 +74,47 @@ func (h *LlamadasHandler) Token(ctx *gin.Context) {
 
 	ahora := time.Now()
 
-	// Por defecto, asumimos claims de servidor local
-	issuer := h.cfg.JitsiAppID
-	audience := h.cfg.JitsiAppID
-	subject := h.cfg.JitsiSubject()
-
 	isJaaS := h.cfg.JitsiPrivateKey != "" && h.cfg.JitsiKid != ""
 	
-	var features *jitsiFeatures
+	var claims jwt.MapClaims
 	if isJaaS {
-		issuer = "chat"
-		audience = "jitsi"
-		subject = h.cfg.JitsiAppID // Para JaaS el subject es el App ID (vpaas...)
-		// 8x8 JaaS exige estrictamente el objeto 'features' en el contexto
-		features = &jitsiFeatures{
-			Livestreaming: false,
-			Recording:     false,
-		}
-	}
-
-	claims := jitsiClaims{
-		Room: body.Sala,
-		Context: jitsiContext{
-			User: jitsiUser{
-				ID:   userID,
-				Name: userName,
-				Moderator: "true",
+		claims = jwt.MapClaims{
+			"room": body.Sala,
+			"context": map[string]interface{}{
+				"user": map[string]interface{}{
+					"id":        userID,
+					"name":      userName,
+					"moderator": "true",
+				},
+				"features": map[string]interface{}{
+					"livestreaming": false,
+					"recording":     false,
+				},
 			},
-			Features: features,
-		},
-		Issuer:    issuer,
-		Audience:  audience,
-		Subject:   subject,
-		IssuedAt:  jwt.NewNumericDate(ahora),
-		NotBefore: jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
-		ExpiresAt: jwt.NewNumericDate(ahora.Add(4 * time.Hour)),
+			"iss": "chat",
+			"aud": "jitsi", // strict string
+			"sub": h.cfg.JitsiAppID,
+			"iat": jwt.NewNumericDate(ahora),
+			"nbf": jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
+			"exp": jwt.NewNumericDate(ahora.Add(4 * time.Hour)),
+		}
+	} else {
+		claims = jwt.MapClaims{
+			"room": body.Sala,
+			"context": map[string]interface{}{
+				"user": map[string]interface{}{
+					"id":        userID,
+					"name":      userName,
+					"moderator": "true",
+				},
+			},
+			"iss": h.cfg.JitsiAppID,
+			"aud": h.cfg.JitsiAppID,
+			"sub": h.cfg.JitsiSubject(),
+			"iat": jwt.NewNumericDate(ahora),
+			"nbf": jwt.NewNumericDate(ahora.Add(-30 * time.Second)),
+			"exp": jwt.NewNumericDate(ahora.Add(4 * time.Hour)),
+		}
 	}
 
 	var firmado string
