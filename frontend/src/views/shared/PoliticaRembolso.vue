@@ -96,19 +96,21 @@ const CORREO = 'soporte@mhsolucionesempresariales.com'
 
             <h2>V. Cómo Solicitar un Reembolso</h2>
             <p>
-                Envíe su solicitud a <a :href="`mailto:${CORREO}`">{{ CORREO }}</a>
-                indicando:
+                Actualmente, la funcionalidad de reembolso <strong>no se encuentra automatizada en la
+                    plataforma</strong>.
+                Si cumple con los criterios descritos en esta política, deberá solicitar la gestión de manera manual
+                enviando un correo electrónico a <a :href="`mailto:${CORREO}`">{{ CORREO }}</a> indicando:
             </p>
             <ol>
-                <li>Nombre completo y correo con el que realizó la compra.</li>
-                <li>Curso, plan o licencia por el que solicita el reembolso.</li>
-                <li>Fecha aproximada del cargo y, si la tiene, la referencia de pago de Stripe.</li>
+                <li>Nombre completo y correo registrado en la Plataforma.</li>
+                <li>Curso, plan o licencia por el que solicita la devolución.</li>
+                <li>Fecha aproximada del cargo y referencia de pago de Stripe.</li>
                 <li>Motivo de la solicitud.</li>
             </ol>
             <p>
-                El Responsable responde en un plazo máximo de <strong>5 días
-                    hábiles</strong>. Si el reembolso procede, se emite directamente
-                desde el panel de Stripe hacia el método de pago original.
+                El Responsable revisará la solicitud y responderá en un plazo máximo de <strong>5 días hábiles</strong>.
+                De ser procedente, el reembolso se procesará de forma manual a través del panel de Stripe
+                hacia el método de pago original.
             </p>
 
             <h2>VI. Excepciones que Siempre Proceden</h2>
