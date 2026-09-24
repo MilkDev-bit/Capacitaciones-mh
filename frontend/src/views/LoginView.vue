@@ -694,7 +694,7 @@ async function resetPassword() {
 
 @keyframes bubble-rise {
   0% {
-    transform: translateY(0) scale(1) rotate(0deg);
+    transform: translateY(0) translateX(0) scale(1) rotate(0deg);
     opacity: 0;
   }
 
@@ -702,12 +702,24 @@ async function resetPassword() {
     opacity: 1;
   }
 
+  25% {
+    transform: translateY(-25vh) translateX(-18px) scale(1.03) rotate(-10deg);
+  }
+
+  50% {
+    transform: translateY(-50vh) translateX(20px) scale(1.07) rotate(15deg);
+  }
+
+  75% {
+    transform: translateY(-75vh) translateX(-15px) scale(1.1) rotate(-8deg);
+  }
+
   80% {
-    opacity: .7;
+    opacity: 0.7;
   }
 
   100% {
-    transform: translateY(-110vh) scale(1.15) rotate(30deg);
+    transform: translateY(-110vh) translateX(10px) scale(1.15) rotate(30deg);
     opacity: 0;
   }
 }
