@@ -172,7 +172,7 @@ func (h *LlamadasHandler) Iniciar(emisorID, emisorName, peerID, peerName string,
 		EmisorId:   emisorID,
 		EmisorName: emisorName,
 		ReceptorId: peerID,
-		Contenido:  "📞 Videollamada",
+		Contenido:  "Videollamada",
 		IsGroup:    isGroup,
 	}); err != nil {
 		// PermissionDenied llega aquí cuando el destinatario no comparte
@@ -226,9 +226,9 @@ func (h *LlamadasHandler) avisarLlamadaPerdida(l *hub.Llamada) {
 	ctx, cancel := contextoCorto()
 	defer cancel()
 
-	texto := "📞 Llamada perdida"
+	texto := "Llamada perdida"
 	if l.IsGroup {
-		texto = "📞 Llamada de grupo sin respuesta"
+		texto = "Llamada de grupo sin respuesta"
 	}
 
 	_, err := h.c.Mensajes.SendMensaje(ctx, &mensajespb.SendMensajeRequest{

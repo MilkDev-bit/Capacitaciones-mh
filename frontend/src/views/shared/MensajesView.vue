@@ -86,7 +86,7 @@ function startVideoCall() {
 }
 
 function esRegistroDeLlamada(contenido: string): boolean {
-  return contenido.startsWith('📞') || contenido.includes('[SALA:')
+  return contenido.startsWith('') || contenido.includes('[SALA:')
 }
 
 // ─── Adjuntos ──────────────────────────────────────────────────────────────
@@ -859,7 +859,7 @@ onUnmounted(() => {
                             <path d="M23 7l-7 5 7 5V7z" />
                             <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                           </svg>
-                          <span>{{ msg.contenido.replace('📞', '').trim() }}</span>
+                          <span>{{ msg.contenido.replace('', '').trim() }}</span>
                         </div>
                       </template>
                       <template v-else>
