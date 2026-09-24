@@ -627,26 +627,23 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               Capacitación empresarial en línea con constancia DC-3, lista para la STPS.
             </p>
             <div class="foot__social" aria-label="Redes sociales">
-              <a href="#" class="foot__social-btn" aria-label="Facebook" target="_blank" rel="noopener">
+              <a href="https://www.facebook.com/share/1EkPKgEdcQ" class="foot__social-btn" aria-label="Facebook"
+                target="_blank" rel="noopener">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path
                     d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.87.24-1.46 1.5-1.46h1.6V4.37C16.3 4.26 15.4 4.2 14.35 4.2c-2.4 0-4.05 1.47-4.05 4.16V10.5H7.8v3h2.5V21h3.2Z" />
                 </svg>
               </a>
-              <a href="#" class="foot__social-btn" aria-label="Instagram" target="_blank" rel="noopener">
+              <a href="https://www.instagram.com/soluciones_mh?igsh=bHdldTI3ankwajVr" class="foot__social-btn"
+                aria-label="Instagram" target="_blank" rel="noopener">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
                   <circle cx="12" cy="12" r="3.6" />
                   <circle cx="17" cy="7" r="0.9" fill="currentColor" stroke="none" />
                 </svg>
               </a>
-              <a href="#" class="foot__social-btn" aria-label="LinkedIn" target="_blank" rel="noopener">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M4.98 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM3.5 9h3v11.5h-3V9Zm6.2 0h2.9v1.57h.04c.4-.76 1.4-1.57 2.9-1.57 3.1 0 3.66 2.04 3.66 4.7v6.8h-3v-6.03c0-1.44-.03-3.3-2.01-3.3-2.02 0-2.33 1.58-2.33 3.2v6.13h-3V9Z" />
-                </svg>
-              </a>
-              <a href="#" class="foot__social-btn" aria-label="WhatsApp" target="_blank" rel="noopener">
+              <a href="https://api.whatsapp.com/send/?phone=%2B524772552693&text&type=phone_number&app_absent=0"
+                class="foot__social-btn" aria-label="WhatsApp" target="_blank" rel="noopener">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path
                     d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Zm0 16.3a7.3 7.3 0 0 1-3.7-1l-.27-.16-2.73.72.73-2.66-.18-.28A7.3 7.3 0 1 1 19.3 12a7.3 7.3 0 0 1-7.3 7.3Zm4-5.4c-.2-.1-1.2-.6-1.4-.67-.2-.07-.34-.1-.48.1-.14.2-.55.67-.68.8-.12.15-.25.16-.46.06-.2-.1-.87-.32-1.66-1.02-.6-.55-1.03-1.22-1.15-1.43-.12-.2 0-.3.1-.4.1-.1.2-.25.3-.38.1-.12.14-.2.2-.35.07-.15.03-.28-.02-.38-.06-.1-.48-1.15-.65-1.58-.17-.4-.35-.35-.48-.36h-.4c-.15 0-.38.06-.58.28-.2.2-.75.74-.75 1.8s.77 2.1.88 2.24c.1.15 1.5 2.3 3.66 3.2.5.22.9.35 1.22.45.5.16.98.14 1.34.08.4-.06 1.2-.5 1.38-.97.17-.48.17-.9.12-.98-.05-.1-.2-.15-.4-.25Z" />
