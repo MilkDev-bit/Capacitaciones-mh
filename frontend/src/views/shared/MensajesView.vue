@@ -1008,7 +1008,7 @@ onUnmounted(() => {
 /* ── Layout ────────────────────────────────────────────────────────────── */
 .mensajes-shell {
   display: flex;
-  height: 100%;
+  height: calc(100vh - 64px);
   min-height: 0;
   flex: 1;
   overflow: hidden;
