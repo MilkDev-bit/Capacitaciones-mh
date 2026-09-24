@@ -1,29 +1,40 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed, watch } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme'
+import { useCartStore } from './stores/cart'
+import { useLlamadas } from './composables/useLlamadas'
 import CartDrawer from './components/CartDrawer.vue'
 import DC3Modal from './components/DC3Modal.vue'
 import BannerPrivacidad from './components/BannerPrivacidad.vue'
 import ModalAviso from './components/ModalAviso.vue'
-import { watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useCartStore } from './stores/cart'
+import LlamadaTimbrando from './components/LlamadaTimbrando.vue'
+import VideoCallModal from './components/VideoCallModal.vue'
 
 useTheme()
 const route = useRoute()
+const router = useRouter()
 const cart = useCartStore()
 
-const router = useRouter()
+function enviarWS(payload: Record<string, unknown>) {
+  if ((window as any).socketWS?.readyState === WebSocket.OPEN) {
+    ; (window as any).socketWS.send(JSON.stringify(payload))
+  }
+}
 
-/**
- * `?opencart=1` reabre el carrito al volver de iniciar sesión.
- *
- * La marca se retira de la URL en cuanto se consume: si se quedara pegada, el
- * botón atrás del navegador y cualquier recarga volverían a abrir el panel, y
- * además acabaría copiada en enlaces compartidos.
- *
- * Se ignora dentro de /login: allí el panel solo taparía el formulario.
- */
+const {
+  estado,
+  llamada,
+  credenciales,
+  restantes,
+  nombreOtro,
+  aceptar,
+  rechazar,
+  colgar
+} = useLlamadas(enviarWS)
+const timbrando = computed(() => estado.value === 'entrante' || estado.value === 'saliente')
+const enLlamada = computed(() => estado.value === 'en_llamada')
+
 watch(
   () => route.query.opencart,
   (val) => {
@@ -41,13 +52,15 @@ watch(
 <template>
   <RouterView />
   <CartDrawer />
-  <!-- Montado aquí y no en cada vista: los botones de constancia están
-       repartidos por cinco pantallas y todas abren esta misma instancia. -->
+
   <DC3Modal />
-  <!-- Aviso de privacidad. Dos piezas para dos situaciones distintas:
-       el banner informa al visitante sin cuenta y no bloquea; el modal exige
-       aceptación a quien ya tiene sesión, porque ahí sus datos ya se están
-       tratando. -->
   <BannerPrivacidad />
   <ModalAviso />
+
+  <LlamadaTimbrando v-if="timbrando && llamada && (estado === 'entrante' || estado === 'saliente')" :modo="estado"
+    :nombre="nombreOtro" :is-group="llamada.is_group" :restantes="restantes" @aceptar="aceptar" @rechazar="rechazar"
+    @colgar="colgar" />
+
+  <VideoCallModal v-if="enLlamada && credenciales" :room-name="credenciales.sala" :user-name="nombreOtro"
+    :domain="credenciales.dominio" :jwt="credenciales.token" @close="colgar" />
 </template>
