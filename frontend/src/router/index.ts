@@ -14,6 +14,8 @@ const router = createRouter({
     // quien recibe el documento en papel, que no tiene cuenta aquí. La forma sin
     // folio permite teclearlo a mano desde la línea impresa al pie.
     { path: '/privacidad', component: () => import('../views/shared/AvisoPrivacidad.vue') },
+    { path: '/terminos', component: () => import('../views/shared/TerminosCondiciones.vue') },
+{ path: '/reembolsos', component: () => import('../views/shared/PoliticaRembolso.vue') },
     { path: '/verificar', component: () => import('../views/shared/VerificarConstancia.vue') },
     { path: '/verificar/:folio', component: () => import('../views/shared/VerificarConstancia.vue') },
     // Pantalla de retorno de Stripe. Pública a propósito: si la cookie tarda en
