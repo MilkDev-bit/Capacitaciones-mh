@@ -210,7 +210,6 @@ const stats = computed(() => {
         </tbody>
       </table>
       <div v-else class="empty-state">
-        <div class="empty-icon">📂</div>
         <h3>No hay entregas registradas</h3>
         <p v-if="searchQuery || selectedCurso">No se encontraron entregas con los filtros seleccionados.</p>
         <p v-else>Cuando los estudiantes suban archivos en las actividades programadas, aparecerán en esta lista.</p>
