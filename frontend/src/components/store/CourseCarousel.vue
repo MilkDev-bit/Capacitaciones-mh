@@ -152,35 +152,24 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
       </div>
 
       <div class="carousel__nav" v-if="!loading && courses.length > 1">
-        <button
-          class="nav-arrow"
-          :disabled="!puedeIzq"
-          aria-label="Desplazar a la izquierda"
-          @click="desplazar(-1)"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        <button class="nav-arrow" :disabled="!puedeIzq" aria-label="Desplazar a la izquierda" @click="desplazar(-1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
-        <button
-          class="nav-arrow"
-          :disabled="!puedeDer"
-          aria-label="Desplazar a la derecha"
-          @click="desplazar(1)"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        <button class="nav-arrow" :disabled="!puedeDer" aria-label="Desplazar a la derecha" @click="desplazar(1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </div>
     </header>
 
     <div class="carousel__viewport">
-      <div
-        ref="track"
-        :class="['carousel__track', efecto3D && 'carousel__track--3d']"
-        role="group"
-        :aria-label="`Carrusel: ${title}`"
-        tabindex="0"
-        @scroll.passive="alHacerScroll"
-        @keydown="alPulsarTecla"
-      >
+      <div ref="track" :class="['carousel__track', efecto3D && 'carousel__track--3d']" role="group"
+        :aria-label="`Carrusel: ${title}`" tabindex="0" @scroll.passive="alHacerScroll" @keydown="alPulsarTecla">
         <template v-if="loading">
           <div v-for="n in 4" :key="`s-${n}`" class="skeleton" aria-hidden="true">
             <div class="skeleton__media" />
@@ -195,14 +184,8 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
           Sin la envoltura, uno pisaría al otro.
         -->
         <div v-else v-for="c in courses" :key="c.id" class="slide">
-          <CourseTile
-            :course="c"
-            variant="carousel"
-            :in-cart="cartIds.includes(c.id)"
-            :incluido-en-plan="incluidoEnPlan"
-            @open="emit('open', $event)"
-            @add="emit('add', $event)"
-          />
+          <CourseTile :course="c" variant="carousel" :in-cart="cartIds.includes(c.id)"
+            :incluido-en-plan="incluidoEnPlan" @open="emit('open', $event)" @add="emit('add', $event)" />
         </div>
       </div>
 
@@ -213,40 +196,26 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
 
     <!-- ── Barra de control: flechas + dots ─────────────────────── -->
     <div v-if="hayControles" class="dock">
-      <button
-        class="dock__arrow"
-        :disabled="!puedeIzq"
-        aria-label="Anterior"
-        @click="desplazar(-1)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+      <button class="dock__arrow" :disabled="!puedeIzq" aria-label="Anterior" @click="desplazar(-1)">
+        Anterior
       </button>
 
       <div class="dock__dots">
-        <button
-          v-for="(c, i) in courses"
-          :key="`d-${c.id}`"
-          :class="['dot', indiceActivo === i && 'dot--on']"
-          :aria-label="`Ir a ${c.title}`"
-          :aria-current="indiceActivo === i ? 'true' : undefined"
-          @click="irA(i)"
-        />
+        <button v-for="(c, i) in courses" :key="`d-${c.id}`" :class="['dot', indiceActivo === i && 'dot--on']"
+          :aria-label="`Ir a ${c.title}`" :aria-current="indiceActivo === i ? 'true' : undefined" @click="irA(i)" />
       </div>
 
-      <button
-        class="dock__arrow"
-        :disabled="!puedeDer"
-        aria-label="Siguiente"
-        @click="desplazar(1)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+      <button class="dock__arrow" :disabled="!puedeDer" aria-label="Siguiente" @click="desplazar(1)">
+        Siguiente
       </button>
     </div>
   </section>
 </template>
 
 <style scoped>
-.carousel { margin-bottom: 52px; }
+.carousel {
+  margin-bottom: 52px;
+}
 
 .carousel__head {
   display: flex;
@@ -263,13 +232,18 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   letter-spacing: -0.025em;
   color: var(--text);
 }
+
 .carousel__sub {
   margin: 4px 0 0;
   font-size: 0.9rem;
   color: var(--muted);
 }
 
-.carousel__nav { display: flex; gap: 8px; flex-shrink: 0; }
+.carousel__nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
 .nav-arrow {
   width: 38px;
@@ -283,15 +257,22 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, opacity 0.2s, transform 0.2s;
 }
+
 .nav-arrow:hover:not(:disabled) {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
   transform: scale(1.06);
 }
-.nav-arrow:disabled { opacity: 0.3; cursor: default; }
 
-.carousel__viewport { position: relative; }
+.nav-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.carousel__viewport {
+  position: relative;
+}
 
 .carousel__track {
   display: flex;
@@ -303,8 +284,14 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.carousel__track::-webkit-scrollbar { display: none; }
-.carousel__track > * { scroll-snap-align: start; }
+
+.carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel__track>* {
+  scroll-snap-align: start;
+}
 
 .carousel__track:focus-visible {
   outline: 2px solid var(--brand);
@@ -319,6 +306,7 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   perspective: 1400px;
   perspective-origin: 50% 50%;
 }
+
 .carousel__track--3d .slide {
   transform: rotateY(var(--rot, 0deg)) scale(var(--esc, 1));
   opacity: var(--op, 1);
@@ -326,7 +314,10 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   transition: opacity 0.3s linear;
   will-change: transform;
 }
-.slide { flex: 0 0 auto; }
+
+.slide {
+  flex: 0 0 auto;
+}
 
 .fade {
   position: absolute;
@@ -337,9 +328,20 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   opacity: 0;
   transition: opacity 0.25s var(--ease-apple);
 }
-.fade--on { opacity: 1; }
-.fade--left { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
-.fade--right { right: 0; background: linear-gradient(270deg, var(--bg), transparent); }
+
+.fade--on {
+  opacity: 1;
+}
+
+.fade--left {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg), transparent);
+}
+
+.fade--right {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg), transparent);
+}
 
 /* ── Barra de control ──────────────────────────────────── */
 .dock {
@@ -370,8 +372,16 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   cursor: pointer;
   transition: color 0.2s, background 0.2s, opacity 0.2s;
 }
-.dock__arrow:hover:not(:disabled) { color: var(--text); background: var(--surface); }
-.dock__arrow:disabled { opacity: 0.25; cursor: default; }
+
+.dock__arrow:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.dock__arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
 
 .dock__dots {
   display: flex;
@@ -381,7 +391,10 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   scrollbar-width: none;
   padding: 4px 2px;
 }
-.dock__dots::-webkit-scrollbar { display: none; }
+
+.dock__dots::-webkit-scrollbar {
+  display: none;
+}
 
 .dot {
   flex: 0 0 auto;
@@ -396,12 +409,31 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
      evita que la fila entera se desplace al cambiar de tarjeta. */
   transition: width 0.3s var(--ease-apple), background 0.3s var(--ease-apple);
 }
-.dot--on { width: 24px; background: var(--brand); }
-.dot:hover { background: var(--brand); }
+
+.dot--on {
+  width: 24px;
+  background: var(--brand);
+}
+
+.dot:hover {
+  background: var(--brand);
+}
+
 /* Área táctil de 24px sin agrandar el punto visible. */
-.dot::before { content: ''; position: absolute; inset: -9px; }
-.dot { position: relative; }
-.dot:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.dot::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.dot {
+  position: relative;
+}
+
+.dot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
 
 /* ── Esqueleto de carga ────────────────────────────────── */
 .skeleton {
@@ -413,37 +445,88 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
   padding-bottom: 16px;
   background: var(--surface);
 }
-.skeleton__media { aspect-ratio: 16 / 10; }
-.skeleton__line { height: 12px; margin: 12px 16px 0; border-radius: 6px; }
-.skeleton__line--short { width: 55%; }
+
+.skeleton__media {
+  aspect-ratio: 16 / 10;
+}
+
+.skeleton__line {
+  height: 12px;
+  margin: 12px 16px 0;
+  border-radius: 6px;
+}
+
+.skeleton__line--short {
+  width: 55%;
+}
+
 .skeleton__media,
 .skeleton__line {
   background: linear-gradient(90deg, var(--surface-soft) 25%, var(--border-light) 50%, var(--surface-soft) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
+
 @keyframes shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 768px) {
-  .carousel { margin-bottom: 40px; }
-  .carousel__title { font-size: 1.25rem; }
-  .carousel__sub { font-size: 0.84rem; }
+  .carousel {
+    margin-bottom: 40px;
+  }
+
+  .carousel__title {
+    font-size: 1.25rem;
+  }
+
+  .carousel__sub {
+    font-size: 0.84rem;
+  }
+
   /* Las flechas de la cabecera sobran donde el gesto de swipe es lo natural;
      la barra de dots se queda porque además indica la posición. */
-  .carousel__nav { display: none; }
-  .carousel__track { gap: 13px; }
-  .skeleton { width: 232px; flex-basis: 232px; }
-  .dock__arrow { display: none; }
+  .carousel__nav {
+    display: none;
+  }
+
+  .carousel__track {
+    gap: 13px;
+  }
+
+  .skeleton {
+    width: 232px;
+    flex-basis: 232px;
+  }
+
+  .dock__arrow {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .carousel__track { scroll-behavior: auto; }
-  .carousel__track--3d .slide { transform: none; opacity: 1; }
-  .dot { transition: none; }
+  .carousel__track {
+    scroll-behavior: auto;
+  }
+
+  .carousel__track--3d .slide {
+    transform: none;
+    opacity: 1;
+  }
+
+  .dot {
+    transition: none;
+  }
+
   .skeleton__media,
-  .skeleton__line { animation: none; }
+  .skeleton__line {
+    animation: none;
+  }
 }
 </style>
