@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme'
 import { useCartStore } from './stores/cart'
+import { useWSStore } from './stores/ws'
 import { useLlamadas } from './composables/useLlamadas'
+
 import CartDrawer from './components/CartDrawer.vue'
 import DC3Modal from './components/DC3Modal.vue'
 import BannerPrivacidad from './components/BannerPrivacidad.vue'
@@ -15,13 +17,7 @@ useTheme()
 const route = useRoute()
 const router = useRouter()
 const cart = useCartStore()
-
-function enviarWS(payload: Record<string, unknown>) {
-  if ((window as any).socketWS?.readyState === WebSocket.OPEN) {
-    ; (window as any).socketWS.send(JSON.stringify(payload))
-  }
-}
-
+const wsStore = useWSStore()
 const {
   estado,
   llamada,
@@ -30,10 +26,18 @@ const {
   nombreOtro,
   aceptar,
   rechazar,
-  colgar
-} = useLlamadas(enviarWS)
+  colgar,
+  manejarEvento
+} = useLlamadas(wsStore.enviar)
 const timbrando = computed(() => estado.value === 'entrante' || estado.value === 'saliente')
 const enLlamada = computed(() => estado.value === 'en_llamada')
+
+onMounted(() => {
+  wsStore.conectar()
+  wsStore.onMensaje((data) => {
+    manejarEvento(data)
+  })
+})
 
 watch(
   () => route.query.opencart,

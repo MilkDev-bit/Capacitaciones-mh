@@ -5,12 +5,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../api'
 import CameraCapture from '../../components/CameraCapture.vue'
-import VideoCallModal from '../../components/VideoCallModal.vue'
-import LlamadaTimbrando from '../../components/LlamadaTimbrando.vue'
 import SearchUserModal from '../../components/SearchUserModal.vue'
 import CreateGroupModal from '../../components/CreateGroupModal.vue'
-import { useLlamadas } from '../../composables/useLlamadas'
 import { puedeBorrarParaTodos } from '../../utils/borrado'
+import { useWSStore } from '../../stores/ws'
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 interface Conversacion {
@@ -36,33 +34,33 @@ interface Mensaje {
   attachment_url?: string
   attachment_type?: string
   is_group?: boolean
-  /** Borrado para todos: el servidor ya no manda el texto, solo la lápida. */
   eliminado?: boolean
   _status?: 'sending' | 'sent' | 'error'
   _tempId?: string
 }
 
 // ─── Estado ────────────────────────────────────────────────────────────────
-const route  = useRoute()
+const route = useRoute()
 const router = useRouter()
-const auth   = useAuthStore()
+const auth = useAuthStore()
+const wsStore = useWSStore()
 
-const convs          = ref<Conversacion[]>([])
-const msgs           = ref<Mensaje[]>([])
-const peerName       = ref('')
-const peerAvatar     = ref('')
-const newMsg         = ref('')
-const loadingConvs   = ref(false)
-const loadingMsgs    = ref(false)
-const sending        = ref(false)
-const hasMore        = ref(false)
-const loadingMore    = ref(false)
-const showTyping     = ref(false)
+const convs = ref<Conversacion[]>([])
+const msgs = ref<Mensaje[]>([])
+const peerName = ref('')
+const peerAvatar = ref('')
+const newMsg = ref('')
+const loadingConvs = ref(false)
+const loadingMsgs = ref(false)
+const sending = ref(false)
+const hasMore = ref(false)
+const loadingMore = ref(false)
+const showTyping = ref(false)
 const typingPeerName = ref('')
-const threadRef      = ref<HTMLElement | null>(null)
-const sentinelRef    = ref<HTMLElement | null>(null)
-const textareaRef    = ref<HTMLTextAreaElement | null>(null)
-const errorMsg       = ref('')
+const threadRef = ref<HTMLElement | null>(null)
+const sentinelRef = ref<HTMLElement | null>(null)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const errorMsg = ref('')
 
 const showSearchUserModal = ref(false)
 const showCreateGroupModal = ref(false)
@@ -70,43 +68,33 @@ const showCreateGroupModal = ref(false)
 const activePeerId = computed(() => route.params.peer_id as string | undefined)
 
 // ─── Videollamada ──────────────────────────────────────────────────────────
-//
-// La sala ya no se deriva de los IDs de usuario ni se pega en un mensaje: el
-// servidor la genera al vuelo y solo la entrega a quien acepta la llamada.
-// Todo lo que hace esta vista es enrutar los eventos de señalización al
-// composable y pintar lo que él decida.
-const llamada = useLlamadas((payload) => {
-  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload))
-})
 
-/** La conversación abierta es un grupo. Determina a cuánta gente se timbra. */
 const esGrupo = computed(
   () => !!convs.value.find(c => c.peer_id === activePeerId.value)?.is_group,
 )
 
 function startVideoCall() {
   if (!activePeerId.value) return
-  llamada.llamar(activePeerId.value, peerName.value, esGrupo.value)
+  // Se envía la petición al WebSocket global. App.vue recibirá la respuesta 
+  // (ej. 'call_ringing') y mostrará la modal automáticamente.
+  wsStore.enviar({
+    type: 'call_start',
+    peer_id: activePeerId.value,
+    peer_name: peerName.value,
+    is_group: esGrupo.value
+  })
 }
 
-/**
- * Detecta los mensajes que son constancia de una llamada para pintarlos como
- * tarjeta y no como texto suelto.
- *
- * Se conserva el prefijo antiguo "[SALA:" para que los hilos existentes, que
- * sí llevaban la sala dentro del mensaje, sigan renderizándose como registro
- * en lugar de mostrar el identificador crudo al usuario.
- */
 function esRegistroDeLlamada(contenido: string): boolean {
   return contenido.startsWith('📞') || contenido.includes('[SALA:')
 }
 
 // ─── Adjuntos ──────────────────────────────────────────────────────────────
-const fileInputRef   = ref<HTMLInputElement | null>(null)
-const showCamera     = ref(false)
-const pendingFile    = ref<File | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const showCamera = ref(false)
+const pendingFile = ref<File | null>(null)
 const pendingPreview = ref<string>('')
-const uploadingFile  = ref(false)
+const uploadingFile = ref(false)
 
 const ALLOWED_MIME = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
@@ -194,46 +182,13 @@ async function uploadFile(file: File): Promise<{ url: string; type: string }> {
   return { url: final_url as string, type: file.type }
 }
 
-// ─── WebSocket ─────────────────────────────────────────────────────────────
-let ws: WebSocket | null = null
-let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null
-let wsReconnectDelay = 1000
-let wsShouldReconnect = true
+// ─── WebSocket (Chat) ──────────────────────────────────────────────────────
 let typingHideTimer: ReturnType<typeof setTimeout> | null = null
 let lastTypingSent = 0
 
-function connectWs() {
-  if (!wsShouldReconnect) return
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  ws = new WebSocket(`${proto}//${location.host}/api/ws`)
-  ws.onopen = () => { wsReconnectDelay = 1000 }
-  ws.onmessage = (ev: MessageEvent) => {
-    try { handleWsEvent(JSON.parse(ev.data as string)) } catch { /* ignorar */ }
-  }
-  ws.onclose = () => {
-    if (!wsShouldReconnect) return
-    wsReconnectTimer = setTimeout(() => {
-      wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000)
-      connectWs()
-    }, wsReconnectDelay)
-  }
-  ws.onerror = () => ws?.close()
-}
-
-function disconnectWs() {
-  wsShouldReconnect = false
-  if (wsReconnectTimer) clearTimeout(wsReconnectTimer)
-  ws?.close()
-  ws = null
-}
-
-function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string; msg_id?: string; call?: unknown }) {
-  // La señalización de llamada se atiende primero y consume el evento: son
-  // los únicos tipos que empiezan por "call_".
-  if (ev.type.startsWith('call_')) {
-    void llamada.manejarEvento(ev as never)
-    return
-  }
+function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer_name?: string; msg_id?: string }) {
+  // Ignoramos la señalización de llamadas aquí, App.vue se encarga
+  if (ev.type.startsWith('call_')) return
 
   switch (ev.type) {
     case 'new_message': {
@@ -251,8 +206,6 @@ function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer
       break
     }
     case 'message_deleted': {
-      // Solo llega el id: el contenido de un mensaje borrado ya no sale del
-      // servidor, y aquí tampoco hace falta para pintar la lápida.
       if (!ev.msg_id) break
       const m = msgs.value.find(x => x.id === ev.msg_id)
       if (m) {
@@ -260,8 +213,6 @@ function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer
         m.contenido = ''
         m.attachment_url = undefined
       }
-      // La vista previa de la lista también deja de ser válida. Se marca en
-      // lugar de recargar la lista entera por un solo mensaje.
       const conv = convs.value.find(c => c.peer_id === ev.peer_id)
       if (conv) { conv.last_message = ''; conv.last_eliminado = true }
       break
@@ -278,11 +229,11 @@ function handleWsEvent(ev: { type: string; msg?: Mensaje; peer_id?: string; peer
 }
 
 function sendTyping() {
-  if (!activePeerId.value || !ws || ws.readyState !== WebSocket.OPEN) return
+  if (!activePeerId.value || !wsStore.conectado) return
   const now = Date.now()
   if (now - lastTypingSent < 2000) return
   lastTypingSent = now
-  ws.send(JSON.stringify({ type: 'typing', peer_id: activePeerId.value }))
+  wsStore.enviar({ type: 'typing', peer_id: activePeerId.value })
 }
 
 async function markRead(msgId: string) {
@@ -291,19 +242,16 @@ async function markRead(msgId: string) {
 
 function refreshConvEntry(msg: Mensaje) {
   const peerId = msg.emisor_id === auth.user?.id ? msg.receptor_id : msg.emisor_id
-  const peerN  = msg.emisor_id === auth.user?.id ? msg.receptor_name : msg.emisor_name
+  const peerN = msg.emisor_id === auth.user?.id ? msg.receptor_name : msg.emisor_name
   const conv = convs.value.find(c => c.peer_id === peerId)
   const unread = activePeerId.value !== peerId && msg.emisor_id !== auth.user?.id ? 1 : 0
   const preview = msg.attachment_url
     ? (msg.attachment_type?.startsWith('image/') ? '📷 Imagen' : msg.attachment_type?.startsWith('video/') ? '🎥 Video' : '📎 Archivo')
-    // Sin marcas: en el listado de conversaciones se pinta como texto, así que
-    // los asteriscos y guiones del Markdown se verían en crudo.
     : markdownATexto(msg.contenido)
   if (conv) {
     conv.last_message = preview
-    conv.last_time    = msg.created_at
+    conv.last_time = msg.created_at
     conv.unread_count += unread
-    // El nuevo mensaje sustituye a la lápida en la vista previa.
     conv.last_eliminado = false
     convs.value = [conv, ...convs.value.filter(c => c.peer_id !== peerId)]
   } else {
@@ -326,7 +274,7 @@ function refreshConvEntry(msg: Mensaje) {
             existing.avatar_url = res.data.user.avatar_url
           }
         }
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 }
@@ -338,7 +286,7 @@ function formatTime(iso: string) {
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
   if (diffDays === 0) return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
   if (diffDays === 1) return 'ayer'
-  if (diffDays < 7)  return d.toLocaleDateString('es', { weekday: 'short' })
+  if (diffDays < 7) return d.toLocaleDateString('es', { weekday: 'short' })
   return d.toLocaleDateString('es', { day: '2-digit', month: 'short' })
 }
 function formatDateSep(iso: string) {
@@ -456,7 +404,6 @@ async function sendMensaje() {
       attachmentUrl = uploaded.url
       attachmentType = uploaded.type
       uploadingFile.value = false
-      // update preview with final URL
       const idx2 = msgs.value.findIndex(m => m._tempId === tempId)
       if (idx2 !== -1) msgs.value[idx2]!.attachment_url = attachmentUrl
     }
@@ -473,16 +420,13 @@ async function sendMensaje() {
     const preview = attachmentUrl ? (attachmentType?.startsWith('image/') ? '📷 Imagen' : attachmentType?.startsWith('video/') ? '🎥 Video' : '📎 Archivo') : text
     if (conv) {
       conv.last_message = preview
-      conv.last_time    = res.data.created_at
+      conv.last_time = res.data.created_at
       convs.value = [conv, ...convs.value.filter(c => c.peer_id !== activePeerId.value)]
     } else {
       convs.value.unshift({ peer_id: activePeerId.value!, peer_name: peerName.value, last_message: preview, last_time: res.data.created_at, unread_count: 0, is_group: isGroup })
     }
   } catch (e: any) {
     uploadingFile.value = false
-    // 403 = el destinatario ya no comparte capacitación. Reintentar nunca va a
-    // funcionar, así que el borrador se retira en vez de dejar un mensaje
-    // fallido con botón de "reintentar" que solo repetiría el rechazo.
     const bloqueado = e.response?.status === 403
     const idx = msgs.value.findIndex(m => m._tempId === tempId)
     if (idx !== -1) {
@@ -523,15 +467,6 @@ function autoResizeTextarea() {
 }
 
 // ─── Borrado ───────────────────────────────────────────────────────────────
-//
-// Dos operaciones, como en WhatsApp:
-//   "Eliminar para mí"    → lo oculta de esta cuenta. El otro lo conserva.
-//   "Eliminar para todos" → lo quita también al otro y deja la lápida.
-//
-// Quién puede hacer qué lo decide el servidor; lo de aquí abajo solo evita
-// ofrecer un botón que iba a fallar.
-
-/** Menú flotante. Uno solo para los dos casos: nunca hay dos abiertos. */
 const menu = ref<{
   tipo: 'mensaje' | 'conversacion'
   id: string
@@ -541,11 +476,9 @@ const menu = ref<{
   esGrupo: boolean
 } | null>(null)
 
-/** Conversación pendiente de confirmar. Borrarla se lleva todo el historial. */
 const convPorBorrar = ref<Conversacion | null>(null)
 
 function abrirMenuMensaje(msg: Mensaje, ev: MouseEvent) {
-  // Un mensaje que todavía no llegó al servidor no tiene id que borrar.
   if (msg._tempId && msg._status !== 'sent') return
   if (msg.eliminado) return
   menu.value = {
@@ -576,8 +509,6 @@ async function eliminarMensaje(msgId: string, paraTodos: boolean) {
   try {
     await api.delete(`/mensajes/mensaje/${msgId}`, { params: { todos: paraTodos } })
     if (paraTodos) {
-      // Se queda la burbuja con la lápida, igual que en WhatsApp: que el hueco
-      // desaparezca sin más hace dudar de si se borró o si nunca se envió.
       const m = msgs.value.find(x => x.id === msgId)
       if (m) { m.eliminado = true; m.contenido = ''; m.attachment_url = undefined }
     } else {
@@ -597,8 +528,6 @@ async function eliminarConversacion() {
       params: { is_group: !!conv.is_group },
     })
     convs.value = convs.value.filter(c => c.peer_id !== conv.peer_id)
-    // Si era la conversación abierta hay que salir de ella: dejarla en pantalla
-    // mostraría un hilo que ya no existe y que al recargar daría vacío.
     if (activePeerId.value === conv.peer_id) {
       msgs.value = []
       router.replace(`${auth.isInstructor ? '/instructor' : '/usuario'}/mensajes`)
@@ -608,7 +537,6 @@ async function eliminarConversacion() {
   }
 }
 
-/** Saca el motivo real del servidor cuando lo hay; si no, el texto de reserva. */
 function mostrarError(e: unknown, respaldo: string) {
   const detalle = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
   errorMsg.value = detalle || respaldo
@@ -684,8 +612,6 @@ watch(activePeerId, async (peerId) => {
 }, { immediate: true })
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────
-// Escape cierra lo que esté abierto, de dentro hacia fuera. Va en `window` y no
-// en el overlay porque el foco puede estar en cualquier parte cuando se pulsa.
 function onEscape(e: KeyboardEvent) {
   if (e.key !== 'Escape') return
   if (convPorBorrar.value) { convPorBorrar.value = null; return }
@@ -694,16 +620,16 @@ function onEscape(e: KeyboardEvent) {
 
 onMounted(async () => {
   await loadConversaciones()
-  connectWs()
+  wsStore.onMensaje(handleWsEvent)
   window.addEventListener('keydown', onEscape)
 })
 
 onUnmounted(() => {
-  disconnectWs()
   sentinelObserver?.disconnect()
   if (typingHideTimer) clearTimeout(typingHideTimer)
   window.removeEventListener('keydown', onEscape)
-  llamada.limpiar()
+  // Opcional: si añadiste un método en el store para limpiar eventos:
+  // wsStore.offMensaje?.(handleWsEvent)
 })
 </script>
 
@@ -716,10 +642,19 @@ onUnmounted(() => {
         <h2>Mensajes</h2>
         <div class="convs-actions">
           <button class="action-btn" title="Nuevo Mensaje" @click="showSearchUserModal = true">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
           </button>
           <button class="action-btn" title="Nuevo Grupo" @click="showCreateGroupModal = true">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              <line x1="12" y1="12" x2="12" y2="18" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
           </button>
         </div>
       </div>
@@ -729,19 +664,24 @@ onUnmounted(() => {
       </div>
       <div v-else-if="convs.length === 0" class="convs-empty">
         <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          <path
+            d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
         <p>Aún no tienes mensajes</p>
       </div>
       <ul v-else class="convs-list">
-        <li
-          v-for="conv in convs" :key="conv.peer_id"
-          :class="['conv-item', conv.peer_id === activePeerId ? 'active' : '']"
-          @click="openConversacion(conv)"
-        >
-          <div class="conv-avatar clickable-avatar" @click.stop="!conv.is_group && verPerfilId(conv.peer_id)" :title="conv.is_group ? 'Grupo' : 'Ver perfil'">
+        <li v-for="conv in convs" :key="conv.peer_id"
+          :class="['conv-item', conv.peer_id === activePeerId ? 'active' : '']" @click="openConversacion(conv)">
+          <div class="conv-avatar clickable-avatar" @click.stop="!conv.is_group && verPerfilId(conv.peer_id)"
+            :title="conv.is_group ? 'Grupo' : 'Ver perfil'">
             <template v-if="conv.is_group">
-              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
             </template>
             <template v-else>
               <img v-if="conv.avatar_url" :src="conv.avatar_url" :alt="conv.peer_name" />
@@ -759,14 +699,12 @@ onUnmounted(() => {
               <span v-if="conv.unread_count > 0" class="conv-badge">{{ conv.unread_count }}</span>
             </div>
           </div>
-          <button
-            class="conv-menu-btn"
-            type="button"
-            :aria-label="`Opciones de la conversación con ${conv.peer_name}`"
-            @click.stop="abrirMenuConversacion(conv, $event)"
-          >
+          <button class="conv-menu-btn" type="button" :aria-label="`Opciones de la conversación con ${conv.peer_name}`"
+            @click.stop="abrirMenuConversacion(conv, $event)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" />
+              <circle cx="12" cy="5" r="1.8" />
+              <circle cx="12" cy="12" r="1.8" />
+              <circle cx="12" cy="19" r="1.8" />
             </svg>
           </button>
         </li>
@@ -778,30 +716,44 @@ onUnmounted(() => {
 
       <div v-if="!activePeerId" class="thread-empty">
         <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
-          <path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          <path
+            d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.862 9.862 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
         <p>Selecciona una conversación para leer tus mensajes</p>
       </div>
 
       <template v-else>
-          <!-- Header -->
+        <!-- Header -->
         <div class="thread-header">
           <button class="back-btn" @click="router.back()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          <div class="thread-avatar clickable-avatar" @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)" :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">
+          <div class="thread-avatar clickable-avatar"
+            @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)"
+            :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">
             <template v-if="convs.find(c => c.peer_id === activePeerId)?.is_group">
-              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg style="width: 100%; height: 100%; color: #fff; padding: 6px;" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
             </template>
             <template v-else>
               <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
               <span v-else>{{ initials(peerName) }}</span>
             </template>
           </div>
-          <span class="thread-peername clickable-name" @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)" :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">{{ peerName || '...' }}</span>
-          
+          <span class="thread-peername clickable-name"
+            @click="!convs.find(c => c.peer_id === activePeerId)?.is_group && verPerfilId(activePeerId!)"
+            :title="convs.find(c => c.peer_id === activePeerId)?.is_group ? 'Grupo' : 'Ver perfil'">{{ peerName || '...'
+            }}</span>
+
           <div style="flex-grow: 1;"></div>
-          
+
           <button class="videocall-btn" @click="startVideoCall" title="Iniciar Videollamada">
             <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
               <path d="M23 7l-7 5 7 5V7z" />
@@ -823,15 +775,14 @@ onUnmounted(() => {
           </div>
 
           <div v-if="loadingMsgs" class="thread-loading"><span class="spinner"></span></div>
-          <div v-else-if="msgs.length === 0" class="thread-no-msgs"><p>Sé el primero en escribir 👋</p></div>
+          <div v-else-if="msgs.length === 0" class="thread-no-msgs">
+            <p>Sé el primero en escribir 👋</p>
+          </div>
 
           <TransitionGroup v-else name="list" tag="div" class="msgs-list">
             <template v-for="(msg, idx) in msgs" :key="msg._tempId ?? msg.id">
               <!-- Separador de fecha -->
-              <div
-                v-if="idx === 0 || !isSameDay(msgs[idx - 1]!.created_at, msg.created_at)"
-                class="date-sep"
-              >
+              <div v-if="idx === 0 || !isSameDay(msgs[idx - 1]!.created_at, msg.created_at)" class="date-sep">
                 <span>{{ formatDateSep(msg.created_at) }}</span>
               </div>
 
@@ -843,9 +794,11 @@ onUnmounted(() => {
                 isLastInGroup(idx) ? 'last-in-group' : '',
                 msg._status === 'error' ? 'has-error' : '',
               ]">
-                <!-- Foto de perfil del otro usuario (solo si es "theirs" y es el primer mensaje de la tanda) -->
-                <div v-if="msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="msg-avatar clickable-avatar" @click="verPerfilId(msg.emisor_id)" title="Ver perfil">
-                  <span v-if="convs.find(c => c.peer_id === activePeerId)?.is_group" style="font-size: 0.75rem;">{{ initials(msg.emisor_name) }}</span>
+                <!-- Foto de perfil del otro usuario -->
+                <div v-if="msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="msg-avatar clickable-avatar"
+                  @click="verPerfilId(msg.emisor_id)" title="Ver perfil">
+                  <span v-if="convs.find(c => c.peer_id === activePeerId)?.is_group" style="font-size: 0.75rem;">{{
+                    initials(msg.emisor_name) }}</span>
                   <template v-else>
                     <img v-if="peerAvatar" :src="peerAvatar" :alt="peerName" />
                     <span v-else>{{ initials(peerName) }}</span>
@@ -854,88 +807,73 @@ onUnmounted(() => {
                 <div v-else-if="msg.emisor_id !== auth.user?.id" class="msg-avatar-placeholder"></div>
 
                 <div class="bubble" :class="{ 'bubble-borrado': msg.eliminado }">
-                  <div v-if="convs.find(c => c.peer_id === activePeerId)?.is_group && msg.emisor_id !== auth.user?.id && !isContinued(idx)" class="group-sender-name">
+                  <div
+                    v-if="convs.find(c => c.peer_id === activePeerId)?.is_group && msg.emisor_id !== auth.user?.id && !isContinued(idx)"
+                    class="group-sender-name">
                     {{ msg.emisor_name }}
                   </div>
 
-                  <!--
-                    Mensaje borrado para todos. Se deja la burbuja con la lápida
-                    en lugar de quitarla: el hueco sin explicación hace dudar de
-                    si el mensaje se borró o nunca llegó a enviarse.
-                    El v-if envuelve al resto porque el servidor ya no manda ni
-                    contenido ni adjunto, pero el resto del bloque no tiene por
-                    qué enterarse de eso.
-                  -->
+                  <!-- Mensaje borrado para todos -->
                   <div v-if="msg.eliminado" class="msg-borrado">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle cx="12" cy="12" r="10" /><path d="M4.9 4.9l14.2 14.2" />
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                      aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M4.9 4.9l14.2 14.2" />
                     </svg>
                     <span>Se eliminó este mensaje</span>
                   </div>
 
                   <template v-else>
-                  <!-- Adjunto: imagen -->
-                  <div v-if="msg.attachment_url && msg.attachment_type?.startsWith('image/')" class="attachment attachment-image">
-                    <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer">
-                      <img :src="msg.attachment_url" alt="imagen adjunta" loading="lazy" />
-                    </a>
-                  </div>
-                  <!-- Adjunto: video -->
-                  <div v-else-if="msg.attachment_url && msg.attachment_type?.startsWith('video/')" class="attachment attachment-video">
-                    <video :src="msg.attachment_url" controls preload="metadata" />
-                  </div>
-                  <!-- Adjunto: archivo genérico -->
-                  <div v-else-if="msg.attachment_url" class="attachment attachment-file">
-                    <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer" download>
-                      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      <span>{{ msg.attachment_url.split('/').pop() }}</span>
-                    </a>
-                  </div>
-                  
-                  <!-- Contenido del mensaje -->
-                  <div v-if="msg.contenido">
-                    <!--
-                      Registro de llamada. Ya no lleva sala embebida ni botón de
-                      "unirse con el código": es solo la constancia de que hubo
-                      una llamada, como en cualquier app de mensajería. Volver a
-                      llamar se hace con el botón de la cabecera, que timbra.
-                    -->
-                    <template v-if="esRegistroDeLlamada(msg.contenido)">
-                      <div class="call-log" :class="{ perdida: msg.contenido.includes('perdida') || msg.contenido.includes('sin respuesta') }">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    <!-- Adjunto: imagen -->
+                    <div v-if="msg.attachment_url && msg.attachment_type?.startsWith('image/')"
+                      class="attachment attachment-image">
+                      <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer">
+                        <img :src="msg.attachment_url" alt="imagen adjunta" loading="lazy" />
+                      </a>
+                    </div>
+                    <!-- Adjunto: video -->
+                    <div v-else-if="msg.attachment_url && msg.attachment_type?.startsWith('video/')"
+                      class="attachment attachment-video">
+                      <video :src="msg.attachment_url" controls preload="metadata" />
+                    </div>
+                    <!-- Adjunto: archivo genérico -->
+                    <div v-else-if="msg.attachment_url" class="attachment attachment-file">
+                      <a :href="msg.attachment_url" target="_blank" rel="noopener noreferrer" download>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
                         </svg>
-                        <span>{{ msg.contenido.replace('📞', '').trim() }}</span>
-                      </div>
-                    </template>
-                    <!--
-                      Mensaje normal, con formato.
-                      v-html sobre renderMarkdown, que sanea siempre. La
-                      variante `chat` recorta la lista blanca: sin títulos ni
-                      separadores, que en una burbuja quedan fuera de lugar y
-                      permitirían escribir a tamaño gigante en la conversación
-                      de otra persona.
-                    -->
-                    <template v-else>
-                      <div class="md-render md-chat" v-html="renderMarkdown(msg.contenido, 'chat')" />
-                    </template>
-                  </div>
+                        <span>{{ msg.attachment_url.split('/').pop() }}</span>
+                      </a>
+                    </div>
+
+                    <!-- Contenido del mensaje -->
+                    <div v-if="msg.contenido">
+                      <!-- Registro de llamada -->
+                      <template v-if="esRegistroDeLlamada(msg.contenido)">
+                        <div class="call-log"
+                          :class="{ perdida: msg.contenido.includes('perdida') || msg.contenido.includes('sin respuesta') }">
+                          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 7l-7 5 7 5V7z" />
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                          </svg>
+                          <span>{{ msg.contenido.replace('📞', '').trim() }}</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="md-render md-chat" v-html="renderMarkdown(msg.contenido, 'chat')" />
+                      </template>
+                    </div>
                   </template>
 
-                  <!--
-                    Disparador del menú de borrado. Solo aparece al pasar el
-                    ratón por encima —o siempre en táctil, que no tiene hover—,
-                    para no ensuciar el hilo con un icono por burbuja.
-                  -->
-                  <button
-                    v-if="!msg.eliminado && (!msg._tempId || msg._status === 'sent')"
-                    class="bubble-menu-btn"
-                    type="button"
-                    aria-label="Opciones del mensaje"
-                    @click.stop="abrirMenuMensaje(msg, $event)"
-                  >
+                  <!-- Disparador del menú de borrado -->
+                  <button v-if="!msg.eliminado && (!msg._tempId || msg._status === 'sent')" class="bubble-menu-btn"
+                    type="button" aria-label="Opciones del mensaje" @click.stop="abrirMenuMensaje(msg, $event)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round" />
                     </svg>
                   </button>
 
@@ -947,11 +885,8 @@ onUnmounted(() => {
                       <span v-else title="Enviado">✓</span>
                     </span>
                   </span>
-                  <button
-                    v-if="msg._status === 'error' && msg._tempId"
-                    class="retry-btn"
-                    @click="retrySend(msg._tempId)"
-                  >Reintentar</button>
+                  <button v-if="msg._status === 'error' && msg._tempId" class="retry-btn"
+                    @click="retrySend(msg._tempId)">Reintentar</button>
                 </div>
               </div>
             </template>
@@ -969,60 +904,41 @@ onUnmounted(() => {
 
         <!-- Input -->
         <div class="thread-input-area">
-          <!-- Preview de archivo pendiente -->
           <div v-if="pendingFile" class="pending-attachment">
             <img v-if="pendingPreview" :src="pendingPreview" class="pending-thumb" alt="preview" />
             <span v-else class="pending-filename">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
               {{ pendingFile.name }}
             </span>
-            <button class="remove-attachment-btn" type="button" @click="removePendingFile" aria-label="Quitar adjunto">✕</button>
+            <button class="remove-attachment-btn" type="button" @click="removePendingFile"
+              aria-label="Quitar adjunto">✕</button>
           </div>
           <form class="thread-input" @submit.prevent="sendMensaje">
-            <!-- Input oculto para archivos -->
-            <input
-              ref="fileInputRef"
-              type="file"
-              hidden
-              :accept="ALLOWED_MIME.join(',')"
-              @change="onFileSelected"
-            />
-            <button
-              type="button"
-              class="attach-btn"
-              :disabled="sending || uploadingFile"
-              aria-label="Tomar fotografía"
-              @click="showCamera = true"
-            >
+            <input ref="fileInputRef" type="file" hidden :accept="ALLOWED_MIME.join(',')" @change="onFileSelected" />
+            <button type="button" class="attach-btn" :disabled="sending || uploadingFile" aria-label="Tomar fotografía"
+              @click="showCamera = true">
               <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
               </svg>
             </button>
-            <button
-              type="button"
-              class="attach-btn"
-              :disabled="sending || uploadingFile"
-              aria-label="Adjuntar archivo"
-              @click="fileInputRef?.click()"
-            >
+            <button type="button" class="attach-btn" :disabled="sending || uploadingFile" aria-label="Adjuntar archivo"
+              @click="fileInputRef?.click()">
               <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
               </svg>
             </button>
-            <textarea
-              ref="textareaRef"
-              v-model="newMsg"
-              rows="1"
-              placeholder="Escribe un mensaje…"
-              :disabled="sending || uploadingFile"
-              @keydown="handleKeydown"
-              @input="autoResizeTextarea"
-            ></textarea>
-            <button type="submit" :disabled="(!newMsg.trim() && !pendingFile) || sending || uploadingFile" aria-label="Enviar">
+            <textarea ref="textareaRef" v-model="newMsg" rows="1" placeholder="Escribe un mensaje…"
+              :disabled="sending || uploadingFile" @keydown="handleKeydown" @input="autoResizeTextarea"></textarea>
+            <button type="submit" :disabled="(!newMsg.trim() && !pendingFile) || sending || uploadingFile"
+              aria-label="Enviar">
               <span v-if="uploadingFile" class="spinner spinner-sm" style="border-top-color:#fff"></span>
               <svg v-else width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
               </svg>
             </button>
           </form>
@@ -1031,88 +947,35 @@ onUnmounted(() => {
     </section>
 
     <!-- Modal de Cámara -->
-    <CameraCapture
-      v-if="showCamera"
-      @capture="onCameraCapture"
-      @close="showCamera = false"
-      @gallery="onGalleryFromCamera"
-    />
+    <CameraCapture v-if="showCamera" @capture="onCameraCapture" @close="showCamera = false"
+      @gallery="onGalleryFromCamera" />
 
-    <!-- Timbre: llamada entrante o saliente antes de conectar -->
-    <LlamadaTimbrando
-      v-if="llamada.estado.value === 'entrante' || llamada.estado.value === 'saliente'"
-      :modo="llamada.estado.value === 'entrante' ? 'entrante' : 'saliente'"
-      :nombre="llamada.nombreOtro.value"
-      :is-group="!!llamada.llamada.value?.is_group"
-      :restantes="llamada.restantes.value"
-      @aceptar="llamada.aceptar"
-      @rechazar="llamada.rechazar"
-      @colgar="llamada.colgar"
-    />
-
-    <!-- Videollamada ya conectada. Solo se monta con token válido en mano. -->
-    <VideoCallModal
-      v-if="llamada.estado.value === 'en_llamada' && llamada.credenciales.value"
-      :roomName="llamada.credenciales.value.sala"
-      :domain="llamada.credenciales.value.dominio"
-      :jwt="llamada.credenciales.value.token"
-      :userName="auth.user?.name ?? 'Usuario'"
-      @close="llamada.colgar"
-    />
-
-    <!-- Aviso breve del resultado de la llamada (rechazada, sin respuesta…) -->
-    <div v-if="llamada.aviso.value" class="call-toast" role="status">{{ llamada.aviso.value }}</div>
-
-    <!--
-      Menú de borrado. Uno solo para mensajes y conversaciones, posicionado
-      donde se pulsó: dos menús separados darían dos formas de cerrar, dos
-      capturas de Escape y dos maneras de quedarse abiertos a la vez.
-    -->
+    <!-- Menú de borrado -->
     <div v-if="menu" class="menu-overlay" @click="cerrarMenu" @contextmenu.prevent="cerrarMenu">
-      <div
-        class="menu-flotante"
-        role="menu"
-        :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
-        @click.stop
-      >
+      <div class="menu-flotante" role="menu" :style="{ left: `${menu.x}px`, top: `${menu.y}px` }" @click.stop>
         <template v-if="menu.tipo === 'mensaje'">
           <button class="menu-opcion" role="menuitem" @click="eliminarMensaje(menu.id, false)">
             Eliminar para mí
           </button>
-          <button
-            v-if="menu.paraTodos"
-            class="menu-opcion peligro"
-            role="menuitem"
-            @click="eliminarMensaje(menu.id, true)"
-          >
+          <button v-if="menu.paraTodos" class="menu-opcion peligro" role="menuitem"
+            @click="eliminarMensaje(menu.id, true)">
             Eliminar para todos
           </button>
-          <!--
-            Explica por qué falta la segunda opción. Sin esto, quien intenta
-            retirar un mensaje viejo solo ve que "ya no está el botón" y no
-            tiene forma de saber que existe un plazo.
-          -->
           <p v-else class="menu-nota">
             Solo puedes eliminarlo para todos durante la primera hora, y si lo escribiste tú.
           </p>
         </template>
 
         <template v-else>
-          <button
-            class="menu-opcion peligro"
-            role="menuitem"
-            @click="convPorBorrar = convs.find(c => c.peer_id === menu!.id) ?? null; cerrarMenu()"
-          >
+          <button class="menu-opcion peligro" role="menuitem"
+            @click="convPorBorrar = convs.find(c => c.peer_id === menu!.id) ?? null; cerrarMenu()">
             Eliminar conversación
           </button>
         </template>
       </div>
     </div>
 
-    <!--
-      Confirmación solo para la conversación. Un mensaje suelto se recupera
-      volviendo a escribirlo; el historial entero, no.
-    -->
+    <!-- Confirmación para eliminar la conversación -->
     <div v-if="convPorBorrar" class="confirm-overlay" @click.self="convPorBorrar = null">
       <div class="confirm-caja" role="alertdialog" aria-labelledby="confirm-titulo">
         <h3 id="confirm-titulo">¿Eliminar la conversación?</h3>
@@ -1132,438 +995,990 @@ onUnmounted(() => {
     </div>
 
     <!-- Modal de Buscar Usuarios -->
-    <SearchUserModal
-      v-if="showSearchUserModal"
-      :show="showSearchUserModal"
-      @close="showSearchUserModal = false"
-      @select="handleUserSelected"
-    />
+    <SearchUserModal v-if="showSearchUserModal" :show="showSearchUserModal" @close="showSearchUserModal = false"
+      @select="handleUserSelected" />
 
     <!-- Modal de Crear Grupo -->
-    <CreateGroupModal
-      v-if="showCreateGroupModal"
-      :show="showCreateGroupModal"
-      @close="showCreateGroupModal = false"
-      @created="handleGroupCreated"
-    />
+    <CreateGroupModal v-if="showCreateGroupModal" :show="showCreateGroupModal" @close="showCreateGroupModal = false"
+      @created="handleGroupCreated" />
   </div>
 </template>
 
 <style scoped>
 /* ── Layout ────────────────────────────────────────────────────────────── */
-.mensajes-shell { display: flex; height: 100%; overflow: hidden; background: var(--surface); }
+.mensajes-shell {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface);
+}
 
 /* ── Panel izquierdo ────────────────────────────────────────────────────── */
 .convs-panel {
-  width: 320px; min-width: 260px;
+  width: 320px;
+  min-width: 260px;
   border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  background: var(--surface); overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  overflow: hidden;
 }
+
 .convs-header {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 1.25rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
 }
-.convs-header h2 { font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text); }
-.convs-actions { display: flex; gap: 0.5rem; }
-.action-btn { 
-  background: none; border: none; color: var(--text-muted); 
-  cursor: pointer; border-radius: 8px; padding: 0.4rem;
-  display: flex; align-items: center; justify-content: center;
+
+.convs-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.convs-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s, color 0.2s;
 }
-.action-btn:hover { background: var(--surface-hover); color: var(--primary); }
-.convs-loading, .convs-empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: .75rem; color: var(--text-muted); font-size: .9rem; padding: 2rem;
+
+.action-btn:hover {
+  background: var(--surface-hover);
+  color: var(--primary);
 }
-.convs-empty svg { opacity: .35; }
-.convs-list { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 0; }
+
+.convs-loading,
+.convs-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  color: var(--text-muted);
+  font-size: .9rem;
+  padding: 2rem;
+}
+
+.convs-empty svg {
+  opacity: .35;
+}
+
+.convs-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .conv-item {
-  display: flex; align-items: center; gap: .75rem;
-  padding: .85rem 1.25rem; cursor: pointer;
-  border-bottom: 1px solid var(--border); transition: background .15s;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1.25rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
 }
-.conv-item:hover { background: var(--surface-hover); }
-.conv-item.active { background: var(--primary-soft, rgba(59,130,246,.08)); }
+
+.conv-item:hover {
+  background: var(--surface-hover);
+}
+
+.conv-item.active {
+  background: var(--primary-soft, rgba(59, 130, 246, .08));
+}
+
 .conv-avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--primary, #3b82f6); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: .8rem; flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .8rem;
+  flex-shrink: 0;
 }
-.conv-info { flex: 1; min-width: 0; }
-.conv-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.conv-name { font-weight: 600; font-size: .9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.conv-time { font-size: .75rem; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
-.conv-preview { font-size: .82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.conv-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.conv-name {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-time {
+  font-size: .75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.conv-preview {
+  font-size: .82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .conv-badge {
-  background: var(--primary, #3b82f6); color: #fff;
-  font-size: .7rem; font-weight: 700;
-  border-radius: 999px; padding: .1rem .45rem;
-  min-width: 18px; text-align: center; flex-shrink: 0;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: .1rem .45rem;
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 /* ── Panel derecho ──────────────────────────────────────────────────────── */
-.thread-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; position: relative; }
-.thread-empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 1rem; color: var(--text-muted); font-size: .95rem;
-  padding: 2rem; text-align: center;
+.thread-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  position: relative;
 }
-.thread-empty svg { opacity: .3; }
+
+.thread-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-size: .95rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.thread-empty svg {
+  opacity: .3;
+}
 
 .thread-header {
-  display: flex; align-items: center; gap: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
   padding: .9rem 1.25rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
+
 .back-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-muted); padding: .25rem;
-  border-radius: .4rem; display: flex; align-items: center; transition: color .15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: .25rem;
+  border-radius: .4rem;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
 }
-.back-btn:hover { color: var(--text); }
+
+.back-btn:hover {
+  color: var(--text);
+}
+
 .thread-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--primary, #3b82f6); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: .75rem; flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .75rem;
+  flex-shrink: 0;
 }
-.thread-peername { font-weight: 600; font-size: 1rem; color: var(--text); }
+
+.thread-peername {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
 
 .error-toast {
-  position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-  background: #ef4444; color: #fff;
-  padding: .45rem 1rem; border-radius: .5rem;
-  font-size: .85rem; z-index: 20; white-space: nowrap;
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: #fff;
+  padding: .45rem 1rem;
+  border-radius: .5rem;
+  font-size: .85rem;
+  z-index: 20;
+  white-space: nowrap;
 }
-.toast-enter-active, .toast-leave-active { transition: opacity .3s, transform .3s; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity .3s, transform .3s;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+}
 
 .thread-body {
-  flex: 1; overflow-y: auto;
+  flex: 1;
+  overflow-y: auto;
   padding: .5rem 1.25rem .5rem;
-  display: flex; flex-direction: column; gap: .1rem;
-}
-.thread-loading, .thread-no-msgs {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); font-size: .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
 }
 
-.load-sentinel { display: flex; justify-content: center; min-height: 24px; padding: .25rem 0; }
+.thread-loading,
+.thread-no-msgs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: .9rem;
+}
 
-.date-sep { text-align: center; margin: .75rem 0; }
+.load-sentinel {
+  display: flex;
+  justify-content: center;
+  min-height: 24px;
+  padding: .25rem 0;
+}
+
+.date-sep {
+  text-align: center;
+  margin: .75rem 0;
+}
+
 .date-sep span {
-  background: var(--surface-soft); color: var(--text-muted);
-  font-size: .72rem; padding: .25rem .75rem; border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: .72rem;
+  padding: .25rem .75rem;
+  border-radius: 999px;
 }
 
-.msgs-list { display: flex; flex-direction: column; gap: .15rem; }
+.msgs-list {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
 
 /* Dentro de una burbuja el último párrafo no debe dejar hueco antes de la
  * hora: la burbuja ya tiene su propio padding. */
-.md-chat :deep(p:last-child) { margin-bottom: 0; }
-.md-chat :deep(ul), .md-chat :deep(ol) { margin-bottom: 0.4em; }
+.md-chat :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.md-chat :deep(ul),
+.md-chat :deep(ol) {
+  margin-bottom: 0.4em;
+}
 
 .bubble {
-  padding: .75rem 1rem; border-radius: 18px; max-width: 100%;
-  font-size: .95rem; line-height: 1.4; color: var(--text); position: relative;
-  display: flex; flex-direction: column; gap: 0.4rem;
+  padding: .75rem 1rem;
+  border-radius: 18px;
+  max-width: 100%;
+  font-size: .95rem;
+  line-height: 1.4;
+  color: var(--text);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
+
 .group-sender-name {
-  font-size: 0.8rem; font-weight: 600; color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
   margin-bottom: -0.25rem;
 }
 
 /* Burbujas */
-.bubble-wrap { display: flex; margin-bottom: .05rem; }
-.bubble-wrap.mine    { justify-content: flex-end; }
-.bubble-wrap.theirs  { justify-content: flex-start; }
-.bubble-wrap.continued  { margin-top: .05rem; }
-.bubble-wrap.last-in-group { margin-bottom: .4rem; }
+.bubble-wrap {
+  display: flex;
+  margin-bottom: .05rem;
+}
+
+.bubble-wrap.mine {
+  justify-content: flex-end;
+}
+
+.bubble-wrap.theirs {
+  justify-content: flex-start;
+}
+
+.bubble-wrap.continued {
+  margin-top: .05rem;
+}
+
+.bubble-wrap.last-in-group {
+  margin-bottom: .4rem;
+}
 
 .bubble {
-  max-width: 72%; padding: .55rem .85rem;
-  border-radius: 1.2rem; font-size: .9rem;
-  line-height: 1.5; word-break: break-word;
+  max-width: 72%;
+  padding: .55rem .85rem;
+  border-radius: 1.2rem;
+  font-size: .9rem;
+  line-height: 1.5;
+  word-break: break-word;
 }
-.bubble p { margin: 0 0 .2rem; }
-.bubble-meta { display: flex; align-items: center; justify-content: flex-end; gap: .3rem; }
-.bubble-time { font-size: .68rem; color: rgba(255,255,255,.65); }
-.status-icon { font-size: .7rem; }
-.status-icon .read { color: #fed7aa; }
+
+.bubble p {
+  margin: 0 0 .2rem;
+}
+
+.bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .3rem;
+}
+
+.bubble-time {
+  font-size: .68rem;
+  color: rgba(255, 255, 255, .65);
+}
+
+.status-icon {
+  font-size: .7rem;
+}
+
+.status-icon .read {
+  color: #fed7aa;
+}
 
 /* ── Borrado ────────────────────────────────────────────────────────────── */
 
-/* Mensaje eliminado para todos: se deja la burbuja, vaciada. */
 .msg-borrado {
-  display: flex; align-items: center; gap: .35rem;
-  font-style: italic; opacity: .7; font-size: .85rem;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-style: italic;
+  opacity: .7;
+  font-size: .85rem;
 }
-.msg-borrado svg { flex-shrink: 0; }
-.bubble.bubble-borrado { opacity: .85; }
-.conv-preview-borrado { font-style: italic; opacity: .75; }
 
-/*
- * Disparadores del menú. Ocultos hasta que el puntero entra en la fila o la
- * burbuja; en táctil no hay hover, así que la consulta de abajo los deja fijos.
- */
+.msg-borrado svg {
+  flex-shrink: 0;
+}
+
+.bubble.bubble-borrado {
+  opacity: .85;
+}
+
+.conv-preview-borrado {
+  font-style: italic;
+  opacity: .75;
+}
+
 .bubble-menu-btn,
 .conv-menu-btn {
-  background: none; border: none; padding: 2px; cursor: pointer;
-  color: inherit; opacity: 0; transition: opacity .15s;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 4px; flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0;
+  transition: opacity .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
+
 .bubble-menu-btn {
-  position: absolute; top: 4px; right: 6px;
+  position: absolute;
+  top: 4px;
+  right: 6px;
 }
+
 .bubble:hover .bubble-menu-btn,
-.bubble-menu-btn:focus-visible { opacity: .75; }
+.bubble-menu-btn:focus-visible {
+  opacity: .75;
+}
+
 .conv-item:hover .conv-menu-btn,
-.conv-menu-btn:focus-visible { opacity: .7; }
-.conv-menu-btn { color: var(--text-muted); width: 26px; height: 26px; }
-.conv-menu-btn:hover { background: var(--surface-hover); opacity: 1; }
+.conv-menu-btn:focus-visible {
+  opacity: .7;
+}
+
+.conv-menu-btn {
+  color: var(--text-muted);
+  width: 26px;
+  height: 26px;
+}
+
+.conv-menu-btn:hover {
+  background: var(--surface-hover);
+  opacity: 1;
+}
 
 @media (hover: none) {
-  /* Sin ratón no hay forma de descubrir un botón que solo aparece al pasar. */
-  .bubble-menu-btn, .conv-menu-btn { opacity: .55; }
+
+  .bubble-menu-btn,
+  .conv-menu-btn {
+    opacity: .55;
+  }
 }
 
-.menu-overlay { position: fixed; inset: 0; z-index: 60; }
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
 .menu-flotante {
-  position: fixed; min-width: 190px; max-width: 260px;
-  background: var(--surface, #fff); color: var(--text);
-  border: 1px solid var(--border); border-radius: .6rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,.18);
-  padding: .3rem; overflow: hidden;
-  /*
-   * Anclado a la esquina superior izquierda del clic y desplazado hacia dentro.
-   * translate(-100%) en X evita que se salga por el borde derecho, que es donde
-   * viven los dos disparadores.
-   */
+  position: fixed;
+  min-width: 190px;
+  max-width: 260px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: .6rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  padding: .3rem;
+  overflow: hidden;
   transform: translate(-100%, .35rem);
 }
+
 .menu-opcion {
-  display: block; width: 100%; text-align: left;
-  background: none; border: none; cursor: pointer;
-  padding: .55rem .7rem; border-radius: .4rem;
-  font-size: .88rem; color: var(--text);
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: .55rem .7rem;
+  border-radius: .4rem;
+  font-size: .88rem;
+  color: var(--text);
 }
-.menu-opcion:hover { background: var(--surface-hover); }
-.menu-opcion.peligro { color: #ef4444; }
+
+.menu-opcion:hover {
+  background: var(--surface-hover);
+}
+
+.menu-opcion.peligro {
+  color: #ef4444;
+}
+
 .menu-nota {
-  margin: .15rem .25rem .1rem; padding: .35rem .45rem;
-  font-size: .74rem; line-height: 1.35; color: var(--text-muted);
+  margin: .15rem .25rem .1rem;
+  padding: .35rem .45rem;
+  font-size: .74rem;
+  line-height: 1.35;
+  color: var(--text-muted);
   border-top: 1px solid var(--border);
 }
 
 .confirm-overlay {
-  position: fixed; inset: 0; z-index: 70;
-  background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
 }
+
 .confirm-caja {
-  background: var(--surface, #fff); color: var(--text);
-  border-radius: .8rem; padding: 1.3rem;
-  max-width: 420px; width: 100%;
-  box-shadow: 0 20px 50px rgba(0,0,0,.3);
+  background: var(--surface, #fff);
+  color: var(--text);
+  border-radius: .8rem;
+  padding: 1.3rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
 }
-.confirm-caja h3 { margin: 0 0 .6rem; font-size: 1.05rem; }
-.confirm-caja p { margin: 0 0 .5rem; font-size: .88rem; line-height: 1.5; color: var(--text-muted); }
-.confirm-nota { font-size: .8rem !important; opacity: .85; }
-.confirm-botones { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
-.btn-secundario, .btn-peligro {
-  border-radius: .45rem; padding: .5rem .95rem;
-  font-size: .87rem; font-weight: 600; cursor: pointer;
+
+.confirm-caja h3 {
+  margin: 0 0 .6rem;
+  font-size: 1.05rem;
 }
-.btn-secundario { background: none; border: 1px solid var(--border); color: var(--text); }
-.btn-secundario:hover { background: var(--surface-hover); }
-.btn-peligro { background: #ef4444; border: 1px solid #ef4444; color: #fff; }
-.btn-peligro:hover { background: #dc2626; }
+
+.confirm-caja p {
+  margin: 0 0 .5rem;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.confirm-nota {
+  font-size: .8rem !important;
+  opacity: .85;
+}
+
+.confirm-botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-top: 1rem;
+}
+
+.btn-secundario,
+.btn-peligro {
+  border-radius: .45rem;
+  padding: .5rem .95rem;
+  font-size: .87rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secundario {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn-secundario:hover {
+  background: var(--surface-hover);
+}
+
+.btn-peligro {
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  color: #fff;
+}
+
+.btn-peligro:hover {
+  background: #dc2626;
+}
 
 .bubble-wrap.mine .bubble {
-  background: #f97316; color: #fff;
+  background: #f97316;
+  color: #fff;
   border-bottom-right-radius: .3rem;
 }
-.bubble-wrap.mine.continued .bubble { border-top-right-radius: .4rem; }
+
+.bubble-wrap.mine.continued .bubble {
+  border-top-right-radius: .4rem;
+}
+
 .bubble-wrap.theirs .bubble {
-  background: #e5e7eb; color: #1f2937;
+  background: #e5e7eb;
+  color: #1f2937;
   border-bottom-left-radius: .3rem;
 }
-.bubble-wrap.theirs.continued .bubble { border-top-left-radius: .4rem; }
-.bubble-wrap.theirs .bubble-time, .bubble-wrap.theirs .status-icon { color: #6b7280; }
 
-.bubble-wrap.has-error .bubble { opacity: .7; }
-.retry-btn {
-  display: block; margin-top: .35rem;
-  background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4);
-  border-radius: .4rem; color: #fff; font-size: .75rem;
-  padding: .2rem .6rem; cursor: pointer; transition: background .15s;
+.bubble-wrap.theirs.continued .bubble {
+  border-top-left-radius: .4rem;
 }
-.retry-btn:hover { background: rgba(255,255,255,.35); }
+
+.bubble-wrap.theirs .bubble-time,
+.bubble-wrap.theirs .status-icon {
+  color: #6b7280;
+}
+
+.bubble-wrap.has-error .bubble {
+  opacity: .7;
+}
+
+.retry-btn {
+  display: block;
+  margin-top: .35rem;
+  background: rgba(255, 255, 255, .2);
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: .4rem;
+  color: #fff;
+  font-size: .75rem;
+  padding: .2rem .6rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.retry-btn:hover {
+  background: rgba(255, 255, 255, .35);
+}
 
 /* Typing indicator */
-.typing-indicator { display: flex; justify-content: flex-start; padding: .25rem 0; }
+.typing-indicator {
+  display: flex;
+  justify-content: flex-start;
+  padding: .25rem 0;
+}
+
 .theirs-bubble {
   background: var(--surface-soft);
-  padding: .5rem .8rem; border-radius: 1.2rem; border-bottom-left-radius: .3rem;
-  display: inline-flex; align-items: center;
+  padding: .5rem .8rem;
+  border-radius: 1.2rem;
+  border-bottom-left-radius: .3rem;
+  display: inline-flex;
+  align-items: center;
 }
-.typing-dots { display: flex; gap: .25rem; align-items: center; }
+
+.typing-dots {
+  display: flex;
+  gap: .25rem;
+  align-items: center;
+}
+
 .typing-dots span {
-  width: 6px; height: 6px; border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--text-muted);
   animation: typingBounce 1.2s infinite ease-in-out;
 }
-.typing-dots span:nth-child(2) { animation-delay: .2s; }
-.typing-dots span:nth-child(3) { animation-delay: .4s; }
+
+.typing-dots span:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: .4s;
+}
+
 @keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30%            { transform: translateY(-5px); }
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translateY(-5px);
+  }
 }
 
 /* Transiciones */
-.list-enter-active { transition: all .3s ease; }
-.list-leave-active { transition: all .2s ease; }
-.list-enter-from   { opacity: 0; transform: translateY(15px); }
-.list-leave-to     { opacity: 0; transform: translateY(5px); }
+.list-enter-active {
+  transition: all .3s ease;
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity .25s; }
-.fade-enter-from, .fade-leave-to       { opacity: 0; }
+.list-leave-active {
+  transition: all .2s ease;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity .25s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
 /* Input */
 .thread-input {
-  display: flex; align-items: flex-end; gap: .6rem;
+  display: flex;
+  align-items: flex-end;
+  gap: .6rem;
   padding: .75rem 1.25rem 1rem;
   border-top: 1px solid var(--border);
   background: var(--surface);
 }
+
 .thread-input textarea {
-  flex: 1; resize: none;
-  border: 1.5px solid var(--border); border-radius: .75rem;
-  padding: .6rem .9rem; font-size: .9rem; font-family: inherit;
-  background: var(--surface-soft); color: var(--text);
-  outline: none; max-height: 120px; overflow-y: auto;
-  line-height: 1.5; transition: border-color .2s;
+  flex: 1;
+  resize: none;
+  border: 1.5px solid var(--border);
+  border-radius: .75rem;
+  padding: .6rem .9rem;
+  font-size: .9rem;
+  font-family: inherit;
+  background: var(--surface-soft);
+  color: var(--text);
+  outline: none;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.5;
+  transition: border-color .2s;
 }
-.thread-input textarea:focus { border-color: var(--primary, #3b82f6); }
-.thread-input textarea:disabled { opacity: .5; cursor: not-allowed; }
+
+.thread-input textarea:focus {
+  border-color: var(--primary, #3b82f6);
+}
+
+.thread-input textarea:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 .thread-input button[type="submit"] {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--primary, #3b82f6); color: #fff;
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: opacity .2s, transform .1s;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .2s, transform .1s;
 }
-.thread-input button[type="submit"]:hover  { opacity: .85; }
-.thread-input button[type="submit"]:active { transform: scale(.92); }
-.thread-input button[type="submit"]:disabled { opacity: .4; cursor: not-allowed; }
+
+.thread-input button[type="submit"]:hover {
+  opacity: .85;
+}
+
+.thread-input button[type="submit"]:active {
+  transform: scale(.92);
+}
+
+.thread-input button[type="submit"]:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
 
 /* Spinner */
 .spinner {
-  display: inline-block; width: 28px; height: 28px;
-  border: 3px solid var(--border); border-top-color: var(--primary, #3b82f6);
-  border-radius: 50%; animation: spin .7s linear infinite;
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary, #3b82f6);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
 }
-.spinner-sm { width: 18px; height: 18px; border-width: 2px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* Responsive */
 @media (max-width: 640px) {
-  .convs-panel { width: 100%; border-right: none; }
-  .hidden-mobile { display: none; }
+  .convs-panel {
+    width: 100%;
+    border-right: none;
+  }
+
+  .hidden-mobile {
+    display: none;
+  }
 }
 
 /* ── Adjuntos en burbujas ───────────────────────────────────────────────── */
-.attachment { margin-bottom: .35rem; border-radius: .6rem; overflow: hidden; }
+.attachment {
+  margin-bottom: .35rem;
+  border-radius: .6rem;
+  overflow: hidden;
+}
+
 .attachment-image img {
-  display: block; max-width: 260px; max-height: 280px;
-  width: 100%; object-fit: cover; border-radius: .6rem;
-  cursor: pointer; transition: opacity .15s;
+  display: block;
+  max-width: 260px;
+  max-height: 280px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: .6rem;
+  cursor: pointer;
+  transition: opacity .15s;
 }
-.attachment-image img:hover { opacity: .9; }
+
+.attachment-image img:hover {
+  opacity: .9;
+}
+
 .attachment-video video {
-  display: block; max-width: 280px; max-height: 200px;
-  width: 100%; border-radius: .6rem; background: #000;
+  display: block;
+  max-width: 280px;
+  max-height: 200px;
+  width: 100%;
+  border-radius: .6rem;
+  background: #000;
 }
+
 .attachment-file a {
-  display: flex; align-items: center; gap: .5rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
   padding: .5rem .75rem;
-  background: rgba(0,0,0,.12); border-radius: .5rem;
-  color: inherit; text-decoration: none; font-size: .82rem;
-  transition: background .15s; word-break: break-all;
+  background: rgba(0, 0, 0, .12);
+  border-radius: .5rem;
+  color: inherit;
+  text-decoration: none;
+  font-size: .82rem;
+  transition: background .15s;
+  word-break: break-all;
 }
-.attachment-file a:hover { background: rgba(0,0,0,.2); }
-.bubble-wrap.theirs .attachment-file a { background: rgba(0,0,0,.07); }
+
+.attachment-file a:hover {
+  background: rgba(0, 0, 0, .2);
+}
+
+.bubble-wrap.theirs .attachment-file a {
+  background: rgba(0, 0, 0, .07);
+}
 
 /* ── Input con adjunto ──────────────────────────────────────────────────── */
 .thread-input-area {
   border-top: 1px solid var(--border);
   background: var(--surface);
 }
+
 .pending-attachment {
-  display: flex; align-items: center; gap: .6rem;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
   padding: .6rem 1.25rem .25rem;
   border-bottom: 1px solid var(--border);
 }
+
 .pending-thumb {
-  width: 56px; height: 56px; border-radius: .5rem;
-  object-fit: cover; flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: .5rem;
+  object-fit: cover;
+  flex-shrink: 0;
 }
+
 .pending-filename {
-  display: flex; align-items: center; gap: .4rem;
-  font-size: .82rem; color: var(--text); flex: 1; min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .82rem;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
   word-break: break-all;
 }
+
 .remove-attachment-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-muted); font-size: 1rem; padding: .2rem .4rem;
-  border-radius: .3rem; transition: color .15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding: .2rem .4rem;
+  border-radius: .3rem;
+  transition: color .15s;
 }
-.remove-attachment-btn:hover { color: #ef4444; }
+
+.remove-attachment-btn:hover {
+  color: #ef4444;
+}
 
 .thread-input {
-  display: flex; align-items: flex-end; gap: .6rem;
+  display: flex;
+  align-items: flex-end;
+  gap: .6rem;
   padding: .75rem 1.25rem 1rem;
   background: var(--surface);
   border-top: none;
 }
+
 .attach-btn {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: none; border: 1.5px solid var(--border);
-  color: var(--text-muted); cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: color .15s, border-color .15s;
 }
-.attach-btn:hover { color: var(--primary, #3b82f6); border-color: var(--primary, #3b82f6); }
-.attach-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.attach-btn:hover {
+  color: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
+}
+
+.attach-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
 
 /* ── Estilos de Foto de Perfil clickable y Msg avatars ── */
 .clickable-avatar {
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.1s ease;
 }
+
 .clickable-avatar:hover {
   opacity: 0.85;
   transform: scale(1.05);
 }
-.clickable-avatar img, .thread-avatar img, .conv-avatar img {
+
+.clickable-avatar img,
+.thread-avatar img,
+.conv-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
 }
+
 .clickable-name {
   cursor: pointer;
   transition: color 0.15s ease;
 }
+
 .clickable-name:hover {
   color: var(--primary, #3b82f6);
   text-decoration: underline;
@@ -1584,17 +1999,20 @@ onUnmounted(() => {
   margin-right: 8px;
   margin-top: 2px;
 }
+
 .msg-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
 }
+
 .msg-avatar-placeholder {
   width: 32px;
   margin-right: 8px;
   flex-shrink: 0;
 }
+
 .videocall-btn {
   background: var(--surface-soft);
   border: none;
@@ -1616,8 +2034,6 @@ onUnmounted(() => {
   transform: scale(1.05);
 }
 
-/* Constancia de llamada dentro del hilo. Es informativa: no lleva acción,
-   porque volver a llamar se hace con el botón de la cabecera, que timbra. */
 .call-log {
   display: flex;
   align-items: center;
@@ -1625,11 +2041,20 @@ onUnmounted(() => {
   font-size: 0.88rem;
   color: var(--muted);
 }
-.call-log svg { flex-shrink: 0; opacity: 0.8; }
-.call-log.perdida { color: var(--danger); }
-.call-log.perdida svg { opacity: 1; }
 
-/* Aviso efímero del desenlace de la llamada (rechazada, sin respuesta…). */
+.call-log svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.call-log.perdida {
+  color: var(--danger);
+}
+
+.call-log.perdida svg {
+  opacity: 1;
+}
+
 .call-toast {
   position: fixed;
   left: 50%;
