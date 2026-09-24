@@ -1331,11 +1331,11 @@ function tramitarDC3() {
                   <div class="ver-activity-head">
                     <div class="ver-activity-dates">
                       <div v-if="selectedLeccion.fecha_inicio" class="ver-act-date">
-                        <span class="ver-act-date-label">📅 Apertura:</span>
+                        <span class="ver-act-date-label">Apertura:</span>
                         <span class="ver-act-date-val">{{ formatActividadFecha(selectedLeccion.fecha_inicio) }}</span>
                       </div>
                       <div v-if="selectedLeccion.fecha_cierre" class="ver-act-date">
-                        <span class="ver-act-date-label">⏰ Cierre:</span>
+                        <span class="ver-act-date-label">Cierre:</span>
                         <span class="ver-act-date-val"
                           :class="{ 'ver-act-expired': isActividadCerrada(selectedLeccion.fecha_cierre) }">{{
                             formatActividadFecha(selectedLeccion.fecha_cierre) }}</span>
