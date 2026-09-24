@@ -1453,15 +1453,12 @@ function tramitarDC3() {
               <Transition name="slide-up">
                 <div v-if="selectedLeccion.completada && nextPendingLeccion" class="ver-next-suggestion">
                   <div class="ver-next-suggestion-left">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
                     <div>
                       <strong>Siguiente lección</strong>
                       <p>{{ nextPendingLeccion.title }}</p>
                     </div>
                   </div>
-                  <button class="btn btn-primary btn-sm" @click="goToLesson(nextPendingLeccion)">Continuar →</button>
+                  <button class="btn btn-primary btn-sm" @click="goToLesson(nextPendingLeccion)">Continuar</button>
                 </div>
               </Transition>
 
@@ -2403,7 +2400,7 @@ function tramitarDC3() {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  background: linear-gradient(135deg, #fefeff, #dbeafe);
   border: 1.5px solid #93c5fd;
   border-radius: var(--r-lg);
   padding: 16px 20px;
