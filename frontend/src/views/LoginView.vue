@@ -607,7 +607,6 @@ async function resetPassword() {
   backdrop-filter: blur(2px);
 }
 
-/* Each bubble: different size, position, duration, delay */
 .bubbles span:nth-child(1) {
   width: 48px;
   height: 48px;
@@ -690,6 +689,10 @@ async function resetPassword() {
   animation-duration: 8.5s;
   animation-delay: 2.8s;
   background: rgba(249, 115, 22, .1);
+}
+
+.bubbles span:nth-child(even) {
+  animation-direction: alternate;
 }
 
 @keyframes bubble-rise {
