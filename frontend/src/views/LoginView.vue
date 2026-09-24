@@ -91,7 +91,7 @@ async function submit() {
     localStorage.setItem('user', JSON.stringify(res.data.user))
     toast.success(`¡Bienvenido/a, ${res.data.user.name}!`, 'Sesión iniciada')
     let redirectPath = route.query.redirect as string | undefined
-    
+
     // Check if there's a stored redirect in sessionStorage (e.g., from B2B checkout)
     if (!redirectPath) {
       const storedRedirect = sessionStorage.getItem('redirect_after_login')
@@ -104,7 +104,7 @@ async function submit() {
     if (!redirectPath) {
       redirectPath = res.data.user?.role === 'admin' ? '/admin' : res.data.user?.role === 'instructor' ? '/instructor' : '/usuario'
     }
-    
+
     router.push(redirectPath).then((failure) => {
       if (failure) {
         console.warn('Router push failed/aborted, forcing hard navigation:', failure)
@@ -145,7 +145,7 @@ async function register() {
   if (!avisoAceptado.value) {
     toast.error('Debes aceptar el aviso de privacidad para crear tu cuenta.'); return
   }
-  
+
   regLoading.value = true
   try {
     const recaptcha_token = await getRecaptchaToken('register')
@@ -247,20 +247,29 @@ async function resetPassword() {
         <div class="hero-features">
           <div class="hero-feature">
             <span class="hero-feature-icon">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
             </span>
-            <span>Cursos con video, documentos y lecturas</span>
+            <span>Cursos basados en normativas aplicables</span>
           </div>
           <div class="hero-feature">
             <span class="hero-feature-icon">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+              </svg>
             </span>
             <span>Exámenes y seguimiento de progreso</span>
           </div>
         </div>
         <div style="margin-top: 32px;">
-          <button style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" @click="router.push('/tienda')">
-            Explorar Catálogo Público
+          <button
+            style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.1)'" @click="router.push('/tienda')">
+            Explorar Catálogo
           </button>
         </div>
       </div>
@@ -272,9 +281,10 @@ async function resetPassword() {
           <img src="../assets/logo-capacitaciones.png" alt="Capacitaciones MH" class="mobile-logo-img" />
           <span>Capacitaciones MH</span>
         </div>
-        
+
         <div class="mobile-store-btn" v-if="tab !== 'forgot'">
-          <button class="btn btn-secondary" style="width: 100%; margin-bottom: 24px;" @click="router.push('/tienda')">Explorar Catálogo Público</button>
+          <button class="btn btn-secondary" style="width: 100%; margin-bottom: 24px;"
+            @click="router.push('/tienda')">Explorar Catálogo Público</button>
         </div>
 
         <div class="form-tabs" v-if="tab !== 'forgot'">
@@ -290,18 +300,32 @@ async function resetPassword() {
           <form v-if="tab === 'login'" @submit.prevent="submit" class="auth-form">
             <div class="form-group">
               <label>Correo electrónico</label>
-              <input class="field-input" v-model="email" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+              <input class="field-input" v-model="email" type="email" placeholder="correo@empresa.com"
+                autocomplete="email" required />
             </div>
             <div class="form-group">
               <div style="display:flex; justify-content: space-between; align-items: baseline;">
                 <label>Contraseña</label>
-                <button type="button" class="link-btn-sm" @click="tab = 'forgot'; forgotStep = 1">¿Olvidaste tu contraseña?</button>
+                <button type="button" class="link-btn-sm" @click="tab = 'forgot'; forgotStep = 1">¿Olvidaste tu
+                  contraseña?</button>
               </div>
               <div class="pass-wrap">
-                <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" required />
-                <button type="button" class="pass-toggle" @click="showPass = !showPass" :title="showPass ? 'Ocultar' : 'Ver'">
-                  <svg v-if="!showPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                <input class="field-input" v-model="password" :type="showPass ? 'text' : 'password'"
+                  placeholder="••••••••" autocomplete="current-password" required />
+                <button type="button" class="pass-toggle" @click="showPass = !showPass"
+                  :title="showPass ? 'Ocultar' : 'Ver'">
+                  <svg v-if="!showPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                    </path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -315,34 +339,50 @@ async function resetPassword() {
               <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Términos</a>
             </p>
             <p class="form-footer">
-              ¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">Regístrate gratis</button>
+              ¿No tienes cuenta? <button type="button" class="link-btn" @click="tab = 'register'">Regístrate
+                gratis</button>
             </p>
           </form>
 
           <form v-else-if="tab === 'register'" @submit.prevent="register" class="auth-form">
             <div class="form-group">
               <label>Nombre completo</label>
-              <input class="field-input" v-model="regName" type="text" placeholder="Tu nombre completo" autocomplete="name" required />
+              <input class="field-input" v-model="regName" type="text" placeholder="Tu nombre completo"
+                autocomplete="name" required />
             </div>
             <div class="form-group">
               <label>Correo electrónico</label>
-              <input class="field-input" v-model="regEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+              <input class="field-input" v-model="regEmail" type="email" placeholder="correo@empresa.com"
+                autocomplete="email" required />
             </div>
-            
+
             <div class="pass-row">
               <div class="form-group" style="flex: 1;">
                 <label>Contraseña</label>
                 <div class="pass-wrap">
-                  <input class="field-input" v-model="regPassword" :type="showRegPass ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
-                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass" :title="showRegPass ? 'Ocultar' : 'Ver'">
-                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  <input class="field-input" v-model="regPassword" :type="showRegPass ? 'text' : 'password'"
+                    placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
+                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass"
+                    :title="showRegPass ? 'Ocultar' : 'Ver'">
+                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                      </path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
                   </button>
                 </div>
-          
+
                 <div class="pass-strength" v-if="regPassword">
                   <div class="strength-bar">
-                    <div class="strength-fill" :style="{ width: `${passStrength}%`, backgroundColor: strengthColor }"></div>
+                    <div class="strength-fill" :style="{ width: `${passStrength}%`, backgroundColor: strengthColor }">
+                    </div>
                   </div>
                   <span class="strength-text" :style="{ color: strengthColor }">{{ strengthText }}</span>
                 </div>
@@ -351,10 +391,22 @@ async function resetPassword() {
               <div class="form-group" style="flex: 1;">
                 <label>Confirmar contraseña</label>
                 <div class="pass-wrap">
-                  <input class="field-input" v-model="regConfirmPassword" :type="showRegPass ? 'text' : 'password'" placeholder="Repite tu contraseña" autocomplete="new-password" required minlength="8" />
-                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass" :title="showRegPass ? 'Ocultar' : 'Ver'">
-                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  <input class="field-input" v-model="regConfirmPassword" :type="showRegPass ? 'text' : 'password'"
+                    placeholder="Repite tu contraseña" autocomplete="new-password" required minlength="8" />
+                  <button type="button" class="pass-toggle" @click="showRegPass = !showRegPass"
+                    :title="showRegPass ? 'Ocultar' : 'Ver'">
+                    <svg v-if="!showRegPass" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg v-else width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                      viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                      </path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
                   </button>
                 </div>
                 <div v-if="regConfirmPassword && !passwordsMatch" class="form-hint error-hint">
@@ -372,7 +424,8 @@ async function resetPassword() {
               </span>
             </label>
 
-            <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="regLoading || !passwordsMatch || passStrength < 50 || !avisoAceptado">
+            <button type="submit" class="btn btn-primary btn-lg submit-btn"
+              :disabled="regLoading || !passwordsMatch || passStrength < 50 || !avisoAceptado">
               <span v-if="regLoading" class="btn-spinner"></span>
               {{ regLoading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
             </button>
@@ -386,23 +439,30 @@ async function resetPassword() {
             </p>
           </form>
 
-          <form v-else-if="tab === 'forgot' && forgotStep === 1" @submit.prevent="forgotPassword" class="auth-form forgot-form">
+          <form v-else-if="tab === 'forgot' && forgotStep === 1" @submit.prevent="forgotPassword"
+            class="auth-form forgot-form">
             <div class="forgot-header">
-              <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+              <div class="forgot-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg></div>
               <h2>Recuperar contraseña</h2>
               <p>Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
             </div>
-            
+
             <div class="form-group">
               <label>Correo electrónico</label>
-              <input class="field-input" v-model="forgotEmail" type="email" placeholder="correo@empresa.com" autocomplete="email" required />
+              <input class="field-input" v-model="forgotEmail" type="email" placeholder="correo@empresa.com"
+                autocomplete="email" required />
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg submit-btn" :disabled="forgotLoading">
               <span v-if="forgotLoading" class="btn-spinner"></span>
               {{ forgotLoading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
             </button>
-            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="tab = 'login'" :disabled="forgotLoading">
+            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0"
+              @click="tab = 'login'" :disabled="forgotLoading">
               Volver al inicio de sesión
             </button>
           </form>
@@ -411,7 +471,8 @@ async function resetPassword() {
             <div class="forgot-header">
               <div class="forgot-icon success-icon-wrap">
                 <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
               <h2>Revisa tu correo</h2>
@@ -426,7 +487,8 @@ async function resetPassword() {
             <button type="button" class="btn btn-primary btn-lg submit-btn" @click="tab = 'login'">
               Volver al inicio de sesión
             </button>
-            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0" @click="forgotStep = 1">
+            <button type="button" class="btn btn-secondary btn-lg submit-btn" style="margin-top:0"
+              @click="forgotStep = 1">
               Intentar con otro correo
             </button>
           </div>
@@ -437,106 +499,441 @@ async function resetPassword() {
 </template>
 
 <style scoped>
-.auth-page { display: flex; min-height: 100vh; min-height: 100dvh; }
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .auth-hero {
   flex: 0 0 47%;
   background:
-    linear-gradient(145deg, rgba(28,29,31,.98) 0%, rgba(38,35,31,.96) 100%),
-    linear-gradient(135deg, rgba(249,115,22,.22), rgba(37,99,235,.18));
-  display: flex; flex-direction: column; justify-content: center; padding: 60px 56px;
-  position: relative; overflow: hidden;
+    linear-gradient(145deg, rgba(28, 29, 31, .98) 0%, rgba(38, 35, 31, .96) 100%),
+    linear-gradient(135deg, rgba(249, 115, 22, .22), rgba(37, 99, 235, .18));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 56px;
+  position: relative;
+  overflow: hidden;
 }
-.hero-content { position: relative; z-index: 1; max-width: 520px; }
-.hero-logo { margin-bottom: 20px; }
-.hero-logo-img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 20px rgba(249,115,22,.4)); }
-.hero-title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 16px; }
-.hero-title span { color: var(--brand); }
-.hero-subtitle { color: rgba(255,255,255,.72); font-size: 0.96rem; line-height: 1.6; max-width: 430px; }
-.hero-features { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+}
+
+.hero-logo {
+  margin-bottom: 20px;
+}
+
+.hero-logo-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 20px rgba(249, 115, 22, .4));
+}
+
+.hero-title {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.hero-title span {
+  color: var(--brand);
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, .72);
+  font-size: 0.96rem;
+  line-height: 1.6;
+  max-width: 430px;
+}
+
+.hero-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
 .hero-feature {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: 10px;
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
-  color: rgba(255,255,255,.82); font-size: 0.88rem; font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: rgba(255, 255, 255, .82);
+  font-size: 0.88rem;
+  font-weight: 500;
 }
+
 .hero-feature-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
-  background: rgba(249,115,22,.2); border: 1px solid rgba(249,115,22,.3);
-  color: var(--brand); backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(249, 115, 22, .2);
+  border: 1px solid rgba(249, 115, 22, .3);
+  color: var(--brand);
+  backdrop-filter: blur(4px);
 }
 
 /* Bubbles animation */
 .bubbles {
-  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
+
 .bubbles span {
-  position: absolute; bottom: -120px;
+  position: absolute;
+  bottom: -120px;
   border-radius: 50%;
-  background: rgba(249,115,22,.12);
-  border: 1px solid rgba(249,115,22,.18);
+  background: rgba(249, 115, 22, .12);
+  border: 1px solid rgba(249, 115, 22, .18);
   animation: bubble-rise linear infinite;
   backdrop-filter: blur(2px);
 }
 
 /* Each bubble: different size, position, duration, delay */
-.bubbles span:nth-child(1)  { width: 48px;  height: 48px;  left: 8%;   animation-duration: 9s;  animation-delay: 0s;   }
-.bubbles span:nth-child(2)  { width: 28px;  height: 28px;  left: 18%;  animation-duration: 7s;  animation-delay: 1.5s; }
-.bubbles span:nth-child(3)  { width: 70px;  height: 70px;  left: 32%;  animation-duration: 11s; animation-delay: 0.8s; background: rgba(255,255,255,.05); }
-.bubbles span:nth-child(4)  { width: 22px;  height: 22px;  left: 45%;  animation-duration: 6s;  animation-delay: 3s;   }
-.bubbles span:nth-child(5)  { width: 54px;  height: 54px;  left: 58%;  animation-duration: 10s; animation-delay: 1s;   background: rgba(249,115,22,.08); }
-.bubbles span:nth-child(6)  { width: 18px;  height: 18px;  left: 68%;  animation-duration: 7.5s;animation-delay: 2.2s; }
-.bubbles span:nth-child(7)  { width: 36px;  height: 36px;  left: 76%;  animation-duration: 8s;  animation-delay: 0.3s; }
-.bubbles span:nth-child(8)  { width: 60px;  height: 60px;  left: 85%;  animation-duration: 12s; animation-delay: 4s;   background: rgba(255,255,255,.04); }
-.bubbles span:nth-child(9)  { width: 26px;  height: 26px;  left: 24%;  animation-duration: 9.5s;animation-delay: 5s;   }
-.bubbles span:nth-child(10) { width: 42px;  height: 42px;  left: 52%;  animation-duration: 8.5s;animation-delay: 2.8s; background: rgba(249,115,22,.1); }
-
-@keyframes bubble-rise {
-  0%   { transform: translateY(0)   scale(1)   rotate(0deg);   opacity: 0; }
-  10%  { opacity: 1; }
-  80%  { opacity: .7; }
-  100% { transform: translateY(-110vh) scale(1.15) rotate(30deg); opacity: 0; }
+.bubbles span:nth-child(1) {
+  width: 48px;
+  height: 48px;
+  left: 8%;
+  animation-duration: 9s;
+  animation-delay: 0s;
 }
 
-.auth-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); overflow-y: auto; }
-.auth-form-wrap { width: 100%; max-width: 440px; }
-.mobile-logo { display: none; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 28px; }
-.mobile-logo-img { width: 36px; height: 36px; object-fit: contain; }
-.form-tabs { display: flex; background: var(--border-light); border-radius: var(--r); padding: 4px; gap: 4px; margin-bottom: 28px; }
-.form-tab { flex: 1; padding: 9px; border: none; border-radius: var(--r-sm); background: transparent; font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: all 0.18s; cursor: pointer; }
-.form-tab.active { background: var(--surface); color: var(--dark); box-shadow: var(--shadow-sm); }
-.auth-form { display: flex; flex-direction: column; gap: 18px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--dark); }
-.pass-wrap { position: relative; }
-.pass-wrap .field-input { padding-right: 78px; }
-.pass-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--border-light); border: none; border-radius: 6px; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; transition: all 0.2s; }
-.pass-toggle:hover { background: var(--border); color: var(--dark); }
-.pass-row { display: flex; gap: 14px; flex-wrap: wrap; }
-.pass-strength { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 10px; }
-.strength-bar { flex: 1; height: 5px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
-.strength-fill { height: 100%; transition: all 0.3s ease; }
-.strength-text { font-size: 0.72rem; font-weight: 700; }
-.form-hint { font-size: 0.75rem; margin-top: 4px; }
-.error-hint { color: var(--danger); font-weight: 600; }
+.bubbles span:nth-child(2) {
+  width: 28px;
+  height: 28px;
+  left: 18%;
+  animation-duration: 7s;
+  animation-delay: 1.5s;
+}
+
+.bubbles span:nth-child(3) {
+  width: 70px;
+  height: 70px;
+  left: 32%;
+  animation-duration: 11s;
+  animation-delay: 0.8s;
+  background: rgba(255, 255, 255, .05);
+}
+
+.bubbles span:nth-child(4) {
+  width: 22px;
+  height: 22px;
+  left: 45%;
+  animation-duration: 6s;
+  animation-delay: 3s;
+}
+
+.bubbles span:nth-child(5) {
+  width: 54px;
+  height: 54px;
+  left: 58%;
+  animation-duration: 10s;
+  animation-delay: 1s;
+  background: rgba(249, 115, 22, .08);
+}
+
+.bubbles span:nth-child(6) {
+  width: 18px;
+  height: 18px;
+  left: 68%;
+  animation-duration: 7.5s;
+  animation-delay: 2.2s;
+}
+
+.bubbles span:nth-child(7) {
+  width: 36px;
+  height: 36px;
+  left: 76%;
+  animation-duration: 8s;
+  animation-delay: 0.3s;
+}
+
+.bubbles span:nth-child(8) {
+  width: 60px;
+  height: 60px;
+  left: 85%;
+  animation-duration: 12s;
+  animation-delay: 4s;
+  background: rgba(255, 255, 255, .04);
+}
+
+.bubbles span:nth-child(9) {
+  width: 26px;
+  height: 26px;
+  left: 24%;
+  animation-duration: 9.5s;
+  animation-delay: 5s;
+}
+
+.bubbles span:nth-child(10) {
+  width: 42px;
+  height: 42px;
+  left: 52%;
+  animation-duration: 8.5s;
+  animation-delay: 2.8s;
+  background: rgba(249, 115, 22, .1);
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: .7;
+  }
+
+  100% {
+    transform: translateY(-110vh) scale(1.15) rotate(30deg);
+    opacity: 0;
+  }
+}
+
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.auth-form-wrap {
+  width: 100%;
+  max-width: 440px;
+}
+
+.mobile-logo {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 28px;
+}
+
+.mobile-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.form-tabs {
+  display: flex;
+  background: var(--border-light);
+  border-radius: var(--r);
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+
+.form-tab {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.18s;
+  cursor: pointer;
+}
+
+.form-tab.active {
+  background: var(--surface);
+  color: var(--dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.pass-wrap {
+  position: relative;
+}
+
+.pass-wrap .field-input {
+  padding-right: 78px;
+}
+
+.pass-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--border-light);
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  transition: all 0.2s;
+}
+
+.pass-toggle:hover {
+  background: var(--border);
+  color: var(--dark);
+}
+
+.pass-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.pass-strength {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 10px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.strength-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.error-hint {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 /* Dos opciones de rol que se apilan solas si no caben, sin media query. */
 .role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
   gap: 10px;
 }
-.role-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 14px 10px; border: 2px solid var(--border); border-radius: var(--r); background: var(--surface); cursor: pointer; transition: all 0.18s; }
-.role-card:hover { border-color: var(--brand); }
-.role-card.selected { border-color: var(--brand); background: var(--brand-light); }
-.role-icon {
-  width: 38px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 7px; background: var(--border-light); color: var(--brand-dark); font-size: 0.72rem; font-weight: 900;
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 14px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.18s;
 }
-.role-card.selected .role-icon { background: var(--brand); color: #fff; }
-.role-card strong { font-size: 0.88rem; color: var(--dark); }
-.role-card small { font-size: 0.72rem; color: var(--muted); line-height: 1.2; }
-.submit-btn { width: 100%; margin-top: 4px; display: flex; justify-content: center; align-items: center; gap: 8px; }
-.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.role-card:hover {
+  border-color: var(--brand);
+}
+
+.role-card.selected {
+  border-color: var(--brand);
+  background: var(--brand-light);
+}
+
+.role-icon {
+  width: 38px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--border-light);
+  color: var(--brand-dark);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.role-card.selected .role-icon {
+  background: var(--brand);
+  color: #fff;
+}
+
+.role-card strong {
+  font-size: 0.88rem;
+  color: var(--dark);
+}
+
+.role-card small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .aviso-check {
   display: flex;
   align-items: flex-start;
@@ -548,33 +945,138 @@ async function resetPassword() {
   cursor: pointer;
 }
 
-.aviso-check input { margin-top: 3px; flex-shrink: 0; }
-.aviso-enlace { color: var(--brand); text-decoration: underline; }
+.aviso-check input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.aviso-enlace {
+  color: var(--brand);
+  text-decoration: underline;
+}
 
 .recaptcha-notice {
-  text-align: center; font-size: 0.72rem; color: var(--muted);
-  display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
 }
-.recaptcha-notice a { color: var(--muted); text-decoration: underline; }
-.recaptcha-notice a:hover { color: var(--brand); }
-.btn-spinner { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
-.form-footer { text-align: center; font-size: 0.85rem; color: var(--muted); }
-.link-btn { background: none; border: none; color: var(--brand); font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; }
-.link-btn-sm { background: none; border: none; color: var(--brand); font-weight: 600; cursor: pointer; padding: 0; font-size: 0.78rem; transition: color 0.2s; }
-.link-btn:hover, .link-btn-sm:hover { text-decoration: underline; color: var(--brand-dark); }
+
+.recaptcha-notice a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.recaptcha-notice a:hover {
+  color: var(--brand);
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(255, 255, 255, .4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.form-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.link-btn-sm {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.78rem;
+  transition: color 0.2s;
+}
+
+.link-btn:hover,
+.link-btn-sm:hover {
+  text-decoration: underline;
+  color: var(--brand-dark);
+}
 
 /* Forgot Password Styles */
-.forgot-header { text-align: center; margin-bottom: 24px; }
-.forgot-icon { font-size: 3rem; margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(249,115,22,.12); color: var(--brand); }
-.success-icon-wrap { background: rgba(16,185,129,.12) !important; color: #10b981 !important; }
-.forgot-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
-.forgot-header p { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
-.forgot-spam-hint { text-align:center; font-size:0.8rem; color:var(--muted); margin:-8px 0 4px; }
+.forgot-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.forgot-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, .12);
+  color: var(--brand);
+}
+
+.success-icon-wrap {
+  background: rgba(16, 185, 129, .12) !important;
+  color: #10b981 !important;
+}
+
+.forgot-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.forgot-header p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.forgot-spam-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: -8px 0 4px;
+}
 
 /* Transitions */
-.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.25s ease; }
-.fade-slide-enter-from { opacity: 0; transform: translateY(10px); }
-.fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
 
 /* lg (1024): el panel ilustrado desaparece y queda solo el formulario.
  *
@@ -582,19 +1084,34 @@ async function resetPassword() {
  * franja tan estrecha que la ilustración salía recortada y el formulario
  * quedaba comprimido: se veían mal las dos cosas a la vez. */
 @media (max-width: 1023px) {
-  .auth-hero { display: none; }
-  .auth-form-panel { padding: 32px 20px; }
-  .mobile-logo { display: flex; }
+  .auth-hero {
+    display: none;
+  }
+
+  .auth-form-panel {
+    padding: 32px 20px;
+  }
+
+  .mobile-logo {
+    display: flex;
+  }
 }
+
 /* Complementario exacto del anterior: el acceso a la tienda solo se ofrece
  * cuando el hero —que ya lo incluye— no está visible. */
 @media (min-width: 1024px) {
-  .mobile-store-btn { display: none; }
+  .mobile-store-btn {
+    display: none;
+  }
 }
+
 /* Antes en 420px, un valor sin relación con ningún dispositivo. Los dos campos
  * de contraseña ya no caben lado a lado bastante antes, así que se apilan en el
  * corte de móvil de la escala. */
 @media (max-width: 639px) {
-  .pass-row { flex-direction: column; gap: 14px; }
+  .pass-row {
+    flex-direction: column;
+    gap: 14px;
+  }
 }
 </style>
