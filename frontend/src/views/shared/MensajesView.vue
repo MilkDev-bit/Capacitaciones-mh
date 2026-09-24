@@ -1009,6 +1009,8 @@ onUnmounted(() => {
 .mensajes-shell {
   display: flex;
   height: 100%;
+  min-height: 0;
+  flex: 1;
   overflow: hidden;
   background: var(--surface);
 }
@@ -1021,6 +1023,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  height: 100%;
   overflow: hidden;
 }
 
@@ -1172,6 +1175,7 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow: hidden;
   min-width: 0;
   position: relative;
