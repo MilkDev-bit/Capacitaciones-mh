@@ -1416,12 +1416,12 @@ function tramitarDC3() {
 
               <div class="ver-lesson-actions">
                 <button class="btn btn-secondary" :disabled="!previousLeccion" @click="goToLesson(previousLeccion)">
-                  ← Anterior
+                  Anterior
                 </button>
                 <button
                   v-if="!selectedLeccion.completada && !isSelectedLeccionVideo && !isGameLesson(selectedLeccion) && !(String(selectedLeccion.lesson_type ?? selectedLeccion.type) === '10' && !entregaActual)"
                   class="btn btn-primary" @click="marcarCompleta">
-                  ✓ Marcar completada
+                  Marcar completada
                 </button>
                 <span v-else-if="!selectedLeccion.completada && isSelectedLeccionVideo" class="ver-video-info-chip"
                   style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-muted, #94a3b8);background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);">
@@ -1430,7 +1430,7 @@ function tramitarDC3() {
                 <button class="btn btn-secondary" :disabled="!nextLeccion"
                   :title="siguienteBloqueada ? 'Termina esta lección para continuar' : undefined"
                   @click="goToLesson(nextLeccion)">
-                  {{ siguienteBloqueada ? 'Termina esta lección' : 'Siguiente →' }}
+                  {{ siguienteBloqueada ? 'Termina esta lección' : 'Siguiente' }}
                 </button>
               </div>
 
@@ -1480,7 +1480,7 @@ function tramitarDC3() {
                   </div>
                   <div v-if="resultadoInt" class="ver-int-result">
                     <div style="font-size:2.5rem;font-weight:800;color:var(--brand)">{{ resultadoInt.puntaje.toFixed(1)
-                      }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
+                    }} / {{ resultadoInt.puntaje_max.toFixed(1) }}</div>
                     <p style="color:var(--muted);font-size:0.9rem">{{ resultadoInt.porcentaje?.toFixed(0) }}% correcto
                     </p>
                     <button @click="cerrarIntermediasYContinuar" class="btn btn-secondary btn-sm"
@@ -1603,7 +1603,7 @@ function tramitarDC3() {
                       </div>
                       <div class="fb-post-meta">
                         <router-link :to="`/usuario/perfil/${post.user_id}`" class="fb-post-author">{{ post.user_name
-                          }}</router-link>
+                        }}</router-link>
                         <span class="fb-post-time">{{ timeAgo(post.created_at) }}</span>
                       </div>
                       <button @click="eliminarPost(post.id)" class="fb-delete-btn" title="Eliminar publicación">

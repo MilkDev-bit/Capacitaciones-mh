@@ -197,7 +197,10 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
     <!-- ── Barra de control: flechas + dots ─────────────────────── -->
     <div v-if="hayControles" class="dock">
       <button class="dock__arrow" :disabled="!puedeIzq" aria-label="Anterior" @click="desplazar(-1)">
-        Anterior
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
       </button>
 
       <div class="dock__dots">
@@ -206,7 +209,10 @@ watch(() => props.courses, () => nextTick(medir), { deep: false })
       </div>
 
       <button class="dock__arrow" :disabled="!puedeDer" aria-label="Siguiente" @click="desplazar(1)">
-        Siguiente
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
       </button>
     </div>
   </section>
