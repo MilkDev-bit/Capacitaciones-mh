@@ -68,7 +68,7 @@ const PASOS: Paso[] = [
     nombre: 'ACCESOS',
     titulo: ['REPARTE', 'AL', 'EQUIPO'],
     cuerpo:
-      'Compra licencias corporativas, cada quien recibe su acceso. Si alguien deja la empresa, reasignas su lugar.',
+      'Compra licencias corporativas, cada quien recibe su acceso. Lugares reasignables.',
     icono: 'M17 20h5v-2a3 3 0 0 0-5.4-1.9M17 20H7m10 0v-2M7 20H2v-2a3 3 0 0 1 5.4-1.9M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   },
   {
