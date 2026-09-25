@@ -84,7 +84,7 @@ const PASOS: Paso[] = [
     clave: 'dc3',
     num: '06',
     nombre: 'DC-3',
-    titulo: ['TU', 'CONSTANCIA'],
+    titulo: ['TU', 'DC3'],
     cuerpo:
       'Al completar el curso se emite tu constancia DC-3, con el formato que pide la STPS. En compras corporativas avisamos al representante para que la descargue.',
     icono: 'M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8.2 13.8 7 22l5-3 5 3-1.2-8.2',
@@ -653,7 +653,8 @@ onUnmounted(() => {
 }
 
 .cf__sec {
-  min-height: 100vh; min-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   /* Aire a la derecha para el HUD y a la izquierda para el strip de pasos. */
