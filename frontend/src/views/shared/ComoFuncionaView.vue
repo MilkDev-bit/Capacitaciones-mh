@@ -342,7 +342,15 @@ onUnmounted(() => {
      resuelve contra el panel y sale igual al 0% que al 100% del recorrido. */
   --panel: rgba(13, 11, 30, 0.92);
   --panel-borde: rgba(245, 197, 78, 0.34);
+  /* Píldora ligera: mismo tratamiento que .cf__link, para que header, HUD y
+     strip de pasos se lean como una sola familia de "chrome" flotante en vez
+     de piezas sueltas con reglas de contraste distintas. */
+  --chip-fondo: rgba(15, 16, 48, 0.4);
+  --chip-borde: rgba(244, 241, 234, 0.18);
   --hueco: clamp(1rem, 4vw, 2rem);
+  /* Alto real de la cabecera (logo + paddings). El HUD se ancla a esto para
+     no volver a invadir la franja de navegación. */
+  --hdr-h: 4.5rem;
   position: relative;
   color: var(--tinta);
   background: #0f1030;
@@ -471,7 +479,11 @@ onUnmounted(() => {
 /* ── HUD ───────────────────────────────────────────────── */
 .hud {
   position: fixed;
-  top: var(--hueco);
+  /* Antes: top: var(--hueco), a la misma altura que la cabecera → el
+     porcentaje quedaba pegado (a veces montado) sobre "Ver catálogo" y,
+     al no tener fondo propio, se volvía ilegible contra un cielo claro.
+     Ahora cuelga bajo la cabecera, dentro de su propia píldora. */
+  top: calc(var(--hdr-h) + 0.35rem);
   right: var(--hueco);
   z-index: 20;
   text-align: right;
@@ -480,9 +492,12 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: var(--tinta);
   font-variant-numeric: tabular-nums;
-  /* El HUD flota sobre el cielo desnudo, que pasa de casi blanco a casi negro.
-     La sombra es lo único que lo mantiene legible en los dos extremos. */
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
+  padding: 0.6rem 0.9rem;
+  border-radius: 14px;
+  background: var(--chip-fondo);
+  border: 1px solid var(--chip-borde);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .hud__barra {
@@ -490,7 +505,7 @@ onUnmounted(() => {
   height: 2px;
   margin: 0.5rem 0 0 auto;
   border-radius: 2px;
-  background: rgba(16, 14, 38, 0.45);
+  background: rgba(244, 241, 234, 0.18);
   overflow: hidden;
 }
 
@@ -503,7 +518,6 @@ onUnmounted(() => {
   margin-top: 0.4rem;
   color: var(--acento);
   font-size: 0.62rem;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 
 .strip {
@@ -514,7 +528,16 @@ onUnmounted(() => {
   z-index: 20;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.85rem;
+  /* Misma píldora que el HUD y los botones de la cabecera: convierte una
+     hilera de puntos sueltos en una única pieza de chrome reconocible. */
+  padding: 0.9rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip-fondo);
+  border: 1px solid var(--chip-borde);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .strip__dot {
@@ -524,13 +547,9 @@ onUnmounted(() => {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  /* Relleno oscuro con anillo claro: los dots flotan sobre el cielo desnudo,
-     que va de casi blanco a casi negro. Un punto de un solo color desaparece
-     en uno de los dos extremos — en claro se perdían al inicio del recorrido. */
-  background: rgba(16, 14, 38, 0.6);
-  box-shadow: 0 0 0 1.5px rgba(244, 241, 234, 0.7);
+  background: rgba(244, 241, 234, 0.35);
   cursor: pointer;
-  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+  transition: background 0.3s, transform 0.3s;
 }
 
 /* Área táctil de 24px sin engordar el punto visible. */
@@ -542,7 +561,6 @@ onUnmounted(() => {
 
 .strip__dot.is-on {
   background: var(--acento);
-  box-shadow: 0 0 0 1.5px rgba(16, 14, 38, 0.75);
   transform: scale(1.7);
 }
 
@@ -577,9 +595,11 @@ onUnmounted(() => {
   line-height: 1;
   /* Marca de agua deliberada: no transporta información —el mismo dato está en
      el HUD y en la tarjeta—, así que se queda por debajo del umbral de lectura
-     a propósito, con aria-hidden en el marcado. */
+     a propósito, con aria-hidden en el marcado. El trazo fino se suma a la
+     sombra para que no se pierda contra un cielo casi blanco al inicio. */
   color: rgba(244, 241, 234, 0.3);
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  -webkit-text-stroke: 1px rgba(15, 16, 48, 0.22);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Cabecera ──────────────────────────────────────────── */
@@ -594,8 +614,19 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem clamp(1rem, 4vw, 2rem);
-  /* Sin fondo: el degradado del paisaje ya da contraste y un panel sólido
-     partiría la escena justo donde debe sentirse continua. */
+  /* Sin fondo sólido: el degradado del paisaje ya da contraste y un panel
+     partiría la escena justo donde debe sentirse continua. El ::before de
+     abajo agrega solo un velo muy suave para el logo, que —a diferencia de
+     los botones— no trae su propia píldora. */
+}
+
+.cf__hdr::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(15, 16, 48, 0.32), transparent);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .cf__brand {
@@ -609,6 +640,7 @@ onUnmounted(() => {
   height: 34px;
   width: auto;
   display: block;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
 }
 
 .cf__hdr-acciones {
@@ -618,7 +650,7 @@ onUnmounted(() => {
 
 .cf__link {
   border: 1px solid rgba(244, 241, 234, 0.3);
-  background: rgba(15, 16, 48, 0.4);
+  background: var(--chip-fondo);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: var(--tinta);
