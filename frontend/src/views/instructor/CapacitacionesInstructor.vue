@@ -172,7 +172,7 @@ function copyCode(code: string) {
               <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                 <span style="font-size:0.8rem;color:var(--muted);font-weight:600;">{{ c.is_public ? 'Público' :
                   'Privado'
-                  }}</span>
+                }}</span>
                 <button class="toggle-btn" :class="{ on: c.is_public }" @click="togglePublic(c)"
                   title="Cambiar visibilidad">
                   <div class="toggle-track"></div>
@@ -202,11 +202,8 @@ function copyCode(code: string) {
     <CourseEditorDrawer :show="showDrawer" :course="selectedCourse" @close="showDrawer = false"
       @updated="fetchCourses()" />
 
-    <SeguimientoAlumnos
-      :curso-id="cursoSeguimiento?.id ?? null"
-      :curso-titulo="cursoSeguimiento?.title"
-      @cerrar="cursoSeguimiento = null"
-    />
+    <SeguimientoAlumnos :curso-id="cursoSeguimiento?.id ?? null" :curso-titulo="cursoSeguimiento?.title"
+      @cerrar="cursoSeguimiento = null" />
   </div>
 </template>
 
@@ -337,9 +334,9 @@ function copyCode(code: string) {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   color: var(--dark);
-  border: none;
+  border: 1px solid var(--border-light);
   cursor: pointer;
   display: flex;
   align-items: center;
