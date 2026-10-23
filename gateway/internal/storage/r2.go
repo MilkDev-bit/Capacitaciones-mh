@@ -83,7 +83,45 @@ func Init(cfg *config.Config) {
 		return
 	}
 	defaultSvc = New(cfg.R2Bucket, cfg.R2Endpoint, cfg.R2AccessKey, cfg.R2SecretKey, cfg.R2PublicURL)
-	slog.Info("R2 inicializado", "bucket", cfg.R2Bucket)
+
+	// Comprobar que la credencial SIRVE, no solo que esté puesta.
+	//
+	// Antes bastaba con que las cuatro variables no estuvieran vacías y el log
+	// decía "R2 inicializado" aunque la llave fuera de otra cuenta, estuviera
+	// revocada o el endpoint llevara el bucket duplicado. El fallo no aparecía
+	// hasta que alguien subía un archivo, y le llegaba disfrazado de error de
+	// CORS: las respuestas de error de R2 no llevan cabeceras CORS, así que el
+	// navegador descarta el motivo real y solo dice "blocked by CORS policy".
+	//
+	// Va en una goroutine y no bloquea el arranque: el resto de la plataforma
+	// funciona sin R2, y un healthcheck que espera a Cloudflare es un arranque
+	// que falla por algo que no es suyo.
+	go verificarCredenciales(cfg.R2Bucket)
+}
+
+// verificarCredenciales hace una lectura mínima del bucket y deja el resultado
+// en el log.
+func verificarCredenciales(bucket string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// ListObjectsV2 con MaxKeys=1 en lugar de HeadBucket: un token con alcance
+	// de objetos —el que recomienda Cloudflare— puede no tener permiso sobre el
+	// bucket en sí y fallar un HeadBucket aunque las subidas funcionen.
+	_, err := defaultSvc.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucket),
+		MaxKeys: aws.Int32(1),
+	})
+	if err != nil {
+		slog.Error("R2: las credenciales NO funcionan; todas las subidas van a fallar",
+			"bucket", bucket,
+			"error", err,
+			"revisa", "R2_ENDPOINT lleva solo la cuenta (https://<cuenta>.r2.cloudflarestorage.com), sin el bucket. "+
+				"Si el error dice AccessDenied, el token de Cloudflare es de solo lectura. "+
+				"Hay un diagnóstico completo en GET /api/admin/diagnostico/r2.")
+		return
+	}
+	slog.Info("R2 inicializado", "bucket", bucket)
 }
 
 // Default returns the package-level storage service.
@@ -100,6 +138,38 @@ func (s *StorageService) PublicURL() string {
 		return ""
 	}
 	return s.publicURL
+}
+
+// Configurado indica si hay credenciales con las que hablar con R2.
+//
+// `Init` crea un servicio inerte cuando faltan variables, para que los handlers
+// no revienten con un puntero nulo. Esto distingue ese caso del real.
+func (s *StorageService) Configurado() bool {
+	return s != nil && s.client != nil && s.bucket != ""
+}
+
+// Bucket devuelve el nombre del bucket configurado. Para diagnóstico.
+func (s *StorageService) Bucket() string {
+	if s == nil {
+		return ""
+	}
+	return s.bucket
+}
+
+// DeleteFile borra un objeto del bucket.
+//
+// Lo usa la prueba de escritura para no dejar basura. No se expone en ninguna
+// ruta de usuario: aquí nada borra archivos subidos, porque una constancia o
+// una entrega tienen que seguir estando el día que alguien las reclame.
+func (s *StorageService) DeleteFile(ctx context.Context, key string) error {
+	if !s.Configurado() {
+		return fmt.Errorf("R2 no configurado")
+	}
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return err
 }
 
 // New creates a StorageService.

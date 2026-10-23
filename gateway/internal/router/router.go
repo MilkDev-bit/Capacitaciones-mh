@@ -31,6 +31,7 @@ type Deps struct {
 	WsH          *handler.WsHandler
 	PresignH     *handler.PresignHandler
 	DC3H         *handler.DC3Handler
+	R2H          *handler.R2Handler
 	AuthMW       gin.HandlerFunc
 	InstructorMW gin.HandlerFunc
 	AdminMW      gin.HandlerFunc
@@ -339,6 +340,11 @@ func New(d Deps) *gin.Engine {
 				// Comprueba que el conversor a PDF responde. Devuelve el error
 				// de red entero, que es lo que el panel de logs recorta.
 				adm.GET("/diagnostico/gotenberg", d.DC3H.DiagnosticoGotenberg)
+				// Escribe y borra un objeto de prueba. Es la única forma de ver
+				// el error real de R2: el que llega al navegador viene disfrazado
+				// de fallo de CORS porque las respuestas de error de R2 no llevan
+				// cabeceras CORS.
+				adm.GET("/diagnostico/r2", d.R2H.DiagnosticoR2)
 
 				adm.GET("/capacitaciones", d.CursosH.AdminListCapacitaciones)
 				adm.POST("/asignar", d.CursosH.AdminAsignar)

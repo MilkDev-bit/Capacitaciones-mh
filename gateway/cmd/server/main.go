@@ -95,6 +95,7 @@ func main() {
 		LlamadasH:    llamadasH,
 		WsH:          handler.NewWsHandler(h, gestorLlamadas, llamadasH),
 		PresignH:     handler.NewPresignHandler(),
+		R2H:          handler.NewR2Handler(),
 		AuthMW:       middleware.AuthRequired(svc),
 		InstructorMW: middleware.InstructorRequired(svc),
 		AdminMW:      middleware.AdminRequired(svc),

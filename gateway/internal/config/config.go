@@ -83,11 +83,21 @@ func Load() *Config {
 
 		AllowedOrigins: parseOrigins(os.Getenv("ALLOWED_ORIGIN")),
 
-		R2Bucket:    os.Getenv("R2_BUCKET"),
-		R2Endpoint:  os.Getenv("R2_ENDPOINT"),
-		R2AccessKey: getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID"),
-		R2SecretKey: getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY"),
-		R2PublicURL: os.Getenv("R2_PUBLIC_URL"),
+		// Recortados, y no por pulcritud.
+		//
+		// La Secret Key entra directa en el cálculo del HMAC de la firma AWS: un
+		// solo espacio o salto de línea al final produce una firma distinta y R2
+		// responde 403 SignatureDoesNotMatch. Desde el navegador eso llega
+		// disfrazado de error de CORS, porque las respuestas de error de R2 no
+		// llevan cabeceras CORS, así que el motivo real nunca se ve.
+		//
+		// Y es facilísimo que ocurra: el Secret de R2 solo se muestra una vez, se
+		// copia a mano y se pega en un panel web que conserva lo que le llegue.
+		R2Bucket:    limpiarVariable("R2_BUCKET", os.Getenv("R2_BUCKET")),
+		R2Endpoint:  limpiarVariable("R2_ENDPOINT", os.Getenv("R2_ENDPOINT")),
+		R2AccessKey: limpiarVariable("R2_ACCESS_KEY", getEnvAny("R2_ACCESS_KEY", "R2_ACCESS_KEY_ID")),
+		R2SecretKey: limpiarVariable("R2_SECRET_KEY", getEnvAny("R2_SECRET_KEY", "R2_SECRET_ACCESS_KEY")),
+		R2PublicURL: limpiarVariable("R2_PUBLIC_URL", os.Getenv("R2_PUBLIC_URL")),
 
 		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
 		ResendFrom:    getEnvAny("RESEND_FROM", "SMTP_FROM"),
@@ -212,6 +222,27 @@ func getEnvOr(key, fallback string) string {
 }
 
 // getEnvAny returns the value of the first non-empty env var among the provided keys.
+// limpiarVariable recorta los espacios de una variable de entorno y avisa si
+// había alguno.
+//
+// El aviso es la mitad del valor de esta función. Recortar en silencio arregla
+// el problema pero deja a quien lo configuró sin saber que lo tuvo: la próxima
+// vez que pegue una credencial volverá a arrastrar el espacio, y en otro
+// servicio que no recorte volverá a fallar.
+//
+// NUNCA registra el valor: estas variables son credenciales. Solo el nombre y
+// cuántos caracteres sobraban.
+func limpiarVariable(nombre, valor string) string {
+	limpio := strings.TrimSpace(valor)
+	if sobra := len(valor) - len(limpio); sobra > 0 {
+		slog.Warn("variable de entorno con espacios al principio o al final; se recortaron",
+			"variable", nombre,
+			"caracteres_sobrantes", sobra,
+			"nota", "en una credencial eso bastaba para invalidar la firma y provocar un 403")
+	}
+	return limpio
+}
+
 func getEnvAny(keys ...string) string {
 	for _, k := range keys {
 		if v := os.Getenv(k); v != "" {
