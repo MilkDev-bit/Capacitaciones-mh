@@ -69,7 +69,7 @@ export const toast = {
     })
   },
 
-  loading(message: string, title = 'Subiendo...'): { close: () => void } {
+  loading(message: string, title = 'Subiendo...'): { close: () => void; update: (m: string) => void } {
     let toastEl: HTMLDivElement | null = null
     let pendingClose = false
     iziToast.show({
@@ -96,6 +96,14 @@ export const toast = {
         } else {
           pendingClose = true
         }
+      },
+      // Reescribe el texto sin cerrar y reabrir el aviso. Es lo que permite
+      // mostrar el avance de una subida larga: sin esto, "Subiendo…" se ve
+      // idéntico al 2% y al 99%, y una subida lenta no se distingue de una
+      // colgada.
+      update(m: string) {
+        const cuerpo = toastEl?.querySelector('.iziToast-message')
+        if (cuerpo) cuerpo.textContent = m
       },
     }
   },

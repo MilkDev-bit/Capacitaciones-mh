@@ -9,7 +9,7 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../api'
 import { toast } from '../utils/toast'
-import { uploadToR2 } from '../utils/upload'
+import { uploadToR2, tamanoLegible } from '../utils/upload'
 import DragDropUpload from './DragDropUpload.vue'
 import ContentTypeSelector from './ContentTypeSelector.vue'
 import GameConfigEditor from './GameConfigEditor.vue'
@@ -217,9 +217,26 @@ async function saveLesson() {
   }
 
   if (panelFile.value && (type === '1' || type === '3')) {
-    const t = toast.loading('Subiendo archivo...')
+    const archivo = panelFile.value
+    const t = toast.loading(`0% de ${tamanoLegible(archivo.size)}`)
     try {
-      payload.file_path = await uploadToR2(panelFile.value, type === '1' ? 'videos' : 'documents')
+      payload.file_path = await uploadToR2(
+        archivo,
+        type === '1' ? 'videos' : 'documents',
+        // El avance se pinta en el propio aviso. Un vídeo de 250 MB puede
+        // tardar minutos, y sin esto no hay forma de distinguir una subida que
+        // avanza de una que se quedó colgada.
+        ({ enviados, total, porcentaje }) => {
+          t.update(porcentaje === null
+            ? `${tamanoLegible(enviados)} enviados`
+            : `${porcentaje}% · ${tamanoLegible(enviados)} de ${tamanoLegible(total)}`)
+        },
+      )
+    } catch (e: any) {
+      // Se relanza para que el guardado no continúe con file_path vacío, pero
+      // el mensaje ya viene explicado desde uploadToR2.
+      toast.error(e?.message || 'No se pudo subir el archivo')
+      throw e
     } finally { t.close() }
   }
 
