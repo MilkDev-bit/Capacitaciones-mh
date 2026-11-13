@@ -29,7 +29,7 @@ GO ?= $(shell command -v go 2>/dev/null \
 	|| ls $$HOME/.local/go/bin/go 2>/dev/null \
 	|| ls /usr/lib/go-*/bin/go 2>/dev/null | sort -V | tail -1)
 
-.PHONY: check-go generate lint-proto breaking tidy build up down logs clean test video-check video-fix jitsi-secrets
+.PHONY: check-go generate lint-proto breaking tidy build up down logs clean test video-check video-fix jitsi-secrets hooks
 
 ## check-go: verifica que el toolchain de Go esté disponible
 #
@@ -56,6 +56,16 @@ generate:
 	@echo "==> Generando código protobuf con buf..."
 	buf generate
 	@echo "==> Hecho. Ejecuta 'make tidy' para sincronizar dependencias."
+
+## hooks: instala el hook de pre-push que protege gen/
+#
+# El CI ya comprueba que gen/ corresponda a los .proto, pero Railway despliega
+# en cuanto hay push y no espera al CI: cuando el aviso llega, los servicios ya
+# fallaron al construir. El hook adelanta esa comprobación al push.
+hooks:
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/*
+	@echo "==> Hooks instalados. Para saltarse uno: git push --no-verify"
 
 ## lint-proto: verifica estilo y convenciones de los .proto
 lint-proto:

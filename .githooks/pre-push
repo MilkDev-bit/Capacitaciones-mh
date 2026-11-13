@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# Impide subir protos cambiados sin regenerar gen/.
+#
+# POR QUÉ EXISTE
+#
+# El CI ya comprueba esto, pero llega tarde: Railway despliega en cuanto hay
+# push a main, sin esperar a que el CI termine ni mirar si pasó. Así que el
+# orden real de los hechos es
+#
+#     push → Railway construye y FALLA → el CI avisa después
+#
+# y el fallo se ve como una lista de "undefined: req.CapacitacionIds" repartida
+# entre los servicios que usan el campo nuevo, con los tres despliegues rotos a
+# la vez. Ha pasado tres veces.
+#
+# Este hook mueve la comprobación a antes del push, que es el único momento en
+# que todavía se puede arreglar sin romper producción.
+#
+# INSTALACIÓN
+#
+#     make hooks
+#
+# Para saltárselo puntualmente: git push --no-verify
+
+set -euo pipefail
+
+# Solo se comprueba si el push incluye cambios en proto/ o en gen/.
+# Un push que solo toca el frontend no tiene por qué pagar esta espera.
+rango_base=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
+if [ -n "$rango_base" ]; then
+	tocados=$(git diff --name-only "$rango_base" HEAD -- proto/ gen/ || true)
+	if [ -z "$tocados" ]; then
+		exit 0
+	fi
+fi
+
+if ! command -v buf >/dev/null 2>&1 && [ ! -x ./buf ]; then
+	echo "pre-push: no encuentro 'buf'; me salto la comprobación de gen/." >&2
+	echo "          Asegúrate a mano de haber ejecutado 'make generate'." >&2
+	exit 0
+fi
+BUF=$(command -v buf || echo ./buf)
+
+echo "pre-push: comprobando que gen/ corresponde a los .proto…"
+
+# Se regenera sobre una copia del árbol de trabajo y se compara. No se toca
+# gen/ de verdad: un hook que modifica archivos durante un push deja al
+# desarrollador con cambios que no pidió.
+antes=$(git status --porcelain -- gen/ | sha256sum)
+"$BUF" generate >/dev/null
+despues=$(git status --porcelain -- gen/ | sha256sum)
+
+if [ "$antes" != "$despues" ] || ! git diff --quiet -- gen/; then
+	echo >&2
+	echo "  ✗ gen/ no corresponde a los .proto actuales." >&2
+	echo >&2
+	git diff --stat -- gen/ >&2
+	echo >&2
+	echo "  Railway desplegaría esto y los servicios fallarían al compilar." >&2
+	echo "  Arréglalo con:" >&2
+	echo >&2
+	echo "      make generate && make tidy && git add gen/" >&2
+	echo >&2
+	exit 1
+fi
+
+echo "pre-push: gen/ está al día."

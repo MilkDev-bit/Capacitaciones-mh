@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"time"
-
-	cursospb "Prueba-Go/gen/cursos"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
