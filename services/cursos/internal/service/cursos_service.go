@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
 	mensajespb "Prueba-Go/gen/mensajes"
@@ -40,6 +41,10 @@ var (
 	// ErrRequierePago: curso de pago y el usuario no tiene suscripción vigente.
 	// El frontend lo traduce en "cómpralo suelto o suscríbete".
 	ErrRequierePago = errors.New("este curso requiere compra individual o una suscripción activa")
+	// ErrYaEsDueno: se intentó asignar como revisor a quien ya es el dueño del
+	// curso. No es un fallo —esa persona ya puede revisarlo— pero el panel debe
+	// decirlo en vez de fingir que hizo algo.
+	ErrYaEsDueno = errors.New("ese instructor ya es el dueño del curso")
 )
 
 // CursosService contiene la lógica de negocio del servicio de cursos.
@@ -1078,6 +1083,45 @@ func (s *CursosService) ActualizarEstadoOrden(ctx context.Context, req *cursospb
 
 	err := s.repo.ActualizarEstadoOrden(ctx, req.StripeSessionId, req.Estado, req.MotivoFallo, req.StripePaymentIntent, com)
 	return &cursospb.EmptyResponse{}, err
+}
+
+// ── Instructores asignados a un curso (revisión) ─────────────────────────────
+//
+// El dueño del curso sigue siendo `capacitaciones.instructor_id`. Esto añade
+// revisores: ven el avance de los alumnos y los resultados de los exámenes, y
+// no pueden editar ni borrar nada.
+
+func (s *CursosService) AdminAsignarInstructor(ctx context.Context, cursoID, instructorID, asignadoPor string) error {
+	err := s.repo.AsignarInstructor(ctx, cursoID, instructorID, asignadoPor)
+	if errors.Is(err, repository.ErrYaEsDueno) {
+		// Se traduce a un error de dominio para que el panel diga por qué no
+		// hizo nada, en vez de mostrar un fallo genérico ante una situación que
+		// es correcta: esa persona ya podía revisar el curso.
+		return ErrYaEsDueno
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	return err
+}
+
+func (s *CursosService) AdminQuitarInstructor(ctx context.Context, cursoID, instructorID string) error {
+	return s.repo.QuitarInstructor(ctx, cursoID, instructorID)
+}
+
+func (s *CursosService) ListInstructoresDeCurso(ctx context.Context, cursoID string) (*cursospb.ListInstructoresResponse, error) {
+	filas, err := s.repo.ListInstructoresDeCurso(ctx, cursoID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &cursospb.ListInstructoresResponse{}
+	for _, f := range filas {
+		resp.Instructores = append(resp.Instructores, &cursospb.InstructorAsignado{
+			InstructorId: f.InstructorID,
+			AsignadoAt:   f.AsignadoAt.Format(time.RFC3339),
+		})
+	}
+	return resp, nil
 }
 
 // CompanerosDeCurso lista a quién comparte capacitación con el usuario.

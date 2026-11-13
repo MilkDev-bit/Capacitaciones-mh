@@ -214,6 +214,8 @@ type CursosRepository interface {
 	// Quién comparte capacitación con quién. Lo consumen usuarios-service
 	// (buscador) y mensajes-service (a quién puedes escribir) por gRPC.
 	CompanerosRepository
+	// Instructores que REVISAN un curso sin ser su dueño.
+	InstructoresRepository
 
 	List(ctx context.Context) ([]*Curso, error)
 	ListPublicos(ctx context.Context) ([]*Curso, error)
@@ -333,8 +335,20 @@ func (r *postgresCursosRepository) ListByUser(ctx context.Context, userID string
 
 func (r *postgresCursosRepository) ListByInstructor(ctx context.Context, instructorID string) ([]*Curso, error) {
 	var cursos []*Curso
+	// La última condición es la de los cursos ASIGNADOS para revisión. Sin
+	// ella, un curso privado que el administrador le encargó a este instructor
+	// no le aparecería en ninguna parte y la asignación sería invisible.
+	//
+	// Las tres anteriores ya estaban: los suyos, los huérfanos y los públicos.
 	return cursos, r.db.SelectContext(ctx, &cursos,
-		selectCurso+` WHERE deleted_at IS NULL AND (instructor_id=$1 OR instructor_id IS NULL OR COALESCE(is_public, false)=true) ORDER BY created_at DESC`, instructorID)
+		selectCurso+` WHERE deleted_at IS NULL AND (
+		    instructor_id = $1
+		 OR instructor_id IS NULL
+		 OR COALESCE(is_public, false) = true
+		 OR EXISTS (SELECT 1 FROM curso_instructores ci
+		             WHERE ci.capacitacion_id = capacitaciones.id
+		               AND ci.instructor_id = $1)
+		) ORDER BY created_at DESC`, instructorID)
 }
 
 func (r *postgresCursosRepository) FindByID(ctx context.Context, cursoID string) (*Curso, error) {
@@ -516,6 +530,8 @@ func (r *postgresCursosRepository) ListEstudiantes(ctx context.Context, instruct
 			   FROM asignaciones a
 			   JOIN capacitaciones c ON c.id = a.capacitacion_id
 			  WHERE c.instructor_id = $1
+			     OR EXISTS (SELECT 1 FROM curso_instructores ci
+			                 WHERE ci.capacitacion_id = c.id AND ci.instructor_id = $1)
 			  ORDER BY a.assigned_at DESC`, instructorID)
 	}
 	return rows, r.db.SelectContext(ctx, &rows,
@@ -525,7 +541,9 @@ func (r *postgresCursosRepository) ListEstudiantes(ctx context.Context, instruct
 		        assigned_at
 		   FROM asignaciones
 		  WHERE capacitacion_id=$1
-		    AND EXISTS(SELECT 1 FROM capacitaciones c WHERE c.id=$1 AND c.instructor_id=$2)
+		    AND (EXISTS(SELECT 1 FROM capacitaciones c WHERE c.id=$1 AND c.instructor_id=$2)
+		      OR EXISTS(SELECT 1 FROM curso_instructores ci
+		                 WHERE ci.capacitacion_id=$1 AND ci.instructor_id=$2))
 		  ORDER BY assigned_at DESC`, cursoID, instructorID)
 }
 

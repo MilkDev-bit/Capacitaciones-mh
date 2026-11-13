@@ -9,6 +9,7 @@ import (
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
+	cursospb "Prueba-Go/gen/cursos"
 	examenespb "Prueba-Go/gen/examenes"
 
 	"github.com/gin-gonic/gin"
@@ -108,10 +109,36 @@ func (h *ExamenesHandler) SubmitExamen(ctx *gin.Context) {
 
 // ── Instructor ────────────────────────────────────────────────────────────────
 
+// cursosQueRevisa devuelve los cursos que este instructor puede revisar.
+//
+// Son los suyos MÁS los que el administrador le asignó. La lista se calcula en
+// cursos-service, dueño de `curso_instructores`, y hace falta aquí porque
+// examenes-service tiene su propia base y no puede consultar esa tabla.
+//
+// Ante un fallo devuelve nil y no corta: sin la lista, el instructor ve solo sus
+// propios exámenes —que es el comportamiento de siempre— en lugar de una
+// pantalla rota. Perder un permiso añadido es preferible a perder el panel.
+func (h *ExamenesHandler) cursosQueRevisa(ctx *gin.Context, instructorID string) []string {
+	resp, err := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(),
+		&cursospb.UserRequest{UserId: instructorID})
+	if err != nil || resp == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(resp.Cursos))
+	for _, c := range resp.Cursos {
+		ids = append(ids, c.Id)
+	}
+	return ids
+}
+
 // GET /api/instructor/examenes
 func (h *ExamenesHandler) InstructorListExamenes(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Examenes.InstructorListExamenes(ctx.Request.Context(), &examenespb.UserRequest{
-		UserId: ctx.GetString(middleware.CtxUserID),
+		UserId: userID,
+		// Con esto aparecen también los exámenes enlazados a un curso que le
+		// asignaron para revisar, aunque los haya creado otra persona.
+		CapacitacionIds: h.cursosQueRevisa(ctx, userID),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
@@ -135,8 +162,14 @@ func (h *ExamenesHandler) InstructorDeleteExamen(ctx *gin.Context) {
 // GET /api/instructor/examenes/:id/resultados
 func (h *ExamenesHandler) InstructorGetResultados(ctx *gin.Context) {
 	examenID := ctx.Param("id")
+	userID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Examenes.InstructorGetResultados(ctx.Request.Context(), &examenespb.ExamenRequest{
 		ExamenId: examenID,
+		// Sin estos dos campos el servicio no comprobaba nada y cualquier
+		// instructor podía leer las notas de los alumnos de otro probando
+		// identificadores de examen.
+		UserId:          userID,
+		CapacitacionIds: h.cursosQueRevisa(ctx, userID),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)

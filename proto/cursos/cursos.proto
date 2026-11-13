@@ -99,6 +99,17 @@ service CursosService {
   rpc InstructorDeleteLicencia(LicenciaIDRequest) returns (EmptyResponse);
 
   // ── Admin ─────────────────────────────────────────────────────────────────
+  //
+  // Instructores asignados a un curso para REVISARLO.
+  //
+  // Distinto de `capacitaciones.instructor_id`, que es el dueño y el único que
+  // puede editar o borrar. Un asignado ve el avance de los alumnos y los
+  // resultados de los exámenes del curso, y nada más. Asignar a alguien para
+  // que revise no debe darle permiso para destruir.
+  rpc AdminAsignarInstructor(AsignarInstructorRequest) returns (EmptyResponse);
+  rpc AdminQuitarInstructor(AsignarInstructorRequest) returns (EmptyResponse);
+  rpc ListInstructoresDeCurso(CursoIDRequest) returns (ListInstructoresResponse);
+
   rpc AdminListCapacitaciones(EmptyRequest) returns (ListCursosResponse);
   rpc AdminCreateCapacitacion(CreateCursoRequest) returns (CursoResponse);
   rpc AdminUpdateCapacitacion(UpdateCursoRequest) returns (CursoResponse);
@@ -148,6 +159,26 @@ service CursosService {
 // ── Requests ─────────────────────────────────────────────────────────────────
 
 message EmptyRequest  {}
+message AsignarInstructorRequest {
+  string capacitacion_id = 1;
+  string instructor_id   = 2;
+  // Quién hace la asignación. Se guarda para poder responder después a "¿quién
+  // le dio acceso a esta persona?", que es la primera pregunta cuando alguien
+  // ve datos de alumnos que no esperaba.
+  string asignado_por    = 3;
+}
+
+message InstructorAsignado {
+  string instructor_id = 1;
+  string asignado_at   = 2;
+  // Nombre y correo NO viajan desde aquí: `users` está en la base de auth. Los
+  // resuelve el gateway, igual que en el panel financiero y el seguimiento.
+}
+
+message ListInstructoresResponse {
+  repeated InstructorAsignado instructores = 1;
+}
+
 message CompanerosRequest {
   string user_id = 1;
   // candidatos vacío = "dime todos mis compañeros" (descubrir, para la

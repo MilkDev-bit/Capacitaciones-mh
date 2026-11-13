@@ -33,8 +33,28 @@ service ExamenesService {
 // ── Requests ─────────────────────────────────────────────────────────────────
 
 message EmptyRequest   {}
-message UserRequest    { string user_id  = 1; }
-message ExamenRequest  { string examen_id = 1; }
+
+message UserRequest {
+  string user_id = 1;
+  // Cursos que este instructor puede REVISAR sin haberlos creado.
+  //
+  // Los calcula cursos-service —dueño de `curso_instructores`— y los transporta
+  // el gateway, porque examenes-service tiene su propia base y no puede
+  // consultar esa tabla. Vacío = solo sus propios exámenes.
+  repeated string capacitacion_ids = 2;
+}
+
+message ExamenRequest {
+  string examen_id = 1;
+  // Quién pregunta, y qué cursos puede revisar.
+  //
+  // Antes no viajaban, y por eso InstructorGetResultados no comprobaba nada:
+  // cualquier instructor podía leer los resultados de cualquier examen ajeno
+  // probando identificadores. Vacíos conservan el comportamiento anterior para
+  // las llamadas internas que no tienen un instructor detrás.
+  string user_id = 2;
+  repeated string capacitacion_ids = 3;
+}
 
 message ExamenUserRequest {
   string examen_id = 1;

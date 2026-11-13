@@ -322,6 +322,39 @@ func (h *CursosHandler) GetAdminDashboardStats(ctx context.Context, req *cursosp
 	return stats, nil
 }
 
+// ── Instructores asignados a un curso (revisión) ─────────────────────────────
+
+func (h *CursosHandler) AdminAsignarInstructor(ctx context.Context, req *cursospb.AsignarInstructorRequest) (*cursospb.EmptyResponse, error) {
+	if req.CapacitacionId == "" || req.InstructorId == "" {
+		return nil, status.Error(codes.InvalidArgument, "capacitacion_id e instructor_id son requeridos")
+	}
+	if err := h.svc.AdminAsignarInstructor(ctx, req.CapacitacionId, req.InstructorId, req.AsignadoPor); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) AdminQuitarInstructor(ctx context.Context, req *cursospb.AsignarInstructorRequest) (*cursospb.EmptyResponse, error) {
+	if req.CapacitacionId == "" || req.InstructorId == "" {
+		return nil, status.Error(codes.InvalidArgument, "capacitacion_id e instructor_id son requeridos")
+	}
+	if err := h.svc.AdminQuitarInstructor(ctx, req.CapacitacionId, req.InstructorId); err != nil {
+		return nil, mapErr(err)
+	}
+	return &cursospb.EmptyResponse{}, nil
+}
+
+func (h *CursosHandler) ListInstructoresDeCurso(ctx context.Context, req *cursospb.CursoIDRequest) (*cursospb.ListInstructoresResponse, error) {
+	if req.CursoId == "" {
+		return nil, status.Error(codes.InvalidArgument, "curso_id es requerido")
+	}
+	resp, err := h.svc.ListInstructoresDeCurso(ctx, req.CursoId)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return resp, nil
+}
+
 func (h *CursosHandler) CompanerosDeCurso(ctx context.Context, req *cursospb.CompanerosRequest) (*cursospb.CompanerosResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id es requerido")
@@ -412,6 +445,10 @@ func mapErr(err error) error {
 	case errors.Is(err, service.ErrRequierePago):
 		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, service.ErrConflict):
+		return status.Error(codes.AlreadyExists, err.Error())
+	// Asignar como revisor a quien ya es dueño. AlreadyExists y no Internal: la
+	// situación es correcta —esa persona ya puede revisar— y el panel lo explica.
+	case errors.Is(err, service.ErrYaEsDueno):
 		return status.Error(codes.AlreadyExists, err.Error())
 	// La licencia se quedó sin lugares por repartir: es un error del usuario,
 	// no del servidor, y el frontend debe mostrar el mensaje tal cual.

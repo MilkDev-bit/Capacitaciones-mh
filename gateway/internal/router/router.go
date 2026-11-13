@@ -347,6 +347,13 @@ func New(d Deps) *gin.Engine {
 				adm.GET("/diagnostico/r2", d.R2H.DiagnosticoR2)
 
 				adm.GET("/capacitaciones", d.CursosH.AdminListCapacitaciones)
+
+				// Instructores que REVISAN un curso. Distinto del dueño: ven el
+				// avance de los alumnos y los resultados de los exámenes, y no
+				// pueden editar ni borrar el curso.
+				adm.GET("/capacitaciones/:id/instructores", d.CursosH.ListInstructoresDeCurso)
+				adm.POST("/capacitaciones/:id/instructores", d.CursosH.AsignarInstructorACurso)
+				adm.DELETE("/capacitaciones/:id/instructores/:instructor_id", d.CursosH.QuitarInstructorDeCurso)
 				adm.POST("/asignar", d.CursosH.AdminAsignar)
 				adm.DELETE("/asignar/:id", d.CursosH.AdminDesAsignar)
 

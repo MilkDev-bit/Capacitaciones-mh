@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	examenespb "Prueba-Go/gen/examenes"
 	"Prueba-Go/services/examenes/internal/repository"
@@ -20,9 +21,9 @@ func NewExamenesService(repo repository.ExamenesRepository) *ExamenesService {
 func (s *ExamenesService) buildExamenResponse(ctx context.Context, e *repository.Examen, showCorrect bool) (*examenespb.ExamenResponse, error) {
 	r := &examenespb.ExamenResponse{
 		Id: e.ID, Title: e.Title, Description: e.Description,
-		CreatedAt: e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:    e.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		YaRespondido: e.YaRespondido,
-		Porcentaje: e.Porcentaje,
+		Porcentaje:   e.Porcentaje,
 	}
 	if e.InstructorID != nil {
 		r.InstructorId = *e.InstructorID
@@ -84,8 +85,8 @@ func (s *ExamenesService) SubmitExamen(ctx context.Context, req *examenespb.Subm
 
 // ── Instructor ────────────────────────────────────────────────────────────────
 
-func (s *ExamenesService) InstructorListExamenes(ctx context.Context, instructorID string) ([]*examenespb.ExamenResponse, error) {
-	exams, err := s.repo.ListByInstructor(ctx, instructorID)
+func (s *ExamenesService) InstructorListExamenes(ctx context.Context, instructorID string, cursosRevisables []string) ([]*examenespb.ExamenResponse, error) {
+	exams, err := s.repo.ListByInstructor(ctx, instructorID, cursosRevisables)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +156,26 @@ func (s *ExamenesService) InstructorDelete(ctx context.Context, examenID string)
 	return s.repo.Delete(ctx, examenID)
 }
 
-func (s *ExamenesService) InstructorGetResultados(ctx context.Context, examenID string) ([]*examenespb.ResultadoUsuario, error) {
+// InstructorGetResultados devuelve las calificaciones de un examen.
+//
+// Comprueba el permiso antes de leer. Antes no lo hacía: con solo el id del
+// examen —que es un UUID, pero viaja en la URL de cualquier instructor— se
+// podían leer las notas de los alumnos de otro instructor. El middleware del
+// gateway solo valida el ROL.
+func (s *ExamenesService) InstructorGetResultados(ctx context.Context, examenID, userID string, cursosRevisables []string) ([]*examenespb.ResultadoUsuario, error) {
+	puede, err := s.repo.PuedeVerExamen(ctx, examenID, userID, cursosRevisables)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+	if !puede {
+		// NotFound y no PermissionDenied: confirmar que el examen existe
+		// convertiría el endpoint en una forma de enumerar los exámenes ajenos.
+		return nil, sql.ErrNoRows
+	}
+
 	rows, err := s.repo.GetResultados(ctx, examenID)
 	if err != nil {
 		return nil, err

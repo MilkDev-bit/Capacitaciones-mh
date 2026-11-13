@@ -52,7 +52,7 @@ func (h *ExamenesHandler) SubmitExamen(ctx context.Context, req *examenespb.Subm
 // ── Instructor ────────────────────────────────────────────────────────────────
 
 func (h *ExamenesHandler) InstructorListExamenes(ctx context.Context, req *examenespb.UserRequest) (*examenespb.ListExamenesResponse, error) {
-	list, err := h.svc.InstructorListExamenes(ctx, req.UserId)
+	list, err := h.svc.InstructorListExamenes(ctx, req.UserId, req.CapacitacionIds)
 	if err != nil {
 		return nil, toGRPC(err)
 	}
@@ -97,7 +97,7 @@ func (h *ExamenesHandler) InstructorDeleteExamen(ctx context.Context, req *exame
 }
 
 func (h *ExamenesHandler) InstructorGetResultados(ctx context.Context, req *examenespb.ExamenRequest) (*examenespb.ListResultadosResponse, error) {
-	list, err := h.svc.InstructorGetResultados(ctx, req.ExamenId)
+	list, err := h.svc.InstructorGetResultados(ctx, req.ExamenId, req.UserId, req.CapacitacionIds)
 	if err != nil {
 		return nil, toGRPC(err)
 	}

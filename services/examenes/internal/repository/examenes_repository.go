@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -52,7 +53,9 @@ type ExamenesRepository interface {
 	EditarRepository
 
 	List(ctx context.Context) ([]*Examen, error)
-	ListByInstructor(ctx context.Context, instructorID string) ([]*Examen, error)
+	// cursosRevisables son capacitaciones que el instructor puede revisar sin
+	// haberlas creado. Las calcula cursos-service y llegan por el gateway.
+	ListByInstructor(ctx context.Context, instructorID string, cursosRevisables []string) ([]*Examen, error)
 	ListByUser(ctx context.Context, userID string) ([]*Examen, error)
 	FindByID(ctx context.Context, examenID string) (*Examen, error)
 	FindByIDWithUser(ctx context.Context, examenID, userID string) (*Examen, error)
@@ -63,6 +66,9 @@ type ExamenesRepository interface {
 	SubmitRespuestas(ctx context.Context, examenID, userID string, respuestas []*examenespb.RespuestaInput) (*examenespb.ResultadoResponse, error)
 	GetResultados(ctx context.Context, examenID string) ([]*ResultadoRow, error)
 	GetRespuestasUsuario(ctx context.Context, examenID, userID string) (*examenespb.RespuestasResponse, error)
+	// PuedeVerExamen autoriza la lectura de resultados: dueño del examen, o
+	// revisor del curso al que está enlazado.
+	PuedeVerExamen(ctx context.Context, examenID, userID string, cursosRevisables []string) (bool, error)
 }
 
 type postgresExamenesRepository struct{ db *sqlx.DB }
@@ -88,12 +94,84 @@ func (r *postgresExamenesRepository) List(ctx context.Context) ([]*Examen, error
 		        capacitacion_id, created_at FROM examenes WHERE deleted_at IS NULL ORDER BY created_at DESC`)
 }
 
-func (r *postgresExamenesRepository) ListByInstructor(ctx context.Context, instructorID string) ([]*Examen, error) {
+func (r *postgresExamenesRepository) ListByInstructor(ctx context.Context, instructorID string, cursosRevisables []string) ([]*Examen, error) {
+	const columnas = `SELECT id, title, COALESCE(description,'') description, instructor_id,
+	                         capacitacion_id, created_at FROM examenes`
+
+	// Sin cursos asignados, la consulta es la de siempre.
+	if len(cursosRevisables) == 0 {
+		var e []*Examen
+		return e, r.db.SelectContext(ctx, &e,
+			columnas+` WHERE deleted_at IS NULL AND instructor_id=$1 ORDER BY created_at DESC`,
+			instructorID)
+	}
+
+	// Con asignaciones se suman los exámenes ENLAZADOS a esos cursos, aunque los
+	// haya creado otra persona: es justo lo que el administrador quiso al
+	// asignar el curso para revisión. Los exámenes sueltos de otros instructores
+	// —sin capacitación, o de cursos que no le tocan— siguen sin aparecer.
+	consulta, args, err := sqlx.In(
+		columnas+` WHERE deleted_at IS NULL
+		             AND (instructor_id = ? OR capacitacion_id IN (?))
+		           ORDER BY created_at DESC`, instructorID, cursosRevisables)
+	if err != nil {
+		return nil, err
+	}
 	var e []*Examen
-	return e, r.db.SelectContext(ctx, &e,
-		`SELECT id, title, COALESCE(description,'') description, instructor_id,
-		        capacitacion_id, created_at FROM examenes
-		  WHERE deleted_at IS NULL AND instructor_id=$1 ORDER BY created_at DESC`, instructorID)
+	return e, r.db.SelectContext(ctx, &e, r.db.Rebind(consulta), args...)
+}
+
+// PuedeVerExamen decide si un instructor puede leer los resultados de un examen.
+//
+// Existe porque InstructorGetResultados no comprobaba NADA: bastaba con probar
+// identificadores de examen para leer las calificaciones de los alumnos de
+// cualquier otro instructor. El middleware solo valida el rol.
+//
+// Con userID vacío devuelve true, para no romper las llamadas internas que no
+// tienen un instructor detrás.
+func (r *postgresExamenesRepository) PuedeVerExamen(ctx context.Context, examenID, userID string, cursosRevisables []string) (bool, error) {
+	if userID == "" {
+		return true, nil
+	}
+
+	var dueno sql.NullString
+	var capID sql.NullString
+	err := r.db.QueryRowxContext(ctx,
+		`SELECT instructor_id::text, capacitacion_id::text FROM examenes
+		  WHERE id = $1::uuid AND deleted_at IS NULL`, examenID).Scan(&dueno, &capID)
+	if err != nil {
+		return false, err
+	}
+	return autorizaExamen(dueno.String, capID.String, userID, cursosRevisables), nil
+}
+
+// autorizaExamen es la decisión en sí, separada de la consulta para poder
+// probarla.
+//
+// Dos vías y ninguna más: ser el dueño del examen, o poder revisar el curso al
+// que está enlazado. Un examen SIN curso (capacitacionID vacío) solo lo ve su
+// dueño: no hay nada que lo ate a una asignación.
+func autorizaExamen(duenoID, capacitacionID, userID string, cursosRevisables []string) bool {
+	if userID == "" {
+		// Llamada interna, sin instructor detrás.
+		return true
+	}
+	// El `duenoID != ""` es redundante hoy —con userID vacío ya se devolvió
+	// arriba, y una cadena vacía nunca iguala a un id real— pero se deja escrito:
+	// si alguien quita el retorno temprano de arriba, esto es lo único que
+	// impediría que un examen con instructor_id nulo quedara abierto.
+	if duenoID != "" && duenoID == userID {
+		return true
+	}
+	if capacitacionID == "" {
+		return false
+	}
+	for _, c := range cursosRevisables {
+		if c == capacitacionID {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *postgresExamenesRepository) ListByUser(ctx context.Context, userID string) ([]*Examen, error) {

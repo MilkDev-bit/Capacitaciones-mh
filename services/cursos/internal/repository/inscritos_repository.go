@@ -31,22 +31,32 @@ func (r *postgresCursosRepository) InstructorListInscritos(ctx context.Context, 
 		return nil, errors.New("curso_id o instructor_id vacíos")
 	}
 
-	// Propiedad del curso. Un instructor no debe poder listar los alumnos de un
-	// curso ajeno cambiando el id en la URL: el middleware solo comprueba el
-	// ROL, no de quién es el curso.
-	var dueno sql.NullString
-	err := r.db.GetContext(ctx, &dueno,
-		`SELECT instructor_id::text FROM capacitaciones WHERE id = $1 AND deleted_at IS NULL`, cursoID)
-	// sql.ErrNoRows y errForbidden, no los errores del paquete `service`: aquí
-	// estamos en `repository` y aquellos viven una capa más arriba. Es la misma
-	// convención que sigue el resto de este paquete; el servicio los traduce.
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, sql.ErrNoRows
-	}
+	// Permiso de REVISIÓN, no de propiedad. Un instructor no debe poder listar
+	// los alumnos de un curso ajeno cambiando el id en la URL —el middleware
+	// solo comprueba el ROL, no de quién es el curso— pero sí debe poder verlos
+	// si el administrador lo asignó como revisor.
+	//
+	// Se comprueba que el curso existe antes que el permiso: así un id
+	// inventado da "no existe" y uno real ajeno da "no puedes", que es la
+	// distinción que necesita quien depura.
+	var existe bool
+	err := r.db.GetContext(ctx, &existe,
+		`SELECT EXISTS(SELECT 1 FROM capacitaciones WHERE id = $1 AND deleted_at IS NULL)`, cursoID)
 	if err != nil {
 		return nil, err
 	}
-	if !dueno.Valid || dueno.String != instructorID {
+	// sql.ErrNoRows y errForbidden, no los errores del paquete `service`: aquí
+	// estamos en `repository` y aquellos viven una capa más arriba. Es la misma
+	// convención que sigue el resto de este paquete; el servicio los traduce.
+	if !existe {
+		return nil, sql.ErrNoRows
+	}
+
+	puede, err := r.PuedeRevisar(ctx, cursoID, instructorID)
+	if err != nil {
+		return nil, err
+	}
+	if !puede {
 		return nil, errForbidden
 	}
 

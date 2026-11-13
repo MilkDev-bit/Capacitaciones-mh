@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import MarkdownEditor from '../../components/MarkdownEditor.vue'
 import api from '../../api'
+import InstructoresDeCurso from '../../components/InstructoresDeCurso.vue'
 import DragDropUpload from '../../components/DragDropUpload.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import { toast } from '../../utils/toast'
@@ -9,6 +10,9 @@ import { uploadToR2 } from '../../utils/upload'
 import { resumenMarkdown } from '../../utils/markdown'
 
 const capacitaciones = ref<any[]>([])
+
+// Curso cuyo panel de instructores está abierto. null = cerrado.
+const cursoInstructores = ref<{ id: string; title: string } | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const showDrawer = ref(false)
@@ -243,6 +247,13 @@ async function resetCode(id: string, hasExisting: boolean = true) {
           <div class="ac-card-footer">
             <span class="ac-card-date">{{ new Date(c.created_at).toLocaleDateString('es') }}</span>
             <div class="ac-card-actions">
+              <button
+                class="btn-icon"
+                title="Instructores que revisan esta capacitación"
+                @click="cursoInstructores = { id: c.id, title: c.title }"
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              </button>
               <button class="btn-icon btn-icon-edit" title="Editar" @click="openEdit(c)">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
@@ -444,6 +455,18 @@ async function resetCode(id: string, hasExisting: boolean = true) {
       </div>
     </Transition>
   </Teleport>
+
+  <!--
+    Instructores que revisan esta capacitación. Ver el componente: asignar aquí
+    da acceso de LECTURA al avance y a los exámenes, no la propiedad del curso.
+  -->
+  <InstructoresDeCurso
+    v-if="cursoInstructores"
+    :curso-id="cursoInstructores.id"
+    :curso-titulo="cursoInstructores.title"
+    @close="cursoInstructores = null"
+  />
+
 </template>
 
 <style scoped>

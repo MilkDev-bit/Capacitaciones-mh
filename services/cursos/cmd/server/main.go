@@ -187,6 +187,33 @@ func runMigrations(db *sqlx.DB) error {
 		)`,
 		`ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS enlace TEXT`,
 		`CREATE INDEX IF NOT EXISTS idx_notificaciones_user_id ON notificaciones(user_id)`,
+
+		// ── Instructores asignados a un curso ────────────────────────────
+		//
+		// `capacitaciones.instructor_id` es el DUEÑO: quien lo creó, el único
+		// que puede editarlo o borrarlo. Esta tabla es otra cosa: instructores
+		// que el administrador suma para que revisen el avance de los alumnos y
+		// los resultados de los exámenes de ese curso.
+		//
+		// Son dos permisos distintos a propósito. Asignar a alguien para que
+		// revise no debería darle la capacidad de borrar el curso entero, y
+		// mezclarlos en un solo campo obligaría justo a eso.
+		//
+		// Sin clave foránea a `users`: esa tabla vive en la base de auth, no en
+		// esta. La existencia del instructor la comprueba el gateway por gRPC
+		// antes de asignar.
+		`CREATE TABLE IF NOT EXISTS curso_instructores (
+			capacitacion_id UUID        NOT NULL REFERENCES capacitaciones(id) ON DELETE CASCADE,
+			instructor_id   UUID        NOT NULL,
+			asignado_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			asignado_por    UUID,
+			PRIMARY KEY (capacitacion_id, instructor_id)
+		)`,
+		// Se consulta en los dos sentidos: "qué cursos reviso yo" en cada
+		// pantalla del instructor, y "quién revisa este curso" en el panel de
+		// administración. La clave primaria solo cubre el primero.
+		`CREATE INDEX IF NOT EXISTS idx_curso_instructores_instructor
+			ON curso_instructores(instructor_id)`,
 		// Eliminar asignaciones duplicadas conservando solo la más antigua, luego aplicar constraint único
 		`DO $$ BEGIN
 		   IF NOT EXISTS (
