@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/config"
@@ -1086,7 +1087,29 @@ func (h *CursosHandler) InstructorDeleteLicencia(ctx *gin.Context) {
 // conteos— de las estadísticas de siempre. Así el panel y la pantalla de
 // Finanzas no pueden discrepar, porque leen lo mismo.
 func (h *CursosHandler) GetAdminDashboardStats(ctx *gin.Context) {
-	resp, err := h.c.Cursos.GetAdminDashboardStats(ctx.Request.Context(), &cursospb.EmptyRequest{})
+	// Las dos llamadas son independientes y van en PARALELO.
+	//
+	// En serie sumaban 2,7 segundos medidos en producción, y como el dashboard
+	// lanza sus cinco peticiones a la vez, esta era la que marcaba el tiempo de
+	// toda la pantalla. Ahora cuesta lo que la más lenta de las dos.
+	var (
+		resp    *cursospb.AdminDashboardStatsResponse
+		err     error
+		fin     *cursospb.FinanzasAdminResponse
+		errFin  error
+		esperar sync.WaitGroup
+	)
+	esperar.Add(2)
+	go func() {
+		defer esperar.Done()
+		resp, err = h.c.Cursos.GetAdminDashboardStats(ctx.Request.Context(), &cursospb.EmptyRequest{})
+	}()
+	go func() {
+		defer esperar.Done()
+		fin, errFin = h.c.Cursos.GetFinanzasAdmin(ctx.Request.Context(), &cursospb.EmptyRequest{})
+	}()
+	esperar.Wait()
+
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
@@ -1100,7 +1123,6 @@ func (h *CursosHandler) GetAdminDashboardStats(ctx *gin.Context) {
 	// Si finanzas falla, se devuelve el resto del panel sin los importes en
 	// vez de tumbar la pantalla entera. Lo que NO se hace es caer de vuelta al
 	// cálculo viejo: preferimos no enseñar cifra a enseñar una inventada.
-	fin, errFin := h.c.Cursos.GetFinanzasAdmin(ctx.Request.Context(), &cursospb.EmptyRequest{})
 	if errFin == nil && fin != nil {
 		salida["bruto_centavos"] = fin.BrutoCentavos
 		salida["comision_centavos"] = fin.ComisionCentavos
