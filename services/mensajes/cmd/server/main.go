@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"time"
 
 	cursospb "Prueba-Go/gen/cursos"
 	mensajespb "Prueba-Go/gen/mensajes"
@@ -38,6 +39,28 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	// Pool de conexiones.
+	//
+	// Sin esto, `database/sql` usa MaxIdleConns=2 y MaxOpenConns ilimitado, y
+	// las dos mitades hacen daño:
+	//
+	//   · Con 2 inactivas, tras cada ráfaga el pool cierra el resto. La ráfaga
+	//     siguiente abre conexiones TCP nuevas contra Postgres, y en la red de
+	//     Railway eso son cientos de milisegundos. Medido en el panel de admin:
+	//     el mismo endpoint daba 17 ms en una carga y 1,24 s en la siguiente,
+	//     según a cuál le tocara pagar el establecimiento.
+	//
+	//   · Sin techo de conexiones abiertas, una ráfaga grande puede pedir más
+	//     de las que acepta el servidor y empezar a fallar en vez de encolar.
+	//
+	// 25 abiertas y 10 inactivas: el techo protege a Postgres y las inactivas
+	// hacen que una pantalla con cinco peticiones simultáneas no pague apertura.
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	// Las conexiones se renuevan: Railway corta las ociosas por su cuenta y una
+	// conexión muerta en el pool se descubre al usarla, como un error suelto.
+	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
 
 	if err := runMigrations(db); err != nil {
 		slog.Error("Migraciones fallidas", "error", err)
