@@ -97,7 +97,16 @@ async function load() {
   try {
     const res = await api.get('/perfil')
     perfil.value = res.data.user
-    stats.value = res.data.stats || {}
+
+    // Los contadores van en su propia petición y NO se esperan: el perfil se
+    // pinta en cuanto llega el usuario, y los números aparecen después.
+    //
+    // Antes venían dentro de /perfil, que el layout pide en cada página, y eso
+    // arrastraba cinco llamadas gRPC en serie más una por curso inscrito —16
+    // segundos medidos en producción— en pantallas que ni los muestran.
+    api.get('/perfil/estadisticas')
+      .then(r => { stats.value = r.data || {} })
+      .catch(() => { stats.value = {} })
     form.value.name = perfil.value.name || ''
     form.value.bio = perfil.value.bio || ''
     form.value.phone = perfil.value.phone || ''

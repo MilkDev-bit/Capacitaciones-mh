@@ -138,6 +138,10 @@ func New(d Deps) *gin.Engine {
 		{
 			// Perfil
 			auth.GET("/perfil", d.UsuariosH.GetPerfil)
+			// Los contadores van aparte: /perfil lo pide el layout en CADA
+			// página y antes arrastraba cinco llamadas gRPC en serie más una
+			// por curso inscrito. En producción eran 16-17 segundos.
+			auth.GET("/perfil/estadisticas", d.UsuariosH.GetEstadisticasPerfil)
 			auth.PUT("/perfil", d.UsuariosH.UpdatePerfil)
 			auth.POST("/perfil/avatar", d.UsuariosH.UploadAvatar)
 			auth.POST("/perfil/cover", d.UsuariosH.UploadCover)

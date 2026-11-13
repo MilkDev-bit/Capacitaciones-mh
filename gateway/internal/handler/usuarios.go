@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"Prueba-Go/gateway/internal/clients"
 	"Prueba-Go/gateway/internal/middleware"
@@ -21,73 +24,120 @@ type UsuariosHandler struct{ c *clients.Clients }
 func NewUsuariosHandler(c *clients.Clients) *UsuariosHandler { return &UsuariosHandler{c: c} }
 
 // GET /api/perfil
+//
+// Devuelve QUIÉN es el usuario, y nada más. Es la llamada que hace el layout en
+// cada página para pintar el nombre y el avatar, así que tiene que ser barata:
+// una sola consulta a usuarios-service.
+//
+// Las estadísticas se fueron a /api/perfil/estadisticas. Estaban aquí, y eso
+// convertía cada carga de página en cinco llamadas gRPC en serie más una por
+// curso inscrito. Medido en producción: 16 y 17 segundos. Solo dos pantallas
+// —el perfil del alumno y el del instructor— leen esos números; el resto de la
+// plataforma los pagaba sin usarlos.
+//
+// `stats` sigue viajando, vacío, para no romper a quien lo lea sin haberse
+// actualizado: un cliente antiguo verá ceros en lugar de reventar.
 func (h *UsuariosHandler) GetPerfil(ctx *gin.Context) {
-	userID := ctx.GetString(middleware.CtxUserID)
 	resp, err := h.c.Usuarios.GetPerfil(ctx.Request.Context(), &usuariospb.GetPerfilRequest{
-		UserId: userID,
+		UserId: ctx.GetString(middleware.CtxUserID),
 	})
 	if err != nil {
 		grpcToHTTP(ctx, err)
 		return
 	}
+	ctx.JSON(http.StatusOK, gin.H{"user": resp, "stats": gin.H{}})
+}
 
-	// Enriquecer stats desde los microservicios correspondientes
-	// (el servicio de usuarios puede no tener acceso a esas tablas en producción)
-	stats := gin.H{
-		"cursos_inscritos":      resp.CursosInscritos,
-		"lecciones_completadas": resp.LeccionesCompletadas,
-		"total_lecciones":       resp.TotalLecciones,
-		"cursos_creados":        resp.CursosCreados,
-		"estudiantes_total":     resp.EstudiantesTotal,
-		"examenes_creados":      resp.ExamenesCreados,
-	}
+// GET /api/perfil/estadisticas
+//
+// Los contadores del perfil, repartidos entre cuatro servicios con su propia
+// base de datos. Solo lo piden las dos pantallas que los muestran.
+//
+// Las consultas van en PARALELO. En serie, el coste era la suma de todas —cinco
+// viajes más uno por curso— y en Railway cada viaje ronda los 200 ms. En
+// paralelo el coste es el de la más lenta.
+func (h *UsuariosHandler) GetEstadisticasPerfil(ctx *gin.Context) {
+	userID := ctx.GetString(middleware.CtxUserID)
+	// Contexto propio: sobrevive a las goroutines aunque gin recicle el suyo.
+	c, cancelar := context.WithTimeout(ctx.Request.Context(), 20*time.Second)
+	defer cancelar()
 
-	// Cursos creados
-	if cursosResp, errC := h.c.Cursos.InstructorListCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
-		stats["cursos_creados"] = int32(len(cursosResp.Cursos))
-	}
-	// Estudiantes totales
-	if estResp, errEst := h.c.Cursos.InstructorListEstudiantes(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errEst == nil {
-		stats["estudiantes_total"] = int32(len(estResp.Estudiantes))
-	}
-	// Exámenes creados
-	if examResp, errE := h.c.Examenes.InstructorListExamenes(ctx.Request.Context(), &examenespb.UserRequest{UserId: userID}); errE == nil {
-		stats["examenes_creados"] = int32(len(examResp.Examenes))
-	}
-	// Cursos inscritos y lecciones completadas
-	if cursosResp, errC := h.c.Cursos.ListMisCapacitaciones(ctx.Request.Context(), &cursospb.UserRequest{UserId: userID}); errC == nil {
-		stats["cursos_inscritos"] = int32(len(cursosResp.Cursos))
-
-		// El avance NO se lee de los cursos que acaban de llegar.
-		//
-		// cursos-service devuelve esas dos columnas como `0 as total_lecciones,
-		// 0 as lecciones_completadas` literales: las lecciones y su progreso
-		// viven en la base de lecciones, no en la suya. Sumarlas daba cero
-		// siempre, y el perfil mostraba "0%" a todo el mundo aunque hubiera
-		// terminado el curso. El handler de /api/mis-capacitaciones sí
-		// enriquece; este, que llama al gRPC directo, se lo saltaba.
-		var comp, total int32
-		for _, c := range cursosResp.Cursos {
-			res, errA := h.c.Lecciones.ResumenAvanceCurso(ctx.Request.Context(), &leccionespb.ResumenAvanceRequest{
-				CursoId: c.Id,
-				UserIds: []string{userID},
-			})
-			if errA != nil || res == nil {
-				continue
-			}
-			// TotalLecciones viene aunque el alumno no tenga ni una fila de
-			// progreso; sin él, un curso recién empezado contaría 0 de 0, que
-			// se lee como completado.
-			total += res.TotalLecciones
-			if len(res.Avances) > 0 {
-				comp += res.Avances[0].Completadas
-			}
+	var (
+		mu    sync.Mutex
+		wg    sync.WaitGroup
+		stats = gin.H{
+			"cursos_inscritos": 0, "lecciones_completadas": 0, "total_lecciones": 0,
+			"cursos_creados": 0, "estudiantes_total": 0, "examenes_creados": 0,
 		}
-		stats["lecciones_completadas"] = comp
-		stats["total_lecciones"] = total
+	)
+	guardar := func(clave string, valor int32) {
+		mu.Lock()
+		stats[clave] = valor
+		mu.Unlock()
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"user": resp, "stats": stats})
+	// Cada contador que un fallo deje sin resolver se queda en cero y no corta
+	// la respuesta: media pantalla de estadísticas es mejor que ninguna.
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		if r, err := h.c.Cursos.InstructorListCapacitaciones(c, &cursospb.UserRequest{UserId: userID}); err == nil {
+			guardar("cursos_creados", int32(len(r.Cursos)))
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if r, err := h.c.Cursos.InstructorListEstudiantes(c, &cursospb.UserRequest{UserId: userID}); err == nil {
+			guardar("estudiantes_total", int32(len(r.Estudiantes)))
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if r, err := h.c.Examenes.InstructorListExamenes(c, &examenespb.UserRequest{UserId: userID}); err == nil {
+			guardar("examenes_creados", int32(len(r.Examenes)))
+		}
+	}()
+
+	// El avance NO se lee de los cursos que llegan de cursos-service: esa base
+	// devuelve `0 as total_lecciones, 0 as lecciones_completadas` literales,
+	// porque las lecciones y su progreso viven en la base de lecciones. Sumarlas
+	// daba cero siempre y el perfil mostraba "0%" aunque el curso estuviera
+	// terminado.
+	if cursos, err := h.c.Cursos.ListMisCapacitaciones(c, &cursospb.UserRequest{UserId: userID}); err == nil {
+		guardar("cursos_inscritos", int32(len(cursos.Cursos)))
+
+		var comp, total int32
+		var muAvance sync.Mutex
+		var wgAvance sync.WaitGroup
+		for _, curso := range cursos.Cursos {
+			wgAvance.Add(1)
+			go func(cursoID string) {
+				defer wgAvance.Done()
+				res, errA := h.c.Lecciones.ResumenAvanceCurso(c, &leccionespb.ResumenAvanceRequest{
+					CursoId: cursoID,
+					UserIds: []string{userID},
+				})
+				if errA != nil || res == nil {
+					return
+				}
+				muAvance.Lock()
+				defer muAvance.Unlock()
+				// TotalLecciones viene aunque el alumno no tenga ni una fila de
+				// progreso; sin él, un curso recién empezado contaría 0 de 0, que
+				// se lee como completado.
+				total += res.TotalLecciones
+				if len(res.Avances) > 0 {
+					comp += res.Avances[0].Completadas
+				}
+			}(curso.Id)
+		}
+		wgAvance.Wait()
+		guardar("lecciones_completadas", comp)
+		guardar("total_lecciones", total)
+	}
+
+	wg.Wait()
+	ctx.JSON(http.StatusOK, stats)
 }
 
 // PUT /api/perfil
