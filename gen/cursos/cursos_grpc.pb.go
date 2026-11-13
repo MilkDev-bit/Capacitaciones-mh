@@ -63,6 +63,9 @@ const (
 	CursosService_InstructorCreateLicencia_FullMethodName       = "/cursos.CursosService/InstructorCreateLicencia"
 	CursosService_InstructorUpdateLicencia_FullMethodName       = "/cursos.CursosService/InstructorUpdateLicencia"
 	CursosService_InstructorDeleteLicencia_FullMethodName       = "/cursos.CursosService/InstructorDeleteLicencia"
+	CursosService_AdminAsignarInstructor_FullMethodName         = "/cursos.CursosService/AdminAsignarInstructor"
+	CursosService_AdminQuitarInstructor_FullMethodName          = "/cursos.CursosService/AdminQuitarInstructor"
+	CursosService_ListInstructoresDeCurso_FullMethodName        = "/cursos.CursosService/ListInstructoresDeCurso"
 	CursosService_AdminListCapacitaciones_FullMethodName        = "/cursos.CursosService/AdminListCapacitaciones"
 	CursosService_AdminCreateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminCreateCapacitacion"
 	CursosService_AdminUpdateCapacitacion_FullMethodName        = "/cursos.CursosService/AdminUpdateCapacitacion"
@@ -175,6 +178,16 @@ type CursosServiceClient interface {
 	InstructorUpdateLicencia(ctx context.Context, in *UpdateLicenciaRequest, opts ...grpc.CallOption) (*Licencia, error)
 	InstructorDeleteLicencia(ctx context.Context, in *LicenciaIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	// ── Admin ─────────────────────────────────────────────────────────────────
+	//
+	// Instructores asignados a un curso para REVISARLO.
+	//
+	// Distinto de `capacitaciones.instructor_id`, que es el dueño y el único que
+	// puede editar o borrar. Un asignado ve el avance de los alumnos y los
+	// resultados de los exámenes del curso, y nada más. Asignar a alguien para
+	// que revise no debe darle permiso para destruir.
+	AdminAsignarInstructor(ctx context.Context, in *AsignarInstructorRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	AdminQuitarInstructor(ctx context.Context, in *AsignarInstructorRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	ListInstructoresDeCurso(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*ListInstructoresResponse, error)
 	AdminListCapacitaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListCursosResponse, error)
 	AdminCreateCapacitacion(ctx context.Context, in *CreateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
 	AdminUpdateCapacitacion(ctx context.Context, in *UpdateCursoRequest, opts ...grpc.CallOption) (*CursoResponse, error)
@@ -664,6 +677,36 @@ func (c *cursosServiceClient) InstructorDeleteLicencia(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *cursosServiceClient) AdminAsignarInstructor(ctx context.Context, in *AsignarInstructorRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminAsignarInstructor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) AdminQuitarInstructor(ctx context.Context, in *AsignarInstructorRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, CursosService_AdminQuitarInstructor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cursosServiceClient) ListInstructoresDeCurso(ctx context.Context, in *CursoIDRequest, opts ...grpc.CallOption) (*ListInstructoresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListInstructoresResponse)
+	err := c.cc.Invoke(ctx, CursosService_ListInstructoresDeCurso_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cursosServiceClient) AdminListCapacitaciones(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListCursosResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListCursosResponse)
@@ -954,6 +997,16 @@ type CursosServiceServer interface {
 	InstructorUpdateLicencia(context.Context, *UpdateLicenciaRequest) (*Licencia, error)
 	InstructorDeleteLicencia(context.Context, *LicenciaIDRequest) (*EmptyResponse, error)
 	// ── Admin ─────────────────────────────────────────────────────────────────
+	//
+	// Instructores asignados a un curso para REVISARLO.
+	//
+	// Distinto de `capacitaciones.instructor_id`, que es el dueño y el único que
+	// puede editar o borrar. Un asignado ve el avance de los alumnos y los
+	// resultados de los exámenes del curso, y nada más. Asignar a alguien para
+	// que revise no debe darle permiso para destruir.
+	AdminAsignarInstructor(context.Context, *AsignarInstructorRequest) (*EmptyResponse, error)
+	AdminQuitarInstructor(context.Context, *AsignarInstructorRequest) (*EmptyResponse, error)
+	ListInstructoresDeCurso(context.Context, *CursoIDRequest) (*ListInstructoresResponse, error)
 	AdminListCapacitaciones(context.Context, *EmptyRequest) (*ListCursosResponse, error)
 	AdminCreateCapacitacion(context.Context, *CreateCursoRequest) (*CursoResponse, error)
 	AdminUpdateCapacitacion(context.Context, *UpdateCursoRequest) (*CursoResponse, error)
@@ -1134,6 +1187,15 @@ func (UnimplementedCursosServiceServer) InstructorUpdateLicencia(context.Context
 }
 func (UnimplementedCursosServiceServer) InstructorDeleteLicencia(context.Context, *LicenciaIDRequest) (*EmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstructorDeleteLicencia not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminAsignarInstructor(context.Context, *AsignarInstructorRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminAsignarInstructor not implemented")
+}
+func (UnimplementedCursosServiceServer) AdminQuitarInstructor(context.Context, *AsignarInstructorRequest) (*EmptyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminQuitarInstructor not implemented")
+}
+func (UnimplementedCursosServiceServer) ListInstructoresDeCurso(context.Context, *CursoIDRequest) (*ListInstructoresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInstructoresDeCurso not implemented")
 }
 func (UnimplementedCursosServiceServer) AdminListCapacitaciones(context.Context, *EmptyRequest) (*ListCursosResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminListCapacitaciones not implemented")
@@ -2008,6 +2070,60 @@ func _CursosService_InstructorDeleteLicencia_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CursosService_AdminAsignarInstructor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AsignarInstructorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminAsignarInstructor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminAsignarInstructor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminAsignarInstructor(ctx, req.(*AsignarInstructorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_AdminQuitarInstructor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AsignarInstructorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).AdminQuitarInstructor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_AdminQuitarInstructor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).AdminQuitarInstructor(ctx, req.(*AsignarInstructorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CursosService_ListInstructoresDeCurso_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CursoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CursosServiceServer).ListInstructoresDeCurso(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CursosService_ListInstructoresDeCurso_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CursosServiceServer).ListInstructoresDeCurso(ctx, req.(*CursoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CursosService_AdminListCapacitaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmptyRequest)
 	if err := dec(in); err != nil {
@@ -2550,6 +2666,18 @@ var CursosService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstructorDeleteLicencia",
 			Handler:    _CursosService_InstructorDeleteLicencia_Handler,
+		},
+		{
+			MethodName: "AdminAsignarInstructor",
+			Handler:    _CursosService_AdminAsignarInstructor_Handler,
+		},
+		{
+			MethodName: "AdminQuitarInstructor",
+			Handler:    _CursosService_AdminQuitarInstructor_Handler,
+		},
+		{
+			MethodName: "ListInstructoresDeCurso",
+			Handler:    _CursosService_ListInstructoresDeCurso_Handler,
 		},
 		{
 			MethodName: "AdminListCapacitaciones",

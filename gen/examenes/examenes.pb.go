@@ -58,10 +58,16 @@ func (*EmptyRequest) Descriptor() ([]byte, []int) {
 }
 
 type UserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	UserId string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Cursos que este instructor puede REVISAR sin haberlos creado.
+	//
+	// Los calcula cursos-service —dueño de `curso_instructores`— y los transporta
+	// el gateway, porque examenes-service tiene su propia base y no puede
+	// consultar esa tabla. Vacío = solo sus propios exámenes.
+	CapacitacionIds []string `protobuf:"bytes,2,rep,name=capacitacion_ids,json=capacitacionIds,proto3" json:"capacitacion_ids,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UserRequest) Reset() {
@@ -101,11 +107,26 @@ func (x *UserRequest) GetUserId() string {
 	return ""
 }
 
+func (x *UserRequest) GetCapacitacionIds() []string {
+	if x != nil {
+		return x.CapacitacionIds
+	}
+	return nil
+}
+
 type ExamenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExamenId      string                 `protobuf:"bytes,1,opt,name=examen_id,json=examenId,proto3" json:"examen_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	ExamenId string                 `protobuf:"bytes,1,opt,name=examen_id,json=examenId,proto3" json:"examen_id,omitempty"`
+	// Quién pregunta, y qué cursos puede revisar.
+	//
+	// Antes no viajaban, y por eso InstructorGetResultados no comprobaba nada:
+	// cualquier instructor podía leer los resultados de cualquier examen ajeno
+	// probando identificadores. Vacíos conservan el comportamiento anterior para
+	// las llamadas internas que no tienen un instructor detrás.
+	UserId          string   `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CapacitacionIds []string `protobuf:"bytes,3,rep,name=capacitacion_ids,json=capacitacionIds,proto3" json:"capacitacion_ids,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ExamenRequest) Reset() {
@@ -143,6 +164,20 @@ func (x *ExamenRequest) GetExamenId() string {
 		return x.ExamenId
 	}
 	return ""
+}
+
+func (x *ExamenRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ExamenRequest) GetCapacitacionIds() []string {
+	if x != nil {
+		return x.CapacitacionIds
+	}
+	return nil
 }
 
 type ExamenUserRequest struct {
@@ -1370,11 +1405,14 @@ var File_examenes_examenes_proto protoreflect.FileDescriptor
 const file_examenes_examenes_proto_rawDesc = "" +
 	"\n" +
 	"\x17examenes/examenes.proto\x12\bexamenes\"\x0e\n" +
-	"\fEmptyRequest\"&\n" +
+	"\fEmptyRequest\"Q\n" +
 	"\vUserRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12)\n" +
+	"\x10capacitacion_ids\x18\x02 \x03(\tR\x0fcapacitacionIds\"p\n" +
 	"\rExamenRequest\x12\x1b\n" +
-	"\texamen_id\x18\x01 \x01(\tR\bexamenId\"I\n" +
+	"\texamen_id\x18\x01 \x01(\tR\bexamenId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12)\n" +
+	"\x10capacitacion_ids\x18\x03 \x03(\tR\x0fcapacitacionIds\"I\n" +
 	"\x11ExamenUserRequest\x12\x1b\n" +
 	"\texamen_id\x18\x01 \x01(\tR\bexamenId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xc6\x01\n" +
